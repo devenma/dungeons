@@ -1,0 +1,71 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/dungeon/room.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/dungeon/door_trigger.tscn" id="2"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_vwall"]
+size = Vector2(16, 1200)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hwall"]
+size = Vector2(1600, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ewall_seg"]
+size = Vector2(16, 568)
+
+[node name="RoomStart" type="Node2D"]
+script = ExtResource("1")
+door_east = true
+
+[node name="Floor" type="ColorRect" parent="."]
+color = Color(0.165, 0.165, 0.165, 1)
+size = Vector2(1600, 1200)
+
+[node name="Walls" type="StaticBody2D" parent="."]
+
+[node name="WallVisuals" type="Node2D" parent="."]
+
+[node name="WallWest" type="ColorRect" parent="WallVisuals"]
+color = Color(0.25, 0.25, 0.27, 1)
+size = Vector2(16, 1200)
+
+[node name="WallNorth" type="ColorRect" parent="WallVisuals"]
+color = Color(0.25, 0.25, 0.27, 1)
+size = Vector2(1600, 16)
+
+[node name="WallSouth" type="ColorRect" parent="WallVisuals"]
+position = Vector2(0, 1184)
+color = Color(0.25, 0.25, 0.27, 1)
+size = Vector2(1600, 16)
+
+[node name="WallEastTop" type="ColorRect" parent="WallVisuals"]
+position = Vector2(1584, 0)
+color = Color(0.25, 0.25, 0.27, 1)
+size = Vector2(16, 568)
+
+[node name="WallEastBottom" type="ColorRect" parent="WallVisuals"]
+position = Vector2(1584, 632)
+color = Color(0.25, 0.25, 0.27, 1)
+size = Vector2(16, 568)
+
+[node name="WallWest" type="CollisionShape2D" parent="Walls"]
+position = Vector2(8, 600)
+shape = SubResource("RectangleShape2D_vwall")
+
+[node name="WallNorth" type="CollisionShape2D" parent="Walls"]
+position = Vector2(800, 8)
+shape = SubResource("RectangleShape2D_hwall")
+
+[node name="WallSouth" type="CollisionShape2D" parent="Walls"]
+position = Vector2(800, 1192)
+shape = SubResource("RectangleShape2D_hwall")
+
+[node name="WallEastTop" type="CollisionShape2D" parent="Walls"]
+position = Vector2(1592, 284)
+shape = SubResource("RectangleShape2D_ewall_seg")
+
+[node name="WallEastBottom" type="CollisionShape2D" parent="Walls"]
+position = Vector2(1592, 916)
+shape = SubResource("RectangleShape2D_ewall_seg")
+
+[node name="DoorEast" parent="." instance=ExtResource("2")]
+position = Vector2(1600, 600)
