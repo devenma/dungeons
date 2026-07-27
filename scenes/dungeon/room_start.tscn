@@ -19,7 +19,7 @@ door_east = true
 [node name="Floor" type="ColorRect" parent="." unique_id=1624345498]
 offset_right = 1600.0
 offset_bottom = 1200.0
-color = Color(0.165, 0.165, 0.165, 1)
+color = Color(0.023529412, 0, 0.24313726, 0.42745098)
 
 [node name="Walls" type="StaticBody2D" parent="." unique_id=395891456]
 

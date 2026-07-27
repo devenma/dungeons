@@ -1,40 +1,32 @@
 [gd_scene format=3 uid="uid://b6ypcipahjuo4"]
 
-[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1"]
-[ext_resource type="Script" path="res://scripts/dungeon/camera_limit_manager.gd" id="2"]
-[ext_resource type="PackedScene" path="res://scenes/dungeon/room_start.tscn" id="3"]
-[ext_resource type="PackedScene" path="res://scenes/dungeon/room_combat_a.tscn" id="4"]
-[ext_resource type="PackedScene" path="res://scenes/dungeon/room_reward.tscn" id="5"]
+[ext_resource type="PackedScene" uid="uid://dyfdu3qmosn35" path="res://scenes/player/player.tscn" id="1"]
+[ext_resource type="Script" uid="uid://d2e7kcfvtw0c7" path="res://scripts/dungeon/camera_limit_manager.gd" id="2"]
+[ext_resource type="Script" uid="uid://b2ahhh2m83c6x" path="res://scripts/dungeon/dungeon_manager.gd" id="3"]
+[ext_resource type="Script" uid="uid://7id6korn0b3b" path="res://scripts/dungeon/dungeon_generator.gd" id="4"]
+[ext_resource type="Script" uid="uid://cdm4p84h70p71" path="res://scripts/game/run_manager.gd" id="5"]
 
-[node name="Main" type="Node"]
+[node name="Main" type="Node" unique_id=1710014798]
 
-[node name="World" type="Node2D" parent="."]
+[node name="RunManager" type="Node" parent="." unique_id=1494447952]
+script = ExtResource("5")
 
-[node name="Player" parent="World" instance=ExtResource("1")]
+[node name="World" type="Node2D" parent="." unique_id=428461756]
+
+[node name="Player" parent="World" unique_id=244688153 instance=ExtResource("1")]
 position = Vector2(800, 600)
 
-[node name="CameraLimitManager" type="Node" parent="World"]
+[node name="DungeonManager" type="Node" parent="World" unique_id=260788842]
+script = ExtResource("3")
+player_node_path = NodePath("../Player")
+dungeon_generator_path = NodePath("DungeonGenerator")
+run_manager_node_path = NodePath("../../RunManager")
+
+[node name="DungeonGenerator" type="Node" parent="World/DungeonManager" unique_id=1333974707]
+script = ExtResource("4")
+
+[node name="CameraLimitManager" type="Node" parent="World" unique_id=1572390939]
 script = ExtResource("2")
 player_node_path = NodePath("../Player")
 
-[node name="RoomStart" parent="World" instance=ExtResource("3")]
-
-[node name="RoomCombatA" parent="World" instance=ExtResource("4")]
-position = Vector2(1600, 0)
-
-[node name="RoomReward" parent="World" instance=ExtResource("5")]
-position = Vector2(3200, 0)
-
-[node name="DoorEast" parent="World/RoomStart" index="-1"]
-target_room_path = NodePath("../../RoomCombatA")
-
-[node name="DoorWest" parent="World/RoomCombatA" index="-1"]
-target_room_path = NodePath("../../RoomStart")
-
-[node name="DoorEast" parent="World/RoomCombatA" index="-1"]
-target_room_path = NodePath("../../RoomReward")
-
-[node name="DoorWest" parent="World/RoomReward" index="-1"]
-target_room_path = NodePath("../../RoomCombatA")
-
-[node name="UI" type="CanvasLayer" parent="."]
+[node name="UI" type="CanvasLayer" parent="." unique_id=821168563]

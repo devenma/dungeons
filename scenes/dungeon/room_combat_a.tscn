@@ -11,13 +11,14 @@ size = Vector2(16, 568)
 
 [node name="RoomCombatA" type="Node2D" unique_id=1370410175]
 script = ExtResource("1")
+room_type = 1
 door_east = true
 door_west = true
 
 [node name="Floor" type="ColorRect" parent="." unique_id=1462597951]
 offset_right = 1600.0
 offset_bottom = 1200.0
-color = Color(0.165, 0.165, 0.165, 1)
+color = Color(0.3372549, 0, 0.02745098, 0.52156866)
 
 [node name="Walls" type="StaticBody2D" parent="." unique_id=651891843]
 
