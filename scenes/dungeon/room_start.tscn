@@ -1,7 +1,7 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene format=3 uid="uid://ctsyfar7qwqhq"]
 
-[ext_resource type="Script" path="res://scripts/dungeon/room.gd" id="1"]
-[ext_resource type="PackedScene" path="res://scenes/dungeon/door_trigger.tscn" id="2"]
+[ext_resource type="Script" uid="uid://bph5dxa8jfat3" path="res://scripts/dungeon/room.gd" id="1"]
+[ext_resource type="PackedScene" uid="uid://bpqcgrl3kpjsm" path="res://scenes/dungeon/door_trigger.tscn" id="2"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_vwall"]
 size = Vector2(16, 1200)
@@ -12,60 +12,67 @@ size = Vector2(1600, 16)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ewall_seg"]
 size = Vector2(16, 568)
 
-[node name="RoomStart" type="Node2D"]
+[node name="RoomStart" type="Node2D" unique_id=1604904976]
 script = ExtResource("1")
 door_east = true
 
-[node name="Floor" type="ColorRect" parent="."]
+[node name="Floor" type="ColorRect" parent="." unique_id=1624345498]
+offset_right = 1600.0
+offset_bottom = 1200.0
 color = Color(0.165, 0.165, 0.165, 1)
-size = Vector2(1600, 1200)
 
-[node name="Walls" type="StaticBody2D" parent="."]
+[node name="Walls" type="StaticBody2D" parent="." unique_id=395891456]
 
-[node name="WallVisuals" type="Node2D" parent="."]
-
-[node name="WallWest" type="ColorRect" parent="WallVisuals"]
-color = Color(0.25, 0.25, 0.27, 1)
-size = Vector2(16, 1200)
-
-[node name="WallNorth" type="ColorRect" parent="WallVisuals"]
-color = Color(0.25, 0.25, 0.27, 1)
-size = Vector2(1600, 16)
-
-[node name="WallSouth" type="ColorRect" parent="WallVisuals"]
-position = Vector2(0, 1184)
-color = Color(0.25, 0.25, 0.27, 1)
-size = Vector2(1600, 16)
-
-[node name="WallEastTop" type="ColorRect" parent="WallVisuals"]
-position = Vector2(1584, 0)
-color = Color(0.25, 0.25, 0.27, 1)
-size = Vector2(16, 568)
-
-[node name="WallEastBottom" type="ColorRect" parent="WallVisuals"]
-position = Vector2(1584, 632)
-color = Color(0.25, 0.25, 0.27, 1)
-size = Vector2(16, 568)
-
-[node name="WallWest" type="CollisionShape2D" parent="Walls"]
+[node name="WallWest" type="CollisionShape2D" parent="Walls" unique_id=2104364503]
 position = Vector2(8, 600)
 shape = SubResource("RectangleShape2D_vwall")
 
-[node name="WallNorth" type="CollisionShape2D" parent="Walls"]
+[node name="WallNorth" type="CollisionShape2D" parent="Walls" unique_id=1757552372]
 position = Vector2(800, 8)
 shape = SubResource("RectangleShape2D_hwall")
 
-[node name="WallSouth" type="CollisionShape2D" parent="Walls"]
+[node name="WallSouth" type="CollisionShape2D" parent="Walls" unique_id=1032404844]
 position = Vector2(800, 1192)
 shape = SubResource("RectangleShape2D_hwall")
 
-[node name="WallEastTop" type="CollisionShape2D" parent="Walls"]
+[node name="WallEastTop" type="CollisionShape2D" parent="Walls" unique_id=1924340603]
 position = Vector2(1592, 284)
 shape = SubResource("RectangleShape2D_ewall_seg")
 
-[node name="WallEastBottom" type="CollisionShape2D" parent="Walls"]
+[node name="WallEastBottom" type="CollisionShape2D" parent="Walls" unique_id=2069078246]
 position = Vector2(1592, 916)
 shape = SubResource("RectangleShape2D_ewall_seg")
 
-[node name="DoorEast" parent="." instance=ExtResource("2")]
-position = Vector2(1600, 600)
+[node name="WallVisuals" type="Node2D" parent="." unique_id=2130577066]
+
+[node name="WallWest" type="ColorRect" parent="WallVisuals" unique_id=27075385]
+offset_right = 16.0
+offset_bottom = 1200.0
+color = Color(0.25, 0.25, 0.27, 1)
+
+[node name="WallNorth" type="ColorRect" parent="WallVisuals" unique_id=1364930222]
+offset_right = 1600.0
+offset_bottom = 16.0
+color = Color(0.25, 0.25, 0.27, 1)
+
+[node name="WallSouth" type="ColorRect" parent="WallVisuals" unique_id=914935454]
+offset_top = 1184.0
+offset_right = 1600.0
+offset_bottom = 1200.0
+color = Color(0.25, 0.25, 0.27, 1)
+
+[node name="WallEastTop" type="ColorRect" parent="WallVisuals" unique_id=1449712585]
+offset_left = 1584.0
+offset_right = 1600.0
+offset_bottom = 568.0
+color = Color(0.25, 0.25, 0.27, 1)
+
+[node name="WallEastBottom" type="ColorRect" parent="WallVisuals" unique_id=1541208307]
+offset_left = 1584.0
+offset_top = 632.0
+offset_right = 1600.0
+offset_bottom = 1200.0
+color = Color(0.25, 0.25, 0.27, 1)
+
+[node name="DoorEast" parent="." unique_id=1438593004 instance=ExtResource("2")]
+position = Vector2(1580, 600)

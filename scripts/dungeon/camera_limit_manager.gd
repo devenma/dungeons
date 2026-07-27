@@ -4,6 +4,9 @@ extends Node
 
 @onready var player: Node2D = get_node(player_node_path)
 
+var _last_transition_time: float = 0.0
+const TRANSITION_COOLDOWN: float = 0.5
+
 
 func _ready() -> void:
 	# Start from the scene root so we find triggers in sibling rooms
@@ -41,6 +44,11 @@ func _connect_all_triggers(node: Node) -> void:
 
 
 func _on_room_entered(_player: Node2D, target_room: Node) -> void:
+	var now := Time.get_ticks_msec() / 1000.0
+	if now - _last_transition_time < TRANSITION_COOLDOWN:
+		return
+	_last_transition_time = now
+
 	if target_room == null:
 		return
 	var cam := player.get_node("Camera2D") as Camera2D

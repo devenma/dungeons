@@ -1,7 +1,7 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene format=3 uid="uid://durghjfhbh7th"]
 
-[ext_resource type="Script" path="res://scripts/dungeon/room.gd" id="1"]
-[ext_resource type="PackedScene" path="res://scenes/dungeon/door_trigger.tscn" id="2"]
+[ext_resource type="Script" uid="uid://bph5dxa8jfat3" path="res://scripts/dungeon/room.gd" id="1"]
+[ext_resource type="PackedScene" uid="uid://bpqcgrl3kpjsm" path="res://scenes/dungeon/door_trigger.tscn" id="2"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hwall"]
 size = Vector2(1600, 16)
@@ -9,73 +9,82 @@ size = Vector2(1600, 16)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_seg"]
 size = Vector2(16, 568)
 
-[node name="RoomCombatA" type="Node2D"]
+[node name="RoomCombatA" type="Node2D" unique_id=1370410175]
 script = ExtResource("1")
 door_east = true
 door_west = true
 
-[node name="Floor" type="ColorRect" parent="."]
+[node name="Floor" type="ColorRect" parent="." unique_id=1462597951]
+offset_right = 1600.0
+offset_bottom = 1200.0
 color = Color(0.165, 0.165, 0.165, 1)
-size = Vector2(1600, 1200)
 
-[node name="Walls" type="StaticBody2D" parent="."]
+[node name="Walls" type="StaticBody2D" parent="." unique_id=651891843]
 
-[node name="WallVisuals" type="Node2D" parent="."]
-
-[node name="WallNorth" type="ColorRect" parent="WallVisuals"]
-color = Color(0.25, 0.25, 0.27, 1)
-size = Vector2(1600, 16)
-
-[node name="WallSouth" type="ColorRect" parent="WallVisuals"]
-position = Vector2(0, 1184)
-color = Color(0.25, 0.25, 0.27, 1)
-size = Vector2(1600, 16)
-
-[node name="WallWestTop" type="ColorRect" parent="WallVisuals"]
-color = Color(0.25, 0.25, 0.27, 1)
-size = Vector2(16, 568)
-
-[node name="WallWestBottom" type="ColorRect" parent="WallVisuals"]
-position = Vector2(0, 632)
-color = Color(0.25, 0.25, 0.27, 1)
-size = Vector2(16, 568)
-
-[node name="WallEastTop" type="ColorRect" parent="WallVisuals"]
-position = Vector2(1584, 0)
-color = Color(0.25, 0.25, 0.27, 1)
-size = Vector2(16, 568)
-
-[node name="WallEastBottom" type="ColorRect" parent="WallVisuals"]
-position = Vector2(1584, 632)
-color = Color(0.25, 0.25, 0.27, 1)
-size = Vector2(16, 568)
-
-[node name="WallNorth" type="CollisionShape2D" parent="Walls"]
+[node name="WallNorth" type="CollisionShape2D" parent="Walls" unique_id=1060582420]
 position = Vector2(800, 8)
 shape = SubResource("RectangleShape2D_hwall")
 
-[node name="WallSouth" type="CollisionShape2D" parent="Walls"]
+[node name="WallSouth" type="CollisionShape2D" parent="Walls" unique_id=398583043]
 position = Vector2(800, 1192)
 shape = SubResource("RectangleShape2D_hwall")
 
-[node name="WallWestTop" type="CollisionShape2D" parent="Walls"]
+[node name="WallWestTop" type="CollisionShape2D" parent="Walls" unique_id=1705392278]
 position = Vector2(8, 284)
 shape = SubResource("RectangleShape2D_wall_seg")
 
-[node name="WallWestBottom" type="CollisionShape2D" parent="Walls"]
+[node name="WallWestBottom" type="CollisionShape2D" parent="Walls" unique_id=1652830901]
 position = Vector2(8, 916)
 shape = SubResource("RectangleShape2D_wall_seg")
 
-[node name="WallEastTop" type="CollisionShape2D" parent="Walls"]
+[node name="WallEastTop" type="CollisionShape2D" parent="Walls" unique_id=651002757]
 position = Vector2(1592, 284)
 shape = SubResource("RectangleShape2D_wall_seg")
 
-[node name="WallEastBottom" type="CollisionShape2D" parent="Walls"]
+[node name="WallEastBottom" type="CollisionShape2D" parent="Walls" unique_id=1507153543]
 position = Vector2(1592, 916)
 shape = SubResource("RectangleShape2D_wall_seg")
 
-[node name="DoorWest" parent="." instance=ExtResource("2")]
-position = Vector2(0, 600)
+[node name="WallVisuals" type="Node2D" parent="." unique_id=20698271]
 
-[node name="DoorEast" parent="." instance=ExtResource("2")]
-position = Vector2(1600, 600)
+[node name="WallNorth" type="ColorRect" parent="WallVisuals" unique_id=510397547]
+offset_right = 1600.0
+offset_bottom = 16.0
+color = Color(0.25, 0.25, 0.27, 1)
+
+[node name="WallSouth" type="ColorRect" parent="WallVisuals" unique_id=1107430285]
+offset_top = 1184.0
+offset_right = 1600.0
+offset_bottom = 1200.0
+color = Color(0.25, 0.25, 0.27, 1)
+
+[node name="WallWestTop" type="ColorRect" parent="WallVisuals" unique_id=1264021361]
+offset_right = 16.0
+offset_bottom = 568.0
+color = Color(0.25, 0.25, 0.27, 1)
+
+[node name="WallWestBottom" type="ColorRect" parent="WallVisuals" unique_id=636697660]
+offset_top = 632.0
+offset_right = 16.0
+offset_bottom = 1200.0
+color = Color(0.25, 0.25, 0.27, 1)
+
+[node name="WallEastTop" type="ColorRect" parent="WallVisuals" unique_id=1300495425]
+offset_left = 1584.0
+offset_right = 1600.0
+offset_bottom = 568.0
+color = Color(0.25, 0.25, 0.27, 1)
+
+[node name="WallEastBottom" type="ColorRect" parent="WallVisuals" unique_id=1345509836]
+offset_left = 1584.0
+offset_top = 632.0
+offset_right = 1600.0
+offset_bottom = 1200.0
+color = Color(0.25, 0.25, 0.27, 1)
+
+[node name="DoorWest" parent="." unique_id=888871151 instance=ExtResource("2")]
+position = Vector2(20, 600)
+exit_direction = "west"
+
+[node name="DoorEast" parent="." unique_id=1947197934 instance=ExtResource("2")]
+position = Vector2(1580, 600)
