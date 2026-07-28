@@ -511,13 +511,14 @@ func _place_doors(layout: FloorLayout, rng: RandomNumberGenerator,
 				door_count = mini(data.max_doors_per_edge,
 					ceili(float(edge_len) / data.multi_door_threshold))
 
-			# Place doors at seeded positions along the edge
-			var stride := float(edge_len) / float(door_count)
-			var base_offset := rng.randi_range(0, 1)  # small irregularity
+			# Place doors centered along the edge with slight jitter
 			for di in door_count:
-				var along := int(floori(di * stride + float(base_offset)))
-				# Clamp along to edge bounds
-				along = clampi(along, 0, edge_len - 1)
+				# Center the door(s) evenly along the shared edge
+				var segment := float(edge_len) / float(door_count)
+				var center := int(floori(di * segment + segment / 2.0))
+				var jitter_max := maxi(1, edge_len / 16)
+				var jitter := rng.randi_range(-jitter_max, jitter_max)
+				var along := clampi(center + jitter, 0, edge_len - 1)
 
 				# Determine which zone's door coordinate
 				var pos_along: int
