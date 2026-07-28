@@ -45,7 +45,7 @@ func _start_floor() -> void:
 	run_manager.current_floor += 1
 
 	# 1  Generate floor layout
-	var generator := DungeonGenerator.new()
+	var generator : = DungeonGenerator.new()
 	var layout = generator.generate_floor(
 		run_manager.current_floor,
 		run_manager.run_seed,
