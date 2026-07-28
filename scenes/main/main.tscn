@@ -4,7 +4,7 @@
 [ext_resource type="Script" uid="uid://d2e7kcfvtw0c7" path="res://scripts/dungeon/camera_limit_manager.gd" id="2"]
 [ext_resource type="Script" uid="uid://b2ahhh2m83c6x" path="res://scripts/dungeon/dungeon_manager.gd" id="3"]
 [ext_resource type="Script" uid="uid://cdm4p84h70p71" path="res://scripts/game/run_manager.gd" id="5"]
-[ext_resource type="Resource" uid="uid://bvd2d20dmih6m" path="res://resources/floors/floor_data.tres" id="6"]
+[ext_resource type="Resource" path="res://resources/floors/floor_data.tres" id="6"]
 
 [node name="Main" type="Node" unique_id=1710014798]
 

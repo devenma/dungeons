@@ -83,7 +83,7 @@ func _start_floor() -> void:
 		_spawner.zone_cleared.connect(_door_controller.on_zone_cleared)
 
 	if _door_controller.has_signal("zone_entered"):
-		var cam_manager := _find_camera_limit_manager()
+		var cam_manager :Node = _find_camera_limit_manager()
 		if cam_manager != null and cam_manager.has_method("_on_zone_entered"):
 			_door_controller.zone_entered.connect(cam_manager._on_zone_entered)
 
@@ -103,7 +103,7 @@ func _start_floor() -> void:
 func _find_camera_limit_manager():
 	# CameraLimitManager is a sibling under World: ../CameraLimitManager
 	if get_parent() != null:
-		var by_path := get_parent().get_node_or_null("CameraLimitManager")
+		var by_path :Node = get_parent().get_node_or_null("CameraLimitManager")
 		if by_path != null:
 			return by_path
 	# Fallback: search entire tree by script
@@ -114,14 +114,14 @@ func _find_node_by_script(node: Node, script_path: String):
 	if node.get_script() and node.get_script().resource_path == script_path:
 		return node
 	for child in node.get_children():
-		var found := _find_node_by_script(child, script_path)
-		if found != nil:
+		var found :Node = _find_node_by_script(child, script_path)
+		if found != null:
 			return found
 	return null
 
 
 func _initialize_camera_limits(layout) -> void:
-	var cam_manager := _find_camera_limit_manager()
+	var cam_manager :Node = _find_camera_limit_manager()
 	if cam_manager != null and cam_manager.has_method("initialize"):
 		cam_manager.initialize(layout)
 
@@ -143,13 +143,13 @@ func _create_exit_area(layout) -> void:
 	var shape := CollisionShape2D.new()
 	var rect := RectangleShape2D.new()
 	# Size = half the zone in pixels
-	var zone_px := exit_zone.tile_rect.size * TILE_SIZE
+	var zone_px :Vector2i = exit_zone.tile_rect.size * TILE_SIZE
 	rect.size = Vector2(minf(zone_px.x, 64), minf(zone_px.y, 64))
 	shape.shape = rect
 	_exit_area.add_child(shape)
 
 	# Position at zone center
-	var zone_center := (exit_zone.tile_rect.position + exit_zone.tile_rect.size / 2) * TILE_SIZE
+	var zone_center :Vector2i = (exit_zone.tile_rect.position + exit_zone.tile_rect.size / 2) * TILE_SIZE
 	_exit_area.position = zone_center
 
 	_exit_area.body_entered.connect(_on_exit_body_entered)
@@ -202,10 +202,10 @@ func _spawn_player(layout) -> void:
 		return
 
 	# Center player in start zone
-	var zone_center := (start_zone.tile_rect.position + start_zone.tile_rect.size / 2) * TILE_SIZE
+	var zone_center :Vector2i = (start_zone.tile_rect.position + start_zone.tile_rect.size / 2) * TILE_SIZE
 	player.position = zone_center
 
 	# Reset camera limits to start zone via the camera manager
-	var cam_manager := _find_camera_limit_manager()
+	var cam_manager :Node = _find_camera_limit_manager()
 	if cam_manager != null and cam_manager.has_method("_on_zone_entered"):
 		cam_manager._on_zone_entered(start_zone.id)

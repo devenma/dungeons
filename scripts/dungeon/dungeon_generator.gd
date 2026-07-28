@@ -143,7 +143,12 @@ func _merge_cells(rng: RandomNumberGenerator, target_count: int,
 		var zids: Array[int] = []
 		for z in zones:
 			zids.append(z.id)
-		zids.shuffle(rng)
+		# Fisher-Yates shuffle
+		for i in range(zids.size() - 1, 0, -1):
+			var j := rng.randi_range(0, i)
+			var tmp = zids[i]
+			zids[i] = zids[j]
+			zids[j] = tmp
 
 		for zid in zids:
 			if unassigned <= 0:
@@ -172,7 +177,7 @@ func _merge_cells(rng: RandomNumberGenerator, target_count: int,
 			var valid := true
 			for gy in range(new_min.y, new_max.y):
 				for gx in range(new_min.x, new_max.x):
-					var cid := cells[gy][gx].zone_id
+					var cid: int = cells[gy][gx].zone_id
 					if cid != -1 and cid != zid:
 						valid = false
 						break
@@ -217,7 +222,7 @@ func _merge_cells(rng: RandomNumberGenerator, target_count: int,
 					var pos := Vector2i(gx, gy)
 					var nbrs := _get_neighbor_positions(pos, grid_w, grid_h)
 					for nb in nbrs:
-						var nid := cells[nb.y][nb.x].zone_id
+						var nid: int = cells[nb.y][nb.x].zone_id
 						if nid != -1:
 							cells[gy][gx].zone_id = nid
 							var z: Zone = zones[nid]
@@ -333,13 +338,13 @@ func _place_fallback_doors(layout: FloorLayout) -> Array:
 			if z.cell_min.y != other.cell_min.y:
 				# Vertical adjacency (north-south)
 				d.edge_axis = "h"
-				var top_y := maxi(z.cell_min.y, other.cell_min.y) * CELL_TILES
+				var top_y: int = maxi(z.cell_min.y, other.cell_min.y) * CELL_TILES
 				d.edge_line = top_y
 				d.pos_along = (z.cell_min.x * CELL_TILES) + (CELL_TILES / 2)
 			else:
 				# Horizontal adjacency (east-west)
 				d.edge_axis = "v"
-				var left_x := maxi(z.cell_min.x, other.cell_min.x) * CELL_TILES
+				var left_x: int = maxi(z.cell_min.x, other.cell_min.x) * CELL_TILES
 				d.edge_line = left_x
 				d.pos_along = (z.cell_min.y * CELL_TILES) + (CELL_TILES / 2)
 
@@ -368,7 +373,7 @@ func _detect_neighbors(layout: FloorLayout, cells: Array) -> void:
 			var nbrs := _get_neighbor_positions(Vector2i(gx, gy),
 				layout.grid_w, layout.grid_h)
 			for nb in nbrs:
-				var nid := cells[nb.y][nb.x].zone_id
+				var nid: int = cells[nb.y][nb.x].zone_id
 				if nid == -1 or nid == c.zone_id:
 					continue
 				var key := "%d,%d" % [mini(c.zone_id, nid), maxi(c.zone_id, nid)]
@@ -390,7 +395,7 @@ func _validate_connectivity(layout: FloorLayout) -> bool:
 	visited[layout.start_zone_id] = true
 
 	while not queue.is_empty():
-		var cur := queue.pop_front()
+		var cur: int = queue.pop_front()
 		if cur == layout.exit_zone_id:
 			return true
 		var z := _find_zone(layout, cur)
@@ -411,9 +416,9 @@ func _assign_types(layout: FloorLayout, rng: RandomNumberGenerator,
 
 	# START = closest to origin (0,0) by cell_min
 	var min_dist := 999999
-	var start_z := layout.zones[0]
+	var start_z: Zone = layout.zones[0]
 	for z in layout.zones:
-		var d := z.cell_min.x + z.cell_min.y  # Manhattan from origin
+		var d: int = z.cell_min.x + z.cell_min.y  # Manhattan from origin
 		if d < min_dist:
 			min_dist = d
 			start_z = z
@@ -422,7 +427,7 @@ func _assign_types(layout: FloorLayout, rng: RandomNumberGenerator,
 
 	# EXIT = farthest from start zone by Manhattan on cell centers
 	var max_dist := -1
-	var exit_z := layout.zones[0]
+	var exit_z: Zone = layout.zones[0]
 	var start_center := Vector2i(
 		start_z.cell_min.x + (start_z.cell_max.x - start_z.cell_min.x) / 2,
 		start_z.cell_min.y + (start_z.cell_max.y - start_z.cell_min.y) / 2
@@ -477,27 +482,27 @@ func _place_doors(layout: FloorLayout, rng: RandomNumberGenerator,
 				# Z is left of Other → vertical edge
 				edge_axis = "v"
 				edge_line = z.cell_max.x * CELL_TILES  # tile-x of edge
-				var top_y := maxi(z.cell_min.y, other.cell_min.y)
-				var bot_y := mini(z.cell_max.y, other.cell_max.y)
+				var top_y: int = maxi(z.cell_min.y, other.cell_min.y)
+				var bot_y: int = mini(z.cell_max.y, other.cell_max.y)
 				edge_len = (bot_y - top_y) * CELL_TILES
 			elif other.cell_max.x <= z.cell_min.x:
 				edge_axis = "v"
 				edge_line = other.cell_max.x * CELL_TILES
-				var top_y := maxi(z.cell_min.y, other.cell_min.y)
-				var bot_y := mini(z.cell_max.y, other.cell_max.y)
+				var top_y: int = maxi(z.cell_min.y, other.cell_min.y)
+				var bot_y: int = mini(z.cell_max.y, other.cell_max.y)
 				edge_len = (bot_y - top_y) * CELL_TILES
 			elif z.cell_max.y <= other.cell_min.y:
 				# Z is above Other → horizontal edge
 				edge_axis = "h"
 				edge_line = z.cell_max.y * CELL_TILES  # tile-y of edge
-				var left_x := maxi(z.cell_min.x, other.cell_min.x)
-				var right_x := mini(z.cell_max.x, other.cell_max.x)
+				var left_x: int = maxi(z.cell_min.x, other.cell_min.x)
+				var right_x: int = mini(z.cell_max.x, other.cell_max.x)
 				edge_len = (right_x - left_x) * CELL_TILES
 			else:
 				edge_axis = "h"
 				edge_line = other.cell_max.y * CELL_TILES
-				var left_x := maxi(z.cell_min.x, other.cell_min.x)
-				var right_x := mini(z.cell_max.x, other.cell_max.x)
+				var left_x: int = maxi(z.cell_min.x, other.cell_min.x)
+				var right_x: int = mini(z.cell_max.x, other.cell_max.x)
 				edge_len = (right_x - left_x) * CELL_TILES
 
 			# Determine number of doors on this edge
@@ -518,11 +523,11 @@ func _place_doors(layout: FloorLayout, rng: RandomNumberGenerator,
 				var pos_along: int
 				var start_along: int
 				if edge_axis == "v":
-					var top_y := maxi(z.cell_min.y, other.cell_min.y)
+					var top_y: int = maxi(z.cell_min.y, other.cell_min.y)
 					start_along = top_y * CELL_TILES
 					pos_along = start_along + along
 				else:
-					var left_x := maxi(z.cell_min.x, other.cell_min.x)
+					var left_x: int = maxi(z.cell_min.x, other.cell_min.x)
 					start_along = left_x * CELL_TILES
 					pos_along = start_along + along
 
@@ -744,41 +749,41 @@ func _render_layout(layout: FloorLayout, tilemap: TileMap) -> void:
 	var walled_pairs: Dictionary = {}  # tile_pos_key -> true
 	for z in layout.zones:
 		for nid in z.neighbors:
-			var other := zone_by_id[nid]
+			var other: Zone = zone_by_id[nid]
 			if other == null:
 				continue
 
 			# Determine shared edge tile positions
 			if z.cell_max.x <= other.cell_min.x:
 				# Vertical edge: Z on left, Other on right
-				var edge_tile_x := z.cell_max.x * CELL_TILES
-				var top_y := maxi(z.cell_min.y, other.cell_min.y) * CELL_TILES
-				var bot_y := mini(z.cell_max.y, other.cell_max.y) * CELL_TILES
+				var edge_tile_x: int = z.cell_max.x * CELL_TILES
+				var top_y: int = maxi(z.cell_min.y, other.cell_min.y) * CELL_TILES
+				var bot_y: int = mini(z.cell_max.y, other.cell_max.y) * CELL_TILES
 				for ty in range(top_y, bot_y):
 					var key := str(Vector2i(edge_tile_x, ty))
 					if not walled_pairs.has(key):
 						walled_pairs[key] = true
 			elif other.cell_max.x <= z.cell_min.x:
-				var edge_tile_x := other.cell_max.x * CELL_TILES
-				var top_y := maxi(z.cell_min.y, other.cell_min.y) * CELL_TILES
-				var bot_y := mini(z.cell_max.y, other.cell_max.y) * CELL_TILES
+				var edge_tile_x: int = other.cell_max.x * CELL_TILES
+				var top_y: int = maxi(z.cell_min.y, other.cell_min.y) * CELL_TILES
+				var bot_y: int = mini(z.cell_max.y, other.cell_max.y) * CELL_TILES
 				for ty in range(top_y, bot_y):
 					var key := str(Vector2i(edge_tile_x, ty))
 					if not walled_pairs.has(key):
 						walled_pairs[key] = true
 			elif z.cell_max.y <= other.cell_min.y:
 				# Horizontal edge: Z above, Other below
-				var edge_tile_y := z.cell_max.y * CELL_TILES
-				var left_x := maxi(z.cell_min.x, other.cell_min.x) * CELL_TILES
-				var right_x := mini(z.cell_max.x, other.cell_max.x) * CELL_TILES
+				var edge_tile_y: int = z.cell_max.y * CELL_TILES
+				var left_x: int = maxi(z.cell_min.x, other.cell_min.x) * CELL_TILES
+				var right_x: int = mini(z.cell_max.x, other.cell_max.x) * CELL_TILES
 				for tx in range(left_x, right_x):
 					var key := str(Vector2i(tx, edge_tile_y))
 					if not walled_pairs.has(key):
 						walled_pairs[key] = true
 			elif other.cell_max.y <= z.cell_min.y:
-				var edge_tile_y := other.cell_max.y * CELL_TILES
-				var left_x := maxi(z.cell_min.x, other.cell_min.x) * CELL_TILES
-				var right_x := mini(z.cell_max.x, other.cell_max.x) * CELL_TILES
+				var edge_tile_y: int = other.cell_max.y * CELL_TILES
+				var left_x: int = maxi(z.cell_min.x, other.cell_min.x) * CELL_TILES
+				var right_x: int = mini(z.cell_max.x, other.cell_max.x) * CELL_TILES
 				for tx in range(left_x, right_x):
 					var key := str(Vector2i(tx, edge_tile_y))
 					if not walled_pairs.has(key):
@@ -788,7 +793,7 @@ func _render_layout(layout: FloorLayout, tilemap: TileMap) -> void:
 	for key in walled_pairs:
 		# Parse the key back to a Vector2i (format like "(x, y)")
 		# We stored it as str(Vector2i) which is "(x, y)"
-		var parts := key.trim_prefix("(").trim_suffix(")").split(", ")
+		var parts: PackedStringArray = key.trim_prefix("(").trim_suffix(")").split(", ")
 		if parts.size() == 2:
 			var wx := int(parts[0])
 			var wy := int(parts[1])
