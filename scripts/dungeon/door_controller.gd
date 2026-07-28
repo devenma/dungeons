@@ -65,34 +65,30 @@ func _on_door_body_entered(body: Node2D, door: Zone.Door,
 	if not (body is CharacterBody2D):
 		return
 
+	var player: CharacterBody2D = body
+
 	# Determine which zone the player is entering based on movement direction
-	var player_dir := body.velocity.normalized()
+	var player_dir: Vector2 = player.velocity.normalized()
 	var z_a: Zone = zone_by_id.get(door.zone_a_id)
 	var z_b: Zone = zone_by_id.get(door.zone_b_id)
 	if z_a == null or z_b == null:
 		return
 
 	# Compute centers of both zones (in tiles)
-	var center_a := Vector2(
-		z_a.tile_rect.position.x + z_a.tile_rect.size.x / 2,
-		z_a.tile_rect.position.y + z_a.tile_rect.size.y / 2
+	var tile_size := 16
+	var center_a: Vector2 = Vector2(
+		(z_a.tile_rect.position.x + z_a.tile_rect.size.x / 2) * tile_size,
+		(z_a.tile_rect.position.y + z_a.tile_rect.size.y / 2) * tile_size
 	)
-	var center_b := Vector2(
-		z_b.tile_rect.position.x + z_b.tile_rect.size.y / 2,
-		z_b.tile_rect.position.y + z_b.tile_rect.size.y / 2
+	var center_b: Vector2 = Vector2(
+		(z_b.tile_rect.position.x + z_b.tile_rect.size.x / 2) * tile_size,
+		(z_b.tile_rect.position.y + z_b.tile_rect.size.y / 2) * tile_size
 	)
 
-	# The target zone is the one the player is moving towards
-	var to_a := center_a - z_a.tile_rect.position
-	var to_b := center_b - z_b.tile_rect.position
-
-	# Simpler: the zone whose center is more in the direction of movement
-	var dir_to_a := to_a.normalized()
-	var dir_to_b := to_b.normalized()
-	var dot_a := player_dir.dot(dir_to_a)
-	var dot_b := player_dir.dot(dir_to_b)
-
-	var target_id := door.zone_a_id if dot_a > dot_b else door.zone_b_id
+	# Determine target zone by proximity to player
+	var to_a: Vector2 = center_a - player.position
+	var to_b: Vector2 = center_b - player.position
+	var target_id := door.zone_a_id if to_a.length_squared() < to_b.length_squared() else door.zone_b_id
 	zone_entered.emit(target_id)
 
 
