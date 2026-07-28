@@ -55,8 +55,8 @@ func _on_zone_entered(zone_id: int) -> void:
 
 func _set_cam_limits_for_zone(cam: Camera2D, zone) -> void:
 	const TILE_SIZE := 16
-	var px := zone.tile_rect.position * TILE_SIZE
-	var sz := zone.tile_rect.size * TILE_SIZE
+	var px: Vector2i = zone.tile_rect.position * TILE_SIZE
+	var sz: Vector2i = zone.tile_rect.size * TILE_SIZE
 	cam.limit_left = px.x
 	cam.limit_top = px.y
 	cam.limit_right = px.x + sz.x
