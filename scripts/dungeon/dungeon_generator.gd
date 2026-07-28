@@ -340,13 +340,13 @@ func _place_fallback_doors(layout: FloorLayout) -> Array:
 				d.edge_axis = "h"
 				var top_y: int = maxi(z.cell_min.y, other.cell_min.y) * CELL_TILES
 				d.edge_line = top_y
-				d.pos_along = (z.cell_min.x * CELL_TILES) + (CELL_TILES / 2)
+				d.pos_along = (z.cell_min.x * CELL_TILES) + (CELL_TILES // 2)
 			else:
 				# Horizontal adjacency (east-west)
 				d.edge_axis = "v"
 				var left_x: int = maxi(z.cell_min.x, other.cell_min.x) * CELL_TILES
 				d.edge_line = left_x
-				d.pos_along = (z.cell_min.y * CELL_TILES) + (CELL_TILES / 2)
+				d.pos_along = (z.cell_min.y * CELL_TILES) + (CELL_TILES // 2)
 
 			d.state = 0  # OPEN
 			d.combat_locked = false
@@ -429,15 +429,15 @@ func _assign_types(layout: FloorLayout, rng: RandomNumberGenerator,
 	var max_dist := -1
 	var exit_z: Zone = layout.zones[0]
 	var start_center := Vector2i(
-		start_z.cell_min.x + (start_z.cell_max.x - start_z.cell_min.x) / 2,
-		start_z.cell_min.y + (start_z.cell_max.y - start_z.cell_min.y) / 2
+		start_z.cell_min.x + (start_z.cell_max.x - start_z.cell_min.x) // 2,
+		start_z.cell_min.y + (start_z.cell_max.y - start_z.cell_min.y) // 2
 	)
 	for z in layout.zones:
 		if z.id == start_z.id:
 			continue
 		var center := Vector2i(
-			z.cell_min.x + (z.cell_max.x - z.cell_min.x) / 2,
-			z.cell_min.y + (z.cell_max.y - z.cell_min.y) / 2
+			z.cell_min.x + (z.cell_max.x - z.cell_min.x) // 2,
+			z.cell_min.y + (z.cell_max.y - z.cell_min.y) // 2
 		)
 		var d := absi(center.x - start_center.x) + absi(center.y - start_center.y)
 		if d > max_dist:
@@ -701,6 +701,10 @@ func _render_layout(layout: FloorLayout, tilemap: TileMap) -> void:
 	var build := _build_tileset()
 	var ts: TileSet = build["tileset"]
 	tilemap.tile_set = ts
+
+	# Add layers: 0=floor, 1=walls, 2=doors
+	while tilemap.get_layers_count() < 3:
+		tilemap.add_layer(-1)
 
 	# Build zone lookup
 	var zone_by_id: Dictionary = {}

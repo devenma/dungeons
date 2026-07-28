@@ -149,7 +149,10 @@ func _create_exit_area(layout) -> void:
 	_exit_area.add_child(shape)
 
 	# Position at zone center
-	var zone_center :Vector2i = (exit_zone.tile_rect.position + exit_zone.tile_rect.size / 2) * TILE_SIZE
+	var zone_center := Vector2(
+		(exit_zone.tile_rect.position.x + exit_zone.tile_rect.size.x / 2.0) * TILE_SIZE,
+		(exit_zone.tile_rect.position.y + exit_zone.tile_rect.size.y / 2.0) * TILE_SIZE
+	)
 	_exit_area.position = zone_center
 
 	_exit_area.body_entered.connect(_on_exit_body_entered)
@@ -202,7 +205,10 @@ func _spawn_player(layout) -> void:
 		return
 
 	# Center player in start zone
-	var zone_center :Vector2i = (start_zone.tile_rect.position + start_zone.tile_rect.size / 2) * TILE_SIZE
+	var zone_center := Vector2(
+		(start_zone.tile_rect.position.x + start_zone.tile_rect.size.x / 2.0) * TILE_SIZE,
+		(start_zone.tile_rect.position.y + start_zone.tile_rect.size.y / 2.0) * TILE_SIZE
+	)
 	player.position = zone_center
 
 	# Reset camera limits to start zone via the camera manager

@@ -49,8 +49,8 @@ func _create_door_areas(layout) -> void:
 		# Area2D world position = tile center in pixels
 		var ts := 16  # TILE_SIZE
 		area.position = Vector2(
-			tile_pos.x * ts + ts / 2,
-			tile_pos.y * ts + ts / 2
+			tile_pos.x * ts + ts / 2.0,
+			tile_pos.y * ts + ts / 2.0
 		)
 
 		area.name = "DoorArea_%d" % door.id
@@ -77,12 +77,12 @@ func _on_door_body_entered(body: Node2D, door: Zone.Door,
 	# Compute centers of both zones (in tiles)
 	var tile_size := 16
 	var center_a: Vector2 = Vector2(
-		(z_a.tile_rect.position.x + z_a.tile_rect.size.x / 2) * tile_size,
-		(z_a.tile_rect.position.y + z_a.tile_rect.size.y / 2) * tile_size
+		(z_a.tile_rect.position.x + z_a.tile_rect.size.x / 2.0) * tile_size,
+		(z_a.tile_rect.position.y + z_a.tile_rect.size.y / 2.0) * tile_size
 	)
 	var center_b: Vector2 = Vector2(
-		(z_b.tile_rect.position.x + z_b.tile_rect.size.x / 2) * tile_size,
-		(z_b.tile_rect.position.y + z_b.tile_rect.size.y / 2) * tile_size
+		(z_b.tile_rect.position.x + z_b.tile_rect.size.x / 2.0) * tile_size,
+		(z_b.tile_rect.position.y + z_b.tile_rect.size.y / 2.0) * tile_size
 	)
 
 	# Determine target zone by proximity to player
