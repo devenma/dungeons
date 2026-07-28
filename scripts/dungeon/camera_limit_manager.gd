@@ -7,69 +7,57 @@ extends Node
 var _last_transition_time: float = 0.0
 const TRANSITION_COOLDOWN: float = 0.5
 
+var _layout_ref  # FloorLayout, set externally
 
-func _ready() -> void:
-	var root := get_tree().current_scene
-	if root != null:
-		_connect_all_triggers(root)
+
+func initialize(layout) -> void:
+	_layout_ref = layout
 	_set_initial_limits()
 
 
 func _set_initial_limits() -> void:
-	if player == null:
+	if player == null or _layout_ref == null:
 		return
 	var cam := player.get_node("Camera2D") as Camera2D
 	if cam == null:
 		return
-	# Find the start room (room group) and use its bounds
-	var rooms := get_tree().get_nodes_in_group("room")
-	for room in rooms:
-		if room.has_method("get_script") and room.get_script():
-			if "room_type" in room and room.get("room_type") == 0:  # RoomType.START = 0
-				var room_pos := (room as Node2D).position
-				var rw = room.get("room_width") if "room_width" in room else 1600
-				var rh = room.get("room_height") if "room_height" in room else 1200
-				cam.limit_left = int(room_pos.x)
-				cam.limit_top = int(room_pos.y)
-				cam.limit_right = int(room_pos.x + rw)
-				cam.limit_bottom = int(room_pos.y + rh)
-				return
-	# Fallback: default bounds
+
+	# Find START zone
+	for z in _layout_ref.zones:
+		if z.type == Zone.ZoneType.START:
+			_set_cam_limits_for_zone(cam, z)
+			return
+
+	# Fallback
 	cam.limit_left = 0
 	cam.limit_top = 0
 	cam.limit_right = 1600
 	cam.limit_bottom = 1200
 
 
-func _connect_all_triggers(node: Node) -> void:
-	for child in node.get_children():
-		if child is Area2D and child.has_method("get_script") and child.get_script():
-			if "target_room_path" in child:
-				var trigger := child as Area2D
-				var target_node := trigger.get_node_or_null(trigger.get("target_room_path"))
-				if target_node == null:
-					continue
-				if trigger.room_entered.is_connected(_on_room_entered):
-					continue
-				trigger.room_entered.connect(_on_room_entered.bind(target_node))
-		_connect_all_triggers(child)
-
-
-func _on_room_entered(_player: Node2D, target_room: Node) -> void:
+func _on_zone_entered(zone_id: int) -> void:
 	var now := Time.get_ticks_msec() / 1000.0
 	if now - _last_transition_time < TRANSITION_COOLDOWN:
 		return
 	_last_transition_time = now
 
-	if target_room == null:
+	if _layout_ref == null:
 		return
 	var cam := player.get_node("Camera2D") as Camera2D
 	if cam == null:
 		return
-	var room_pos := (target_room as Node2D).position
-	var rw = target_room.get("room_width") if "room_width" in target_room else 1600
-	var rh = target_room.get("room_height") if "room_height" in target_room else 1200
-	cam.limit_left = int(room_pos.x)
-	cam.limit_top = int(room_pos.y)
-	cam.limit_right = int(room_pos.x + rw)
-	cam.limit_bottom = int(room_pos.y + rh)
+
+	for z in _layout_ref.zones:
+		if z.id == zone_id:
+			_set_cam_limits_for_zone(cam, z)
+			return
+
+
+func _set_cam_limits_for_zone(cam: Camera2D, zone) -> void:
+	const TILE_SIZE := 16
+	var px := zone.tile_rect.position * TILE_SIZE
+	var sz := zone.tile_rect.size * TILE_SIZE
+	cam.limit_left = px.x
+	cam.limit_top = px.y
+	cam.limit_right = px.x + sz.x
+	cam.limit_bottom = px.y + sz.y

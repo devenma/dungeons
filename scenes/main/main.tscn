@@ -3,8 +3,8 @@
 [ext_resource type="PackedScene" uid="uid://dyfdu3qmosn35" path="res://scenes/player/player.tscn" id="1"]
 [ext_resource type="Script" uid="uid://d2e7kcfvtw0c7" path="res://scripts/dungeon/camera_limit_manager.gd" id="2"]
 [ext_resource type="Script" uid="uid://b2ahhh2m83c6x" path="res://scripts/dungeon/dungeon_manager.gd" id="3"]
-[ext_resource type="Script" uid="uid://7id6korn0b3b" path="res://scripts/dungeon/dungeon_generator.gd" id="4"]
 [ext_resource type="Script" uid="uid://cdm4p84h70p71" path="res://scripts/game/run_manager.gd" id="5"]
+[ext_resource type="Resource" uid="uid://bvd2d20dmih6m" path="res://resources/floors/floor_data.tres" id="6"]
 
 [node name="Main" type="Node" unique_id=1710014798]
 
@@ -19,11 +19,8 @@ position = Vector2(800, 600)
 [node name="DungeonManager" type="Node" parent="World" unique_id=260788842]
 script = ExtResource("3")
 player_node_path = NodePath("../Player")
-dungeon_generator_path = NodePath("DungeonGenerator")
 run_manager_node_path = NodePath("../../RunManager")
-
-[node name="DungeonGenerator" type="Node" parent="World/DungeonManager" unique_id=1333974707]
-script = ExtResource("4")
+floor_data = ExtResource("6")
 
 [node name="CameraLimitManager" type="Node" parent="World" unique_id=1572390939]
 script = ExtResource("2")

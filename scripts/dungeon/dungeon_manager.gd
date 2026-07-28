@@ -1,12 +1,13 @@
 extends Node
 
 @export var player_node_path: NodePath
-@export var dungeon_generator_path: NodePath
 @export var run_manager_node_path: NodePath
 @export var floor_data: FloorData
 
 @onready var player: Node2D = get_node(player_node_path)
-@onready var generator: Node = get_node(dungeon_generator_path)
+
+const TILE_SIZE := 16
+const CELL_TILES := 8
 
 func _get_run_manager():
 	return get_node(run_manager_node_path) if run_manager_node_path else null
@@ -15,6 +16,12 @@ var _current_layout
 var _last_transition_time: float = 0.0
 const TRANSITION_COOLDOWN: float = 0.5
 var _player_in_exit: bool = false
+
+# Runtime nodes
+var _tilemap: TileMap
+var _door_controller: Node
+var _spawner: Node
+var _exit_area: Area2D
 
 
 func _ready() -> void:
@@ -37,7 +44,8 @@ func _start_floor() -> void:
 
 	run_manager.current_floor += 1
 
-	# Generate floor layout
+	# 1  Generate floor layout
+	var generator := DungeonGenerator.new()
 	var layout = generator.generate_floor(
 		run_manager.current_floor,
 		run_manager.run_seed,
@@ -45,96 +53,120 @@ func _start_floor() -> void:
 	)
 	_current_layout = layout
 
-	# Create dungeon container
+	# 2  Create dungeon container
 	var dungeon := Node2D.new()
 	dungeon.name = "Dungeon"
 	add_child(dungeon)
 
-	# Instantiate rooms (first pass)
-	for room_node in layout.rooms:
-		_instantiate_room(room_node, dungeon, layout)
+	# 3  Create and render TileMap
+	_tilemap = TileMap.new()
+	_tilemap.name = "FloorTileMap"
+	dungeon.add_child(_tilemap)
+	generator._render_layout(layout, _tilemap)
+	generator.queue_free()
 
-	# Connect door triggers (second pass, after all rooms exist)
-	for room_node in layout.rooms:
-		_connect_room_triggers(room_node, dungeon, layout)
+	# 4  Create DoorController
+	_door_controller = Node.new()
+	_door_controller.name = "DoorController"
+	_door_controller.set_script(preload("res://scripts/dungeon/door_controller.gd"))
+	dungeon.add_child(_door_controller)
+	_door_controller.initialize(layout, _tilemap)
 
-	# Spawn player in start room
+	# 5  Create Spawner
+	_spawner = Node.new()
+	_spawner.name = "Spawner"
+	_spawner.set_script(preload("res://scripts/dungeon/spawner.gd"))
+	dungeon.add_child(_spawner)
+	_spawner.spawn_content(layout, dungeon)
+
+	# 6  Wire signals
+	if _spawner.has_signal("zone_cleared") and _door_controller.has_method("on_zone_cleared"):
+		_spawner.zone_cleared.connect(_door_controller.on_zone_cleared)
+
+	if _door_controller.has_signal("zone_entered"):
+		var cam_manager := _find_camera_limit_manager()
+		if cam_manager != null and cam_manager.has_method("_on_zone_entered"):
+			_door_controller.zone_entered.connect(cam_manager._on_zone_entered)
+
+	# 7  Create exit Area2D in EXIT zone
+	_create_exit_area(layout)
+
+	# 8  Spawn player in START zone
 	_spawn_player(layout)
+
+	# 9  Initialize camera limits
+	_initialize_camera_limits(layout)
+
+
+func _find_camera_limit_manager():
+	# CameraLimitManager is a sibling under World: ../CameraLimitManager
+	if get_parent() != null:
+		var by_path := get_parent().get_node_or_null("CameraLimitManager")
+		if by_path != null:
+			return by_path
+	# Fallback: search entire tree by script
+	return _find_node_by_script(get_tree().root, "res://scripts/dungeon/camera_limit_manager.gd")
+
+
+func _find_node_by_script(node: Node, script_path: String):
+	if node.get_script() and node.get_script().resource_path == script_path:
+		return node
+	for child in node.get_children():
+		var found := _find_node_by_script(child, script_path)
+		if found != nil:
+			return found
+	return null
+
+
+func _initialize_camera_limits(layout) -> void:
+	var cam_manager := _find_camera_limit_manager()
+	if cam_manager != null and cam_manager.has_method("initialize"):
+		cam_manager.initialize(layout)
+
+
+func _create_exit_area(layout) -> void:
+	# Find EXIT zone
+	var exit_zone = null
+	for z in layout.zones:
+		if z.type == Zone.ZoneType.EXIT:
+			exit_zone = z
+			break
+	if exit_zone == null:
+		return
+
+	# Create an Area2D covering the exit zone center
+	_exit_area = Area2D.new()
+	_exit_area.name = "ExitArea"
+
+	var shape := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	# Size = half the zone in pixels
+	var zone_px := exit_zone.tile_rect.size * TILE_SIZE
+	rect.size = Vector2(minf(zone_px.x, 64), minf(zone_px.y, 64))
+	shape.shape = rect
+	_exit_area.add_child(shape)
+
+	# Position at zone center
+	var zone_center := (exit_zone.tile_rect.position + exit_zone.tile_rect.size / 2) * TILE_SIZE
+	_exit_area.position = zone_center
+
+	_exit_area.body_entered.connect(_on_exit_body_entered)
+	_exit_area.body_exited.connect(_on_exit_body_exited)
+
+	# Add to dungeon
+	var dungeon := get_node_or_null("Dungeon")
+	if dungeon != null:
+		dungeon.add_child(_exit_area)
 
 
 func _clear_floor() -> void:
 	var existing := get_node_or_null("Dungeon")
 	if existing != null and is_instance_valid(existing):
 		existing.queue_free()
-
-
-func _instantiate_room(room_node, dungeon: Node2D, layout) -> void:
-	var scene: PackedScene = load(room_node.scene_path)
-	if scene == null:
-		return
-
-	var instance: Node2D = scene.instantiate()
-	instance.name = "Room_%d_%s" % [room_node.id, _room_type_name(room_node.type)]
-	instance.position = room_node.position
-
-	# Set room type on the instance
-	if instance.has_method("set") and "room_type" in instance:
-		instance.set("room_type", room_node.type)
-
-	dungeon.add_child(instance)
-
-
-func _connect_room_triggers(room_node, dungeon: Node2D, layout) -> void:
-	var instance = _find_room_instance(dungeon, room_node.id)
-	if instance == null:
-		return
-
-	# Connect door triggers based on room graph
-	for dir in room_node.doors:
-		var neighbor_id = room_node.doors[dir]
-		var neighbor = _find_room_in_layout(layout, neighbor_id)
-		if neighbor == null:
-			continue
-
-		# Find the trigger in this room for that direction
-		var trigger = _find_door_trigger(instance, dir)
-		if trigger == null:
-			continue
-
-		# Find neighbor's room instance (already added to dungeon since second pass)
-		var target = _find_room_instance(dungeon, neighbor_id)
-		if target == null:
-			continue
-
-		# Connect the trigger signal to update camera limits
-		if not trigger.room_entered.is_connected(_on_room_entered):
-			trigger.room_entered.connect(_on_room_entered.bind(target))
-
-	# Wire exit trigger for EXIT rooms
-	if room_node.type == 4:  # RoomType.EXIT
-		var exit_trigger := instance.get_node_or_null("ExitTrigger") as Area2D
-		if exit_trigger != null:
-			exit_trigger.body_entered.connect(_on_exit_body_entered)
-			exit_trigger.body_exited.connect(_on_exit_body_exited)
-
-
-func _on_room_entered(_player: Node2D, target_room: Node) -> void:
-	var now := Time.get_ticks_msec() / 1000.0
-	if now - _last_transition_time < TRANSITION_COOLDOWN:
-		return
-	_last_transition_time = now
-
-	# Update camera limits directly
-	var cam := player.get_node("Camera2D") as Camera2D
-	if cam == null:
-		return
-	var room_pos := (target_room as Node2D).position
-	var rw = target_room.get("room_width") if "room_width" in target_room else 1600
-	var rh = target_room.get("room_height") if "room_height" in target_room else 1200
-	cam.limit_left = int(room_pos.x)
-	cam.limit_top = int(room_pos.y)
-	cam.limit_right = int(room_pos.x + rw)
-	cam.limit_bottom = int(room_pos.y + rh)
+	_tilemap = null
+	_door_controller = null
+	_spawner = null
+	_exit_area = null
 
 
 func _on_exit_body_entered(body: Node2D) -> void:
@@ -157,63 +189,21 @@ func _go_to_next_floor() -> void:
 	_start_floor()
 
 
-func _find_door_trigger(room_instance: Node, direction: String) -> Area2D:
-	for child in room_instance.get_children():
-		if child is Area2D and child.has_method("get_script") and child.get_script():
-			if "exit_direction" in child and child.get("exit_direction") == direction:
-				if child.has_signal("room_entered"):
-					return child
-		# Recurse
-		var found = _find_door_trigger(child, direction)
-		if found != null:
-			return found
-	return null
-
-
-func _find_room_in_layout(layout, id: int):
-	for room in layout.rooms:
-		if room.id == id:
-			return room
-	return null
-
-
-func _find_room_instance(dungeon: Node2D, id: int) -> Node2D:
-	for child in dungeon.get_children():
-		if child is Node2D and child.name.begins_with("Room_%d_" % [id]):
-			return child
-	return null
-
-
 func _spawn_player(layout) -> void:
-	var start_room_node = _find_room_by_type(layout.rooms, 0)  # RoomType.START = 0
-	if start_room_node == null:
+	# Find START zone
+	var start_zone = null
+	for z in layout.zones:
+		if z.type == Zone.ZoneType.START:
+			start_zone = z
+			break
+	if start_zone == null:
 		return
 
-	# Center player in start room
-	var room_center = start_room_node.position + Vector2(800, 600)
-	player.position = room_center
+	# Center player in start zone
+	var zone_center := (start_zone.tile_rect.position + start_zone.tile_rect.size / 2) * TILE_SIZE
+	player.position = zone_center
 
-	# Reset camera limits to start room
-	var cam := player.get_node("Camera2D") as Camera2D
-	if cam != null:
-		cam.limit_left = int(start_room_node.position.x)
-		cam.limit_top = int(start_room_node.position.y)
-		cam.limit_right = int(start_room_node.position.x + 1600)
-		cam.limit_bottom = int(start_room_node.position.y + 1200)
-
-
-func _find_room_by_type(rooms: Array, type: int):
-	for room in rooms:
-		if room.type == type:
-			return room
-	return null
-
-
-func _room_type_name(type: int) -> String:
-	match type:
-		0: return "Start"
-		1: return "Combat"
-		2: return "Reward"
-		3: return "Event"
-		4: return "Exit"
-	return "Unknown"
+	# Reset camera limits to start zone via the camera manager
+	var cam_manager := _find_camera_limit_manager()
+	if cam_manager != null and cam_manager.has_method("_on_zone_entered"):
+		cam_manager._on_zone_entered(start_zone.id)
