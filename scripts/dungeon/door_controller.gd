@@ -35,7 +35,7 @@ func _create_door_areas(layout) -> void:
 		var area := Area2D.new()
 		var shape := CollisionShape2D.new()
 		var rect := RectangleShape2D.new()
-		rect.size = Vector2(12, 12)
+		rect.size = Vector2(48, 48)
 		shape.shape = rect
 		area.add_child(shape)
 

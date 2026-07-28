@@ -2,7 +2,7 @@ class_name DungeonGenerator
 extends Node
 
 const TILE_SIZE := 16
-const CELL_TILES := 8
+const CELL_TILES := 75
 
 # ── Grid cell tracking ──────────────────────────────────────────────────────
 
@@ -812,8 +812,15 @@ func _render_layout(layout: FloorLayout, tilemap: TileMap) -> void:
 		else:
 			door_tile_pos = Vector2i(door.pos_along, door.edge_line)
 
-		# Remove wall at door position on layer 1
-		tilemap.erase_cell(1, door_tile_pos)
+		# Remove wall tiles at door position (3-tile wide gap along the wall)
+		if door.edge_axis == "v":
+			# Vertical wall: gap extends along y axis
+			for offset in range(-1, 2):
+				tilemap.erase_cell(1, door_tile_pos + Vector2i(0, offset))
+		else:
+			# Horizontal wall: gap extends along x axis
+			for offset in range(-1, 2):
+				tilemap.erase_cell(1, door_tile_pos + Vector2i(offset, 0))
 
 		# Place door tile on layer 2 if CLOSED
 		if door.state == 1:
