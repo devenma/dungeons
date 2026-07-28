@@ -81,25 +81,16 @@ La arquitectura principal debe mantenerse aproximadamente así:
              ┌────────────┼────────────┐
              │            │            │
              ▼            ▼            ▼
-          World          UI       RunManager
-             │
-             ▼
-       DungeonManager
-             │
-             ▼
-      DungeonGenerator
-             │
-             ▼
-           Floor
-             │
-      ┌──────┼──────┐
-      ▼      ▼      ▼
-    Room   Room    Room
-      │
-      ├── Enemies
-      ├── Loot
-      ├── Doors
-      └── Triggers
+           World          UI       RunManager
+              │
+              ▼
+        DungeonManager
+              │
+              ├── DungeonGenerator (grid-merging + TileMap)
+              ├── DoorController (zona → zona)
+              ├── Spawner (contenido por zona)
+              ├── TileMap único (3 capas: floor/wall/door)
+              └── ExitArea (transición de piso)
 
 
                          Player
@@ -167,11 +158,6 @@ res://
 │   ├── player/
 │   │   └── player.tscn
 │   │
-│   ├── dungeon/
-│   │   ├── dungeon.tscn
-│   │   ├── room.tscn
-│   │   └── exit.tscn
-│   │
 │   ├── enemies/
 │   │   ├── enemy_base.tscn
 │   │   └── slime.tscn
@@ -194,9 +180,12 @@ res://
 │   │   └── player_controller.gd
 │   │
 │   ├── dungeon/
-│   │   ├── dungeon_generator.gd
-│   │   ├── room_generator.gd
-│   │   └── dungeon_manager.gd
+│   │   ├── dungeon_generator.gd     # Grid-merging + TileMap renderer
+│   │   ├── dungeon_manager.gd       # Orquestación del piso
+│   │   ├── door_controller.gd       # Puertas y transiciones entre zonas
+│   │   ├── camera_limit_manager.gd  # Límites de cámara por zona
+│   │   ├── spawner.gd               # Spawn de contenido por tipo de zona
+│   │   └── zone.gd                  # Data structures: Zone, Door, ZoneType
 │   │
 │   ├── combat/
 │   │   ├── health_component.gd
@@ -207,17 +196,8 @@ res://
 │   ├── enemies/
 │   │   └── enemy.gd
 │   │
-│   └── game/
-│       ├── game_manager.gd
-│       └── run_manager.gd
-│
-├── resources/
-│   │
-│   ├── weapons/
-│   ├── abilities/
-│   ├── enemies/
-│   ├── rooms/
-│   └── floors/
+│   ├── resources/
+│   │   └── floor_data.gd
 │
 ├── tilesets/
 │
@@ -744,14 +724,16 @@ No crear toda esta jerarquía hasta que el proyecto realmente la necesite.
 El sistema procedural debe separar tres niveles:
 
 ```text
-GENERACIÓN LÓGICA
+GENERACIÓN LÓGICA (grid-merging)
         ↓
-HABITACIONES
+        ZONAS
         ↓
-TILEMAP
+     TILEMAP
 ```
 
 No generar directamente un conjunto de tiles aleatorios sin una estructura lógica previa.
+
+El piso completo se renderiza en un **TileMap único** con tilesets procedurales (sin assets externos). Las habitaciones individuales `.tscn` fueron reemplazadas por un sistema de zonas generadas proceduralmente sobre una grilla.
 
 ---
 
@@ -760,42 +742,49 @@ No generar directamente un conjunto de tiles aleatorios sin una estructura lógi
 Responsabilidad:
 
 - generar la estructura lógica de un piso;
-- crear el grafo de habitaciones;
-- conectar habitaciones;
-- asignar tipos de habitación;
-- producir la información necesaria para construir el piso.
+- crear la grilla de celdas y mergearlas en zonas rectangulares;
+- detectar adyacencia entre zonas;
+- asignar tipos de zona (START, COMBAT, REWARD, EXIT);
+- colocar puertas en posiciones irregulares sobre aristas compartidas;
+- renderizar el piso completo en un TileMap con tilesets procedurales.
 
 Flujo conceptual:
 
 ```text
-generate_floor(floor_number)
+generate_floor(floor_number, base_seed, data)
        │
        ▼
 crear seed
        │
        ▼
-crear grafo
+dimensionar grilla
        │
        ▼
-crear habitaciones
+mergear celdas en zonas (region growth)
        │
        ▼
-conectar habitaciones
+detectar vecinos
        │
        ▼
-asignar tipos
+asignar tipos (START/EXIT/COMBAT/REWARD)
        │
        ▼
-crear/spawnear habitaciones
+colocar puertas en aristas compartidas
+       │
+       ▼
+renderizar TileMap (floor/wall/door)
+       │
+       ▼
+devolver FloorLayout
 ```
 
-No debe encargarse de lógica específica de combate.
+No debe encargarse de lógica específica de combate ni de spawn de enemigos.
 
 ---
 
 # 22. Estructura lógica de una dungeon
 
-Una dungeon puede representarse como un grafo:
+Una dungeon puede representarse como un grafo de zonas en un espacio contiguo:
 
 ```text
        [Boss]
@@ -806,7 +795,7 @@ Una dungeon puede representarse como un grafo:
        [Event]
 ```
 
-Tipos iniciales:
+Tipos de zona:
 
 ```text
 Start
@@ -817,48 +806,24 @@ Boss
 Exit
 ```
 
-El generador debe producir primero esta estructura abstracta.
-
-Después se seleccionan las escenas de habitaciones apropiadas.
+Las zonas se generan mediante grid-merging: se divide el piso en una grilla de celdas, se mergean celdas contiguas en clusters rectangulares, y cada cluster recibe un tipo de zona. Todas las celdas pertenecen exactamente a una zona (sin espacios muertos).
 
 ---
 
-# 23. Habitaciones
+# 23. Zonas
 
-Las habitaciones deben ser reutilizables.
+Las zonas son la unidad funcional del piso. Cada zona tiene:
 
-Ejemplo:
+- un tipo (START, COMBAT, REWARD, EXIT)
+- un rectángulo en la grilla (cell_min/cell_max)
+- un rectángulo en tiles (tile_rect, para renderizado y cámara)
+- una lista de zonas vecinas (por adyacencia de celdas)
+- una lista de puertas que la conectan con sus vecinas
+- un estado cleared (si el contenido fue resuelto)
 
-```text
-rooms/
-│
-├── combat/
-│   ├── combat_01.tscn
-│   ├── combat_02.tscn
-│   ├── combat_03.tscn
-│   └── combat_04.tscn
-│
-├── treasure/
-│   ├── treasure_01.tscn
-│   └── treasure_02.tscn
-│
-├── event/
-│   └── event_01.tscn
-│
-└── boss/
-    └── boss_room_01.tscn
-```
+Las zonas se generan proceduralmente con region-growth a partir de semillas determinísticas. El tamaño de cada zona varía según cuántas celdas se mergearon.
 
-El generador decide qué tipo de habitación necesita y selecciona una variante válida.
-
-Esto permite:
-
-- diseño manual;
-- variedad procedural;
-- control artístico;
-- control de dificultad.
-
-No crear todas las habitaciones mediante generación matemática si una combinación de prefabs diseñados manualmente ofrece mejor resultado.
+En el futuro, una zona COMBAT podría contener una sub-zona REWARD (reward pocket) asignando una celda interna con tipo diferente al de la zona padre.
 
 ---
 
@@ -869,11 +834,11 @@ No crear todas las habitaciones mediante generación matemática si una combinac
 Responsabilidades:
 
 - iniciar un piso;
-- cargar/generar habitaciones;
-- administrar la salida;
+- invocar al DungeonGenerator para obtener un FloorLayout;
+- crear el TileMap, DoorController, Spawner y wirear señales;
+- administrar la salida (ExitArea);
 - detectar finalización del piso;
-- iniciar transición al siguiente piso;
-- solicitar generación de un nuevo piso.
+- iniciar transición al siguiente piso.
 
 No debe almacenar permanentemente el estado completo de la partida.
 
@@ -883,19 +848,22 @@ Ese estado corresponde al `RunManager`.
 
 # 25. FloorData
 
-Los pisos pueden utilizar `FloorData` para definir parámetros de dificultad.
+Los pisos pueden utilizar `FloorData` para definir parámetros de dificultad y generación.
 
-Datos posibles:
+Datos actuales:
 
 ```text
 floor_number
+grid_min_w / grid_max_w          # Grilla: cantidad de celdas en X
+grid_min_h / grid_max_h          # Grilla: cantidad de celdas en Y
+zone_count_min / zone_count_max  # Rango de zonas del piso
+multi_door_threshold             # Tiles mínimos para múltiples puertas en una arista
+max_doors_per_edge               # Máximo de puertas por arista compartida
+max_generation_retries           # Intentos antes del fallback
+reward_ratio                     # Probabilidad de que una zona no-START/EXIT sea REWARD
+zone_count_by_floor_depth        # Mapa piso → [min, max] de zonas
 enemy_health_multiplier
 enemy_damage_multiplier
-enemy_count_multiplier
-room_count
-elite_chance
-treasure_quality
-boss
 ```
 
 La dificultad no debe aumentar únicamente mediante multiplicadores de estadísticas.
@@ -1129,33 +1097,31 @@ Objetivo:
 
 ---
 
-## Fase 3 — Generación procedural inicial
+## Fase 3 — Generación procedural (grid-merging + TileMap)
 
 Implementar:
 
 ```text
 Seed
  ↓
-Room graph
+Grid cells
  ↓
-Rooms
+Region growth → Zonas rectangulares
  ↓
-Doors
+Tipo de zona (START/COMBAT/REWARD/EXIT)
  ↓
-Dungeon
+Puertas en aristas compartidas (posición irregular)
+ ↓
+TileMap único procedural
 ```
 
-Inicialmente puede ser lineal:
+La generación produce un piso contiguo sin espacios muertos. Las zonas se asignan a tipos funcionales. Las puertas se colocan en posiciones irregulares — si la arista compartida es suficientemente larga pueden haber múltiples puertas.
 
-```text
-Start → Combat → Combat → Treasure → Exit
-```
-
-Después introducir ramificaciones.
+Cada celda del grid es de `CELL_TILES × CELL_TILES` tiles (configurable). El TileMap usa tilesets procedurales de colores sólidos — sin assets externos.
 
 Objetivo:
 
-> Cada ejecución debe poder producir una dungeon diferente y válida.
+> Cada ejecución produce un piso procedural único con zonas de distintos tamaños conectadas por puertas en posiciones variables.
 
 ---
 
@@ -1346,6 +1312,31 @@ DungeonManager
 HealthComponent
 WeaponData
 ```
+
+## Tipado explícito (OBLIGATORIO)
+
+Toda variable local debe declararse con tipo explícito, **especialmente** cuando:
+
+- se accede a valores dentro de arrays anidados (`cells[gy][gx].zone_id`);
+- se accede a propiedades de objetos sin tipo (`zone.tile_rect.position`);
+- se mezclan `Vector2` y `Vector2i`;
+- se usan señales con parámetros (`body: Node2D` no tiene `velocity` — castear a `CharacterBody2D`).
+
+Preferir:
+
+```gdscript
+var cid: int = cells[gy][gx].zone_id
+var zone_center: Vector2 = Vector2(...)
+var player: CharacterBody2D = body  # cast after is-check
+```
+
+Evitar inferencia de tipo (`:=`) cuando el tipo no sea obvio para el parser de GDScript.
+
+El parser de Godot 4.7 no puede inferir tipos a través de:
+
+- arrays anidados (`cells[y][x]`);
+- diccionarios (`dict[key]`);
+- referencias a objetos sin tipo explícito.
 
 ## Señales
 
@@ -1631,26 +1622,25 @@ La prioridad es construir un **núcleo jugable sólido** sobre el que se puedan 
 Al comenzar el desarrollo, el objetivo inmediato es:
 
 ```text
-[ ] Crear proyecto Godot
-[ ] Crear estructura de directorios
-[ ] Configurar Input Map
-[ ] Crear Main
-[ ] Crear Player
-[ ] Implementar movimiento
-[ ] Implementar colisiones
-[ ] Crear primera habitación
-[ ] Añadir cámara
-[ ] Validar movimiento
+[x] Crear proyecto Godot
+[x] Crear estructura de directorios
+[x] Configurar Input Map
+[x] Crear Main
+[x] Crear Player
+[x] Implementar movimiento
+[x] Implementar colisiones
+[x] Crear primera habitación
+[x] Añadir cámara
+[x] Validar movimiento
 ```
 
 Después:
 
 ```text
-[ ] Crear DungeonManager
-[ ] Crear DungeonGenerator
-[ ] Crear Room
-[ ] Generar primer mapa procedural
-[ ] Implementar transición de pisos
+[x] Crear DungeonManager
+[x] Crear DungeonGenerator
+[x] Generar primer mapa procedural (grid-merging + TileMap)
+[x] Implementar transición de pisos
 ```
 
 Después:
@@ -1701,6 +1691,8 @@ Cualquier agente que trabaje sobre este repositorio debe:
 12. No implementar sistemas futuros de forma especulativa solamente porque aparecen en el roadmap.
 13. Si una nueva característica contradice esta arquitectura, señalarlo antes de implementarla.
 14. Mantener este documento actualizado si una decisión arquitectónica importante cambia de forma permanente.
+15. **Toda variable debe declararse con tipo explícito** — no usar `:=` para inferencia cuando el tipo provenga de arrays anidados, diccionarios, o propiedades de objetos sin tipo. Ver sección 32 (Tipado explícito).
+16. **Las señales que emiten eventos sincrónicos** (ej: `spawn_content()` que emite `zone_cleared`) deben conectarse ANTES de la llamada que dispara la emisión.
 
 ---
 
