@@ -634,7 +634,8 @@ func _zone_floor_color(type: int) -> Color:
 			return Color(0.4, 0.4, 0.4)    # default gray
 
 
-func _build_tileset() -> TileSet:
+func _build_tileset() -> Dictionary:
+	"""Returns {tileset: TileSet, floor_src_id: int, wall_src_id: int, door_src_id: int}"""
 	var ts := TileSet.new()
 	ts.tile_size = Vector2i(TILE_SIZE, TILE_SIZE)
 
@@ -657,7 +658,6 @@ func _build_tileset() -> TileSet:
 	floor_src.texture_region_size = Vector2i(TILE_SIZE, TILE_SIZE)
 	for type_idx in Zone.ZoneType.size():
 		floor_src.create_tile(Vector2i(type_idx, 0))
-	floor_src.tile_size = Vector2i(TILE_SIZE, TILE_SIZE)
 	var floor_src_id := ts.add_source(floor_src, -1)
 
 	# ── Source 1: wall tile ──
@@ -676,26 +676,29 @@ func _build_tileset() -> TileSet:
 	door_src.texture = door_tex
 	door_src.texture_region_size = Vector2i(TILE_SIZE, TILE_SIZE)
 	door_src.create_tile(Vector2i(0, 0))
-	door_src.tile_size = Vector2i(TILE_SIZE, TILE_SIZE)
-	var _door_src_id := ts.add_source(door_src, -1)
+	var door_src_id := ts.add_source(door_src, -1)
 
-	return ts
+	return {
+		"tileset": ts,
+		"floor_src_id": floor_src_id,
+		"wall_src_id": wall_src_id,
+		"door_src_id": door_src_id,
+	}
 
 
 func _render_layout(layout: FloorLayout, tilemap: TileMap) -> void:
-	var ts := _build_tileset()
+	var build := _build_tileset()
+	var ts: TileSet = build["tileset"]
 	tilemap.tile_set = ts
-	tilemap.clear()
 
 	# Build zone lookup
 	var zone_by_id: Dictionary = {}
 	for z in layout.zones:
 		zone_by_id[z.id] = z
 
-	# Determine which source IDs we got
-	var floor_src_id := 0
-	var wall_src_id := 1
-	var door_src_id := 2
+	var floor_src_id: int = build["floor_src_id"]
+	var wall_src_id: int = build["wall_src_id"]
+	var door_src_id: int = build["door_src_id"]
 
 	# ── Layer 0: floor ──
 	# Iterate every tile position in the grid
