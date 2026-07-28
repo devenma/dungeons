@@ -1,3 +1,4 @@
+class_name DungeonGenerator
 extends Node
 
 const TILE_SIZE := 16
@@ -99,7 +100,12 @@ func _merge_cells(rng: RandomNumberGenerator, target_count: int,
 	for gy in grid_h:
 		for gx in grid_w:
 			all_positions.append(Vector2i(gx, gy))
-	all_positions.shuffle(rng)
+	# Manual Fisher-Yates shuffle (Godot Array.shuffle() does not accept RNG)
+	for i in range(all_positions.size() - 1, 0, -1):
+		var j := rng.randi_range(0, i)
+		var tmp = all_positions[i]
+		all_positions[i] = all_positions[j]
+		all_positions[j] = tmp
 
 	var seed_count := mini(target_count, total_cells)
 	var seeds: Array[Vector2i] = all_positions.slice(0, seed_count)

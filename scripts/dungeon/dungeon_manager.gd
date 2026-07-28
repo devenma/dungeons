@@ -77,9 +77,8 @@ func _start_floor() -> void:
 	_spawner.name = "Spawner"
 	_spawner.set_script(preload("res://scripts/dungeon/spawner.gd"))
 	dungeon.add_child(_spawner)
-	_spawner.spawn_content(layout, dungeon)
 
-	# 6  Wire signals
+	# 6  Wire signals BEFORE spawn_content (spawn emits zone_cleared synchronously)
 	if _spawner.has_signal("zone_cleared") and _door_controller.has_method("on_zone_cleared"):
 		_spawner.zone_cleared.connect(_door_controller.on_zone_cleared)
 
@@ -88,13 +87,16 @@ func _start_floor() -> void:
 		if cam_manager != null and cam_manager.has_method("_on_zone_entered"):
 			_door_controller.zone_entered.connect(cam_manager._on_zone_entered)
 
-	# 7  Create exit Area2D in EXIT zone
+	# 7  Now call spawn (zone_cleared signals will reach DoorController)
+	_spawner.spawn_content(layout, dungeon)
+
+	# 8  Create exit Area2D in EXIT zone
 	_create_exit_area(layout)
 
-	# 8  Spawn player in START zone
+	# 9  Spawn player in START zone
 	_spawn_player(layout)
 
-	# 9  Initialize camera limits
+	# 10  Initialize camera limits
 	_initialize_camera_limits(layout)
 
 
