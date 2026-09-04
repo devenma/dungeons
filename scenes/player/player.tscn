@@ -1,0 +1,89 @@
+[gd_scene format=3 uid="uid://dyfdu3qmosn35"]
+
+[ext_resource type="Script" uid="uid://dniv7631dh2o4" path="res://scripts/player/player.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://0gbhhbohqcbr" path="res://assets/Examples/Player_Base_Down_Full_min.png" id="2_dovo2"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dovo2"]
+atlas = ExtResource("2_dovo2")
+region = Rect2(0, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gmlin"]
+atlas = ExtResource("2_dovo2")
+region = Rect2(0, 32, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_lvxji"]
+atlas = ExtResource("2_dovo2")
+region = Rect2(16, 32, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_p47bc"]
+atlas = ExtResource("2_dovo2")
+region = Rect2(32, 32, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_75vfm"]
+atlas = ExtResource("2_dovo2")
+region = Rect2(48, 32, 16, 16)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_kmatr"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dovo2")
+}],
+"loop": 1,
+"name": &"Idle_Down",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_gmlin")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_lvxji")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_p47bc")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_75vfm")
+}],
+"loop": 1,
+"name": &"Walk_Down",
+"speed": 5.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hurtbox"]
+size = Vector2(16, 16)
+
+[node name="Player" type="CharacterBody2D" unique_id=929287210]
+z_index = 1
+script = ExtResource("1")
+
+[node name="Visuals" type="ColorRect" parent="." unique_id=1876639920]
+visible = false
+offset_left = -8.0
+offset_top = -8.0
+offset_right = 8.0
+offset_bottom = 8.0
+color = Color(0.267, 0.6, 1, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=917985610]
+shape = SubResource("RectangleShape2D_body")
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=461443296]
+position_smoothing_enabled = true
+position_smoothing_speed = 10.0
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=895176558]
+scale = Vector2(4, 4)
+sprite_frames = SubResource("SpriteFrames_kmatr")
+animation = &"Idle_Down"
+
+[node name="Hurtbox" type="Area2D" parent="." unique_id=1758036033]
+monitoring = false
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox" unique_id=990877774]
+shape = SubResource("RectangleShape2D_hurtbox")

@@ -1,0 +1,29 @@
+[gd_scene format=3 uid="uid://b6ypcipahjuo4"]
+
+[ext_resource type="PackedScene" uid="uid://dyfdu3qmosn35" path="res://scenes/player/player.tscn" id="1"]
+[ext_resource type="Script" uid="uid://d2e7kcfvtw0c7" path="res://scripts/dungeon/camera_limit_manager.gd" id="2"]
+[ext_resource type="Script" uid="uid://b2ahhh2m83c6x" path="res://scripts/dungeon/dungeon_manager.gd" id="3"]
+[ext_resource type="Script" uid="uid://cdm4p84h70p71" path="res://scripts/game/run_manager.gd" id="5"]
+[ext_resource type="Resource" path="res://resources/floors/floor_data.tres" id="6"]
+
+[node name="Main" type="Node" unique_id=1710014798]
+
+[node name="RunManager" type="Node" parent="." unique_id=1494447952]
+script = ExtResource("5")
+
+[node name="World" type="Node2D" parent="." unique_id=428461756]
+
+[node name="Player" parent="World" unique_id=244688153 instance=ExtResource("1")]
+position = Vector2(800, 600)
+
+[node name="DungeonManager" type="Node" parent="World" unique_id=260788842]
+script = ExtResource("3")
+player_node_path = NodePath("../Player")
+run_manager_node_path = NodePath("../../RunManager")
+floor_data = ExtResource("6")
+
+[node name="CameraLimitManager" type="Node" parent="World" unique_id=1572390939]
+script = ExtResource("2")
+player_node_path = NodePath("../Player")
+
+[node name="UI" type="CanvasLayer" parent="." unique_id=821168563]
