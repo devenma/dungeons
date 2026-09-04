@@ -1,0 +1,30 @@
+---
+description: Convenciones del proyecto Dungeons (Godot) y flujo git del usuario
+alwaysApply: true
+---
+
+# Dungeons — reglas del proyecto
+
+## Identidad
+
+- Repo: `devenma/dungeons` (Godot 4.7, GDScript).
+- Path de trabajo: carpeta con `project.godot` (hoy `dungeons-main/dungeons-main`).
+- Proyecto Engram: **`dungeons`**. No usar `mazmorra-2d`.
+- Documentación de arquitectura y convenciones: `AGENTS.md`.
+
+## Git (obligatorio)
+
+- **NO** ejecutar `git commit` ni `git push` salvo que el usuario lo pida **explícitamente**.
+- Sí se puede: editar código, sugerir mensaje de commit, listar archivos a stage, explicar conflictos.
+- Si el usuario no pide commit/push, dejar los cambios listos en el working tree.
+
+## Assets
+
+- `assets/References/` está en `.gitignore` (moodboards locales). No añadir esas PNGs al repo.
+- Estética: top-down 16×16, colores muted/apagados (no plataformas).
+
+## Código
+
+- Tipado explícito en GDScript (Godot 4.7 no infiere bien arrays/dicts anidados).
+- Preferir sistemas componibles; no meter toda la lógica en `Player.gd` o el generador.
+- Señales conectadas **antes** de dispararlas si son síncronas.
