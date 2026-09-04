@@ -19,3 +19,6 @@ gdextension_interface.h
 
 # Configuracion personalizada de vscode
 .vscode
+
+# Art references (local moodboards, not game assets)
+assets/References/
