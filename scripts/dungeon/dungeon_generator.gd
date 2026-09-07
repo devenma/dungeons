@@ -632,6 +632,19 @@ func _create_colored_texture(color: Color, size: Vector2i) -> ImageTexture:
 	return ImageTexture.create_from_image(img)
 
 
+func _add_block_collision(src: TileSetAtlasSource) -> void:
+	# Full-tile square collision polygon (points are relative to tile center).
+	var td: TileData = src.get_tile_data(Vector2i(0, 0), 0)
+	td.add_collision_polygon(0)
+	var half := TILE_SIZE / 2.0
+	td.set_collision_polygon_points(0, 0, PackedVector2Array([
+		Vector2(-half, -half),
+		Vector2(half, -half),
+		Vector2(half, half),
+		Vector2(-half, half),
+	]))
+
+
 func _zone_floor_color(type: int) -> Color:
 	match type:
 		Zone.ZoneType.START:
@@ -651,6 +664,11 @@ func _build_tileset() -> Dictionary:
 	var ts := TileSet.new()
 	ts.tile_size = Vector2i(TILE_SIZE, TILE_SIZE)
 
+	# Physics layer 0: world geometry (walls + closed doors). The player's
+	# CharacterBody2D uses default collision_mask = 1, so geometry lives on bit 1.
+	ts.add_physics_layer()
+	ts.set_physics_layer_collision_layer(0, 1)
+
 	# ── Source 0: floor tiles (per zone type) ──
 	var floor_tex_size := Vector2i(
 		TILE_SIZE * Zone.ZoneType.size(),
@@ -668,9 +686,11 @@ func _build_tileset() -> Dictionary:
 	var floor_src := TileSetAtlasSource.new()
 	floor_src.texture = ImageTexture.create_from_image(floor_img)
 	floor_src.texture_region_size = Vector2i(TILE_SIZE, TILE_SIZE)
+	# Bind the source to the TileSet BEFORE creating tiles — TileData is only
+	# aware of the TileSet's physics layers if the source is bound first.
+	var floor_src_id := ts.add_source(floor_src, -1)
 	for type_idx in Zone.ZoneType.size():
 		floor_src.create_tile(Vector2i(type_idx, 0))
-	var floor_src_id := ts.add_source(floor_src, -1)
 
 	# ── Source 1: wall tile ──
 	var wall_color := Color(0.25, 0.2, 0.15)
@@ -678,8 +698,9 @@ func _build_tileset() -> Dictionary:
 	var wall_src := TileSetAtlasSource.new()
 	wall_src.texture = wall_tex
 	wall_src.texture_region_size = Vector2i(TILE_SIZE, TILE_SIZE)
-	wall_src.create_tile(Vector2i(0, 0))
 	var wall_src_id := ts.add_source(wall_src, -1)
+	wall_src.create_tile(Vector2i(0, 0))
+	_add_block_collision(wall_src)
 
 	# ── Source 2: door-closed tile ──
 	var door_color := Color(0.5, 0.35, 0.1)  # brown / wood
@@ -687,8 +708,9 @@ func _build_tileset() -> Dictionary:
 	var door_src := TileSetAtlasSource.new()
 	door_src.texture = door_tex
 	door_src.texture_region_size = Vector2i(TILE_SIZE, TILE_SIZE)
-	door_src.create_tile(Vector2i(0, 0))
 	var door_src_id := ts.add_source(door_src, -1)
+	door_src.create_tile(Vector2i(0, 0))
+	_add_block_collision(door_src)
 
 	return {
 		"tileset": ts,
@@ -823,6 +845,10 @@ func _render_layout(layout: FloorLayout, tilemap: TileMap) -> void:
 			for offset in range(-1, 2):
 				tilemap.erase_cell(1, door_tile_pos + Vector2i(offset, 0))
 
-		# Place door tile on layer 2 if CLOSED
+		# Place door tiles on layer 2 if CLOSED — cover the whole 3-tile gap so
+		# a closed door cannot be bypassed through its side tiles.
 		if door.state == 1:
-			tilemap.set_cell(2, door_tile_pos, door_src_id, Vector2i(0, 0))
+			for offset in range(-1, 2):
+				var gap_offset := Vector2i(0, offset) if door.edge_axis == "v" \
+						else Vector2i(offset, 0)
+				tilemap.set_cell(2, door_tile_pos + gap_offset, door_src_id, Vector2i(0, 0))

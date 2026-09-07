@@ -7,14 +7,11 @@ extends Node
 @onready var player: Node2D = get_node(player_node_path)
 
 const TILE_SIZE := 16
-const CELL_TILES := 8
 
 func _get_run_manager():
 	return get_node(run_manager_node_path) if run_manager_node_path else null
 
 var _current_layout
-var _last_transition_time: float = 0.0
-const TRANSITION_COOLDOWN: float = 0.5
 var _player_in_exit: bool = false
 
 # Runtime nodes
