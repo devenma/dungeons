@@ -22,3 +22,6 @@ gdextension_interface.h
 
 # Art references (local moodboards, not game assets)
 assets/References/
+
+# Ignore Atlassian IDE files
+.atl
