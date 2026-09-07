@@ -10,7 +10,7 @@ func _physics_process(_delta: float) -> void:
 	# animaciones
 	if direction != Vector2.ZERO:
 		sprite.play("Walk_Down")
-		sprite.flip_h = direction.x < 0
+		if direction.x != 0.0:
+			sprite.flip_h = direction.x < 0.0
 	else:
 		sprite.play("Idle_Down")
-		sprite.flip_h = false
