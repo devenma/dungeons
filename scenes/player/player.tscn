@@ -4,6 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://0gbhhbohqcbr" path="res://assets/Examples/Player_Base_Down_Full_min.png" id="2_dovo2"]
 [ext_resource type="Script" path="res://scripts/combat/hurtbox.gd" id="3"]
 [ext_resource type="Script" path="res://scripts/combat/health_component.gd" id="4"]
+[ext_resource type="PackedScene" path="res://scenes/weapons/sword.tscn" id="5"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
 size = Vector2(16, 16)
@@ -99,3 +100,5 @@ script = ExtResource("4")
 max_health = 100
 
 [node name="Weapons" type="Node" parent="."]
+
+[node name="Sword" parent="Weapons" instance=ExtResource("5")]
