@@ -539,8 +539,10 @@ func _place_doors(layout: FloorLayout, rng: RandomNumberGenerator,
 				d.edge_axis = edge_axis
 				d.edge_line = edge_line
 				d.pos_along = pos_along
-				d.state = 1  # CLOSED by default
-				# combat_locked if either side is COMBAT
+				# Doors start OPEN — a combat zone locks its doors when the player
+				# enters it (door_controller), not at floor start.
+				d.state = 0
+				# Doors bordering a COMBAT zone can lock on player entry
 				if z.type == Zone.ZoneType.COMBAT or other.type == Zone.ZoneType.COMBAT:
 					d.combat_locked = true
 
@@ -720,7 +722,9 @@ func _build_tileset() -> Dictionary:
 	}
 
 
-func _render_layout(layout: FloorLayout, tilemap: TileMap) -> void:
+func _render_layout(layout: FloorLayout, tilemap: TileMap) -> int:
+	# Returns the door tile source id so callers (door_controller) can re-place
+	# door tiles when a combat zone locks its doors at runtime.
 	var build := _build_tileset()
 	var ts: TileSet = build["tileset"]
 	tilemap.tile_set = ts
@@ -852,3 +856,5 @@ func _render_layout(layout: FloorLayout, tilemap: TileMap) -> void:
 				var gap_offset := Vector2i(0, offset) if door.edge_axis == "v" \
 						else Vector2i(offset, 0)
 				tilemap.set_cell(2, door_tile_pos + gap_offset, door_src_id, Vector2i(0, 0))
+
+	return int(build["door_src_id"])

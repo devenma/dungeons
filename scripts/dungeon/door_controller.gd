@@ -19,13 +19,18 @@ const TILE_SIZE := 16
 
 var _doors: Array = []        # of Zone.Door
 var _tilemap: TileMap
+var _door_src_id: int = -1    # door tile source (needed to re-place tiles on lock)
 var _zone_doors: Dictionary = {}  # zone_id -> Array[Zone.Door]
+var _zones: Dictionary = {}   # zone_id -> Zone
 var _pending_crossings: Dictionary = {}  # door.id -> source_zone_id (single player)
 
 
-func initialize(layout, tilemap: TileMap) -> void:
+func initialize(layout, tilemap: TileMap, door_src_id: int) -> void:
 	_tilemap = tilemap
+	_door_src_id = door_src_id
 	_doors = layout.doors
+	for z in layout.zones:
+		_zones[z.id] = z
 
 	# Build zone -> doors lookup
 	for d in _doors:
@@ -42,10 +47,6 @@ func initialize(layout, tilemap: TileMap) -> void:
 
 
 func _create_door_areas(layout) -> void:
-	var zone_by_id: Dictionary = {}
-	for z in layout.zones:
-		zone_by_id[z.id] = z
-
 	for d in _doors:
 		var door: Zone.Door = d
 		var area := Area2D.new()
@@ -76,8 +77,8 @@ func _create_door_areas(layout) -> void:
 
 		# Connect crossing detection: entry records the source side,
 		# exit + movement direction applies the transition.
-		area.body_entered.connect(_on_door_body_entered.bind(door, zone_by_id))
-		area.body_exited.connect(_on_door_body_exited.bind(door, zone_by_id))
+		area.body_entered.connect(_on_door_body_entered.bind(door, _zones))
+		area.body_exited.connect(_on_door_body_exited.bind(door, _zones))
 
 
 func _on_door_body_entered(body: Node2D, door: Zone.Door,
@@ -133,6 +134,12 @@ func _on_door_body_exited(body: Node2D, door: Zone.Door,
 		return
 
 	zone_entered.emit(target_zone.id)
+
+	# Combat lock: entering an uncleared COMBAT zone seals its doors until the
+	# zone is cleared. The lock is placed behind the player — at exit time the
+	# body is fully past the door line, so the new collision never overlaps it.
+	if target_zone.type == Zone.ZoneType.COMBAT and not target_zone.cleared:
+		_lock_zone_doors(target_zone.id)
 
 
 func _side_of_line(door: Zone.Door, pos: Vector2) -> int:
@@ -192,6 +199,32 @@ func _zone_on_side(zone_by_id: Dictionary, door: Zone.Door, side: int) -> Zone:
 			if side < 0 and z.tile_rect.end.y <= door.edge_line:
 				return z
 	return null
+
+
+func _lock_zone_doors(zone_id: int) -> void:
+	# Seal every open combat-locked door of the zone (player just entered it).
+	if not _zone_doors.has(zone_id):
+		return
+	for door in _zone_doors[zone_id]:
+		var d: Zone.Door = door
+		if not d.combat_locked or d.state != 0:
+			continue
+		d.state = 1  # CLOSED
+		_place_door_tiles(d)
+
+
+func _place_door_tiles(door: Zone.Door) -> void:
+	# Place door tiles across the whole 3-tile gap — mirrors the generator's
+	# closed-door placement and on_zone_cleared's erase.
+	var tile_pos: Vector2i
+	if door.edge_axis == "v":
+		tile_pos = Vector2i(door.edge_line, door.pos_along)
+	else:
+		tile_pos = Vector2i(door.pos_along, door.edge_line)
+	for offset in range(-1, 2):
+		var gap_offset := Vector2i(0, offset) if door.edge_axis == "v" \
+				else Vector2i(offset, 0)
+		_tilemap.set_cell(2, tile_pos + gap_offset, _door_src_id, Vector2i(0, 0))
 
 
 func on_zone_cleared(zone_id: int) -> void:
