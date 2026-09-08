@@ -69,6 +69,9 @@ func _create_door_areas(layout) -> void:
 		)
 
 		area.name = "DoorArea_%d" % door.id
+		# Detect only the player body (layer 2 after the Fase 4 flip).
+		area.collision_layer = CollisionLayers.WORLD
+		area.collision_mask = CollisionLayers.PLAYER_BODY
 		add_child(area)
 
 		# Connect crossing detection: entry records the source side,

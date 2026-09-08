@@ -179,6 +179,9 @@ func _create_exit_area(layout) -> void:
 
 	_exit_area.body_entered.connect(_on_exit_body_entered)
 	_exit_area.body_exited.connect(_on_exit_body_exited)
+	# Detect only the player body (layer 2 after the Fase 4 flip).
+	_exit_area.collision_layer = CollisionLayers.WORLD
+	_exit_area.collision_mask = CollisionLayers.PLAYER_BODY
 
 	# Add to dungeon
 	if _dungeon != null:
