@@ -2,7 +2,7 @@ class_name DungeonGenerator
 extends Node
 
 const TILE_SIZE := 16
-const CELL_TILES := 75
+const CELL_TILES := 32
 
 # ── Grid cell tracking ──────────────────────────────────────────────────────
 
