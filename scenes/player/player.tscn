@@ -101,6 +101,6 @@ shape = SubResource("RectangleShape2D_hurtbox")
 script = ExtResource("4")
 max_health = 100
 
-[node name="Weapons" type="Node" parent="."]
+[node name="Weapons" type="Node2D" parent="."]
 
 [node name="Sword" parent="Weapons" instance=ExtResource("5")]
