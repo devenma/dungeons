@@ -1,25 +1,23 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene format=3 uid="uid://d1kuhd4db3mua"]
 
-[ext_resource type="Script" path="res://scripts/weapons/sword.gd" id="1"]
-[ext_resource type="Script" path="res://scripts/combat/hitbox.gd" id="2"]
+[ext_resource type="Script" uid="uid://dhkd81lsvbdol" path="res://scripts/weapons/sword.gd" id="1"]
+[ext_resource type="Script" uid="uid://ccss1am1umlms" path="res://scripts/combat/hitbox.gd" id="2"]
 [ext_resource type="Resource" path="res://resources/weapons/sword_basic.tres" id="3"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_swing"]
 size = Vector2(120, 120)
 
-[node name="Sword" type="Node2D"]
+[node name="Sword" type="Node2D" unique_id=810455764]
 script = ExtResource("1")
 data = ExtResource("3")
 
-[node name="Hitbox" type="Area2D" parent="."]
+[node name="Hitbox" type="Area2D" parent="." unique_id=1397001853]
 collision_layer = 0
 collision_mask = 16
 monitoring = false
 monitorable = false
 script = ExtResource("2")
-damage = 10
-target_mask = 16
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox" unique_id=1031736435]
 position = Vector2(60, 0)
 shape = SubResource("RectangleShape2D_swing")
