@@ -1,0 +1,7 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/enemies/enemy_base.tscn" id="1"]
+[ext_resource type="Resource" path="res://resources/enemies/slime_data.tres" id="2"]
+
+[node name="Slime" instance=ExtResource("1")]
+enemy_data = ExtResource("2")
