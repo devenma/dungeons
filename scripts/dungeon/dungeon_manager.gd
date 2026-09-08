@@ -13,8 +13,10 @@ func _get_run_manager():
 
 var _current_layout
 var _player_in_exit: bool = false
+var _dead_handling: bool = false
 
 # Runtime nodes
+var _dungeon: Node2D
 var _tilemap: TileMap
 var _door_controller: Node
 var _spawner: Node
@@ -25,10 +27,29 @@ func _ready() -> void:
 	set_process_input(true)
 	if floor_data == null:
 		floor_data = FloorData.new()
+	# Hook player death BEFORE the floor starts (DR-1, §44.16).
+	var health := player.get_node_or_null("Health") as HealthComponent
+	if health != null:
+		health.died.connect(_on_player_died)
 	var run_manager = _get_run_manager()
 	if run_manager != null:
 		run_manager.start_new_run()
 	_start_floor()
+
+
+func _on_player_died() -> void:
+	if _dead_handling:
+		return
+	_dead_handling = true
+	await get_tree().create_timer(0.5).timeout
+	var health := player.get_node_or_null("Health") as HealthComponent
+	if health != null:
+		health.reset_health()
+	var run_manager = _get_run_manager()
+	if run_manager != null:
+		run_manager.start_new_run()
+	_start_floor()
+	_dead_handling = false
 
 
 func _start_floor() -> void:
@@ -51,8 +72,12 @@ func _start_floor() -> void:
 	_current_layout = layout
 
 	# 2  Create dungeon container
+	# Keep a direct reference: re-resolving via get_node("Dungeon") during
+	# this same frame can return the PREVIOUS floor's node, which is still
+	# queue_free-pending and would swallow the ExitArea.
 	var dungeon := Node2D.new()
 	dungeon.name = "Dungeon"
+	_dungeon = dungeon
 	add_child(dungeon)
 
 	# 3  Create and render TileMap
@@ -156,15 +181,18 @@ func _create_exit_area(layout) -> void:
 	_exit_area.body_exited.connect(_on_exit_body_exited)
 
 	# Add to dungeon
-	var dungeon := get_node_or_null("Dungeon")
-	if dungeon != null:
-		dungeon.add_child(_exit_area)
+	if _dungeon != null:
+		_dungeon.add_child(_exit_area)
 
 
 func _clear_floor() -> void:
-	var existing := get_node_or_null("Dungeon")
-	if existing != null and is_instance_valid(existing):
-		existing.queue_free()
+	if _dungeon != null and is_instance_valid(_dungeon):
+		# The node stays in the tree until the deferred queue_free lands at
+		# frame end; rename it so the next floor can take the "Dungeon" name
+		# without an add_child collision.
+		_dungeon.name = "%s_old_%d" % [_dungeon.name, _dungeon.get_instance_id()]
+		_dungeon.queue_free()
+	_dungeon = null
 	_tilemap = null
 	_door_controller = null
 	_spawner = null
