@@ -12,7 +12,9 @@ extends Node
 signal zone_cleared(zone_id: int)
 
 const TILE_SIZE: int = 16
-const INTERIOR_INSET_TILES: int = 3
+# Enemies spawn past the zone's wall ring (the template wall band) so nothing
+# spawns inside, or collides against, wall tiles.
+const INTERIOR_INSET_TILES: int = DungeonGenerator.WALL_RING_TILES
 
 @export var enemy_scene: PackedScene = preload("res://scenes/enemies/slime.tscn")
 @export var enemies_per_zone: int = 2

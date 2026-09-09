@@ -61,24 +61,6 @@ func _set_cam_limits_for_zone(cam: Camera2D, zone) -> void:
 	cam.limit_top = px.y
 	cam.limit_right = px.x + sz.x
 	cam.limit_bottom = px.y + sz.y
-
-	# The shared wall line between two zones is drawn on the first column/row
-	# of the right/bottom zone of the pair. It therefore sits OUTSIDE this
-	# zone's tile_rect when the neighbor is to the right or below. Extend those
-	# limits by one tile so the wall ring is visible consistently in every zone.
-	if _layout_ref == null:
-		return
-	var extend_right := false
-	var extend_bottom := false
-	for n in _layout_ref.zones:
-		var other: Zone = n
-		if not zone.neighbors.has(other.id):
-			continue
-		if other.cell_min.x >= zone.cell_max.x:
-			extend_right = true
-		if other.cell_min.y >= zone.cell_max.y:
-			extend_bottom = true
-	if extend_right:
-		cam.limit_right += TILE_SIZE
-	if extend_bottom:
-		cam.limit_bottom += TILE_SIZE
+	# Wall rings render INSIDE each zone's tile_rect, so the zone's own limits
+	# already frame its complete wall band — no extension needed. The neighbor's
+	# ring stays invisible, keeping rooms isolated (Isaac-style).

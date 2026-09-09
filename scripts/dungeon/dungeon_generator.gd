@@ -3,6 +3,16 @@ extends Node
 
 const TILE_SIZE := 16
 const CELL_TILES := 32
+const FLOOR_TEXTURE_PATH := "res://assets/Examples/Plank_Floor_min.png"
+const FLOOR_PATCH_SCALE := 3  # nearest-neighbor upscale: chunkier planks (1 = native)
+const WALL_TEMPLATE_PATH := "res://assets/Examples/Wall_Floor_min_v2.png"
+# Wall template: a 128×128 native room (8×8 tiles of 16px) whose wall ring
+# (outer frame + brick band + skirting) is 32 native px thick per side. At the
+# same art grain as the floor (FLOOR_PATCH_SCALE) the ring spans 2 scaled-tile
+# rows: FLOOR_PATCH_SCALE * 32 / TILE_SIZE = FLOOR_PATCH_SCALE * 2 tiles.
+const WALL_PATCH_SCALE := FLOOR_PATCH_SCALE
+const WALL_RING_TILES := WALL_PATCH_SCALE * 2
+const WALL_TEMPLATE_TILES := 8 * WALL_PATCH_SCALE
 
 # ── Grid cell tracking ──────────────────────────────────────────────────────
 
@@ -634,9 +644,8 @@ func _create_colored_texture(color: Color, size: Vector2i) -> ImageTexture:
 	return ImageTexture.create_from_image(img)
 
 
-func _add_block_collision(src: TileSetAtlasSource) -> void:
+func _add_block_collision(td: TileData) -> void:
 	# Full-tile square collision polygon (points are relative to tile center).
-	var td: TileData = src.get_tile_data(Vector2i(0, 0), 0)
 	td.add_collision_polygon(0)
 	var half := TILE_SIZE / 2.0
 	td.set_collision_polygon_points(0, 0, PackedVector2Array([
@@ -647,18 +656,19 @@ func _add_block_collision(src: TileSetAtlasSource) -> void:
 	]))
 
 
-func _zone_floor_color(type: int) -> Color:
+func _zone_floor_tint(type: int) -> Color:
+	# Multiplicative tint applied to the plank floor texture so the per-zone
+	# color language survives the switch from solid colors to real tiles.
+	# COMBAT has no entry — it uses the untinted base tile.
 	match type:
 		Zone.ZoneType.START:
-			return Color(0.2, 0.6, 0.2)    # green
-		Zone.ZoneType.COMBAT:
-			return Color(0.3, 0.3, 0.35)   # gray
+			return Color(0.55, 1.0, 0.55)  # green-tinted planks
 		Zone.ZoneType.REWARD:
-			return Color(0.7, 0.6, 0.1)    # gold
+			return Color(1.0, 0.85, 0.45)  # warm golden planks
 		Zone.ZoneType.EXIT:
-			return Color(0.6, 0.2, 0.2)    # red
+			return Color(1.0, 0.5, 0.5)    # reddish planks
 		_:
-			return Color(0.4, 0.4, 0.4)    # default gray
+			return Color(1.0, 1.0, 1.0)
 
 
 func _build_tileset() -> Dictionary:
@@ -671,38 +681,73 @@ func _build_tileset() -> Dictionary:
 	ts.add_physics_layer()
 	ts.set_physics_layer_collision_layer(0, 1)
 
-	# ── Source 0: floor tiles (per zone type) ──
-	var floor_tex_size := Vector2i(
-		TILE_SIZE * Zone.ZoneType.size(),
-		TILE_SIZE
-	)
-	var floor_img := Image.create(floor_tex_size.x, floor_tex_size.y,
-		false, Image.FORMAT_RGBA8)
-	for type_idx in Zone.ZoneType.size():
-		var color := _zone_floor_color(type_idx)
-		var rx := type_idx * TILE_SIZE
-		for py in TILE_SIZE:
-			for px in TILE_SIZE:
-				floor_img.set_pixel(rx + px, py, color)
-
+	# ── Source 0: floor tiles (upscaled plank sheet, 16×16 slices) ──
+	# The 2× sheet is sliced into variant_count² tiles of TILE_SIZE and placed
+	# in SHEET ORDER per 8×8 block (see _render_layout): every block reproduces
+	# the seamless sheet, so blocks tile continuously with zero seams. Tiles
+	# stay 1×1 map cells on purpose — Godot draws multi-cell tiles centered on
+	# their anchor cell, which made whole-sheet 128px patches spill 56px
+	# ((128 - 16) / 2) past zone walls and look like floor outside the room.
+	var base_tex: Texture2D = load(FLOOR_TEXTURE_PATH)
+	var sheet_img: Image = base_tex.get_image()
+	if sheet_img.is_compressed():
+		sheet_img.decompress()
+	if FLOOR_PATCH_SCALE != 1:
+		sheet_img.resize(sheet_img.get_width() * FLOOR_PATCH_SCALE,
+				sheet_img.get_height() * FLOOR_PATCH_SCALE,
+				Image.INTERPOLATE_NEAREST)
 	var floor_src := TileSetAtlasSource.new()
-	floor_src.texture = ImageTexture.create_from_image(floor_img)
+	floor_src.texture = ImageTexture.create_from_image(sheet_img)
 	floor_src.texture_region_size = Vector2i(TILE_SIZE, TILE_SIZE)
 	# Bind the source to the TileSet BEFORE creating tiles — TileData is only
 	# aware of the TileSet's physics layers if the source is bound first.
 	var floor_src_id := ts.add_source(floor_src, -1)
-	for type_idx in Zone.ZoneType.size():
-		floor_src.create_tile(Vector2i(type_idx, 0))
+	var variant_count: int = sheet_img.get_width() / TILE_SIZE
+	for vy in variant_count:
+		for vx in variant_count:
+			floor_src.create_tile(Vector2i(vx, vy))
 
-	# ── Source 1: wall tile ──
-	var wall_color := Color(0.25, 0.2, 0.15)
-	var wall_tex := _create_colored_texture(wall_color, Vector2i(TILE_SIZE, TILE_SIZE))
+	# Zone-type tinting via alternative tiles (TileData.modulate is
+	# multiplicative), one per variant so any variant can carry any tint.
+	# COMBAT keeps the untinted base tile (alternative 0).
+	var floor_alt_ids := {}  # ZoneType -> {Vector2i variant -> alternative id}
+	for type_idx in Zone.ZoneType.size():
+		if type_idx == Zone.ZoneType.COMBAT:
+			continue
+		var tint := _zone_floor_tint(type_idx)
+		var per_variant := {}
+		for vy in variant_count:
+			for vx in variant_count:
+				var coords := Vector2i(vx, vy)
+				var alt_id := floor_src.create_alternative_tile(coords)
+				var tdata: TileData = floor_src.get_tile_data(coords, alt_id)
+				tdata.modulate = tint
+				per_variant[coords] = alt_id
+		floor_alt_ids[type_idx] = per_variant
+
+	# ── Source 1: wall-template tiles (Wall_Floor_min_v2 9-patch, ×scale) ──
+	# The template's wall ring (outer frame + brick band + skirting, 32 native
+	# px per side) is rendered INSIDE each zone so zones look like the template
+	# room. The whole scaled sheet is sliced in sheet order (24×24 tiles at
+	# scale 3) and every tile carries a full-tile collision polygon.
+	var tpl_src_tex: Texture2D = load(WALL_TEMPLATE_PATH)
+	var tpl_img: Image = tpl_src_tex.get_image()
+	if tpl_img.is_compressed():
+		tpl_img.decompress()
+	if WALL_PATCH_SCALE != 1:
+		tpl_img.resize(tpl_img.get_width() * WALL_PATCH_SCALE,
+				tpl_img.get_height() * WALL_PATCH_SCALE,
+				Image.INTERPOLATE_NEAREST)
 	var wall_src := TileSetAtlasSource.new()
-	wall_src.texture = wall_tex
+	wall_src.texture = ImageTexture.create_from_image(tpl_img)
 	wall_src.texture_region_size = Vector2i(TILE_SIZE, TILE_SIZE)
 	var wall_src_id := ts.add_source(wall_src, -1)
-	wall_src.create_tile(Vector2i(0, 0))
-	_add_block_collision(wall_src)
+	var tpl_tiles: int = tpl_img.get_width() / TILE_SIZE
+	for vy in tpl_tiles:
+		for vx in tpl_tiles:
+			var wcoords := Vector2i(vx, vy)
+			wall_src.create_tile(wcoords)
+			_add_block_collision(wall_src.get_tile_data(wcoords, 0))
 
 	# ── Source 2: door-closed tile ──
 	var door_color := Color(0.5, 0.35, 0.1)  # brown / wood
@@ -712,11 +757,13 @@ func _build_tileset() -> Dictionary:
 	door_src.texture_region_size = Vector2i(TILE_SIZE, TILE_SIZE)
 	var door_src_id := ts.add_source(door_src, -1)
 	door_src.create_tile(Vector2i(0, 0))
-	_add_block_collision(door_src)
+	_add_block_collision(door_src.get_tile_data(Vector2i(0, 0), 0))
 
 	return {
 		"tileset": ts,
 		"floor_src_id": floor_src_id,
+		"floor_alt_ids": floor_alt_ids,
+		"floor_variant_count": variant_count,
 		"wall_src_id": wall_src_id,
 		"door_src_id": door_src_id,
 	}
@@ -741,9 +788,15 @@ func _render_layout(layout: FloorLayout, tilemap: TileMap) -> int:
 	var floor_src_id: int = build["floor_src_id"]
 	var wall_src_id: int = build["wall_src_id"]
 	var door_src_id: int = build["door_src_id"]
+	var floor_alt_ids: Dictionary = build["floor_alt_ids"]
+	var variant_count: int = build["floor_variant_count"]
 
 	# ── Layer 0: floor ──
-	# Iterate every tile position in the grid
+	# Cells are placed in SHEET ORDER: atlas coord = (tx % N, ty % N) rebuilds
+	# the seamless sheet once per variant_count² block, so the pattern stays
+	# continuous across blocks and zones with zero seams. Zone edges are
+	# multiples of CELL_TILES (32) and 32 % variant_count == 0, so no block is
+	# ever cut mid-pattern.
 	for gy in range(layout.grid_h):
 		for gx in range(layout.grid_w):
 			# Find which zone this cell belongs to
@@ -757,78 +810,37 @@ func _render_layout(layout: FloorLayout, tilemap: TileMap) -> int:
 				continue
 
 			var z: Zone = zone_by_id[cell_zone_id]
-			var atlas_coord := Vector2i(z.type, 0)
 
 			for tx in CELL_TILES:
 				for ty in CELL_TILES:
 					var tile_pos := Vector2i(gx * CELL_TILES + tx, gy * CELL_TILES + ty)
-					tilemap.set_cell(0, tile_pos, floor_src_id, atlas_coord)
+					var atlas_coord := Vector2i(tx % variant_count, ty % variant_count)
+					# Zone-type tint via alternative tile (0 = untinted COMBAT).
+					var alt_id: int = 0
+					if floor_alt_ids.has(z.type):
+						var per_variant: Dictionary = floor_alt_ids[z.type]
+						alt_id = per_variant[atlas_coord]
+					tilemap.set_cell(0, tile_pos, floor_src_id, atlas_coord, alt_id)
 
-	# ── Layer 1: walls ──
-	var total_tile_w := layout.grid_w * CELL_TILES
-	var total_tile_h := layout.grid_h * CELL_TILES
-
-	# Outer perimeter
-	for tx in total_tile_w:
-		tilemap.set_cell(1, Vector2i(tx, 0), wall_src_id, Vector2i(0, 0))
-		tilemap.set_cell(1, Vector2i(tx, total_tile_h - 1), wall_src_id, Vector2i(0, 0))
-	for ty in total_tile_h:
-		tilemap.set_cell(1, Vector2i(0, ty), wall_src_id, Vector2i(0, 0))
-		tilemap.set_cell(1, Vector2i(total_tile_w - 1, ty), wall_src_id, Vector2i(0, 0))
-
-	# Shared edges between zones (inner walls)
-	var walled_pairs: Dictionary = {}  # tile_pos_key -> true
+	# ── Layer 1: zone wall rings (Wall_Floor template, in-zone 9-patch) ──
+	# Every zone renders its wall ring INSIDE its own tile_rect — the template
+	# cities frame + brick band + skirting — so interior tiles stay plank
+	# floor. Shared boundaries therefore show BOTH zones' rings (a two-faced
+	# thick wall), which also hides the floor's block-phase restarts at zone
+	# edges. Doors punch 3-tile-wide gaps through BOTH rings.
 	for z in layout.zones:
-		for nid in z.neighbors:
-			var other: Zone = zone_by_id[nid]
-			if other == null:
-				continue
-
-			# Determine shared edge tile positions
-			if z.cell_max.x <= other.cell_min.x:
-				# Vertical edge: Z on left, Other on right
-				var edge_tile_x: int = z.cell_max.x * CELL_TILES
-				var top_y: int = maxi(z.cell_min.y, other.cell_min.y) * CELL_TILES
-				var bot_y: int = mini(z.cell_max.y, other.cell_max.y) * CELL_TILES
-				for ty in range(top_y, bot_y):
-					var key := str(Vector2i(edge_tile_x, ty))
-					if not walled_pairs.has(key):
-						walled_pairs[key] = true
-			elif other.cell_max.x <= z.cell_min.x:
-				var edge_tile_x: int = other.cell_max.x * CELL_TILES
-				var top_y: int = maxi(z.cell_min.y, other.cell_min.y) * CELL_TILES
-				var bot_y: int = mini(z.cell_max.y, other.cell_max.y) * CELL_TILES
-				for ty in range(top_y, bot_y):
-					var key := str(Vector2i(edge_tile_x, ty))
-					if not walled_pairs.has(key):
-						walled_pairs[key] = true
-			elif z.cell_max.y <= other.cell_min.y:
-				# Horizontal edge: Z above, Other below
-				var edge_tile_y: int = z.cell_max.y * CELL_TILES
-				var left_x: int = maxi(z.cell_min.x, other.cell_min.x) * CELL_TILES
-				var right_x: int = mini(z.cell_max.x, other.cell_max.x) * CELL_TILES
-				for tx in range(left_x, right_x):
-					var key := str(Vector2i(tx, edge_tile_y))
-					if not walled_pairs.has(key):
-						walled_pairs[key] = true
-			elif other.cell_max.y <= z.cell_min.y:
-				var edge_tile_y: int = other.cell_max.y * CELL_TILES
-				var left_x: int = maxi(z.cell_min.x, other.cell_min.x) * CELL_TILES
-				var right_x: int = mini(z.cell_max.x, other.cell_max.x) * CELL_TILES
-				for tx in range(left_x, right_x):
-					var key := str(Vector2i(tx, edge_tile_y))
-					if not walled_pairs.has(key):
-						walled_pairs[key] = true
-
-	# Place wall tiles on shared edges
-	for key in walled_pairs:
-		# Parse the key back to a Vector2i (format like "(x, y)")
-		# We stored it as str(Vector2i) which is "(x, y)"
-		var parts: PackedStringArray = key.trim_prefix("(").trim_suffix(")").split(", ")
-		if parts.size() == 2:
-			var wx := int(parts[0])
-			var wy := int(parts[1])
-			tilemap.set_cell(1, Vector2i(wx, wy), wall_src_id, Vector2i(0, 0))
+		var w: int = z.tile_rect.size.x
+		var h: int = z.tile_rect.size.y
+		var origin: Vector2i = z.tile_rect.position
+		var r := WALL_RING_TILES
+		for ty in h:
+			var v: int = _tpl_side_coord(ty, h)
+			for tx in w:
+				if not (tx < r or tx >= w - r or ty < r or ty >= h - r):
+					continue  # interior: plank floor already painted on layer 0
+				var u: int = _tpl_side_coord(tx, w)
+				tilemap.set_cell(1, origin + Vector2i(tx, ty), wall_src_id,
+						Vector2i(u, v))
 
 	# ── Layer 2: doors ──
 	for d in layout.doors:
@@ -839,22 +851,41 @@ func _render_layout(layout: FloorLayout, tilemap: TileMap) -> int:
 		else:
 			door_tile_pos = Vector2i(door.pos_along, door.edge_line)
 
-		# Remove wall tiles at door position (3-tile wide gap along the wall)
-		if door.edge_axis == "v":
-			# Vertical wall: gap extends along y axis
-			for offset in range(-1, 2):
-				tilemap.erase_cell(1, door_tile_pos + Vector2i(0, offset))
-		else:
-			# Horizontal wall: gap extends along x axis
-			for offset in range(-1, 2):
-				tilemap.erase_cell(1, door_tile_pos + Vector2i(offset, 0))
+		# Punch the 3-tile-wide gap across BOTH rings' full depth (the strip
+		# from the edge line into each zone's wall band). Open gaps reveal the
+		# layer-0 floor beneath; closedCombat doors fill the whole punched gap
+		# on layer 2 so a closed door cannot be bypassed.
+		for dz in range(-WALL_RING_TILES, WALL_RING_TILES):
+			for gap in range(-1, 2):
+				var cell: Vector2i
+				if door.edge_axis == "v":
+					cell = Vector2i(door_tile_pos.x + dz, door_tile_pos.y + gap)
+				else:
+					cell = Vector2i(door_tile_pos.x + gap, door_tile_pos.y + dz)
+				tilemap.erase_cell(1, cell)
 
-		# Place door tiles on layer 2 if CLOSED — cover the whole 3-tile gap so
-		# a closed door cannot be bypassed through its side tiles.
 		if door.state == 1:
-			for offset in range(-1, 2):
-				var gap_offset := Vector2i(0, offset) if door.edge_axis == "v" \
-						else Vector2i(offset, 0)
-				tilemap.set_cell(2, door_tile_pos + gap_offset, door_src_id, Vector2i(0, 0))
+			for dz in range(-WALL_RING_TILES, WALL_RING_TILES):
+				for gap in range(-1, 2):
+					var cell: Vector2i
+					if door.edge_axis == "v":
+						cell = Vector2i(door_tile_pos.x + dz, door_tile_pos.y + gap)
+					else:
+						cell = Vector2i(door_tile_pos.x + gap, door_tile_pos.y + dz)
+					tilemap.set_cell(2, cell, door_src_id, Vector2i(0, 0))
 
 	return int(build["door_src_id"])
+
+
+func _tpl_side_coord(t: int, span: int) -> int:
+	# Maps a world tile offset along a zone's side to a wall-template tile
+	# coordinate: the outer ring at each end (0..R-1 / TEMPLATE-R..TEMPLATE-1),
+	# else the template's edge-band interior repeated so long edges stay
+	# covered. Wall-vs-floor is decided by the caller, not here.
+	var r := WALL_RING_TILES
+	var mid := WALL_TEMPLATE_TILES - 2 * r
+	if t < r:
+		return t
+	if t >= span - r:
+		return WALL_TEMPLATE_TILES - (span - t)
+	return r + (t - r) % mid
