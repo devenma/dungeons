@@ -110,8 +110,8 @@ func _test_connectivity() -> void:
 		visited[layout.start_zone_id] = true
 
 		while not queue.is_empty():
-			var cur := queue.pop_front()
-			var z := _find_zone_by_id(layout, cur)
+			var cur: int = queue.pop_front()
+			var z: Zone = _find_zone_by_id(layout, cur)
 			if z == null:
 				continue
 			for nid in z.neighbors:
