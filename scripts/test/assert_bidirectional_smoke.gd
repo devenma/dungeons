@@ -116,9 +116,6 @@ func _run() -> void:
 	_check(swung, "C: try_attack() accepted")
 	_check(absf(sword.rotation - PI / 2.0) < 0.01, "C: aim defaults Down (rotation = PI/2)")
 
-	# Cooldown (1/1.5 s) must elapse before the next swing.
-	await _frames(50)
-
 	# A — player sword → enemy hurtbox (HP-3, nonzero Player→Enemy damage).
 	swung = sword.call("try_attack", Vector2.RIGHT) as bool
 	await _frames(5)
