@@ -19,15 +19,15 @@ var _living: bool = true
 
 
 func _ready() -> void:
+	# NOTE: keep monitorable=true — with layer 0 no other area can see the
+	# arrow, but monitorable=false stops body_entered (wall) detection.
 	set_deferred("collision_layer", SPAWN_LAYER)
 	set_deferred("collision_mask", TARGET_MASK)
 	set_deferred("monitoring", true)
-	set_deferred("monitorable", false)
 	rotation = direction.angle()
 	collision_layer = SPAWN_LAYER
 	collision_mask = TARGET_MASK
 	monitoring = true
-	monitorable = false
 
 	# Connect handlers BEFORE any signal can fire (§44.16).
 	area_entered.connect(_on_area_entered)
