@@ -6,12 +6,13 @@ const CELL_TILES := 32
 const FLOOR_TEXTURE_PATH := "res://assets/Examples/Plank_Floor_min.png"
 const FLOOR_PATCH_SCALE := 3  # nearest-neighbor upscale: chunkier planks (1 = native)
 const WALL_TEMPLATE_PATH := "res://assets/Examples/Wall_Floor_min_v2.png"
-# Wall template: a 128×128 native room (8×8 tiles of 16px) whose wall ring
-# (outer frame + brick band + skirting) is 32 native px thick per side. At the
-# same art grain as the floor (FLOOR_PATCH_SCALE) the ring spans 2 scaled-tile
-# rows: FLOOR_PATCH_SCALE * 32 / TILE_SIZE = FLOOR_PATCH_SCALE * 2 tiles.
+# Wall template: a 128×128 native room (8×8 tiles of 16px). Its wall ring is
+# 3 native tiles deep per side: frame + stone band + the template's own floor
+# edge row, which carries the warm trim baked into its outer pixels. At the
+# same art grain as the floor (FLOOR_PATCH_SCALE) the ring spans 3 scaled-tile
+# rows: FLOOR_PATCH_SCALE * 48 / TILE_SIZE = FLOOR_PATCH_SCALE * 3 tiles.
 const WALL_PATCH_SCALE := FLOOR_PATCH_SCALE
-const WALL_RING_TILES := WALL_PATCH_SCALE * 2
+const WALL_RING_TILES := WALL_PATCH_SCALE * 3
 const WALL_TEMPLATE_TILES := 8 * WALL_PATCH_SCALE
 
 # ── Grid cell tracking ──────────────────────────────────────────────────────
