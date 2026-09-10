@@ -2,32 +2,32 @@ extends Node2D
 
 ## Ranged bow (PA-1..PA-3, BC-1/BC-2): polls the "secondary_attack" action,
 ## fires an Arrow from the player position toward the aim direction into
-## the scene root (world space), then waits a cooldown of 1/attack_speed.
+## the scene root (world space), gated by the player's stamina.
 ## Sword-parity contract: try_attack(aim_dir) -> bool. No player logic (§35).
 
 @export var data: WeaponData
 
+## NodePath to the player's StaminaComponent; null lookup degrades to
+## unlimited attacks (ST-weapon-gating).
+@export var stamina_node_path: NodePath = NodePath("../../Stamina")
+
 const SPAWN_OFFSET: float = 20.0
 
-var _can_attack: bool = true
-var _cooldown_timer: Timer
+var _stamina: StaminaComponent = null
 
 
 func _ready() -> void:
-	_cooldown_timer = Timer.new()
-	_cooldown_timer.one_shot = true
-	if data != null:
-		_cooldown_timer.wait_time = 1.0 / data.attack_speed
-	_cooldown_timer.timeout.connect(_on_cooldown_timeout)
-	add_child(_cooldown_timer)
+	_stamina = get_node_or_null(stamina_node_path) as StaminaComponent
 
 
 func try_attack(aim_dir: Vector2 = Vector2.ZERO) -> bool:
-	if not _can_attack or data == null or data.projectile_scene == null:
+	if data == null or data.projectile_scene == null:
 		return false
 	var aim: Vector2 = aim_dir
 	if aim == Vector2.ZERO:
 		aim = _resolve_player_aim()
+	if _stamina != null and not _stamina.try_spend(data.stamina_cost):
+		return false
 	aim = aim.normalized()
 	var packed: PackedScene = data.projectile_scene
 	var arrow := packed.instantiate() as Arrow
@@ -42,8 +42,6 @@ func try_attack(aim_dir: Vector2 = Vector2.ZERO) -> bool:
 	var scene_root: Node = get_tree().current_scene
 	scene_root.add_child(arrow)
 	arrow.global_position = origin + aim * SPAWN_OFFSET
-	_can_attack = false
-	_cooldown_timer.start()
 	return true
 
 
@@ -60,7 +58,3 @@ func _resolve_player_aim() -> Vector2:
 	if found is Node2D and (found as Node2D).has_method("aim_direction"):
 		return (found as Node2D).call("aim_direction") as Vector2
 	return Vector2.DOWN
-
-
-func _on_cooldown_timeout() -> void:
-	_can_attack = true

@@ -9,3 +9,4 @@ damage = 10
 attack_speed = 1.5
 knockback = 28.0
 attack_range = 120.0
+stamina_cost = 20

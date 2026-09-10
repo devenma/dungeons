@@ -55,10 +55,8 @@ func _run() -> void:
 		_check(dir == Vector2.RIGHT, "PA-1: arrow direction = RIGHT")
 
 	var refired: bool = bow.call("try_attack", Vector2.RIGHT) as bool
-	_check(refired == false, "PA-3: second call within cooldown returns false")
-
-	for i in range(140):
-		await physics_frame
+	_check(refired == true,
+			"PA-3: second call with full stamina refires (no cooldown)")
 
 	var melee_fired: bool = sword.call("try_attack", Vector2.DOWN) as bool
 	_check(melee_fired, "SA-2/WD: sword.try_attack(DOWN) still works")
