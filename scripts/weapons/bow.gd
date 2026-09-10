@@ -49,7 +49,10 @@ func try_attack(aim_dir: Vector2 = Vector2.ZERO) -> bool:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("secondary_attack"):
-		try_attack()
+		var facing: Vector2 = _resolve_player_aim()
+		var aim: Vector2 = AimResolver.resolve(
+				event, global_position, facing, get_global_mouse_position())
+		try_attack(aim)
 
 
 func _resolve_player_aim() -> Vector2:
