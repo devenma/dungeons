@@ -45,6 +45,7 @@ func _on_player_died() -> void:
 	var health := player.get_node_or_null("Health") as HealthComponent
 	if health != null:
 		health.reset_health()
+	_refill_stamina()
 	var run_manager = _get_run_manager()
 	if run_manager != null:
 		run_manager.start_new_run()
@@ -52,10 +53,21 @@ func _on_player_died() -> void:
 	_dead_handling = false
 
 
+## Refill stamina to full (ST-reset): called at the top of `_start_floor()`
+## for every floor transition; death routing also refills here, so no
+## second hook exists and a double call is idempotent.
+func _refill_stamina() -> void:
+	var stamina := player.get_node_or_null("Stamina") as StaminaComponent
+	if stamina != null:
+		stamina.reset_full()
+
+
 func _start_floor() -> void:
 	var run_manager = _get_run_manager()
 	if run_manager == null:
 		return
+
+	_refill_stamina()
 
 	# Clear previous floor
 	_clear_floor()
