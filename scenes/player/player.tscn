@@ -6,6 +6,7 @@
 [ext_resource type="Script" path="res://scripts/combat/health_component.gd" id="4"]
 [ext_resource type="PackedScene" path="res://scenes/weapons/sword.tscn" id="5"]
 [ext_resource type="PackedScene" path="res://scenes/weapons/bow.tscn" id="6"]
+[ext_resource type="Script" path="res://scripts/combat/stamina_component.gd" id="7"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
 size = Vector2(16, 16)
@@ -101,6 +102,10 @@ shape = SubResource("RectangleShape2D_hurtbox")
 [node name="Health" type="Node" parent="."]
 script = ExtResource("4")
 max_health = 100
+
+[node name="Stamina" type="Node" parent="."]
+script = ExtResource("7")
+max_stamina = 100
 
 [node name="Weapons" type="Node2D" parent="."]
 

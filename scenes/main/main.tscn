@@ -6,6 +6,10 @@
 [ext_resource type="Script" uid="uid://cdm4p84h70p71" path="res://scripts/game/run_manager.gd" id="5"]
 [ext_resource type="Resource" path="res://resources/floors/floor_data.tres" id="6"]
 [ext_resource type="Script" path="res://scripts/ui/health_bar.gd" id="7"]
+[ext_resource type="Script" path="res://scripts/ui/stamina_bar.gd" id="8"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_stamina_fill"]
+bg_color = Color(0.2, 0.75, 0.25, 1)
 
 [node name="Main" type="Node" unique_id=1710014798]
 
@@ -36,3 +40,12 @@ offset_right = 216.0
 offset_bottom = 36.0
 script = ExtResource("7")
 health_node_path = NodePath("../../World/Player/Health")
+
+[node name="StaminaBar" type="ProgressBar" parent="UI"]
+offset_left = 16.0
+offset_top = 40.0
+offset_right = 216.0
+offset_bottom = 58.0
+theme_override_styles/fill = SubResource("StyleBoxFlat_stamina_fill")
+script = ExtResource("8")
+stamina_node_path = NodePath("../../World/Player/Stamina")
