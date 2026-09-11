@@ -137,5 +137,26 @@ func _run() -> void:
 			func(btn: int) -> bool: return secondary_pad_buttons.has(btn)) == false
 	_check(distinct, "MA-joypad: attack button 2 != secondary button 3, no dual-binding")
 
+	# --- Staff binding asserts (MA-joypad-bindings-three-actions): the
+	# distinct-button contract spans attack != secondary_attack != staff_attack.
+	var staff_events: Array = InputMap.action_get_events("staff_attack")
+	var staff_keys: Array[int] = []
+	var staff_pad_buttons: Array[int] = []
+	for input_event: InputEvent in staff_events:
+		var key: InputEventKey = input_event as InputEventKey
+		if key != null:
+			staff_keys.append(key.physical_keycode)
+		var pad: InputEventJoypadButton = input_event as InputEventJoypadButton
+		if pad != null:
+			staff_pad_buttons.append(pad.button_index)
+	_check(staff_keys == [81], "MA-joypad: staff_attack has exactly 1 key (Q, physical 81)")
+	_check(staff_pad_buttons.size() == 1,
+			"MA-joypad: staff_attack has exactly 1 joypad button")
+	var staff_distinct: bool = staff_pad_buttons.any(
+			func(btn: int) -> bool:
+				return attack_pad_buttons.has(btn) or secondary_pad_buttons.has(btn)) == false
+	_check(staff_distinct,
+			"MA-joypad: staff pad button 0 != attack 2 != secondary 3, no dual-binding")
+
 	_check(_failures == 0, "mouse-aim seam: all checks passed")
 	quit(0 if _failures == 0 else 1)
