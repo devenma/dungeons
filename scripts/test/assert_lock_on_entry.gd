@@ -8,7 +8,11 @@ extends SceneTree
 #   5. Real render sanity (Phase 3/4, prebuilt-tileset): generate_floor on a
 #      fixed seed renders tiles from the prebuilt .tres — wall cells use
 #      source 0, fill uses source 1, closed combat doors place the dark fill
-#      alternative on layer 2 and it drops when the zone clears.
+#      alternative on layer 2 across EXACTLY the punched corridor (full depth,
+#      2 tiles — shared formula) and layer 2 is empty again on zone clear.
+#      Phase 6 review: _corridor_cells iterated range(-DEPTH, DEPTH) and
+#      painted 4 tiles (2 over unpunched cells outside the corridor); the
+#      exact set-equality checks below pin the closed tiles to the corridor.
 # Run: godot --headless -s scripts/test/assert_lock_on_entry.gd
 
 var _fails: int = 0
@@ -20,6 +24,16 @@ func _check(cond: bool, msg: String) -> void:
 	else:
 		_fails += 1
 		print("VERIFY_FAIL: " + msg)
+
+
+## Order-independent set equality for tile-coordinate arrays.
+func _same_cell_set(a: Array[Vector2i], b: Array[Vector2i]) -> bool:
+	if a.size() != b.size():
+		return false
+	for cell in a:
+		if not b.has(cell):
+			return false
+	return true
 
 
 func _init() -> void:
@@ -68,12 +82,14 @@ func _init() -> void:
 	var dc: Node = load("res://scripts/dungeon/door_controller.gd").new()
 	dc.initialize(layout, tilemap)
 
-	# The corridor spans BOTH wall rings' full depth: columns
-	# [edge_line - R, edge_line + R - 1] at the door row.
+	# The corridor is the full punched depth: DOOR_CORRIDOR_DEPTH_TILES tiles
+	# (2 * WALL_RING_TILES) starting R tiles before the edge line — the same
+	# shared derivation as the generator's _punch_doors and the controller's
+	# _corridor_cells (offsets -R..R-1 from the edge line).
 	var corridor_tiles: Array[Vector2i] = []
-	for dz in range(-DungeonGeometry.WALL_RING_TILES,
-			DungeonGeometry.WALL_RING_TILES):
-		corridor_tiles.append(Vector2i(cell + dz, cell / 2))
+	var ring: int = DungeonGeometry.WALL_RING_TILES
+	for i in DungeonGeometry.DOOR_CORRIDOR_DEPTH_TILES:
+		corridor_tiles.append(Vector2i(cell - ring + i, cell / 2))
 
 	# ── Check 1: floor starts with doors OPEN (START-zone deadlock fix) ──
 	_check(door.state == 0, "door state is OPEN at floor start")
@@ -110,6 +126,11 @@ func _init() -> void:
 			door_closed_ok = false
 	_check(door_closed_ok,
 			"corridor tiles show the dark closed-door fill alternative after lock")
+	# Exactness: with exactly one door in this layout, layer 2 must hold the
+	# corridor's tiles and NOTHING else (guards against overpaint outside the
+	# punched corridor).
+	_check(_same_cell_set(tilemap.get_used_cells(2), corridor_tiles),
+			"layer 2 holds EXACTLY the corridor's closed tiles (no extras)")
 
 	# ── Check 3: clearing the zone re-opens the doors ──
 	dc.on_zone_cleared(1)
@@ -117,6 +138,8 @@ func _init() -> void:
 	for t in corridor_tiles:
 		_check(tilemap.get_cell_source_id(2, t) == -1,
 				"corridor tile %s erased after zone cleared" % str(t))
+	_check(tilemap.get_used_cells(2).is_empty(),
+			"layer 2 is globally empty after the zone cleared")
 
 	# ── Check 4: re-entering a cleared zone does NOT re-lock ──
 	z1.cleared = true
@@ -242,26 +265,31 @@ func gen_lock_combat_zone(gen: Node, real_layout: DungeonGenerator.FloorLayout,
 		if proved.state != 1:
 			dc.free()
 			continue
-		# Layer-2 closed tiles present on the corridor.
-		var cells: Array = dc._corridor_cells(proved)
-		var tiles_ok := true
-		for cell_any in cells:
-			var cellv: Vector2i = cell_any
-			var src: int = real_map.get_cell_source_id(2, cellv)
-			if src != DungeonGeometry.FLOOR_SOURCE_ID \
+		# Layer-2 closed tiles present on this corridor, and layer 2 holds
+		# EXACTLY the union of the corridors of every currently-locked door
+		# (_lock_zone_doors seals all open combat-locked doors of the zone)
+		# — no tiles over unpunched cells outside those corridors.
+		var cells: Array[Vector2i] = dc._corridor_cells(proved)
+		var expected: Array[Vector2i] = []
+		for d_locked in real_layout.doors:
+			var locked: Zone.Door = d_locked
+			if locked.state == 1:
+				for c_locked in dc._corridor_cells(locked):
+					expected.append(c_locked)
+		var tiles_ok: bool = _same_cell_set(real_map.get_used_cells(2), expected)
+		for cellv in cells:
+			if real_map.get_cell_source_id(2, cellv) != DungeonGeometry.FLOOR_SOURCE_ID \
 					or real_map.get_cell_alternative_tile(2, cellv) \
 							!= DungeonGeometry.DOOR_CLOSED_ALT:
 				tiles_ok = false
-		# Clear the combat zone: tiles drop, state opens.
+		# Clear the combat zone: tiles drop, state opens, layer 2 empty.
 		target.cleared = true
 		dc.on_zone_cleared(target.id)
 		var open_ok := true
 		if proved.state != 0:
 			open_ok = false
-		for cell_any2 in cells:
-			var cellv2: Vector2i = cell_any2
-			if real_map.get_cell_source_id(2, cellv2) != -1:
-				open_ok = false
+		if not real_map.get_used_cells(2).is_empty():
+			open_ok = false
 		dc.free()
 		if open_ok and tiles_ok:
 			return proved

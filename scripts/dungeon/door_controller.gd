@@ -234,16 +234,19 @@ func _place_door_tiles(door: Zone.Door) -> void:
 
 
 func _corridor_cells(door: Zone.Door) -> Array[Vector2i]:
-	# The punched corridor: offsets -ring..ring-1 cross-axis from the edge
-	# line (2 * WALL_RING_TILES = DOOR_CORRIDOR_DEPTH_TILES) across the
-	# DOOR_GAP_TILES row/tile centered on pos_along. Identical derivation in
-	# the generator (_punch_doors) and here.
+	# The punched corridor: offsets -R..R-1 cross-axis from the edge line
+	# (R = WALL_RING_TILES; total depth 2R = DOOR_CORRIDOR_DEPTH_TILES) across
+	# the DOOR_GAP_TILES row/tile centered on pos_along. MUST stay identical
+	# to the generator's _punch_doors derivation (R-door-gap-normalize: the
+	# two files must not diverge in this math). Found in the Phase 6 review:
+	# this loop previously iterated range(-DEPTH, DEPTH) and painted 4 tiles,
+	# 2 of them over unpunched cells outside the corridor.
 	var tile_pos: Vector2i
 	if door.edge_axis == "v":
 		tile_pos = Vector2i(door.edge_line, door.pos_along)
 	else:
 		tile_pos = Vector2i(door.pos_along, door.edge_line)
-	var ring := DungeonGeometry.DOOR_CORRIDOR_DEPTH_TILES
+	var ring: int = DungeonGeometry.WALL_RING_TILES
 	var gap: int = DungeonGeometry.DOOR_GAP_TILES
 	var half_gap: int = gap / 2
 	var cells: Array[Vector2i] = []

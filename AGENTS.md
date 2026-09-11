@@ -733,7 +733,7 @@ GENERACIÓN LÓGICA (grid-merging)
 
 No generar directamente un conjunto de tiles aleatorios sin una estructura lógica previa.
 
-El piso completo se renderiza en un **TileMap único** con tilesets procedurales (sin assets externos). Las habitaciones individuales `.tscn` fueron reemplazadas por un sistema de zonas generadas proceduralmente sobre una grilla.
+El piso completo se renderiza en un **TileMap único** que consume el recurso pre-construido `res://tilesets/dungeon.tres` (32×32 px, geometría real de los assets, autorado en el editor): el código solo coloca tiles — no construye tilesets ni colisiones en runtime. `scripts/dungeon/dungeon_geometry.gd` (`DungeonGeometry`) es la fuente única de las constantes de geometría y roles de tiles, y si el recurso falta la generación falla de forma ruidosa (sin fallback). Las habitaciones individuales `.tscn` fueron reemplazadas por un sistema de zonas generadas proceduralmente sobre una grilla.
 
 ---
 
@@ -746,7 +746,7 @@ Responsabilidad:
 - detectar adyacencia entre zonas;
 - asignar tipos de zona (START, COMBAT, REWARD, EXIT);
 - colocar puertas en posiciones irregulares sobre aristas compartidas;
-- renderizar el piso completo en un TileMap con tilesets procedurales.
+- renderizar el piso completo en un TileMap consumiendo el `TileSet` pre-construido (`res://tilesets/dungeon.tres`).
 
 Flujo conceptual:
 
@@ -1112,12 +1112,12 @@ Tipo de zona (START/COMBAT/REWARD/EXIT)
  ↓
 Puertas en aristas compartidas (posición irregular)
  ↓
-TileMap único procedural
+TileMap único (consume res://tilesets/dungeon.tres)
 ```
 
 La generación produce un piso contiguo sin espacios muertos. Las zonas se asignan a tipos funcionales. Las puertas se colocan en posiciones irregulares — si la arista compartida es suficientemente larga pueden haber múltiples puertas.
 
-Cada celda del grid es de `CELL_TILES × CELL_TILES` tiles (configurable). El TileMap usa tilesets procedurales de colores sólidos — sin assets externos.
+Cada celda del grid es de `CELL_TILES × CELL_TILES` tiles (configurable). El TileMap consume el `TileSet` pre-construido `res://tilesets/dungeon.tres` (32×32 px, hojas de assets reales, autorado en el editor; `scripts/tools/build_dungeon_tileset.gd` lo regenera de forma reproducible) — el código solo coloca tiles; `DungeonGeometry` es la fuente única de las constantes de geometría.
 
 Objetivo:
 
@@ -1639,7 +1639,7 @@ Después:
 ```text
 [x] Crear DungeonManager
 [x] Crear DungeonGenerator
-[x] Generar primer mapa procedural (grid-merging + TileMap)
+[x] Generar primer mapa procedural (grid-merging + TileMap + dungeon.tres)
 [x] Implementar transición de pisos
 ```
 
