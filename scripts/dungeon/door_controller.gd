@@ -53,7 +53,7 @@ func _create_door_areas(_layout) -> void:
 		# The door spans the punched corridor: the full depth of both wall
 		# rings plus one tile of margin past each end so a combat lock placed
 		# at exit time is never laid over the player body.
-		var depth_px: float = (DungeonGeometry.DOOR_CORRIDOR_DEPTH_TILES + 2) * TILE_SIZE
+		var depth_px: float = (DungeonGeometry.DOOR_CORRIDOR_DEPTH_TILES) * TILE_SIZE
 		if door.edge_axis == "v":
 			rect.size = Vector2(depth_px, DungeonGeometry.DOOR_GAP_TILES * TILE_SIZE)
 		else:
@@ -69,10 +69,10 @@ func _create_door_areas(_layout) -> void:
 			tile_pos = Vector2i(door.pos_along, door.edge_line)
 
 		# Area2D world position = tile center in pixels
-		area.position = Vector2(
-			tile_pos.x * TILE_SIZE + TILE_SIZE / 2.0,
-			tile_pos.y * TILE_SIZE + TILE_SIZE / 2.0
-		)
+		var vectorX:float = tile_pos.x * TILE_SIZE / 1.0 if door.edge_axis == "v" else tile_pos.x * TILE_SIZE + TILE_SIZE / 2.0
+		var vectorY:float = tile_pos.y * TILE_SIZE + TILE_SIZE / 2.0 if door.edge_axis == "v" else tile_pos.y * TILE_SIZE / 1.0
+
+		area.position = Vector2(vectorX, vectorY)
 
 		area.name = "DoorArea_%d" % door.id
 		# Detect only the player body (layer 2 after the Fase 4 flip).
