@@ -78,16 +78,19 @@ func _integration_checks() -> void:
 
 	var sword: Node = player.get_node("Weapons/Sword")
 	var bow: Node2D = player.get_node("Weapons/Bow") as Node2D
+	var staff: Node2D = player.get_node("Weapons/Staff") as Node2D
 	var stamina: StaminaComponent = player.get_node("Stamina") as StaminaComponent
 
-	# Full stamina: all three attack paths pass (LMB sword, Space via aim
-	# seam same path, RMB bow).
+	# Full stamina: all attack paths pass (LMB sword, Space via aim
+	# seam same path, RMB bow, Q staff).
 	var sword_hit: bool = sword.call("try_attack", Vector2.RIGHT) as bool
 	_check(sword_hit, "Ig: sword.try_attack(RIGHT) at full stamina = true")
 	var bow_hit: bool = bow.call("try_attack", Vector2.RIGHT) as bool
 	_check(bow_hit, "Ig: bow.try_attack(RIGHT) at full stamina = true")
-	_check(stamina.current_stamina == 100 - 20 - 12,
-			"Ig: pool drained by 20 (sword) + 12 (bow)")
+	var staff_hit: bool = staff.call("try_attack", Vector2.RIGHT) as bool
+	_check(staff_hit, "Ig: staff.try_attack(RIGHT) at full stamina = true")
+	_check(stamina.current_stamina == 100 - 20 - 12 - 18,
+			"Ig: pool drained by 20 (sword) + 12 (bow) + 18 (staff)")
 
 	# Drain below sword cost: silent refusal.
 	stamina.spend(stamina.current_stamina)
@@ -100,10 +103,12 @@ func _integration_checks() -> void:
 	# Arrow count should NOT grow after the refusal.
 	var refused_bow: bool = bow.call("try_attack", Vector2.RIGHT) as bool
 	_check(not refused_bow, "Ig: silent refusal below cost (bow)")
+	var refused_staff: bool = staff.call("try_attack", Vector2.RIGHT) as bool
+	_check(not refused_staff, "Ig: silent refusal below cost (staff)")
 	var arrows_after: Array = container.get_children().filter(
 			func(node: Node) -> bool: return node is Arrow)
 	_check(arrows.size() == arrows_after.size(),
-			"Ig: no arrow spawned on refusal")
+			"Ig: no arrow/bolt spawned on refusal")
 
 	# Missing Stamina node degrades to unlimited; simulate by clearing the
 	# weapon's stamina cache directly (the null-lookup branch).
