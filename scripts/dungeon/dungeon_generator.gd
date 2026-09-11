@@ -1,21 +1,9 @@
 class_name DungeonGenerator
 extends Node
 
-# Transitional bridge: the runtime builder still renders 16px tiles from
-# DungeonGeometry. Phase 3 deletes this alias together with _build_tileset().
-const TILE_SIZE := DungeonGeometry.LEGACY_TILE_PX
-const CELL_TILES := 16
-const FLOOR_TEXTURE_PATH := "res://assets/Examples/Plank_Floor_min.png"
-const FLOOR_PATCH_SCALE := 1  # nearest-neighbor upscale: chunkier planks (1 = native)
-const WALL_TEMPLATE_PATH := "res://assets/Examples/Wall_Floor_min_v2.png"
-# Wall template: a 128×128 native room (8×8 tiles of 16px). Its wall ring is
-# 3 native tiles deep per side: frame + stone band + the template's own floor
-# edge row, which carries the warm trim baked into its outer pixels. At the
-# same art grain as the floor (FLOOR_PATCH_SCALE) the ring spans 3 scaled-tile
-# rows: FLOOR_PATCH_SCALE * 48 / TILE_SIZE = FLOOR_PATCH_SCALE * 3 tiles.
-const WALL_PATCH_SCALE := FLOOR_PATCH_SCALE
-const WALL_RING_TILES := WALL_PATCH_SCALE * 3
-const WALL_TEMPLATE_TILES := 8 * WALL_PATCH_SCALE
+# Geometry, tile roles and source ids are defined in DungeonGeometry.
+# Rendering consumes the editor-authored TileSet resource directly — no
+# in-code tileset construction (Phase 3, prebuilt-tileset).
 
 # ── Grid cell tracking ──────────────────────────────────────────────────────
 
@@ -23,12 +11,6 @@ class Cell:
 	var gx: int
 	var gy: int
 	var zone_id: int = -1  # -1 = unassigned
-
-
-# Phase-1 note: CELL_TILES stays local at 16 on purpose. The legacy builder's
-# render loop iterates 16x16 tile cells per grid cell; swapping to the 32px
-# DungeonGeometry.CELL_TILES (=8) would halve the tile grid and change the
-# rendered layout before the Phase 3 placement rework. Consolidated in Ph3.
 
 # ── Output layout ────────────────────────────────────────────────────────────
 
@@ -138,10 +120,10 @@ func _merge_cells(rng: RandomNumberGenerator, target_count: int,
 		z.cell_min = sp
 		z.cell_max = sp + Vector2i(1, 1)
 		z.tile_rect = Rect2i(
-			sp.x * CELL_TILES,
-			sp.y * CELL_TILES,
-			CELL_TILES,
-			CELL_TILES
+			sp.x * DungeonGeometry.CELL_TILES,
+			sp.y * DungeonGeometry.CELL_TILES,
+			DungeonGeometry.CELL_TILES,
+			DungeonGeometry.CELL_TILES
 		)
 		zones.append(z)
 		cells[sp.y][sp.x].zone_id = i
@@ -214,10 +196,10 @@ func _merge_cells(rng: RandomNumberGenerator, target_count: int,
 			z.cell_min = new_min
 			z.cell_max = new_max
 			z.tile_rect = Rect2i(
-				new_min.x * CELL_TILES,
-				new_min.y * CELL_TILES,
-				(new_max.x - new_min.x) * CELL_TILES,
-				(new_max.y - new_min.y) * CELL_TILES
+				new_min.x * DungeonGeometry.CELL_TILES,
+				new_min.y * DungeonGeometry.CELL_TILES,
+				(new_max.x - new_min.x) * DungeonGeometry.CELL_TILES,
+				(new_max.y - new_min.y) * DungeonGeometry.CELL_TILES
 			)
 
 			# Claim any OTHER unassigned cells that now fall inside the new bbox
@@ -253,10 +235,10 @@ func _merge_cells(rng: RandomNumberGenerator, target_count: int,
 								maxi(z.cell_max.y, pos.y + 1)
 							)
 							z.tile_rect = Rect2i(
-								z.cell_min.x * CELL_TILES,
-								z.cell_min.y * CELL_TILES,
-								(z.cell_max.x - z.cell_min.x) * CELL_TILES,
-								(z.cell_max.y - z.cell_min.y) * CELL_TILES
+								z.cell_min.x * DungeonGeometry.CELL_TILES,
+								z.cell_min.y * DungeonGeometry.CELL_TILES,
+								(z.cell_max.x - z.cell_min.x) * DungeonGeometry.CELL_TILES,
+								(z.cell_max.y - z.cell_min.y) * DungeonGeometry.CELL_TILES
 							)
 							unassigned -= 1
 							break
@@ -302,8 +284,8 @@ func _build_fallback_layout(floor_number: int, floor_seed: int) -> FloorLayout:
 			z.cell_min = Vector2i(gx, gy)
 			z.cell_max = Vector2i(gx + 1, gy + 1)
 			z.tile_rect = Rect2i(
-				gx * CELL_TILES, gy * CELL_TILES,
-				CELL_TILES, CELL_TILES
+				gx * DungeonGeometry.CELL_TILES, gy * DungeonGeometry.CELL_TILES,
+				DungeonGeometry.CELL_TILES, DungeonGeometry.CELL_TILES
 			)
 			if z.type == Zone.ZoneType.START:
 				layout.start_zone_id = z.id
@@ -356,15 +338,15 @@ func _place_fallback_doors(layout: FloorLayout) -> Array:
 			if z.cell_min.y != other.cell_min.y:
 				# Vertical adjacency (north-south)
 				d.edge_axis = "h"
-				var top_y: int = maxi(z.cell_min.y, other.cell_min.y) * CELL_TILES
+				var top_y: int = maxi(z.cell_min.y, other.cell_min.y) * DungeonGeometry.CELL_TILES
 				d.edge_line = top_y
-				d.pos_along = (z.cell_min.x * CELL_TILES) + (CELL_TILES / 2)
+				d.pos_along = (z.cell_min.x * DungeonGeometry.CELL_TILES) + (DungeonGeometry.CELL_TILES / 2)
 			else:
 				# Horizontal adjacency (east-west)
 				d.edge_axis = "v"
-				var left_x: int = maxi(z.cell_min.x, other.cell_min.x) * CELL_TILES
+				var left_x: int = maxi(z.cell_min.x, other.cell_min.x) * DungeonGeometry.CELL_TILES
 				d.edge_line = left_x
-				d.pos_along = (z.cell_min.y * CELL_TILES) + (CELL_TILES / 2)
+				d.pos_along = (z.cell_min.y * DungeonGeometry.CELL_TILES) + (DungeonGeometry.CELL_TILES / 2)
 
 			d.state = 0  # OPEN
 			d.combat_locked = false
@@ -499,29 +481,29 @@ func _place_doors(layout: FloorLayout, rng: RandomNumberGenerator,
 			if z.cell_max.x <= other.cell_min.x:
 				# Z is left of Other → vertical edge
 				edge_axis = "v"
-				edge_line = z.cell_max.x * CELL_TILES  # tile-x of edge
+				edge_line = z.cell_max.x * DungeonGeometry.CELL_TILES  # tile-x of edge
 				var top_y: int = maxi(z.cell_min.y, other.cell_min.y)
 				var bot_y: int = mini(z.cell_max.y, other.cell_max.y)
-				edge_len = (bot_y - top_y) * CELL_TILES
+				edge_len = (bot_y - top_y) * DungeonGeometry.CELL_TILES
 			elif other.cell_max.x <= z.cell_min.x:
 				edge_axis = "v"
-				edge_line = other.cell_max.x * CELL_TILES
+				edge_line = other.cell_max.x * DungeonGeometry.CELL_TILES
 				var top_y: int = maxi(z.cell_min.y, other.cell_min.y)
 				var bot_y: int = mini(z.cell_max.y, other.cell_max.y)
-				edge_len = (bot_y - top_y) * CELL_TILES
+				edge_len = (bot_y - top_y) * DungeonGeometry.CELL_TILES
 			elif z.cell_max.y <= other.cell_min.y:
 				# Z is above Other → horizontal edge
 				edge_axis = "h"
-				edge_line = z.cell_max.y * CELL_TILES  # tile-y of edge
+				edge_line = z.cell_max.y * DungeonGeometry.CELL_TILES  # tile-y of edge
 				var left_x: int = maxi(z.cell_min.x, other.cell_min.x)
 				var right_x: int = mini(z.cell_max.x, other.cell_max.x)
-				edge_len = (right_x - left_x) * CELL_TILES
+				edge_len = (right_x - left_x) * DungeonGeometry.CELL_TILES
 			else:
 				edge_axis = "h"
-				edge_line = other.cell_max.y * CELL_TILES
+				edge_line = other.cell_max.y * DungeonGeometry.CELL_TILES
 				var left_x: int = maxi(z.cell_min.x, other.cell_min.x)
 				var right_x: int = mini(z.cell_max.x, other.cell_max.x)
-				edge_len = (right_x - left_x) * CELL_TILES
+				edge_len = (right_x - left_x) * DungeonGeometry.CELL_TILES
 
 			# Determine number of doors on this edge
 			var door_count := 1
@@ -543,11 +525,11 @@ func _place_doors(layout: FloorLayout, rng: RandomNumberGenerator,
 				var start_along: int
 				if edge_axis == "v":
 					var top_y: int = maxi(z.cell_min.y, other.cell_min.y)
-					start_along = top_y * CELL_TILES
+					start_along = top_y * DungeonGeometry.CELL_TILES
 					pos_along = start_along + along
 				else:
 					var left_x: int = maxi(z.cell_min.x, other.cell_min.x)
-					start_along = left_x * CELL_TILES
+					start_along = left_x * DungeonGeometry.CELL_TILES
 					pos_along = start_along + along
 
 				var d := Zone.Door.new()
@@ -644,218 +626,103 @@ func generate_floor(floor_number: int, base_seed: int,
 	return layout
 
 
+
 # ── TileMap / Rendering ──────────────────────────────────────────────────────
 
-func _create_colored_texture(color: Color, size: Vector2i) -> ImageTexture:
-	var img := Image.create(size.x, size.y, false, Image.FORMAT_RGBA8)
-	img.fill(color)
-	return ImageTexture.create_from_image(img)
-
-
-func _add_block_collision(td: TileData) -> void:
-	# Full-tile square collision polygon (points are relative to tile center).
-	td.add_collision_polygon(0)
-	var half := TILE_SIZE / 2.0
-	td.set_collision_polygon_points(0, 0, PackedVector2Array([
-		Vector2(-half, -half),
-		Vector2(half, -half),
-		Vector2(half, half),
-		Vector2(-half, half),
-	]))
-
-
-func _zone_floor_tint(type: int) -> Color:
-	# Multiplicative tint applied to the plank floor texture so the per-zone
-	# color language survives the switch from solid colors to real tiles.
-	# COMBAT has no entry — it uses the untinted base tile.
-	match type:
-		Zone.ZoneType.START:
-			return Color(0.55, 1.0, 0.55)  # green-tinted planks
-		Zone.ZoneType.REWARD:
-			return Color(1.0, 0.85, 0.45)  # warm golden planks
-		Zone.ZoneType.EXIT:
-			return Color(1.0, 0.5, 0.5)    # reddish planks
-		_:
-			return Color(1.0, 1.0, 1.0)
-
-
-func _build_tileset() -> Dictionary:
-	"""Returns {tileset: TileSet, floor_src_id: int, wall_src_id: int, door_src_id: int}"""
-	var tile_set := TileSet.new()
-	tile_set.tile_size = Vector2i(TILE_SIZE, TILE_SIZE)
-
-	# Physics layer 0: world geometry (walls + closed doors). The player's
-	# CharacterBody2D uses default collision_mask = 1, so geometry lives on bit 1.
-	tile_set.add_physics_layer()
-	tile_set.set_physics_layer_collision_layer(0, 1)
-
-	# ── Source 0: floor tiles (upscaled plank sheet, 16×16 slices) ──
-	# The 2× sheet is sliced into variant_count² tiles of TILE_SIZE and placed
-	# in SHEET ORDER per 8×8 block (see _render_layout): every block reproduces
-	# the seamless sheet, so blocks tile continuously with zero seams. Tiles
-	# stay 1×1 map cells on purpose — Godot draws multi-cell tiles centered on
-	# their anchor cell, which made whole-sheet 128px patches spill 56px
-	# ((128 - 16) / 2) past zone walls and look like floor outside the room.
-	var base_tex: Texture2D = load(FLOOR_TEXTURE_PATH)
-	var sheet_img: Image = base_tex.get_image()
-	if sheet_img.is_compressed():
-		sheet_img.decompress()
-
-	if FLOOR_PATCH_SCALE != 1:
-		sheet_img.resize(sheet_img.get_width() * FLOOR_PATCH_SCALE,
-				sheet_img.get_height() * FLOOR_PATCH_SCALE,
-				Image.INTERPOLATE_NEAREST)
-
-	var floor_src := TileSetAtlasSource.new()
-	floor_src.texture = ImageTexture.create_from_image(sheet_img)
-	floor_src.texture_region_size = Vector2i(TILE_SIZE, TILE_SIZE)
-	# Bind the source to the TileSet BEFORE creating tiles — TileData is only
-	# aware of the TileSet's physics layers if the source is bound first.
-	var floor_src_id := tile_set.add_source(floor_src, -1)
-	var variant_count: int = sheet_img.get_width() / TILE_SIZE
-	for vy in variant_count:
-		for vx in variant_count:
-			floor_src.create_tile(Vector2i(vx, vy))
-
-	# Zone-type tinting via alternative tiles (TileData.modulate is
-	# multiplicative), one per variant so any variant can carry any tint.
-	# COMBAT keeps the untinted base tile (alternative 0).
-	var floor_alt_ids := {}  # ZoneType -> {Vector2i variant -> alternative id}
-	for type_idx in Zone.ZoneType.size():
-		if type_idx == Zone.ZoneType.COMBAT:
-			continue
-		var tint := _zone_floor_tint(type_idx)
-		var per_variant := {}
-		for vy in variant_count:
-			for vx in variant_count:
-				var coords := Vector2i(vx, vy)
-				var alt_id := floor_src.create_alternative_tile(coords)
-				var tdata: TileData = floor_src.get_tile_data(coords, alt_id)
-				tdata.modulate = tint
-				per_variant[coords] = alt_id
-		floor_alt_ids[type_idx] = per_variant
-
-	# ── Source 1: wall-template tiles (Wall_Floor_min_v2 9-patch, ×scale) ──
-	# The template's wall ring (outer frame + brick band + skirting, 32 native
-	# px per side) is rendered INSIDE each zone so zones look like the template
-	# room. The whole scaled sheet is sliced in sheet order (24×24 tiles at
-	# scale 3) and every tile carries a full-tile collision polygon.
-	var template_src_texture: Texture2D = load(WALL_TEMPLATE_PATH)
-	var template_img: Image = template_src_texture.get_image()
-	if template_img.is_compressed():
-		template_img.decompress()
-
-	if WALL_PATCH_SCALE != 1:
-		template_img.resize(template_img.get_width() * WALL_PATCH_SCALE,
-				template_img.get_height() * WALL_PATCH_SCALE,
-				Image.INTERPOLATE_NEAREST)
-
-	var wall_src := TileSetAtlasSource.new()
-	wall_src.texture = ImageTexture.create_from_image(template_img)
-	wall_src.texture_region_size = Vector2i(TILE_SIZE, TILE_SIZE)
-	var wall_src_id := tile_set.add_source(wall_src, -1)
-
-	var template_tiles: int = template_img.get_width() / TILE_SIZE
-	for vectorY in template_tiles:
-		for vectorX in template_tiles:
-			var wall_coords := Vector2i(vectorX, vectorY)
-			wall_src.create_tile(wall_coords)
-			_add_block_collision(wall_src.get_tile_data(wall_coords, 0))
-
-	# ── Source 2: door-closed tile ──
-	var door_color := Color(0.5, 0.35, 0.1)  # brown / wood
-	var door_tex := _create_colored_texture(door_color, Vector2i(TILE_SIZE, TILE_SIZE))
-	var door_src := TileSetAtlasSource.new()
-	door_src.texture = door_tex
-	door_src.texture_region_size = Vector2i(TILE_SIZE, TILE_SIZE)
-	var door_src_id := tile_set.add_source(door_src, -1)
-	door_src.create_tile(Vector2i(0, 0))
-	_add_block_collision(door_src.get_tile_data(Vector2i(0, 0), 0))
-
-	return {
-		"tileset": tile_set,
-		"floor_src_id": floor_src_id,
-		"floor_alt_ids": floor_alt_ids,
-		"floor_variant_count": variant_count,
-		"wall_src_id": wall_src_id,
-		"door_src_id": door_src_id,
-	}
+const FILL_VARIANTS := 2  # plank fill sheet is 2x2 @32px (defines .tres source 1)
 
 
 func _render_layout(layout: FloorLayout, tilemap: TileMap) -> int:
-	# Returns the door tile source id so callers (door_controller) can re-place
-	# door tiles when a combat zone locks its doors at runtime.
-	var build := _build_tileset()
-	var ts: TileSet = build["tileset"]
+	# Ph3 transitional: returns the door FILL source id so DoorController can
+	# still re-place dark closed-door tiles at runtime. Phase 4 (task 4.1)
+	# deletes this return value.
+	var ts: TileSet = load(DungeonGeometry.DUNGEON_TILESET_PATH)
+	if ts == null:
+		push_error("DungeonGenerator: tileset resource missing or unreadable at %s — aborting floor render, no fallback" % DungeonGeometry.DUNGEON_TILESET_PATH)
+		return -1
 	tilemap.tile_set = ts
 
-	# Add layers: 0=floor, 1=walls, 2=doors
+	# Layers: 0=floor, 1=walls, 2=doors
 	while tilemap.get_layers_count() < 3:
 		tilemap.add_layer(-1)
 
-	# Build zone lookup
-	var zone_by_id: Dictionary = {}
 	for z in layout.zones:
-		zone_by_id[z.id] = z
+		_paint_zone_floor(tilemap, z)
+	for z in layout.zones:
+		_paint_zone_walls(tilemap, z)
+	_punch_doors(tilemap, layout)
 
-	var floor_src_id: int = build["floor_src_id"]
-	var wall_src_id: int = build["wall_src_id"]
-	var door_src_id: int = build["door_src_id"]
-	var floor_alt_ids: Dictionary = build["floor_alt_ids"]
-	var variant_count: int = build["floor_variant_count"]
+	return DungeonGeometry.FLOOR_SOURCE_ID
 
-	# ── Layer 0: floor ──
-	# Cells are placed in SHEET ORDER: atlas coord = (tx % N, ty % N) rebuilds
-	# the seamless sheet once per variant_count² block, so the pattern stays
-	# continuous across blocks and zones with zero seams. Zone edges are
-	# multiples of CELL_TILES (32) and 32 % variant_count == 0, so no block is
-	# ever cut mid-pattern.
-	for gy in range(layout.grid_h):
-		for gx in range(layout.grid_w):
-			# Find which zone this cell belongs to
-			var cell_zone_id := -1
-			for z in layout.zones:
-				if gx >= z.cell_min.x and gx < z.cell_max.x \
-						and gy >= z.cell_min.y and gy < z.cell_max.y:
-					cell_zone_id = z.id
-					break
-			if cell_zone_id == -1:
+
+func _zone_fill_alt(type: int) -> int:
+	# Zone-type tint via the .tres alternative tiles; COMBAT keeps the base tile.
+	match type:
+		Zone.ZoneType.START:
+			return DungeonGeometry.FLOOR_ALT_START
+		Zone.ZoneType.REWARD:
+			return DungeonGeometry.FLOOR_ALT_REWARD
+		Zone.ZoneType.EXIT:
+			return DungeonGeometry.FLOOR_ALT_EXIT
+		_:
+			return 0
+
+
+func _paint_zone_floor(tilemap: TileMap, z: Zone) -> void:
+	# Layer 0: plank fill in SHEET ORDER (atlas = position mod variant count)
+	# so the 2x2 fill sheet stays seamless across blocks and zones. The fill
+	# is painted under the WHOLE rect — including the wall band — so the
+	# punched door corridors reveal plain floor, not empty background.
+	# The trim ring (1 tile deep, hugging the wall band) carries the four
+	# baseboard corner tiles from the wall sheet; COMBAT zones keep the
+	# untinted base, START/REWARD/EXIT carry their alternative tint.
+	var origin: Vector2i = z.tile_rect.position
+	var size: Vector2i = z.tile_rect.size
+	var fill_alt: int = _zone_fill_alt(z.type)
+	for ty in size.y:
+		for tx in size.x:
+			var pos: Vector2i = origin + Vector2i(tx, ty)
+			var atlas: Vector2i = Vector2i(tx % FILL_VARIANTS, ty % FILL_VARIANTS)
+			var depth: int = DungeonGeometry.tile_edge_depth(tx, ty, size.x, size.y)
+			if depth == 1:
+				var trim: Vector2i = DungeonGeometry.floor_edge_atlas_for(
+						tx, ty, size.x, size.y)
+				if trim != Vector2i(-1, -1):
+					# Corner cell of the trim ring: baseboard tile, no tint.
+					tilemap.set_cell(0, pos, DungeonGeometry.WALL_SOURCE_ID, trim, 0)
+					continue
+			if depth == 0:
+				# Wall band: keep the layer-0 platform (no tint needed).
+				tilemap.set_cell(0, pos, DungeonGeometry.FLOOR_SOURCE_ID, atlas, 0)
 				continue
+			tilemap.set_cell(0, pos, DungeonGeometry.FLOOR_SOURCE_ID, atlas, fill_alt)
 
-			var z: Zone = zone_by_id[cell_zone_id]
 
-			for tx in CELL_TILES:
-				for ty in CELL_TILES:
-					var tile_pos := Vector2i(gx * CELL_TILES + tx, gy * CELL_TILES + ty)
-					var atlas_coord := Vector2i(tx % variant_count, ty % variant_count)
-					# Zone-type tint via alternative tile (0 = untinted COMBAT).
-					var alt_id: int = 0
-					if floor_alt_ids.has(z.type):
-						var per_variant: Dictionary = floor_alt_ids[z.type]
-						alt_id = per_variant[atlas_coord]
-					tilemap.set_cell(0, tile_pos, floor_src_id, atlas_coord, alt_id)
+func _paint_zone_walls(tilemap: TileMap, z: Zone) -> void:
+	# Layer 1: 1-tile wall ring INSIDE the zone's tile_rect, per-side wall
+	# tiles chosen by which sides meet at each corner (decision obs #429).
+	# Adjacent zones' rings touch back-to-back at shared edges.
+	var origin: Vector2i = z.tile_rect.position
+	var size: Vector2i = z.tile_rect.size
+	for ty in size.y:
+		for tx in size.x:
+			if DungeonGeometry.tile_edge_depth(tx, ty, size.x, size.y) != 0:
+				continue  # interior, floor only
+			var pos: Vector2i = origin + Vector2i(tx, ty)
+			tilemap.set_cell(1, pos, DungeonGeometry.WALL_SOURCE_ID,
+					DungeonGeometry.wall_atlas_for(tx, ty, size.x, size.y))
 
-	# ── Layer 1: zone wall rings (Wall_Floor template, in-zone 9-patch) ──
-	# Every zone renders its wall ring INSIDE its own tile_rect — the template
-	# cities frame + brick band + skirting — so interior tiles stay plank
-	# floor. Shared boundaries therefore show BOTH zones' rings (a two-faced
-	# thick wall), which also hides the floor's block-phase restarts at zone
-	# edges. Doors punch 3-tile-wide gaps through BOTH rings.
-	for z in layout.zones:
-		var w: int = z.tile_rect.size.x
-		var h: int = z.tile_rect.size.y
-		var origin: Vector2i = z.tile_rect.position
-		var r := WALL_RING_TILES
-		for ty in h:
-			var v: int = _tpl_side_coord(ty, h)
-			for tx in w:
-				if not (tx < r or tx >= w - r or ty < r or ty >= h - r):
-					continue  # interior: plank floor already painted on layer 0
-				var u: int = _tpl_side_coord(tx, w)
-				tilemap.set_cell(1, origin + Vector2i(tx, ty), wall_src_id,
-						Vector2i(u, v))
 
-	# ── Layer 2: doors ──
+func _punch_doors(tilemap: TileMap, layout: FloorLayout) -> void:
+	# Punch each door's corridor: the full depth of BOTH zones' wall rings
+	# (2 * WALL_RING_TILES tiles cross-axis — no shared row: each zone paints
+	# its band inside its own tile_rect) across DOOR_GAP_TILES tiles.
+	# Erasing layer 1 exposes the layer-0 fill beneath: open doors render
+	# floor-look. Closed doors (state 1) fill the punched corridor on layer 2
+	# with the dark fill alternative so they block via tile collision.
+	var ring := DungeonGeometry.WALL_RING_TILES
+	var gap: int = DungeonGeometry.DOOR_GAP_TILES
+	var half_gap: int = gap / 2
 	for d in layout.doors:
 		var door: Zone.Door = d
 		var door_tile_pos: Vector2i
@@ -863,42 +730,15 @@ func _render_layout(layout: FloorLayout, tilemap: TileMap) -> int:
 			door_tile_pos = Vector2i(door.edge_line, door.pos_along)
 		else:
 			door_tile_pos = Vector2i(door.pos_along, door.edge_line)
-
-		# Punch the 3-tile-wide gap across BOTH rings' full depth (the strip
-		# from the edge line into each zone's wall band). Open gaps reveal the
-		# layer-0 floor beneath; closedCombat doors fill the whole punched gap
-		# on layer 2 so a closed door cannot be bypassed.
-		for dz in range(-WALL_RING_TILES, WALL_RING_TILES):
-			for gap in range(-1, 2):
+		for dz in range(-ring, ring):
+			for g in range(-half_gap, half_gap + 1):
 				var cell: Vector2i
 				if door.edge_axis == "v":
-					cell = Vector2i(door_tile_pos.x + dz, door_tile_pos.y + gap)
+					cell = Vector2i(door_tile_pos.x + dz, door_tile_pos.y + g)
 				else:
-					cell = Vector2i(door_tile_pos.x + gap, door_tile_pos.y + dz)
+					cell = Vector2i(door_tile_pos.x + g, door_tile_pos.y + dz)
 				tilemap.erase_cell(1, cell)
-
-		if door.state == 1:
-			for dz in range(-WALL_RING_TILES, WALL_RING_TILES):
-				for gap in range(-1, 2):
-					var cell: Vector2i
-					if door.edge_axis == "v":
-						cell = Vector2i(door_tile_pos.x + dz, door_tile_pos.y + gap)
-					else:
-						cell = Vector2i(door_tile_pos.x + gap, door_tile_pos.y + dz)
-					tilemap.set_cell(2, cell, door_src_id, Vector2i(0, 0))
-
-	return int(build["door_src_id"])
-
-
-func _tpl_side_coord(t: int, span: int) -> int:
-	# Maps a world tile offset along a zone's side to a wall-template tile
-	# coordinate: the outer ring at each end (0..R-1 / TEMPLATE-R..TEMPLATE-1),
-	# else the template's edge-band interior repeated so long edges stay
-	# covered. Wall-vs-floor is decided by the caller, not here.
-	var r := WALL_RING_TILES
-	var mid := WALL_TEMPLATE_TILES - 2 * r
-	if t < r:
-		return t
-	if t >= span - r:
-		return WALL_TEMPLATE_TILES - (span - t)
-	return r + (t - r) % mid
+				if door.state == 1:
+					tilemap.set_cell(2, cell, DungeonGeometry.FLOOR_SOURCE_ID,
+							DungeonGeometry.DOOR_FILL_ATLAS,
+							DungeonGeometry.DOOR_CLOSED_ALT)

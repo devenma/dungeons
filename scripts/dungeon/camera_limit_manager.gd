@@ -52,9 +52,9 @@ func _on_zone_entered(zone_id: int) -> void:
 
 
 func _set_cam_limits_for_zone(cam: Camera2D, zone) -> void:
-	# Transitional bridge: tile_rect is tile coordinates against the still-
-	# active 16px builder. Swapped to DungeonGeometry.TILE_SIZE in Phase 3.
-	const TILE_SIZE := DungeonGeometry.LEGACY_TILE_PX
+	# tile_rect is in tile coordinates against the 32px tile grid
+	# (DungeonGeometry is the single source of truth).
+	const TILE_SIZE := DungeonGeometry.TILE_SIZE
 	var px: Vector2i = zone.tile_rect.position * TILE_SIZE
 	var sz: Vector2i = zone.tile_rect.size * TILE_SIZE
 	cam.limit_left = px.x

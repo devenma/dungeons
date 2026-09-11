@@ -6,9 +6,8 @@ extends Node
 
 @onready var player: Node2D = get_node(player_node_path)
 
-# Transitional bridge: tile_rect pixel math still targets the 16px builder.
-# Swapped to DungeonGeometry.TILE_SIZE in Phase 3.
-const TILE_SIZE := DungeonGeometry.LEGACY_TILE_PX
+# Pixel geometry for tile_rect comes from DungeonGeometry (single source of
+# truth; zones render from the editor-authored 32px tileset).
 
 func _get_run_manager():
 	return get_node(run_manager_node_path) if run_manager_node_path else null
@@ -179,15 +178,15 @@ func _create_exit_area(layout) -> void:
 	var shape := CollisionShape2D.new()
 	var rect := RectangleShape2D.new()
 	# Size = half the zone in pixels
-	var zone_px :Vector2i = exit_zone.tile_rect.size * TILE_SIZE
+	var zone_px :Vector2i = exit_zone.tile_rect.size * DungeonGeometry.TILE_SIZE
 	rect.size = Vector2(minf(zone_px.x, 64), minf(zone_px.y, 64))
 	shape.shape = rect
 	_exit_area.add_child(shape)
 
 	# Position at zone center
 	var zone_center := Vector2(
-		(exit_zone.tile_rect.position.x + exit_zone.tile_rect.size.x / 2.0) * TILE_SIZE,
-		(exit_zone.tile_rect.position.y + exit_zone.tile_rect.size.y / 2.0) * TILE_SIZE
+		(exit_zone.tile_rect.position.x + exit_zone.tile_rect.size.x / 2.0) * DungeonGeometry.TILE_SIZE,
+		(exit_zone.tile_rect.position.y + exit_zone.tile_rect.size.y / 2.0) * DungeonGeometry.TILE_SIZE
 	)
 	_exit_area.position = zone_center
 
@@ -248,8 +247,8 @@ func _spawn_player(layout) -> void:
 
 	# Center player in start zone
 	var zone_center := Vector2(
-		(start_zone.tile_rect.position.x + start_zone.tile_rect.size.x / 2.0) * TILE_SIZE,
-		(start_zone.tile_rect.position.y + start_zone.tile_rect.size.y / 2.0) * TILE_SIZE
+		(start_zone.tile_rect.position.x + start_zone.tile_rect.size.x / 2.0) * DungeonGeometry.TILE_SIZE,
+		(start_zone.tile_rect.position.y + start_zone.tile_rect.size.y / 2.0) * DungeonGeometry.TILE_SIZE
 	)
 	player.position = zone_center
 

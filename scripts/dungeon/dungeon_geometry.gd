@@ -18,7 +18,12 @@ const CELL_TILES := 8                 # 8x32 = 256px cell (same physical size as
 const WALL_RING_TILES := 1            # stone wall band = 1 tile
 const FLOOR_EDGE_TILES := 1           # trim band = 1 tile (inner-ring floor)
 const DOOR_GAP_TILES := 1             # corridor width = 1 door tile (32px)
-const DOOR_GAP_DEPTH_TILES := 2 * WALL_RING_TILES + 1  # = 3 (full cross-axis depth)
+# Full corridor depth: the wall bands of BOTH zones crossing the door.
+# Corrected in Phase 3 (re-derived at ring=1): each zone paints its wall band
+# INSIDE its own tile_rect with no shared row, so the depth is 2 * R, not
+# the design's 2R+1 (that formula assumed overlapping/shared ring rows that
+# do not exist — every grid cell belongs to exactly one zone).
+const DOOR_CORRIDOR_DEPTH_TILES := 2 * WALL_RING_TILES  # = 2
 
 # ── Tileset resource contract ───────────────────────────────────────────────
 
@@ -69,10 +74,63 @@ const FLOOR_TINT_REWARD := Color(1.0, 0.8, 0.2)
 const FLOOR_TINT_EXIT := Color(1.0, 0.4, 0.4)
 const DOOR_TINT_CLOSED := Color(0.4, 0.4, 0.4)
 
-# ── Transitional bridge (16px builder still active) ─────────────────────────
-## DELETE in Phase 3/4 once the generator renders from dungeon.tres at 32px.
-## These mirror the CURRENT builder's render geometry so consumer pixel math
-## stays byte-identical while already depending on this shared leaf.
 
-const LEGACY_TILE_PX := 16            # builder tile size while 16px render lives
-const LEGACY_WALL_RING_TILES := 3     # builder's rendered ring (3x16 = 48px band)
+## Depth of a rect cell from the nearest rect edge: 0 = border (wall band),
+## 1 = trim ring, >= 2 = interior. Shared by generator placement and tests.
+static func tile_edge_depth(tx: int, ty: int, w: int, h: int) -> int:
+	return mini(
+		mini(tx, ty),
+		mini(w - 1 - tx, h - 1 - ty)
+	)
+
+
+## Wall-sheet atlas coordinate for a wall-band cell (depth 0), chosen by
+## which sides of the rect meet there: corners take corner tiles, edges take
+## the per-side straight tiles alternating A/B by position parity.
+static func wall_atlas_for(tx: int, ty: int, w: int, h: int) -> Vector2i:
+	var is_tl: bool = tx == 0 and ty == 0
+	var is_tr: bool = tx == w - 1 and ty == 0
+	var is_bl: bool = tx == 0 and ty == h - 1
+	var is_br: bool = tx == w - 1 and ty == h - 1
+	if is_tl:
+		return WALL_CORNER_TL
+	if is_tr:
+		return WALL_CORNER_TR
+	if is_bl:
+		return WALL_CORNER_BL
+	if is_br:
+		return WALL_CORNER_BR
+	if ty == 0:
+		return WALL_TOP_A if is_even(tx) else WALL_TOP_B
+	if ty == h - 1:
+		return WALL_BOTTOM_A if is_even(tx) else WALL_BOTTOM_B
+	if tx == 0:
+		return WALL_LEFT_A if is_even(ty) else WALL_LEFT_B
+	return WALL_RIGHT_A if is_even(ty) else WALL_RIGHT_B
+
+
+static func is_even(t: int) -> bool:
+	return t % 2 == 0
+
+
+## Wall-sheet floor-edge (baseboard) atlas coordinate for a trim-ring corner
+## cell (depth 1), or (-1, -1) when the cell is a trim-ring straight edge
+## (the sheet has no single-side baseboard tile — plain fill goes there).
+static func floor_edge_atlas_for(tx: int, ty: int, w: int, h: int) -> Vector2i:
+	var lx: int = FLOOR_EDGE_TILES
+	var rx: int = w - 1 - FLOOR_EDGE_TILES
+	var uy: int = FLOOR_EDGE_TILES
+	var dy: int = h - 1 - FLOOR_EDGE_TILES
+	if tx == lx and ty == uy:
+		return FLOOR_EDGE_TL
+	if tx == rx and ty == uy:
+		return FLOOR_EDGE_TR
+	if tx == lx and ty == dy:
+		return FLOOR_EDGE_BL
+	if tx == rx and ty == dy:
+		return FLOOR_EDGE_BR
+	return Vector2i(-1, -1)
+
+
+static func is_trim_corner(tx: int, ty: int, w: int, h: int) -> bool:
+	return floor_edge_atlas_for(tx, ty, w, h) != Vector2i(-1, -1)

@@ -11,12 +11,11 @@ extends Node
 
 signal zone_cleared(zone_id: int)
 
-const TILE_SIZE: int = DungeonGeometry.LEGACY_TILE_PX
-# Enemies spawn past the zone's wall ring (the template wall band) so nothing
-# spawns inside, or collides against, wall tiles.
-# Transitional: re-derived from DungeonGeometry (wall ring + trim band) in
-# Phase 5 once the 32px render lands.
-const INTERIOR_INSET_TILES: int = DungeonGeometry.LEGACY_WALL_RING_TILES
+const TILE_SIZE: int = DungeonGeometry.TILE_SIZE
+# Enemies spawn past the zone's wall ring AND floor-edge trim band so nothing
+# spawns inside, or collides against, wall or baseboard tiles.
+const INTERIOR_INSET_TILES: int = DungeonGeometry.WALL_RING_TILES \
+		+ DungeonGeometry.FLOOR_EDGE_TILES
 
 @export var enemy_scene: PackedScene = preload("res://scenes/enemies/slime.tscn")
 @export var enemies_per_zone: int = 2
