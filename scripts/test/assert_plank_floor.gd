@@ -65,7 +65,7 @@ func _run_tileset_contract_checks() -> void:
 		return
 	_check(ts.tile_size == Vector2i(DungeonGeometry.TILE_SIZE, DungeonGeometry.TILE_SIZE),
 			".tres tile_size is 32x32")
-	_check(ts.get_source_count() == 2, ".tres has exactly 2 sources")
+	_check(ts.get_source_count() == 3, ".tres has exactly 3 sources")
 
 	var wall_src: TileSetAtlasSource = ts.get_source(DungeonGeometry.WALL_SOURCE_ID)
 	var fill_src: TileSetAtlasSource = ts.get_source(DungeonGeometry.FLOOR_SOURCE_ID)
@@ -271,8 +271,9 @@ func _run_real_generation_checks() -> void:
 								!= DungeonGeometry.wall_atlas_for(tx, ty, size.x, size.y):
 						wall_ok = false
 						wall_detail = "wall band cell " + str(pos) + " has the wrong wall tile"
-				# Layer 0: fill everywhere, except trim-ring corners which use
-				# the wall-sheet baseboard tiles.
+				# Layer 0: fill everywhere, except trim-ring cells which use
+				# baseboard tiles: corners from the wall sheet, straight
+				# edges from the synthesized one-sided edge source.
 				var ls: int = _map.get_cell_source_id(0, pos)
 				var lat: Vector2i = _map.get_cell_atlas_coords(0, pos)
 				var lalt: int = _map.get_cell_alternative_tile(0, pos)
@@ -282,6 +283,14 @@ func _run_real_generation_checks() -> void:
 					if ls != DungeonGeometry.WALL_SOURCE_ID or lat != trim or lalt != 0:
 						trim_ok = false
 						trim_detail = "trim corner cell " + str(pos)
+				elif depth == 1:
+					var straight: Dictionary = DungeonGeometry.trim_cell_at(
+							tx, ty, size.x, size.y)
+					if ls != DungeonGeometry.EDGE_SOURCE_ID \
+							or lat != straight.atlas or lalt != 0:
+						trim_ok = false
+						trim_detail = "trim straight-edge cell " + str(pos) \
+								+ " (src=%d, atlas=%s)" % [ls, lat]
 				else:
 					var expected_atlas := Vector2i(tx % 2, ty % 2)
 					var expected_alt: int = 0 if depth == 0 else fill_alt
@@ -295,7 +304,7 @@ func _run_real_generation_checks() -> void:
 	_check_matrix(fill_ok, fill_detail,
 			"all fill cells use the floor source (id 1) with the zone's tint alternative")
 	_check_matrix(trim_ok, trim_detail,
-			"trim-ring corners present per the frozen baseboard corner coords")
+			"trim ring complete: corners per frozen coords + straight edges via the edge source")
 
 	# At least one START zone painted with its tint alternative (probe the
 	# rect center: always a depth>=2 interior cell, never punched).

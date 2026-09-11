@@ -11,6 +11,10 @@ extends SceneTree
 ##     collision, no baseboard. Alternatives (author order):
 ##     alt 1 START green tint, alt 2 REWARD gold, alt 3 EXIT red,
 ##     alt 4 DOOR_CLOSED dark tint (open door = plain base tile, alt 0).
+##   Source 2 — synthesized one-sided straight-edge trim, 4x1 @32px: the
+##     sheet has baseboard only on corner tiles, so straight-edge trim is
+##     composed here by grafting a corner's outer-edge band onto the
+##     opposite corner's plain side (no collision, untinted).
 ## Keep this script in the repo — it documents how the .tres was produced
 ## and stays compatible with later edits.
 ## Run: godot --headless -s scripts/tools/build_dungeon_tileset.gd
@@ -26,6 +30,10 @@ const WALL_INTERIOR := [
 	Vector2i(1, 1), Vector2i(2, 1),
 	Vector2i(1, 2), Vector2i(2, 2),
 ]
+
+# Band of baseboard art (px) grafted when composing straight-edge tiles.
+# Probed against the sheet: the corner tiles' baseboard arm spans <= 8px.
+const TRIM_BAND_PX := 8
 
 # Full-tile collision polygon, tile-space (32px tile centered on origin).
 # PackedVector2Array(...) is not a const expression in Godot 4.7, so a static var.
@@ -86,6 +94,17 @@ func _build() -> int:
 			if tile_err != 0:
 				return tile_err
 
+	# ── Source 2: synthesized one-sided straight-edge trim ──
+	var edge_src: TileSetAtlasSource = TileSetAtlasSource.new()
+	var edge_canvas: Image = _compose_straight_trim_image()
+	if edge_canvas == null:
+		return 1
+	edge_src.texture = ImageTexture.create_from_image(edge_canvas)
+	edge_src.texture_region_size = Vector2i(DungeonGeometry.TILE_SIZE, DungeonGeometry.TILE_SIZE)
+	ts.add_source(edge_src, DungeonGeometry.EDGE_SOURCE_ID)
+	for gx in range(0, 4):
+		edge_src.create_tile(Vector2i(gx, 0))
+
 	# ── Save ──
 	var save_err: Error = ResourceSaver.save(ts, DungeonGeometry.DUNGEON_TILESET_PATH)
 	if save_err != OK:
@@ -95,6 +114,42 @@ func _build() -> int:
 	print("OK: authored %s (%d sources, tile_size=%s)"
 			% [DungeonGeometry.DUNGEON_TILESET_PATH, ts.get_source_count(), str(ts.tile_size)])
 	return 0
+
+
+## Composes the 4 one-sided straight trim tiles (128x32 canvas) from the
+## wall sheet's own corner tiles: straight_top = TL with its left arm
+## replaced by TR's plain-left side; symmetrical for the other sides.
+## Order matches DungeonGeometry EDGE_TRIM_TOP/BOTTOM/LEFT/RIGHT.
+func _compose_straight_trim_image() -> Image:
+	var sheet_tex: Texture2D = load(WALL_SHEET_PATH)
+	if sheet_tex == null:
+		push_error("FAILED: cannot load wall sheet for edge composition")
+		return null
+	var sheet: Image = sheet_tex.get_image()
+	if sheet.is_compressed():
+		sheet.decompress()
+	var tile_px: int = DungeonGeometry.TILE_SIZE
+	var tl: Image = sheet.get_region(Rect2i(tile_px, tile_px, tile_px, tile_px))
+	var tr: Image = sheet.get_region(Rect2i(2 * tile_px, tile_px, tile_px, tile_px))
+	var bl: Image = sheet.get_region(Rect2i(tile_px, 2 * tile_px, tile_px, tile_px))
+	var br: Image = sheet.get_region(Rect2i(2 * tile_px, 2 * tile_px, tile_px, tile_px))
+	var band: int = TRIM_BAND_PX
+
+	var straight_top: Image = tl.duplicate()
+	straight_top.blit_rect(tr, Rect2i(0, 0, band, tile_px), Vector2i(0, 0))
+	var straight_bottom: Image = bl.duplicate()
+	straight_bottom.blit_rect(br, Rect2i(0, 0, band, tile_px), Vector2i(0, 0))
+	var straight_left: Image = tl.duplicate()
+	straight_left.blit_rect(bl, Rect2i(0, 0, tile_px, band), Vector2i(0, 0))
+	var straight_right: Image = tr.duplicate()
+	straight_right.blit_rect(br, Rect2i(0, 0, tile_px, band), Vector2i(0, 0))
+
+	var canvas: Image = Image.create(4 * tile_px, tile_px, false, sheet.get_format())
+	canvas.blit_rect(straight_top, Rect2i(0, 0, tile_px, tile_px), Vector2i(0, 0))
+	canvas.blit_rect(straight_bottom, Rect2i(0, 0, tile_px, tile_px), Vector2i(tile_px, 0))
+	canvas.blit_rect(straight_left, Rect2i(0, 0, tile_px, tile_px), Vector2i(2 * tile_px, 0))
+	canvas.blit_rect(straight_right, Rect2i(0, 0, tile_px, tile_px), Vector2i(3 * tile_px, 0))
+	return canvas
 
 
 ## Creates the plain-fill tile plus its four tinted alternatives, verifying

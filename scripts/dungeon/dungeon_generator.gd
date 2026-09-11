@@ -670,9 +670,10 @@ func _paint_zone_floor(tilemap: TileMap, z: Zone) -> void:
 	# so the 2x2 fill sheet stays seamless across blocks and zones. The fill
 	# is painted under the WHOLE rect — including the wall band — so the
 	# punched door corridors reveal plain floor, not empty background.
-	# The trim ring (1 tile deep, hugging the wall band) carries the four
-	# baseboard corner tiles from the wall sheet; COMBAT zones keep the
-	# untinted base, START/REWARD/EXIT carry their alternative tint.
+	# The trim ring (1 tile deep, hugging the wall band) carries the corner
+	# baseboard tiles plus synthesized one-sided straight tiles (source 2);
+	# COMBAT zones keep the untinted base, START/REWARD/EXIT carry their
+	# alternative tint.
 	var origin: Vector2i = z.tile_rect.position
 	var size: Vector2i = z.tile_rect.size
 	var fill_alt: int = _zone_fill_alt(z.type)
@@ -682,12 +683,12 @@ func _paint_zone_floor(tilemap: TileMap, z: Zone) -> void:
 			var atlas: Vector2i = Vector2i(tx % FILL_VARIANTS, ty % FILL_VARIANTS)
 			var depth: int = DungeonGeometry.tile_edge_depth(tx, ty, size.x, size.y)
 			if depth == 1:
-				var trim: Vector2i = DungeonGeometry.floor_edge_atlas_for(
+				var trim: Dictionary = DungeonGeometry.trim_cell_at(
 						tx, ty, size.x, size.y)
-				if trim != Vector2i(-1, -1):
-					# Corner cell of the trim ring: baseboard tile, no tint.
-					tilemap.set_cell(0, pos, DungeonGeometry.WALL_SOURCE_ID, trim, 0)
-					continue
+				# Trim ring (corner + one-sided straight tiles): baseboard
+				# tile, no tint.
+				tilemap.set_cell(0, pos, trim.source_id, trim.atlas, 0)
+				continue
 			if depth == 0:
 				# Wall band: keep the layer-0 platform (no tint needed).
 				tilemap.set_cell(0, pos, DungeonGeometry.FLOOR_SOURCE_ID, atlas, 0)

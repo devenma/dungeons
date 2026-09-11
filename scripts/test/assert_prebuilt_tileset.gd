@@ -1,7 +1,7 @@
 extends SceneTree
 
 ## Runtime assertions for the prebuilt dungeon TileSet resource:
-##   1. dungeon.tres loads, is a TileSet, tile_size 32x32, exactly 2 sources.
+##   1. dungeon.tres loads, is a TileSet, tile_size 32x32, exactly 3 sources.
 ##   2. Wall source (id 0): wall sheet texture, all 16 role tiles present at
 ##      the DungeonGeometry frozen coords; the 12 wall tiles carry one
 ##      full-tile collision polygon on physics layer 0; the 4 interior
@@ -9,6 +9,8 @@ extends SceneTree
 ##   3. Floor source (id 1): v1 plank fill 64x64, 4 plain tiles without
 ##      collision; tint alternatives START green / REWARD gold / EXIT red;
 ##      DOOR_CLOSED dark alternative; base (alt 0 = DOOR_OPEN) stays white.
+##   4. Edge source (id 2): 4 synthesized one-sided straight trim tiles,
+##      no collision.
 ## Run: godot --headless -s scripts/test/assert_prebuilt_tileset.gd
 ## Exit 0 on pass; nonzero + push_error on failure.
 
@@ -42,11 +44,13 @@ func _run_checks() -> void:
 		return
 	_check(ts.tile_size == Vector2i(DungeonGeometry.TILE_SIZE, DungeonGeometry.TILE_SIZE),
 			"tile_size is 32x32")
-	_check(ts.get_source_count() == 2, "tileset has exactly 2 sources")
+	_check(ts.get_source_count() == 3, "tileset has exactly 3 sources")
 
 	var wall_src: TileSetAtlasSource = ts.get_source(DungeonGeometry.WALL_SOURCE_ID)
 	var fill_src: TileSetAtlasSource = ts.get_source(DungeonGeometry.FLOOR_SOURCE_ID)
-	_check(wall_src != null and fill_src != null, "sources 0 and 1 exist as atlas sources")
+	var edge_src: TileSetAtlasSource = ts.get_source(DungeonGeometry.EDGE_SOURCE_ID)
+	_check(wall_src != null and fill_src != null and edge_src != null,
+			"sources 0, 1 and 2 exist as atlas sources")
 
 	# ── Check 2: wall sheet source (walls + floor-edge trim) ──
 	var wall_texture: Texture2D = wall_src.texture
@@ -140,6 +144,20 @@ func _run_checks() -> void:
 			DungeonGeometry.DOOR_OPEN_ALT)
 	_check(open_td != null and open_td.modulate == Color(1, 1, 1),
 			"door-open variant is the plain (white) fill tile")
+
+	# ── Check 5: synthesized one-sided straight-edge trim source ──
+	var edge_tiles: Array[Vector2i] = [
+		DungeonGeometry.EDGE_TRIM_TOP, DungeonGeometry.EDGE_TRIM_BOTTOM,
+		DungeonGeometry.EDGE_TRIM_LEFT, DungeonGeometry.EDGE_TRIM_RIGHT,
+	]
+	_check(_all_tiles_present(edge_src, edge_tiles),
+			"all 4 synthesized straight-edge trim tiles exist (4x1 @32px)")
+	var straight_coll_ok := true
+	for coords in edge_tiles:
+		var td: TileData = edge_src.get_tile_data(coords, 0)
+		if td == null or td.get_collision_polygons_count(0) != 0:
+			straight_coll_ok = false
+	_check(straight_coll_ok, "straight-edge trim tiles have no collision")
 
 
 func _all_tiles_present(src: TileSetAtlasSource, coords_list: Array[Vector2i]) -> bool:

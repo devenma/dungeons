@@ -32,6 +32,7 @@ const DUNGEON_TILESET_PATH := "res://tilesets/dungeon.tres"
 # scripts/tools/build_dungeon_tileset.gd — headless, reproducible).
 const WALL_SOURCE_ID := 0            # Wall_Floor_min_v2.png, 4x4 @32px
 const FLOOR_SOURCE_ID := 1           # plain plank fill (Plank_Floor_min.png v1, 2x2 @32px, no baseboard)
+const EDGE_SOURCE_ID := 2            # synthesized one-sided straight-edge trim (4x1 @32px)
 
 # Wall-sheet tile roles — user-validated in editor 2026-09-11.
 # Outer ring = walls (full-tile collision); inner 2x2 = floor edge w/ baseboard trim.
@@ -53,6 +54,13 @@ const FLOOR_EDGE_TL := Vector2i(1, 1)
 const FLOOR_EDGE_TR := Vector2i(2, 1)
 const FLOOR_EDGE_BL := Vector2i(1, 2)
 const FLOOR_EDGE_BR := Vector2i(2, 2)
+
+# Synthesized one-sided straight-edge trim tiles (built by
+# build_dungeon_tileset.gd from the sheet's own corner art; no collision).
+const EDGE_TRIM_TOP := Vector2i(0, 0)
+const EDGE_TRIM_BOTTOM := Vector2i(1, 0)
+const EDGE_TRIM_LEFT := Vector2i(2, 0)
+const EDGE_TRIM_RIGHT := Vector2i(3, 0)
 
 # Zone tint alternatives on floor fill tiles (TileData.modulate, author order).
 const FLOOR_ALT_START := 1           # green
@@ -114,7 +122,7 @@ static func is_even(t: int) -> bool:
 
 ## Wall-sheet floor-edge (baseboard) atlas coordinate for a trim-ring corner
 ## cell (depth 1), or (-1, -1) when the cell is a trim-ring straight edge
-## (the sheet has no single-side baseboard tile — plain fill goes there).
+## (straight edges resolve to EDGE_SOURCE_ID via trim_cell_at() below).
 static func floor_edge_atlas_for(tx: int, ty: int, w: int, h: int) -> Vector2i:
 	var lx: int = FLOOR_EDGE_TILES
 	var rx: int = w - 1 - FLOOR_EDGE_TILES
@@ -133,3 +141,32 @@ static func floor_edge_atlas_for(tx: int, ty: int, w: int, h: int) -> Vector2i:
 
 static func is_trim_corner(tx: int, ty: int, w: int, h: int) -> bool:
 	return floor_edge_atlas_for(tx, ty, w, h) != Vector2i(-1, -1)
+
+
+## Trim-ring cell resolution for any depth-1 cell. Corner cells use the
+## wall-sheet baseboard corner tiles; straight-edge cells use the synthesized
+## one-sided trim tiles (EDGE_SOURCE_ID). Returns {"source_id": int, "atlas": Vector2i}.
+static func trim_cell_at(tx: int, ty: int, w: int, h: int) -> Dictionary:
+	var coords := Dictionary()
+	var corner: Vector2i = floor_edge_atlas_for(tx, ty, w, h)
+	if corner != Vector2i(-1, -1):
+		coords["source_id"] = WALL_SOURCE_ID
+		coords["atlas"] = corner
+		return coords
+	var uy: int = FLOOR_EDGE_TILES
+	var dy: int = h - 1 - FLOOR_EDGE_TILES
+	if ty == uy:
+		coords["source_id"] = EDGE_SOURCE_ID
+		coords["atlas"] = EDGE_TRIM_TOP
+	elif ty == dy:
+		coords["source_id"] = EDGE_SOURCE_ID
+		coords["atlas"] = EDGE_TRIM_BOTTOM
+	else:
+		var lx: int = FLOOR_EDGE_TILES
+		if tx == lx:
+			coords["source_id"] = EDGE_SOURCE_ID
+			coords["atlas"] = EDGE_TRIM_LEFT
+		else:
+			coords["source_id"] = EDGE_SOURCE_ID
+			coords["atlas"] = EDGE_TRIM_RIGHT
+	return coords
