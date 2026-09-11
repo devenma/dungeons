@@ -632,14 +632,13 @@ func generate_floor(floor_number: int, base_seed: int,
 const FILL_VARIANTS := 2  # plank fill sheet is 2x2 @32px (defines .tres source 1)
 
 
-func _render_layout(layout: FloorLayout, tilemap: TileMap) -> int:
-	# Ph3 transitional: returns the door FILL source id so DoorController can
-	# still re-place dark closed-door tiles at runtime. Phase 4 (task 4.1)
-	# deletes this return value.
+func _render_layout(layout: FloorLayout, tilemap: TileMap) -> void:
+	# Loud failure, no fallback: a missing/broken tileset resource aborts the
+	# render (task 3.2, R-failure).
 	var ts: TileSet = load(DungeonGeometry.DUNGEON_TILESET_PATH)
 	if ts == null:
 		push_error("DungeonGenerator: tileset resource missing or unreadable at %s — aborting floor render, no fallback" % DungeonGeometry.DUNGEON_TILESET_PATH)
-		return -1
+		return
 	tilemap.tile_set = ts
 
 	# Layers: 0=floor, 1=walls, 2=doors
@@ -651,8 +650,6 @@ func _render_layout(layout: FloorLayout, tilemap: TileMap) -> int:
 	for z in layout.zones:
 		_paint_zone_walls(tilemap, z)
 	_punch_doors(tilemap, layout)
-
-	return DungeonGeometry.FLOOR_SOURCE_ID
 
 
 func _zone_fill_alt(type: int) -> int:

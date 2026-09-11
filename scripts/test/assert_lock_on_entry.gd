@@ -63,10 +63,10 @@ func _init() -> void:
 
 	# ── Real render + real door controller ──
 	var tilemap := TileMap.new()
-	var door_src_id: int = gen._render_layout(layout, tilemap)
+	gen._render_layout(layout, tilemap)
 
 	var dc: Node = load("res://scripts/dungeon/door_controller.gd").new()
-	dc.initialize(layout, tilemap, door_src_id)
+	dc.initialize(layout, tilemap)
 
 	# The corridor spans BOTH wall rings' full depth: columns
 	# [edge_line - R, edge_line + R - 1] at the door row.
@@ -175,7 +175,7 @@ func _init() -> void:
 	# zone through one of its combat-locked doors and confirm the layer-2
 	# dark door tiles appear, then clear and confirm they drop.
 	var lock_ok := false
-	if gen_lock_combat_zone(gen, real_layout, real_map, door_src_id):
+	if gen_lock_combat_zone(gen, real_layout, real_map):
 		lock_ok = true
 	_check(lock_ok, "real render: combat lock + clear works end-to-end")
 
@@ -194,9 +194,9 @@ func _init() -> void:
 ## whose far side is an uncleared COMBAT zone, approaches from the other
 ## side, crosses, then clears the combat zone.
 func gen_lock_combat_zone(gen: Node, real_layout: DungeonGenerator.FloorLayout,
-		real_map: TileMap, source_id: int) -> Zone.Door:
+		real_map: TileMap) -> Zone.Door:
 	var dc: Node = load("res://scripts/dungeon/door_controller.gd").new()
-	dc.initialize(real_layout, real_map, source_id)
+	dc.initialize(real_layout, real_map)
 	for d in real_layout.doors:
 		var door: Zone.Door = d
 		if not door.combat_locked:

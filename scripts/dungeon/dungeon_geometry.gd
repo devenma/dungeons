@@ -7,9 +7,8 @@ extends RefCounted
 ## and camera_limit_manager so no side depends on another's consts (§33).
 ##
 ## Target geometry is 32px real-asset tiles (design: prebuilt-tileset).
-## During the transition the runtime tileset builder still renders at 16px,
-## so consumers bridge through LEGACY_* constants until the placement rework
-## lands (Phase 3/4 of the prebuilt-tileset change).
+## Phase 3+ of the change: all consumers render from the editor-authored
+## res://tilesets/dungeon.tres; no transitional bridge constants remain.
 
 # ── Target geometry (32px asset tiles) ──────────────────────────────────────
 

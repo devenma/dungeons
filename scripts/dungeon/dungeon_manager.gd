@@ -97,7 +97,7 @@ func _start_floor() -> void:
 	_tilemap = TileMap.new()
 	_tilemap.name = "FloorTileMap"
 	dungeon.add_child(_tilemap)
-	var door_src_id: int = generator._render_layout(layout, _tilemap)
+	generator._render_layout(layout, _tilemap)
 	generator.queue_free()
 
 	# 4  Create DoorController
@@ -105,7 +105,7 @@ func _start_floor() -> void:
 	_door_controller.name = "DoorController"
 	_door_controller.set_script(preload("res://scripts/dungeon/door_controller.gd"))
 	dungeon.add_child(_door_controller)
-	_door_controller.initialize(layout, _tilemap, door_src_id)
+	_door_controller.initialize(layout, _tilemap)
 
 	# 5  Create Spawner
 	_spawner = Node.new()

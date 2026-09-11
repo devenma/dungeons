@@ -125,6 +125,17 @@ func _run_checks() -> void:
 	_check(alts_ok, "alt 1/2/3/4 (START/REWARD/EXIT/DOOR_CLOSED) exist on every fill tile")
 	_check(mods_ok, "alternative tints round-trip and match DungeonGeometry constants")
 
+	# ── Check 4: closed-door variant carries its own blocking collision ──
+	# Alternative tiles do not inherit the base tile's physics; the lock-on-
+	# entry door model relies on the dark alternative blocking the player.
+	var door_coll_ok := true
+	for coords in fill_tiles:
+		var td: TileData = fill_src.get_tile_data(coords, DungeonGeometry.DOOR_CLOSED_ALT)
+		if td == null or td.get_collision_polygons_count(0) != 1 \
+				or td.get_collision_polygon_points(0, 0).size() != 4:
+			door_coll_ok = false
+	_check(door_coll_ok, "DOOR_CLOSED alternative has one full-tile collision polygon")
+
 	var open_td: TileData = fill_src.get_tile_data(DungeonGeometry.DOOR_FILL_ATLAS,
 			DungeonGeometry.DOOR_OPEN_ALT)
 	_check(open_td != null and open_td.modulate == Color(1, 1, 1),

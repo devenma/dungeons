@@ -19,15 +19,13 @@ const TILE_SIZE := DungeonGeometry.TILE_SIZE
 
 var _doors: Array = []        # of Zone.Door
 var _tilemap: TileMap
-var _door_src_id: int = -1    # door tile source (needed to re-place tiles on lock)
 var _zone_doors: Dictionary = {}  # zone_id -> Array[Zone.Door]
 var _zones: Dictionary = {}   # zone_id -> Zone
 var _pending_crossings: Dictionary = {}  # door.id -> source_zone_id (single player)
 
 
-func initialize(layout, tilemap: TileMap, door_src_id: int) -> void:
+func initialize(layout, tilemap: TileMap) -> void:
 	_tilemap = tilemap
-	_door_src_id = door_src_id
 	_doors = layout.doors
 	for z in layout.zones:
 		_zones[z.id] = z

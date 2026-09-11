@@ -117,7 +117,12 @@ func _author_fill_tile(fill_src: TileSetAtlasSource, coords: Vector2i) -> int:
 	fill_src.get_tile_data(coords, alt_start).modulate = DungeonGeometry.FLOOR_TINT_START
 	fill_src.get_tile_data(coords, alt_reward).modulate = DungeonGeometry.FLOOR_TINT_REWARD
 	fill_src.get_tile_data(coords, alt_exit).modulate = DungeonGeometry.FLOOR_TINT_EXIT
-	fill_src.get_tile_data(coords, alt_door).modulate = DungeonGeometry.DOOR_TINT_CLOSED
+	var door_td: TileData = fill_src.get_tile_data(coords, alt_door)
+	door_td.modulate = DungeonGeometry.DOOR_TINT_CLOSED
+	# Alternative tiles do NOT inherit the base tile's physics — the closed
+	# door must carry its own blocking polygon explicitly.
+	door_td.set_collision_polygons_count(0, 1)
+	door_td.set_collision_polygon_points(0, 0, FULL_TILE_POLYGON)
 
 	# Base variant (alt 0) must stay untinted: it doubles as the plain floor
 	# AND the open-door look.
