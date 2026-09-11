@@ -5,8 +5,17 @@
 [ext_resource type="Script" uid="uid://b2ahhh2m83c6x" path="res://scripts/dungeon/dungeon_manager.gd" id="3"]
 [ext_resource type="Script" uid="uid://cdm4p84h70p71" path="res://scripts/game/run_manager.gd" id="5"]
 [ext_resource type="Resource" path="res://resources/floors/floor_data.tres" id="6"]
-[ext_resource type="Script" path="res://scripts/ui/health_bar.gd" id="7"]
-[ext_resource type="Script" path="res://scripts/ui/stamina_bar.gd" id="8"]
+[ext_resource type="Script" uid="uid://lcn7ig6k5w6r" path="res://scripts/ui/health_bar.gd" id="7"]
+[ext_resource type="Script" uid="uid://c85phwivuv5py" path="res://scripts/ui/stamina_bar.gd" id="8"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_b1x3f"]
+bg_color = Color(0, 0, 0, 0.49803922)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hujxm"]
+bg_color = Color(1, 0.12156863, 0.18431373, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_yyfjg"]
+bg_color = Color(0, 0, 0, 0.49803922)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_stamina_fill"]
 bg_color = Color(0.2, 0.75, 0.25, 1)
@@ -29,23 +38,29 @@ floor_data = ExtResource("6")
 
 [node name="CameraLimitManager" type="Node" parent="World" unique_id=1572390939]
 script = ExtResource("2")
-player_node_path = NodePath("../Player")
 
 [node name="UI" type="CanvasLayer" parent="." unique_id=821168563]
 
-[node name="HealthBar" type="ProgressBar" parent="UI"]
-offset_left = 16.0
-offset_top = 16.0
-offset_right = 216.0
-offset_bottom = 36.0
+[node name="HealthBar" type="ProgressBar" parent="UI" unique_id=10241248]
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 124.0
+offset_bottom = 10.0
+scale = Vector2(0.5, 0.5)
+theme_override_font_sizes/font_size = 1
+theme_override_styles/background = SubResource("StyleBoxFlat_b1x3f")
+theme_override_styles/fill = SubResource("StyleBoxFlat_hujxm")
+show_percentage = false
 script = ExtResource("7")
-health_node_path = NodePath("../../World/Player/Health")
 
-[node name="StaminaBar" type="ProgressBar" parent="UI"]
-offset_left = 16.0
-offset_top = 40.0
-offset_right = 216.0
-offset_bottom = 58.0
+[node name="StaminaBar" type="ProgressBar" parent="UI" unique_id=533441499]
+offset_left = 68.0
+offset_top = 4.0
+offset_right = 188.0
+offset_bottom = 10.0
+scale = Vector2(0.5, 0.5)
+theme_override_font_sizes/font_size = 1
+theme_override_styles/background = SubResource("StyleBoxFlat_yyfjg")
 theme_override_styles/fill = SubResource("StyleBoxFlat_stamina_fill")
+show_percentage = false
 script = ExtResource("8")
-stamina_node_path = NodePath("../../World/Player/Stamina")

@@ -1,6 +1,6 @@
 extends CharacterBody2D
 
-@export var speed := 200.0
+@export var speed := 60.0
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 
 # Last nonzero move direction; aim for weapons defaults to Down (SW-3).

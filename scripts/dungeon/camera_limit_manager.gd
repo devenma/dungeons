@@ -1,24 +1,22 @@
 extends Node
 
-@export var player_node_path: NodePath
-
-@onready var player: Node2D = get_node(player_node_path)
-
 var _last_transition_time: float = 0.0
 const TRANSITION_COOLDOWN: float = 0.5
 
 var _layout_ref  # FloorLayout, set externally
+var _player_ref # Node2D, comes from dungeon manager
 
 
-func initialize(layout) -> void:
+func initialize(layout: DungeonGenerator.FloorLayout, player: Node2D) -> void:
 	_layout_ref = layout
+	_player_ref = player
 	_set_initial_limits()
 
 
 func _set_initial_limits() -> void:
-	if player == null or _layout_ref == null:
+	if _player_ref == null or _layout_ref == null:
 		return
-	var cam := player.get_node("Camera2D") as Camera2D
+	var cam := _player_ref.get_node("Camera2D") as Camera2D
 	if cam == null:
 		return
 
@@ -43,7 +41,7 @@ func _on_zone_entered(zone_id: int) -> void:
 
 	if _layout_ref == null:
 		return
-	var cam := player.get_node("Camera2D") as Camera2D
+	var cam := _player_ref.get_node("Camera2D") as Camera2D
 	if cam == null:
 		return
 

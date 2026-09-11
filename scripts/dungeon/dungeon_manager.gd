@@ -157,7 +157,7 @@ func _find_node_by_script(node: Node, script_path: String):
 func _initialize_camera_limits(layout) -> void:
 	var cam_manager :Node = _find_camera_limit_manager()
 	if cam_manager != null and cam_manager.has_method("initialize"):
-		cam_manager.initialize(layout)
+		cam_manager.initialize(layout, player)
 
 
 func _create_exit_area(layout) -> void:

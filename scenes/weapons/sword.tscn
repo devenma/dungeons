@@ -5,7 +5,7 @@
 [ext_resource type="Resource" path="res://resources/weapons/sword_basic.tres" id="3"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_swing"]
-size = Vector2(120, 120)
+size = Vector2(30, 30)
 
 [node name="Sword" type="Node2D" unique_id=810455764]
 script = ExtResource("1")
@@ -19,5 +19,5 @@ monitorable = false
 script = ExtResource("2")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox" unique_id=1031736435]
-position = Vector2(60, 0)
+position = Vector2(23, 0)
 shape = SubResource("RectangleShape2D_swing")

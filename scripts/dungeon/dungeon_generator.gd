@@ -2,9 +2,9 @@ class_name DungeonGenerator
 extends Node
 
 const TILE_SIZE := 16
-const CELL_TILES := 32
+const CELL_TILES := 16
 const FLOOR_TEXTURE_PATH := "res://assets/Examples/Plank_Floor_min.png"
-const FLOOR_PATCH_SCALE := 3  # nearest-neighbor upscale: chunkier planks (1 = native)
+const FLOOR_PATCH_SCALE := 1  # nearest-neighbor upscale: chunkier planks (1 = native)
 const WALL_TEMPLATE_PATH := "res://assets/Examples/Wall_Floor_min_v2.png"
 # Wall template: a 128×128 native room (8×8 tiles of 16px). Its wall ring is
 # 3 native tiles deep per side: frame + stone band + the template's own floor
@@ -674,13 +674,13 @@ func _zone_floor_tint(type: int) -> Color:
 
 func _build_tileset() -> Dictionary:
 	"""Returns {tileset: TileSet, floor_src_id: int, wall_src_id: int, door_src_id: int}"""
-	var ts := TileSet.new()
-	ts.tile_size = Vector2i(TILE_SIZE, TILE_SIZE)
+	var tile_set := TileSet.new()
+	tile_set.tile_size = Vector2i(TILE_SIZE, TILE_SIZE)
 
 	# Physics layer 0: world geometry (walls + closed doors). The player's
 	# CharacterBody2D uses default collision_mask = 1, so geometry lives on bit 1.
-	ts.add_physics_layer()
-	ts.set_physics_layer_collision_layer(0, 1)
+	tile_set.add_physics_layer()
+	tile_set.set_physics_layer_collision_layer(0, 1)
 
 	# ── Source 0: floor tiles (upscaled plank sheet, 16×16 slices) ──
 	# The 2× sheet is sliced into variant_count² tiles of TILE_SIZE and placed
@@ -693,16 +693,18 @@ func _build_tileset() -> Dictionary:
 	var sheet_img: Image = base_tex.get_image()
 	if sheet_img.is_compressed():
 		sheet_img.decompress()
+
 	if FLOOR_PATCH_SCALE != 1:
 		sheet_img.resize(sheet_img.get_width() * FLOOR_PATCH_SCALE,
 				sheet_img.get_height() * FLOOR_PATCH_SCALE,
 				Image.INTERPOLATE_NEAREST)
+
 	var floor_src := TileSetAtlasSource.new()
 	floor_src.texture = ImageTexture.create_from_image(sheet_img)
 	floor_src.texture_region_size = Vector2i(TILE_SIZE, TILE_SIZE)
 	# Bind the source to the TileSet BEFORE creating tiles — TileData is only
 	# aware of the TileSet's physics layers if the source is bound first.
-	var floor_src_id := ts.add_source(floor_src, -1)
+	var floor_src_id := tile_set.add_source(floor_src, -1)
 	var variant_count: int = sheet_img.get_width() / TILE_SIZE
 	for vy in variant_count:
 		for vx in variant_count:
@@ -731,24 +733,27 @@ func _build_tileset() -> Dictionary:
 	# px per side) is rendered INSIDE each zone so zones look like the template
 	# room. The whole scaled sheet is sliced in sheet order (24×24 tiles at
 	# scale 3) and every tile carries a full-tile collision polygon.
-	var tpl_src_tex: Texture2D = load(WALL_TEMPLATE_PATH)
-	var tpl_img: Image = tpl_src_tex.get_image()
-	if tpl_img.is_compressed():
-		tpl_img.decompress()
+	var template_src_texture: Texture2D = load(WALL_TEMPLATE_PATH)
+	var template_img: Image = template_src_texture.get_image()
+	if template_img.is_compressed():
+		template_img.decompress()
+
 	if WALL_PATCH_SCALE != 1:
-		tpl_img.resize(tpl_img.get_width() * WALL_PATCH_SCALE,
-				tpl_img.get_height() * WALL_PATCH_SCALE,
+		template_img.resize(template_img.get_width() * WALL_PATCH_SCALE,
+				template_img.get_height() * WALL_PATCH_SCALE,
 				Image.INTERPOLATE_NEAREST)
+
 	var wall_src := TileSetAtlasSource.new()
-	wall_src.texture = ImageTexture.create_from_image(tpl_img)
+	wall_src.texture = ImageTexture.create_from_image(template_img)
 	wall_src.texture_region_size = Vector2i(TILE_SIZE, TILE_SIZE)
-	var wall_src_id := ts.add_source(wall_src, -1)
-	var tpl_tiles: int = tpl_img.get_width() / TILE_SIZE
-	for vy in tpl_tiles:
-		for vx in tpl_tiles:
-			var wcoords := Vector2i(vx, vy)
-			wall_src.create_tile(wcoords)
-			_add_block_collision(wall_src.get_tile_data(wcoords, 0))
+	var wall_src_id := tile_set.add_source(wall_src, -1)
+
+	var template_tiles: int = template_img.get_width() / TILE_SIZE
+	for vectorY in template_tiles:
+		for vectorX in template_tiles:
+			var wall_coords := Vector2i(vectorX, vectorY)
+			wall_src.create_tile(wall_coords)
+			_add_block_collision(wall_src.get_tile_data(wall_coords, 0))
 
 	# ── Source 2: door-closed tile ──
 	var door_color := Color(0.5, 0.35, 0.1)  # brown / wood
@@ -756,12 +761,12 @@ func _build_tileset() -> Dictionary:
 	var door_src := TileSetAtlasSource.new()
 	door_src.texture = door_tex
 	door_src.texture_region_size = Vector2i(TILE_SIZE, TILE_SIZE)
-	var door_src_id := ts.add_source(door_src, -1)
+	var door_src_id := tile_set.add_source(door_src, -1)
 	door_src.create_tile(Vector2i(0, 0))
 	_add_block_collision(door_src.get_tile_data(Vector2i(0, 0), 0))
 
 	return {
-		"tileset": ts,
+		"tileset": tile_set,
 		"floor_src_id": floor_src_id,
 		"floor_alt_ids": floor_alt_ids,
 		"floor_variant_count": variant_count,
