@@ -182,14 +182,14 @@ func _init() -> void:
 					if ws != DungeonGeometry.WALL_SOURCE_ID and ws != -1:
 						walls_ok = false
 				var fs: int = real_map.get_cell_source_id(0, pos)
-				# layer-0: fill everywhere except a punched corridor
-				# (-1) and the trim-ring corners (wall-sheet baseboard).
+				# layer-0: fill everywhere except unpunched trim-ring cells
+				# (corners: wall-sheet baseboard, straight edges: the
+				# synthesized edge source). Punched corridors are plain fill.
 				if fs != DungeonGeometry.FLOOR_SOURCE_ID:
-					var is_trim_corner: bool = DungeonGeometry.tile_edge_depth(
-							tx, ty, size.x, size.y) == 1 \
-							and DungeonGeometry.is_trim_corner(
-									tx, ty, size.x, size.y)
-					if not (is_trim_corner and fs == DungeonGeometry.WALL_SOURCE_ID):
+					var depth1: int = DungeonGeometry.tile_edge_depth(
+							tx, ty, size.x, size.y)
+					if not (depth1 == 1 and (fs == DungeonGeometry.WALL_SOURCE_ID \
+							or fs == DungeonGeometry.EDGE_SOURCE_ID)):
 						fill_ok = false
 	_check(walls_ok, "real render: wall band uses the wall source (id 0)")
 	_check(fill_ok, "real render: every zone cell shows fill (id 1) on layer 0")

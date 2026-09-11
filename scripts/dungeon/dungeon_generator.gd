@@ -736,6 +736,12 @@ func _punch_doors(tilemap: TileMap, layout: FloorLayout) -> void:
 				else:
 					cell = Vector2i(door_tile_pos.x + g, door_tile_pos.y + dz)
 				tilemap.erase_cell(1, cell)
+				# Corridor floor: overwrite layer 0 with plain untinted fill
+				# so doorways never show the trim-ring baseboard crossing
+				# them (paint order leaves trim EDGE tiles there otherwise).
+				var floor_atlas: Vector2i = Vector2i(
+						posmod(cell.x, FILL_VARIANTS), posmod(cell.y, FILL_VARIANTS))
+				tilemap.set_cell(0, cell, DungeonGeometry.FLOOR_SOURCE_ID, floor_atlas, 0)
 				if door.state == 1:
 					tilemap.set_cell(2, cell, DungeonGeometry.FLOOR_SOURCE_ID,
 							DungeonGeometry.DOOR_FILL_ATLAS,

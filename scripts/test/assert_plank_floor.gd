@@ -271,9 +271,13 @@ func _run_real_generation_checks() -> void:
 								!= DungeonGeometry.wall_atlas_for(tx, ty, size.x, size.y):
 						wall_ok = false
 						wall_detail = "wall band cell " + str(pos) + " has the wrong wall tile"
-				# Layer 0: fill everywhere, except trim-ring cells which use
-				# baseboard tiles: corners from the wall sheet, straight
-				# edges from the synthesized one-sided edge source.
+				# Layer 0: fill everywhere, except unpunched trim-ring cells
+				# which use baseboard tiles: corners from the wall sheet,
+				# straight edges from the synthesized one-sided edge source.
+				# Punched corridor cells are plain floor (punch overwrites
+				# layer 0), so they fall in the else branch below.
+				if punched.has(pos):
+					continue
 				var ls: int = _map.get_cell_source_id(0, pos)
 				var lat: Vector2i = _map.get_cell_atlas_coords(0, pos)
 				var lalt: int = _map.get_cell_alternative_tile(0, pos)
