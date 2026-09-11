@@ -7,6 +7,7 @@
 [ext_resource type="PackedScene" uid="uid://d1kuhd4db3mua" path="res://scenes/weapons/sword.tscn" id="5"]
 [ext_resource type="PackedScene" path="res://scenes/weapons/bow.tscn" id="6"]
 [ext_resource type="Script" uid="uid://bddhxc25eexs6" path="res://scripts/combat/stamina_component.gd" id="7"]
+[ext_resource type="PackedScene" path="res://scenes/weapons/staff.tscn" id="8"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
 size = Vector2(16, 16)
@@ -108,3 +109,5 @@ script = ExtResource("7")
 [node name="Sword" parent="Weapons" unique_id=2028356274 instance=ExtResource("5")]
 
 [node name="Bow" parent="Weapons" unique_id=395362901 instance=ExtResource("6")]
+
+[node name="Staff" parent="Weapons" instance=ExtResource("8")]
