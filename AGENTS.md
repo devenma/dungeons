@@ -368,6 +368,7 @@ move_right
 
 attack
 secondary_attack
+staff_attack
 
 ability_1
 ability_2
@@ -528,6 +529,15 @@ Arco
 
 ```text
 Bastón
+```
+
+Estado actual: las tres familias existen y coexisten bajo el nodo `Weapons` del
+jugador. Cada una individualiza su disparo por una acción de input distinta:
+
+```text
+Espada  → attack
+Arco    → secondary_attack
+Bastón  → staff_attack
 ```
 
 El arma debe definir principalmente cómo produce su ataque.
@@ -1210,6 +1220,11 @@ Staff
  ↓
 Magic Projectile
 ```
+
+Estado actual: el bastón (tercera familia, ranged mágico) está implementado
+como clon del patrón del arco, dispara el proyectil mágico reutilizando
+`arrow.gd` (`magic_bolt.tscn`) y se ataque con `staff_attack`. Sin cooldowns:
+el gating es de stamina únicamente.
 
 ---
 
