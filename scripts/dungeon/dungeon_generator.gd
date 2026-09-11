@@ -715,10 +715,13 @@ func _punch_doors(tilemap: TileMap, layout: FloorLayout) -> void:
 	# Punch each door's corridor: the full depth of BOTH zones' wall rings
 	# (2 * WALL_RING_TILES tiles cross-axis — no shared row: each zone paints
 	# its band inside its own tile_rect) across DOOR_GAP_TILES tiles.
-	# Erasing layer 1 exposes the layer-0 fill beneath: open doors render
-	# floor-look. Closed doors (state 1) fill the punched corridor on layer 2
+	# Ring-plane floor: layer 0 is overwritten with plain untinted fill for
+	# the wall bands AND the trim rings behind them, so doorways read as an
+	# open floor path with no baseboard directly in front of/behind them.
+	# Closed doors (state 1) fill only the wall-band corridor on layer 2
 	# with the dark fill alternative so they block via tile collision.
 	var ring := DungeonGeometry.WALL_RING_TILES
+	var edge := DungeonGeometry.FLOOR_EDGE_TILES
 	var gap: int = DungeonGeometry.DOOR_GAP_TILES
 	var half_gap: int = gap / 2
 	for d in layout.doors:
@@ -728,7 +731,7 @@ func _punch_doors(tilemap: TileMap, layout: FloorLayout) -> void:
 			door_tile_pos = Vector2i(door.edge_line, door.pos_along)
 		else:
 			door_tile_pos = Vector2i(door.pos_along, door.edge_line)
-		for dz in range(-ring, ring):
+		for dz in range(-ring - edge, ring + edge):
 			for g in range(-half_gap, half_gap + 1):
 				var cell: Vector2i
 				if door.edge_axis == "v":
@@ -736,13 +739,12 @@ func _punch_doors(tilemap: TileMap, layout: FloorLayout) -> void:
 				else:
 					cell = Vector2i(door_tile_pos.x + g, door_tile_pos.y + dz)
 				tilemap.erase_cell(1, cell)
-				# Corridor floor: overwrite layer 0 with plain untinted fill
-				# so doorways never show the trim-ring baseboard crossing
-				# them (paint order leaves trim EDGE tiles there otherwise).
+				# Corridor floor: overwrite with plain untinted fill so the
+				# trim ring never crosses a doorway.
 				var floor_atlas: Vector2i = Vector2i(
 						posmod(cell.x, FILL_VARIANTS), posmod(cell.y, FILL_VARIANTS))
 				tilemap.set_cell(0, cell, DungeonGeometry.FLOOR_SOURCE_ID, floor_atlas, 0)
-				if door.state == 1:
+				if door.state == 1 and dz >= -ring and dz < ring:
 					tilemap.set_cell(2, cell, DungeonGeometry.FLOOR_SOURCE_ID,
 							DungeonGeometry.DOOR_FILL_ATLAS,
 							DungeonGeometry.DOOR_CLOSED_ALT)

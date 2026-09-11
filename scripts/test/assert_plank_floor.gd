@@ -224,8 +224,9 @@ func _run_real_generation_checks() -> void:
 		else:
 			door_tile = Vector2i(door.pos_along, door.edge_line)
 		var ring: int = DungeonGeometry.WALL_RING_TILES
+		var edge: int = DungeonGeometry.FLOOR_EDGE_TILES
 		var half_gap: int = DungeonGeometry.DOOR_GAP_TILES / 2
-		for dz in range(-ring, ring):
+		for dz in range(-ring - edge, ring + edge):
 			for g in range(-half_gap, half_gap + 1):
 				var cell: Vector2i
 				if door.edge_axis == "v":
