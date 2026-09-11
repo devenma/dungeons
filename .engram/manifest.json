@@ -48,6 +48,14 @@
       "sessions": 1,
       "memories": 35,
       "prompts": 14
+    },
+    {
+      "id": "94c3a3e5",
+      "created_by": "deverosales",
+      "created_at": "2026-09-11T19:57:13Z",
+      "sessions": 1,
+      "memories": 24,
+      "prompts": 11
     }
   ]
 }
