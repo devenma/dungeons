@@ -15,7 +15,7 @@ extends Node
 
 signal zone_entered(zone_id: int)
 
-const TILE_SIZE := 16
+const TILE_SIZE := DungeonGeometry.LEGACY_TILE_PX
 
 var _doors: Array = []        # of Zone.Door
 var _tilemap: TileMap
@@ -46,7 +46,7 @@ func initialize(layout, tilemap: TileMap, door_src_id: int) -> void:
 	_create_door_areas(layout)
 
 
-func _create_door_areas(layout) -> void:
+func _create_door_areas(_layout) -> void:
 	for d in _doors:
 		var door: Zone.Door = d
 		var area := Area2D.new()
@@ -55,7 +55,7 @@ func _create_door_areas(layout) -> void:
 		# The door spans the punched gap: 3 tiles across plus the full depth of
 		# both wall rings, plus one tile of margin past each end so a combat
 		# lock placed at exit time is never laid over the player body.
-		var ring := DungeonGenerator.WALL_RING_TILES
+		var ring := DungeonGeometry.LEGACY_WALL_RING_TILES
 		var depth_px: float = (ring + ring + 2) * TILE_SIZE
 		if door.edge_axis == "v":
 			rect.size = Vector2(depth_px, 48)
@@ -231,7 +231,7 @@ func _place_door_tiles(door: Zone.Door) -> void:
 		tile_pos = Vector2i(door.edge_line, door.pos_along)
 	else:
 		tile_pos = Vector2i(door.pos_along, door.edge_line)
-	var ring := DungeonGenerator.WALL_RING_TILES
+	var ring := DungeonGeometry.LEGACY_WALL_RING_TILES
 	for dz in range(-ring, ring):
 		for gap in range(-1, 2):
 			var cell: Vector2i
@@ -261,7 +261,7 @@ func on_zone_cleared(zone_id: int) -> void:
 			tile_pos = Vector2i(d.edge_line, d.pos_along)
 		else:
 			tile_pos = Vector2i(d.pos_along, d.edge_line)
-		var ring := DungeonGenerator.WALL_RING_TILES
+		var ring := DungeonGeometry.LEGACY_WALL_RING_TILES
 		for dz in range(-ring, ring):
 			for gap in range(-1, 2):
 				var cell: Vector2i

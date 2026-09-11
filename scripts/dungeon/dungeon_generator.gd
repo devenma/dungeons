@@ -1,7 +1,9 @@
 class_name DungeonGenerator
 extends Node
 
-const TILE_SIZE := 16
+# Transitional bridge: the runtime builder still renders 16px tiles from
+# DungeonGeometry. Phase 3 deletes this alias together with _build_tileset().
+const TILE_SIZE := DungeonGeometry.LEGACY_TILE_PX
 const CELL_TILES := 16
 const FLOOR_TEXTURE_PATH := "res://assets/Examples/Plank_Floor_min.png"
 const FLOOR_PATCH_SCALE := 1  # nearest-neighbor upscale: chunkier planks (1 = native)
@@ -22,6 +24,11 @@ class Cell:
 	var gy: int
 	var zone_id: int = -1  # -1 = unassigned
 
+
+# Phase-1 note: CELL_TILES stays local at 16 on purpose. The legacy builder's
+# render loop iterates 16x16 tile cells per grid cell; swapping to the 32px
+# DungeonGeometry.CELL_TILES (=8) would halve the tile grid and change the
+# rendered layout before the Phase 3 placement rework. Consolidated in Ph3.
 
 # ── Output layout ────────────────────────────────────────────────────────────
 

@@ -6,7 +6,9 @@ extends Node
 
 @onready var player: Node2D = get_node(player_node_path)
 
-const TILE_SIZE := 16
+# Transitional bridge: tile_rect pixel math still targets the 16px builder.
+# Swapped to DungeonGeometry.TILE_SIZE in Phase 3.
+const TILE_SIZE := DungeonGeometry.LEGACY_TILE_PX
 
 func _get_run_manager():
 	return get_node(run_manager_node_path) if run_manager_node_path else null
