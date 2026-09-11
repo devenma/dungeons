@@ -93,9 +93,11 @@ func _run() -> void:
 	var player := (load("res://scenes/player/player.tscn") as PackedScene).instantiate() as Node2D
 	root.add_child(player)
 
-	# double_a takes the sword hit at +100 x (outside the Down swing box).
+	# double_a takes the sword hit at +30 x: inside the RIGHT swing box
+	# (sword.tscn: 30x30 shape at offset (23,0) -> reach x in [8, 38]) and
+	# outside the Down swing box (x in [-15, 15]).
 	var double_a := _build_double(Vector2.ZERO)
-	double_a.position = Vector2(100, 0)
+	double_a.position = Vector2(30, 0)
 	root.add_child(double_a)
 
 	# double_b attacks the player: its hitbox is offset to reach the hurtbox.

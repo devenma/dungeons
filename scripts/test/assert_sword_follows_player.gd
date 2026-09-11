@@ -54,9 +54,11 @@ func _run() -> void:
 	await process_frame
 	var shape: CollisionShape2D = sword.get_node("Hitbox/CollisionShape2D") \
 			as CollisionShape2D
-	var expected_center: Vector2 = player.global_position + Vector2(0, 60)
+	# Hitbox arc offset is scene-tuned: sword.tscn places the 30x30 swing
+	# shape at (23, 0); rotated DOWN (PI/2) that lands at (0, 23).
+	var expected_center: Vector2 = player.global_position + Vector2(0, 23)
 	_check(shape.global_position.distance_to(expected_center) < 0.01,
-			"hitbox arc centered at player + aim*range (DOWN)")
+			"hitbox arc centered at player + aim*hitbox_offset (DOWN)")
 
 	# ── Wiring sanity ──
 	_check(player.is_in_group("player"), "player in 'player' group")

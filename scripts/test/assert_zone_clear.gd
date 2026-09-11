@@ -63,8 +63,16 @@ func _run() -> void:
 	var enemies := container.get_children()
 	_check(enemies.size() == 2, "CZ-1: 2 slimes spawned in COMBAT zone")
 
-	var min_px: float = (2 + 3) * 16.0 + 8.0
-	var max_px: float = 8 * 16.0 + 8.0
+	# Interior band per DungeonGeometry: 32px tiles, inset = wall ring +
+	# floor edge (2 tiles). Spawn px range for tile_rect (2, 2, 10, 10):
+	# tiles [4, 9] -> px [144, 304] (tile center = tile * 32 + 16).
+	var tile_size: int = DungeonGeometry.TILE_SIZE
+	var inset: int = DungeonGeometry.WALL_RING_TILES \
+			+ DungeonGeometry.FLOOR_EDGE_TILES
+	var min_px: float = (combat.tile_rect.position.x + inset) * tile_size \
+			+ tile_size / 2.0
+	var max_px: float = (combat.tile_rect.end.x - inset - 1) * tile_size \
+			+ tile_size / 2.0
 	for e in enemies:
 		var pos: Vector2 = (e as Node2D).position
 		var inside: bool = pos.x >= min_px and pos.x <= max_px \
