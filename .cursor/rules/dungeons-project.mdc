@@ -20,8 +20,9 @@ alwaysApply: true
 
 ## Assets
 
-- `assets/References/` está en `.gitignore` (moodboards locales). No añadir esas PNGs al repo.
-- Estética: top-down 16×16, colores muted/apagados (no plataformas).
+- `assets/References/` está en `.gitignore` (moodboards / refs del agente). **Todas las referencias que genere el agente van SOLO ahí**, nunca en `assets/Examples/` (Examples es para assets finales del usuario y sí puede subirse a git).
+- El usuario redibuja a mano a partir de esas refs; no tratar las refs del agente como assets de producción.
+- Estética: top-down pixel art muted/apagado (16×16 o 32×32 según decida el usuario).
 
 ## Código
 
