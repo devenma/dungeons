@@ -47,7 +47,7 @@ const WALL_BOTTOM := Vector2i(5, 2)
 # Floor variants: vertical strip (4,4)/(4,5) in the v2 sheet, no collision.
 # The generator tiles them as a checkerboard along (tx + ty) parity.
 const FLOOR_VARIANT_A := Vector2i(4, 4)
-const FLOOR_VARIANT_B := Vector2i(4, 5)
+const FLOOR_VARIANT_B := Vector2i(4, 4)
 
 ## Floor atlas coordinate for an interior cell, cycling the two strip
 ## variants by checkerboard parity so small seams blend.
