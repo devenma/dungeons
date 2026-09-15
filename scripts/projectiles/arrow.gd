@@ -59,7 +59,7 @@ func _on_area_entered(area: Area2D) -> void:
 	queue_free()
 
 
-func _on_body_entered(body: Node2D) -> void:
+func _on_body_entered(_body: Node2D) -> void:
 	if not _living:
 		return
 	_living = false
