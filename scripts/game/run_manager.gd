@@ -1,3 +1,4 @@
+class_name RunManager
 extends Node
 
 ## Run state owner (§6.2): everything that must survive a floor transition
@@ -61,7 +62,10 @@ func get_equipped() -> WeaponData:
 
 func reset_inventory() -> void:
 	var weapon_data: WeaponData = _default_data()
-	owned_weapons = [weapon_data] if weapon_data != null else []
+	var base: Array[WeaponData] = []
+	if weapon_data != null:
+		base.append(weapon_data)
+	owned_weapons = base
 	equipped_index = 0
 	inventory_changed.emit(owned_weapons)
 
