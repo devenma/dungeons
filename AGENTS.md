@@ -1654,28 +1654,28 @@ Después:
 ```text
 [x] Crear DungeonManager
 [x] Crear DungeonGenerator
-[x] Generar primer mapa procedural (grid-merging + TileMap + dungeon.tres)
+[x] Generar primer mapa procedural (grid-merging + TileMap + dungeons_v2.tres)
 [x] Implementar transición de pisos
 ```
 
 Después:
 
 ```text
-[ ] Crear Enemy base
-[ ] Crear HealthComponent
-[ ] Crear Hitbox
-[ ] Crear Hurtbox
-[ ] Crear primer enemigo
-[ ] Crear espada
-[ ] Implementar combate
+[x] Crear Enemy base
+[x] Crear HealthComponent
+[x] Crear Hitbox
+[x] Crear Hurtbox
+[x] Crear primer enemigo
+[x] Crear espada
+[x] Implementar combate
 ```
 
-Solo cuando esto sea estable:
+Después:
 
 ```text
-[ ] Arco
-[ ] Proyectiles
-[ ] Bastón
+[x] Arco
+[x] Proyectiles
+[x] Bastón
 [ ] Habilidades
 [ ] Buffs
 [ ] Crowd Control

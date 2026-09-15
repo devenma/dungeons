@@ -13,8 +13,11 @@ Un juego de mazmorras generadas proceduralmente donde el jugador avanza a travé
 | Fase 1 — Movimiento | ✅ | Player con movimiento 8 direcciones, cámara con límites, colisiones |
 | Fase 2 — Dungeon estático | ✅ | 3 habitaciones conectadas con puertas y transición de cámara |
 | Fase 3 — Generación procedural | ✅ | Grid-merging + TileMap único con zonas, puertas irregulares, cámara por zona |
-| Fase 4 — Enemigos y combate | ⏳ | Pendiente (Spawner stub listo) |
-| Fase 5+ — Armas, habilidades, bosses | ⏳ | Pendiente |
+| Fase 3.5 — Tileset v2 | ✅ | Atlas unificado (`dungeons_v2.tres`) con físicas autoradas en el editor |
+| Fase 4/6 — Enemigos y combate | ✅ | Slime con EnemyData, Health/Hitbox/Hurtbox/DamageInfo, espada, muerte y restart |
+| Fase 7 — Ranged (arco + bastón) | ✅ | `secondary_attack` (flecha) y `staff_attack` (proyectil mágico) sobre la pipeline de projectiles en común |
+| Fase 8 — Habilidades | ⏳ | En marcha (Ice Nova / Fireball / Speed Buff) |
+| Fase 9+ — Progresión, bosses, loot | ⏳ | Pendiente |
 
 ## Cómo ejecutar
 
@@ -48,7 +51,7 @@ Main
 └── UI (CanvasLayer)
 ```
 
-El piso se genera mediante **grid-merging**: se divide el área en una grilla, se mergean celdas contiguas en zonas, y cada zona recibe un tipo funcional (START, COMBAT, REWARD, EXIT). Todo el piso se renderiza en un TileMap único con tilesets procedurales (sin assets externos). Las puertas se colocan en posiciones irregulares sobre aristas compartidas.
+El piso se genera mediante **grid-merging**: se divide el área en una grilla, se mergean celdas contiguas en zonas, y cada zona recibe un tipo funcional (START, COMBAT, REWARD, EXIT). Todo el piso se renderiza en un TileMap único que consume el tileset pre-construido `res://tilesets/dungeons_v2.tres` (atlas `assets/Examples/Background_min_all_v2_FIXED.png`, 32px, físicas de pared autoradas en el editor). Las puertas se colocan en posiciones irregulares sobre aristas compartidas.
 
 Ver [`AGENTS.md`](AGENTS.md) para la documentación completa de arquitectura y convenciones de código.
 
@@ -63,8 +66,8 @@ Ver [`AGENTS.md`](AGENTS.md) para la documentación completa de arquitectura y c
 1. ✅ Movimiento y cámara
 2. ✅ Dungeon estático con puertas
 3. ✅ Generación procedural (grid-merging + TileMap)
-4. ⏳ Sistema de daño (Hitbox/Hurtbox/Health) + enemigos
-5. ⏳ Armas cuerpo a cuerpo y a distancia
+4. ✅ Sistema de daño (Hitbox/Hurtbox/Health) + enemigos (slime)
+5. ✅ Armas: espada, arco y bastón mágico
 6. ⏳ Habilidades, buffs, progresión
 7. ⏳ Bosses, loot, builds avanzadas
 
