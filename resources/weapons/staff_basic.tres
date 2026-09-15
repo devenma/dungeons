@@ -7,6 +7,7 @@
 [resource]
 script = ExtResource("1")
 weapon_name = "Magic Staff"
+weapon_kind = 2
 weapon_scene = ExtResource("3")
 damage = 14
 knockback = 12.0

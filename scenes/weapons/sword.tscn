@@ -2,14 +2,12 @@
 
 [ext_resource type="Script" uid="uid://dhkd81lsvbdol" path="res://scripts/weapons/sword.gd" id="1"]
 [ext_resource type="Script" uid="uid://ccss1am1umlms" path="res://scripts/combat/hitbox.gd" id="2"]
-[ext_resource type="Resource" path="res://resources/weapons/sword_basic.tres" id="3"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_swing"]
 size = Vector2(30, 30)
 
 [node name="Sword" type="Node2D" unique_id=810455764]
 script = ExtResource("1")
-data = ExtResource("3")
 
 [node name="Hitbox" type="Area2D" parent="." unique_id=1397001853]
 collision_layer = 0

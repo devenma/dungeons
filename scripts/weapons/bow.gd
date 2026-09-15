@@ -17,6 +17,11 @@ var _stamina: StaminaComponent = null
 
 
 func _ready() -> void:
+	# Standalone fallback: static .tres binding removed to break the
+	# bow_basic.tres <-> bow.tscn load cycle; mount injection sets data
+	# before _ready (EM-1, slice 2).
+	if data == null:
+		data = load("res://resources/weapons/bow_basic.tres") as WeaponData
 	_stamina = get_node_or_null(stamina_node_path) as StaminaComponent
 
 

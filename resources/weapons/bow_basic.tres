@@ -7,6 +7,7 @@
 [resource]
 script = ExtResource("1")
 weapon_name = "Basic Bow"
+weapon_kind = 1
 weapon_scene = ExtResource("3")
 damage = 8
 attack_speed = 2.0

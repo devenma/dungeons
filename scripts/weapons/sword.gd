@@ -19,6 +19,12 @@ var _window_timer: Timer
 
 
 func _ready() -> void:
+	# Fallback for scenes instantiated standalone (static .tres binding was
+	# removed to break the sword_basic.tres <-> sword.tscn load cycle).
+	# Equipped mounting injects `data` before add_child, so this never runs
+	# for runtime-mounted weapons (EM-1, slice 2).
+	if data == null:
+		data = load("res://resources/weapons/sword_basic.tres") as WeaponData
 	if data != null:
 		hitbox.damage = data.damage
 	_stamina = get_node_or_null(stamina_node_path) as StaminaComponent
