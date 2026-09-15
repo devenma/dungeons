@@ -35,6 +35,11 @@ func _run() -> void:
 	var health := player.get_node("Health") as HealthComponent
 	var stamina := player.get_node("Stamina") as StaminaComponent
 
+	# RD-1 setup: grant extra weapons so the reset must strip them.
+	var run_manager_typed: RunManager = run_manager
+	run_manager_typed.add_weapon(load("res://resources/weapons/bow_basic.tres"))
+	run_manager_typed.add_weapon(load("res://resources/weapons/staff_basic.tres"))
+
 	_check(run_manager.get("current_floor") == 1, "boot: run starts at floor 1")
 	var seed_before: int = run_manager.get("run_seed")
 
@@ -51,6 +56,13 @@ func _run() -> void:
 	_check(health.current_health == 100, "DR-2: player health reset to full")
 	_check(stamina.current_stamina == stamina.max_stamina,
 			"ST-reset: stamina refilled to max after death reset")
+
+	var owned_after: int = (run_manager_typed.owned_weapons as Array).size()
+	_check(owned_after == 1, "RD-1: inventory reset to exactly one weapon")
+	var equipped_after: WeaponData = run_manager_typed.get_equipped()
+	_check(equipped_after != null and equipped_after.weapon_name == "Basic Sword",
+			"RD-1: armed with the sword default after death")
+	_check(run_manager_typed.equipped_index == 0, "RD-1: equip index reset to 0")
 
 	_check(_failures == 0, "death reset: all checks passed")
 	quit(0 if _failures == 0 else 1)
