@@ -1,6 +1,7 @@
 extends Node2D
 
-## Ranged bow (PA-1..PA-3, BC-1/BC-2): polls the "secondary_attack" action,
+## Ranged bow (PA-1..PA-3, BC-1/BC-2): polls the "attack" action (IC-2: all
+## three weapons gate only on attack; only the mounted weapon responds),
 ## fires an Arrow from the player position toward the aim direction into
 ## the scene root (world space), gated by the player's stamina.
 ## Sword-parity contract: try_attack(aim_dir) -> bool. No player logic (§35).
@@ -51,7 +52,7 @@ func try_attack(aim_dir: Vector2 = Vector2.ZERO) -> bool:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("secondary_attack"):
+	if event.is_action_pressed("attack"):
 		var facing: Vector2 = _resolve_player_aim()
 		var aim: Vector2 = AimResolver.resolve(
 				event, global_position, facing, get_global_mouse_position())
