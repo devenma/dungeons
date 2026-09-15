@@ -4,6 +4,19 @@ extends Resource
 ## Configurable weapon stats (§39): data lives here, behavior in the
 ## weapon scene/script.
 
+enum WeaponKind {
+	MELEE,
+	RANGED_PHYSICAL,
+	RANGED_MAGIC,
+}
+
+## Weapon identity (WI-1/WI-3): families are distinguishable without
+## scene-specific casts; kits remain deferred.
+@export var weapon_kind: WeaponKind = WeaponKind.MELEE
+## (WI-1) Scene the EquipmentController instantiates to mount this weapon
+## at runtime under Player/Weapons.
+@export var weapon_scene: PackedScene = null
+
 @export var weapon_name: String = ""
 @export var damage: int = 10
 ## DEPRECATED: no longer used as an attack gate (stamina replaced cooldowns).
