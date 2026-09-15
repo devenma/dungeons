@@ -117,6 +117,12 @@ func _start_floor() -> void:
 	if _spawner.has_signal("zone_cleared") and _door_controller.has_method("on_zone_cleared"):
 		_spawner.zone_cleared.connect(_door_controller.on_zone_cleared)
 
+	# PF-1: chest grants flow Spawner -> RunManager (add + auto-equip).
+	# Wired BEFORE spawn_content: spawn may place chests that can grant
+	# immediately (§44.16).
+	if _spawner.has_signal("weapon_granted"):
+		_spawner.weapon_granted.connect(_on_weapon_granted)
+
 	if _door_controller.has_signal("zone_entered"):
 		var cam_manager :Node = _find_camera_limit_manager()
 		if cam_manager != null and cam_manager.has_method("_on_zone_entered"):
@@ -133,6 +139,19 @@ func _start_floor() -> void:
 
 	# 10  Initialize camera limits
 	_initialize_camera_limits(layout)
+
+
+func _on_weapon_granted(data: WeaponData) -> void:
+	# PF-1: a granted weapon is added to the run inventory and immediately
+	# equipped so the mount/HUD react via weapon_equipped (§3(b)).
+	if data == null:
+		return
+	var run_manager: Node = _get_run_manager()
+	if run_manager == null:
+		return
+	var new_index: int = run_manager.add_weapon(data)
+	if new_index >= 0:
+		run_manager.equip_weapon(new_index)
 
 
 func _find_camera_limit_manager():
