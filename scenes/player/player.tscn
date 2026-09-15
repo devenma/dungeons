@@ -4,10 +4,9 @@
 [ext_resource type="Texture2D" uid="uid://darqbqq8jje0i" path="res://assets/Examples/Old/Player_Base_Down_Full_min.png" id="2_dovo2"]
 [ext_resource type="Script" uid="uid://5lfh4iwav4kq" path="res://scripts/combat/hurtbox.gd" id="3"]
 [ext_resource type="Script" uid="uid://cwbxq6ncoqixu" path="res://scripts/combat/health_component.gd" id="4"]
-[ext_resource type="PackedScene" uid="uid://d1kuhd4db3mua" path="res://scenes/weapons/sword.tscn" id="5"]
-[ext_resource type="PackedScene" path="res://scenes/weapons/bow.tscn" id="6"]
 [ext_resource type="Script" uid="uid://bddhxc25eexs6" path="res://scripts/combat/stamina_component.gd" id="7"]
-[ext_resource type="PackedScene" path="res://scenes/weapons/staff.tscn" id="8"]
+[ext_resource type="Script" path="res://scripts/player/equipment_controller.gd" id="9"]
+[ext_resource type="Resource" path="res://resources/weapons/sword_basic.tres" id="10"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_dovo2"]
 atlas = ExtResource("2_dovo2")
@@ -100,8 +99,6 @@ script = ExtResource("7")
 
 [node name="Weapons" type="Node2D" parent="." unique_id=657842418]
 
-[node name="Sword" parent="Weapons" unique_id=2028356274 instance=ExtResource("5")]
-
-[node name="Bow" parent="Weapons" unique_id=395362901 instance=ExtResource("6")]
-
-[node name="Staff" parent="Weapons" unique_id=2116126950 instance=ExtResource("8")]
+[node name="EquipmentController" type="Node" parent="."]
+script = ExtResource("9")
+default_weapon_data = ExtResource("10")
