@@ -4,6 +4,7 @@
 [ext_resource type="Script" uid="uid://d2e7kcfvtw0c7" path="res://scripts/dungeon/camera_limit_manager.gd" id="2"]
 [ext_resource type="Script" uid="uid://cg6bw3t3sdn5q" path="res://scripts/dungeon/dungeon_manager.gd" id="3"]
 [ext_resource type="Script" uid="uid://cdm4p84h70p71" path="res://scripts/game/run_manager.gd" id="5"]
+[ext_resource type="Resource" path="res://resources/weapons/sword_basic.tres" id="9"]
 [ext_resource type="Resource" path="res://resources/floors/floor_data.tres" id="6"]
 [ext_resource type="Script" uid="uid://lcn7ig6k5w6r" path="res://scripts/ui/health_bar.gd" id="7"]
 [ext_resource type="Script" uid="uid://c85phwivuv5py" path="res://scripts/ui/stamina_bar.gd" id="8"]
@@ -24,6 +25,7 @@ bg_color = Color(0.2, 0.75, 0.25, 1)
 
 [node name="RunManager" type="Node" parent="." unique_id=1494447952]
 script = ExtResource("5")
+default_weapon = ExtResource("9")
 
 [node name="World" type="Node2D" parent="." unique_id=428461756]
 
