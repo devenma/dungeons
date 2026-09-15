@@ -4,7 +4,7 @@ extends SceneTree
 # task 6.1, prebuilt-tileset). Two test layers exist:
 #
 #   - scripts/test/assert_prebuilt_tileset.gd
-#       resource-only contract of res://tilesets/dungeon.tres.
+#       resource-only contract of res://tilesets/dungeons_v2.tres.
 #   - THIS script
 #       the .tres contract summary PLUS the render contract on a REAL
 #       generation run (generate_floor -> _render_layout via the normal
@@ -65,120 +65,99 @@ func _run_tileset_contract_checks() -> void:
 		return
 	_check(ts.tile_size == Vector2i(DungeonGeometry.TILE_SIZE, DungeonGeometry.TILE_SIZE),
 			".tres tile_size is 32x32")
-	_check(ts.get_source_count() == 3, ".tres has exactly 3 sources")
+	_check(ts.get_source_count() == 1, ".tres has exactly 1 source")
 
-	var wall_src: TileSetAtlasSource = ts.get_source(DungeonGeometry.WALL_SOURCE_ID)
-	var fill_src: TileSetAtlasSource = ts.get_source(DungeonGeometry.FLOOR_SOURCE_ID)
-	if wall_src == null or fill_src == null:
-		push_error("FATAL: sources %d/%d missing from the .tres"
-				% [DungeonGeometry.WALL_SOURCE_ID, DungeonGeometry.FLOOR_SOURCE_ID])
+	var src_any: TileSetSource = ts.get_source(DungeonGeometry.DUNGEON_SOURCE_ID)
+	var atlas_src := src_any as TileSetAtlasSource
+	if src_any == null or atlas_src == null:
+		push_error("FATAL: source %d missing from the .tres"
+				% DungeonGeometry.DUNGEON_SOURCE_ID)
 		_fails += 1
 		return
 
-	# Wall source: 12 wall tiles with full-tile collision, 4 trim tiles without.
+	# Wall ring: 8 role tiles, one full-tile collision polygon each.
 	var wall_roles: Array[Vector2i] = [
-		DungeonGeometry.WALL_CORNER_TL, DungeonGeometry.WALL_CORNER_TR,
-		DungeonGeometry.WALL_CORNER_BL, DungeonGeometry.WALL_CORNER_BR,
-		DungeonGeometry.WALL_TOP_A, DungeonGeometry.WALL_TOP_B,
-		DungeonGeometry.WALL_LEFT_A, DungeonGeometry.WALL_LEFT_B,
-		DungeonGeometry.WALL_RIGHT_A, DungeonGeometry.WALL_RIGHT_B,
-		DungeonGeometry.WALL_BOTTOM_A, DungeonGeometry.WALL_BOTTOM_B,
-	]
-	var edge_roles: Array[Vector2i] = [
-		DungeonGeometry.FLOOR_EDGE_TL, DungeonGeometry.FLOOR_EDGE_TR,
-		DungeonGeometry.FLOOR_EDGE_BL, DungeonGeometry.FLOOR_EDGE_BR,
+		DungeonGeometry.WALL_CORNER_TL, DungeonGeometry.WALL_TOP,
+		DungeonGeometry.WALL_CORNER_TR, DungeonGeometry.WALL_LEFT,
+		DungeonGeometry.WALL_RIGHT, DungeonGeometry.WALL_CORNER_BL,
+		DungeonGeometry.WALL_BOTTOM, DungeonGeometry.WALL_CORNER_BR,
 	]
 	var wall_ok := true
 	var wall_detail := ""
 	for coords in wall_roles:
-		if not wall_src.has_tile(coords):
+		if not atlas_src.has_tile(coords):
 			wall_ok = false
 			wall_detail = "missing wall tile " + str(coords)
 			break
-		var td: TileData = wall_src.get_tile_data(coords, 0)
+		var td: TileData = atlas_src.get_tile_data(coords, 0)
 		if td == null or td.get_collision_polygons_count(0) != 1 \
 				or td.get_collision_polygon_points(0, 0).size() != 4:
 			wall_ok = false
 			wall_detail = "wall tile " + str(coords) + " lacks one full-tile polygon"
 			break
 	_check_matrix(wall_ok, wall_detail,
-			"wall source: all 12 wall tiles carry one full-tile collision polygon")
+			"single atlas source: all 8 ring tiles carry one full-tile collision polygon")
 
-	var edge_ok := true
-	var edge_detail := ""
-	for coords in edge_roles:
-		if not wall_src.has_tile(coords):
-			edge_ok = false
-			edge_detail = "missing trim tile " + str(coords)
-			break
-		var td2: TileData = wall_src.get_tile_data(coords, 0)
-		if td2 == null or td2.get_collision_polygons_count(0) != 0:
-			edge_ok = false
-			edge_detail = "trim tile " + str(coords) + " carries collision"
-			break
-	_check_matrix(edge_ok, edge_detail,
-			"wall source: all 4 trim tiles carry no collision")
-
-	# Fill source: 4 plain tiles without collision + frozen tint alternatives.
-	var fill_tiles: Array[Vector2i] = [
-		Vector2i(0, 0), Vector2i(1, 0), Vector2i(0, 1), Vector2i(1, 1),
+	# Floor strip variants: no collision + frozen tint alternatives.
+	var floor_tiles: Array[Vector2i] = [
+		DungeonGeometry.FLOOR_VARIANT_A, DungeonGeometry.FLOOR_VARIANT_B,
 	]
-	var fill_ok := true
-	var fill_detail := ""
+	var floor_ok := true
+	var floor_detail := ""
 	var tints_ok := true
 	var tints_detail := ""
-	for coords2 in fill_tiles:
-		if not fill_src.has_tile(coords2):
-			fill_ok = false
-			fill_detail = "missing fill tile " + str(coords2)
+	for coords2 in floor_tiles:
+		if not atlas_src.has_tile(coords2):
+			floor_ok = false
+			floor_detail = "missing floor tile " + str(coords2)
 			break
-		var tf: TileData = fill_src.get_tile_data(coords2, 0)
+		var tf: TileData = atlas_src.get_tile_data(coords2, 0)
 		if tf == null or tf.get_collision_polygons_count(0) != 0:
-			fill_ok = false
-			fill_detail = "fill tile " + str(coords2) + " carries collision"
+			floor_ok = false
+			floor_detail = "floor tile " + str(coords2) + " carries collision"
 			break
-		if not fill_src.has_alternative_tile(coords2, DungeonGeometry.FLOOR_ALT_START) \
-				or not fill_src.has_alternative_tile(coords2, DungeonGeometry.FLOOR_ALT_REWARD) \
-				or not fill_src.has_alternative_tile(coords2, DungeonGeometry.FLOOR_ALT_EXIT) \
-				or not fill_src.has_alternative_tile(coords2, DungeonGeometry.DOOR_CLOSED_ALT):
+		if not atlas_src.has_alternative_tile(coords2, DungeonGeometry.FLOOR_ALT_START) \
+				or not atlas_src.has_alternative_tile(coords2, DungeonGeometry.FLOOR_ALT_REWARD) \
+				or not atlas_src.has_alternative_tile(coords2, DungeonGeometry.FLOOR_ALT_EXIT) \
+				or not atlas_src.has_alternative_tile(coords2, DungeonGeometry.DOOR_CLOSED_ALT):
 			tints_ok = false
-			tints_detail = "fill tile " + str(coords2) + " misses an alternative"
+			tints_detail = "floor tile " + str(coords2) + " misses an alternative"
 			break
-		if fill_src.get_tile_data(coords2, DungeonGeometry.FLOOR_ALT_START).modulate \
+		if atlas_src.get_tile_data(coords2, DungeonGeometry.FLOOR_ALT_START).modulate \
 				!= DungeonGeometry.FLOOR_TINT_START \
-				or fill_src.get_tile_data(coords2, DungeonGeometry.FLOOR_ALT_REWARD).modulate \
+				or atlas_src.get_tile_data(coords2, DungeonGeometry.FLOOR_ALT_REWARD).modulate \
 					!= DungeonGeometry.FLOOR_TINT_REWARD \
-				or fill_src.get_tile_data(coords2, DungeonGeometry.FLOOR_ALT_EXIT).modulate \
+				or atlas_src.get_tile_data(coords2, DungeonGeometry.FLOOR_ALT_EXIT).modulate \
 					!= DungeonGeometry.FLOOR_TINT_EXIT:
 			tints_ok = false
-			tints_detail = "fill tile " + str(coords2) + " has a wrong tint"
+			tints_detail = "floor tile " + str(coords2) + " has a wrong tint"
 			break
-	_check_matrix(fill_ok, fill_detail, "fill source: all 4 fill tiles carry no collision")
+	_check_matrix(floor_ok, floor_detail, "floor strip variants carry no collision")
 	_check_matrix(tints_ok, tints_detail,
-			"fill source: START/REWARD/EXIT alternatives exist with the frozen modulate values")
+			"START/REWARD/EXIT alternatives exist with the frozen modulate values")
 
 	# Closed-door alternative: dark, with exactly one full-tile polygon
 	# (alternatives do NOT inherit the base tile's physics).
 	var door_closed_ok := true
 	var door_closed_detail := ""
-	for coords3 in fill_tiles:
-		var tdc: TileData = fill_src.get_tile_data(coords3, DungeonGeometry.DOOR_CLOSED_ALT)
+	for coords3 in floor_tiles:
+		var tdc: TileData = atlas_src.get_tile_data(coords3, DungeonGeometry.DOOR_CLOSED_ALT)
 		if tdc == null or tdc.modulate != DungeonGeometry.DOOR_TINT_CLOSED \
 				or tdc.get_collision_polygons_count(0) != 1 \
 				or tdc.get_collision_polygon_points(0, 0).size() != 4:
 			door_closed_ok = false
-			door_closed_detail = "fill tile " + str(coords3)
+			door_closed_detail = "floor tile " + str(coords3)
 			break
 	_check_matrix(door_closed_ok, door_closed_detail,
 			"DOOR_CLOSED_ALT=%d alternative is dark with one full-tile collision polygon"
 					% DungeonGeometry.DOOR_CLOSED_ALT)
 
-	# Open-door variant: the plain (white) base fill tile, no collision.
-	var open_td: TileData = fill_src.get_tile_data(DungeonGeometry.DOOR_FILL_ATLAS,
+	# Open-door variant: the plain (white) base floor tile, no collision.
+	var open_td: TileData = atlas_src.get_tile_data(DungeonGeometry.DOOR_FILL_ATLAS,
 			DungeonGeometry.DOOR_OPEN_ALT)
 	_check(open_td != null and open_td.modulate == Color(1, 1, 1)
 			and open_td.get_collision_polygons_count(0) == 0,
-			"DOOR_OPEN_ALT=%d is the plain fill tile without collision"
+			"DOOR_OPEN_ALT=%d is the plain floor tile without collision"
 					% DungeonGeometry.DOOR_OPEN_ALT)
 
 
@@ -237,7 +216,7 @@ func _run_real_generation_checks() -> void:
 				if _map.get_cell_source_id(1, cell) != -1:
 					punch_ok = false
 					punch_detail = "corridor cell " + str(cell) + " still has a wall tile"
-				if _map.get_cell_source_id(0, cell) != DungeonGeometry.FLOOR_SOURCE_ID:
+				if _map.get_cell_source_id(0, cell) != DungeonGeometry.DUNGEON_SOURCE_ID:
 					punch_ok = false
 					punch_detail = "corridor cell " + str(cell) + " shows no floor on layer 0"
 	_check_matrix(punch_ok, punch_detail,
@@ -248,8 +227,6 @@ func _run_real_generation_checks() -> void:
 	var wall_detail := ""
 	var fill_ok := true
 	var fill_detail := ""
-	var trim_ok := true
-	var trim_detail := ""
 	for z_any in _layout.zones:
 		var z: Zone = z_any
 		var origin: Vector2i = z.tile_rect.position
@@ -259,57 +236,37 @@ func _run_real_generation_checks() -> void:
 			for tx in size.x:
 				var pos: Vector2i = origin + Vector2i(tx, ty)
 				var depth: int = DungeonGeometry.tile_edge_depth(tx, ty, size.x, size.y)
-				# Layer 1: wall band uses the wall source with the per-side
-				# role tile, except where a corridor punched it open.
+				# Layer 1: wall band uses the single atlas source with the
+				# per-side role tile, except where a corridor punched it open.
 				if depth == 0:
 					var ws: int = _map.get_cell_source_id(1, pos)
 					if punched.has(pos):
 						if ws != -1:
 							wall_ok = false
 							wall_detail = "punched cell " + str(pos) + " has a wall tile"
-					elif ws != DungeonGeometry.WALL_SOURCE_ID \
+					elif ws != DungeonGeometry.DUNGEON_SOURCE_ID \
 							or _map.get_cell_atlas_coords(1, pos) \
 								!= DungeonGeometry.wall_atlas_for(tx, ty, size.x, size.y):
 						wall_ok = false
 						wall_detail = "wall band cell " + str(pos) + " has the wrong wall tile"
-				# Layer 0: fill everywhere, except unpunched trim-ring cells
-				# which use baseboard tiles: corners from the wall sheet,
-				# straight edges from the synthesized one-sided edge source.
-				# Punched corridor cells are plain floor (punch overwrites
-				# layer 0), so they fall in the else branch below.
+				# Layer 0: floor everywhere in the zone (punched corridors
+				# fall through too and are just plain floor).
 				if punched.has(pos):
 					continue
 				var ls: int = _map.get_cell_source_id(0, pos)
 				var lat: Vector2i = _map.get_cell_atlas_coords(0, pos)
 				var lalt: int = _map.get_cell_alternative_tile(0, pos)
-				if depth == 1 and DungeonGeometry.is_trim_corner(tx, ty, size.x, size.y):
-					var trim: Vector2i = DungeonGeometry.floor_edge_atlas_for(
-							tx, ty, size.x, size.y)
-					if ls != DungeonGeometry.WALL_SOURCE_ID or lat != trim or lalt != 0:
-						trim_ok = false
-						trim_detail = "trim corner cell " + str(pos)
-				elif depth == 1:
-					var straight: Dictionary = DungeonGeometry.trim_cell_at(
-							tx, ty, size.x, size.y)
-					if ls != DungeonGeometry.EDGE_SOURCE_ID \
-							or lat != straight.atlas or lalt != 0:
-						trim_ok = false
-						trim_detail = "trim straight-edge cell " + str(pos) \
-								+ " (src=%d, atlas=%s)" % [ls, lat]
-				else:
-					var expected_atlas := Vector2i(tx % 2, ty % 2)
-					var expected_alt: int = 0 if depth == 0 else fill_alt
-					if ls != DungeonGeometry.FLOOR_SOURCE_ID \
-							or lat != expected_atlas or lalt != expected_alt:
-						fill_ok = false
-						fill_detail = "floor cell " + str(pos) \
-								+ " (src=%d, atlas=%s, alt=%d; want src=%d, alt=%d)" \
-								% [ls, lat, lalt, DungeonGeometry.FLOOR_SOURCE_ID, expected_alt]
-	_check_matrix(wall_ok, wall_detail, "all wall-band cells use the wall source (id 0) role tiles")
+				var expected_alt: int = DungeonGeometry.DOOR_OPEN_ALT if depth == 0 else fill_alt
+				if ls != DungeonGeometry.DUNGEON_SOURCE_ID \
+						or lat != DungeonGeometry.floor_atlas_for(tx, ty) \
+						or lalt != expected_alt:
+					fill_ok = false
+					fill_detail = "floor cell " + str(pos) \
+							+ " (src=%d, atlas=%s, alt=%d; want src=%d, alt=%d)" \
+							% [ls, lat, lalt, DungeonGeometry.DUNGEON_SOURCE_ID, expected_alt]
+	_check_matrix(wall_ok, wall_detail, "all wall-band cells use the single source's ring role tiles")
 	_check_matrix(fill_ok, fill_detail,
-			"all fill cells use the floor source (id 1) with the zone's tint alternative")
-	_check_matrix(trim_ok, trim_detail,
-			"trim ring complete: corners per frozen coords + straight edges via the edge source")
+			"all fill cells use the atlas floor variants with the zone's tint alternative")
 
 	# At least one START zone painted with its tint alternative (probe the
 	# rect center: always a depth>=2 interior cell, never punched).

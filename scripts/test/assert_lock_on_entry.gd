@@ -94,7 +94,7 @@ func _init() -> void:
 	# ── Check 1: floor starts with doors OPEN (START-zone deadlock fix) ──
 	_check(door.state == 0, "door state is OPEN at floor start")
 	_check(tilemap.get_cell_source_id(0, Vector2i(cell - 1, cell / 2))
-			== DungeonGeometry.FLOOR_SOURCE_ID,
+			== DungeonGeometry.DUNGEON_SOURCE_ID,
 			"corridor shows floor on layer 0 after being punched open")
 	for t in corridor_tiles:
 		_check(tilemap.get_cell_source_id(2, t) == -1,
@@ -120,7 +120,7 @@ func _init() -> void:
 	_check(door.state == 1, "door CLOSED after entering combat zone")
 	var door_closed_ok := true
 	for t in corridor_tiles:
-		if tilemap.get_cell_source_id(2, t) != DungeonGeometry.FLOOR_SOURCE_ID \
+		if tilemap.get_cell_source_id(2, t) != DungeonGeometry.DUNGEON_SOURCE_ID \
 				or tilemap.get_cell_atlas_coords(2, t) != DungeonGeometry.DOOR_FILL_ATLAS \
 				or tilemap.get_cell_alternative_tile(2, t) != DungeonGeometry.DOOR_CLOSED_ALT:
 			door_closed_ok = false
@@ -179,18 +179,13 @@ func _init() -> void:
 					# wall band cells: either wall tile (source 0) or erased
 					# by a punched door corridor (source -1), never fill.
 					var ws: int = real_map.get_cell_source_id(1, pos)
-					if ws != DungeonGeometry.WALL_SOURCE_ID and ws != -1:
+					if ws != DungeonGeometry.DUNGEON_SOURCE_ID and ws != -1:
 						walls_ok = false
 				var fs: int = real_map.get_cell_source_id(0, pos)
-				# layer-0: fill everywhere except unpunched trim-ring cells
-				# (corners: wall-sheet baseboard, straight edges: the
-				# synthesized edge source). Punched corridors are plain fill.
-				if fs != DungeonGeometry.FLOOR_SOURCE_ID:
-					var depth1: int = DungeonGeometry.tile_edge_depth(
-							tx, ty, size.x, size.y)
-					if not (depth1 == 1 and (fs == DungeonGeometry.WALL_SOURCE_ID \
-							or fs == DungeonGeometry.EDGE_SOURCE_ID)):
-						fill_ok = false
+				# layer-0: fill everywhere (the v2 sheet has no separate trim
+				# ring; punched corridors are painted plain too).
+				if fs != DungeonGeometry.DUNGEON_SOURCE_ID:
+					fill_ok = false
 	_check(walls_ok, "real render: wall band uses the wall source (id 0)")
 	_check(fill_ok, "real render: every zone cell shows fill (id 1) on layer 0")
 
@@ -278,7 +273,7 @@ func gen_lock_combat_zone(gen: Node, real_layout: DungeonGenerator.FloorLayout,
 					expected.append(c_locked)
 		var tiles_ok: bool = _same_cell_set(real_map.get_used_cells(2), expected)
 		for cellv in cells:
-			if real_map.get_cell_source_id(2, cellv) != DungeonGeometry.FLOOR_SOURCE_ID \
+			if real_map.get_cell_source_id(2, cellv) != DungeonGeometry.DUNGEON_SOURCE_ID \
 					or real_map.get_cell_alternative_tile(2, cellv) \
 							!= DungeonGeometry.DOOR_CLOSED_ALT:
 				tiles_ok = false

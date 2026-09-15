@@ -2,38 +2,31 @@ extends SceneTree
 
 ## One-off authoring tool for the prebuilt dungeon TileSet resource.
 ##
-## Constructs res://tilesets/dungeon.tres headlessly and reproducibly from
-## the source sheets, baking collision and TileData.modulate alternatives:
-##   Source 0 — Wall_Floor_min_v2.png (4x4 @32px): outer 12 wall tiles get a
-##     full-tile physics polygon (layer 0, collision_layer = 1); inner 2x2
-##     floor-edge trim tiles have no collision.
-##   Source 1 — Plank_Floor_min.png (v1, 2x2 @32px): plain floor fill, no
-##     collision, no baseboard. Alternatives (author order):
-##     alt 1 START green tint, alt 2 REWARD gold, alt 3 EXIT red,
-##     alt 4 DOOR_CLOSED dark tint (open door = plain base tile, alt 0).
-##   Source 2 — synthesized one-sided straight-edge trim, 4x1 @32px: the
-##     sheet has baseboard only on corner tiles, so straight-edge trim is
-##     composed here by grafting a corner's outer-edge band onto the
-##     opposite corner's plain side (no collision, untinted).
+## Constructs res://tilesets/dungeons_v2.tres headlessly and reproducibly:
+##   Source 0 — Background_min_all_v2_FIXED.png (320x320, 10x10 @32px grid):
+##     - Wall ring tiles (corners + one straight tile per side) get a
+##       full-tile physics polygon (layer 0, collision_layer = 1).
+##     - Floor strip variants (4,4)/(4,5) — no collision — with modulate
+##       alternatives (author order):
+##       alt 1 START green tint, alt 2 REWARD gold, alt 3 EXIT red,
+##       alt 4 DOOR_CLOSED dark tint (open door = plain base tile, alt 0).
 ## Keep this script in the repo — it documents how the .tres was produced
 ## and stays compatible with later edits.
 ## Run: godot --headless -s scripts/tools/build_dungeon_tileset.gd
 
-const WALL_SHEET_PATH := "res://assets/Examples/Wall_Floor_min_v2.png"
-const FILL_SHEET_PATH := "res://assets/Examples/Plank_Floor_min.png"
+const SHEET_PATH := "res://assets/Examples/Background_min_all_v2_FIXED.png"
 
-const WALL_GRID := Vector2i(4, 4)
-const FILL_GRID := Vector2i(2, 2)
-
-# Wall-sheet tiles WITHOUT collision (floor-edge trim w/ baseboard).
-const WALL_INTERIOR := [
-	Vector2i(1, 1), Vector2i(2, 1),
-	Vector2i(1, 2), Vector2i(2, 2),
+# Wall ring tiles (full-tile collision). Corners + one straight per side.
+const WALL_RING_TILES: Array[Vector2i] = [
+	Vector2i(4, 0), Vector2i(5, 0), Vector2i(6, 0),   # TL / top / TR
+	Vector2i(4, 1), Vector2i(6, 1),                   # left / right
+	Vector2i(4, 2), Vector2i(5, 2), Vector2i(6, 2),   # BL / bottom / BR
 ]
 
-# Band of baseboard art (px) grafted when composing straight-edge tiles.
-# Probed against the sheet: the corner tiles' baseboard arm spans <= 8px.
-const TRIM_BAND_PX := 8
+# Floor strip variants (no collision, alternative tints).
+const FLOOR_TILES: Array[Vector2i] = [
+	Vector2i(4, 4), Vector2i(4, 5),
+]
 
 # Full-tile collision polygon, tile-space (32px tile centered on origin).
 # PackedVector2Array(...) is not a const expression in Godot 4.7, so a static var.
@@ -58,52 +51,28 @@ func _build() -> int:
 	ts.add_physics_layer()
 	ts.set_physics_layer_collision_layer(0, 1)
 
-	# ── Source 0: wall sheet (walls + floor-edge trim) ──
-	var wall_src: TileSetAtlasSource = TileSetAtlasSource.new()
-	var wall_texture: Texture2D = load(WALL_SHEET_PATH)
-	if wall_texture == null:
-		push_error("FAILED: cannot load wall sheet " + WALL_SHEET_PATH)
+	# ── Source 0: unified dungeon sheet (walls + floor) ──
+	var src: TileSetAtlasSource = TileSetAtlasSource.new()
+	var texture: Texture2D = load(SHEET_PATH)
+	if texture == null:
+		push_error("FAILED: cannot load dungeon sheet " + SHEET_PATH)
 		return 1
-	wall_src.texture = wall_texture
-	wall_src.texture_region_size = Vector2i(DungeonGeometry.TILE_SIZE, DungeonGeometry.TILE_SIZE)
+	src.texture = texture
+	src.texture_region_size = Vector2i(DungeonGeometry.TILE_SIZE, DungeonGeometry.TILE_SIZE)
 	# The source MUST be added to the TileSet BEFORE TileData is touched,
 	# so each tile sees the TileSet's physics layers (layer-insertion sync).
-	ts.add_source(wall_src, DungeonGeometry.WALL_SOURCE_ID)
-	for gy in range(0, WALL_GRID.y):
-		for gx in range(0, WALL_GRID.x):
-			var coords: Vector2i = Vector2i(gx, gy)
-			wall_src.create_tile(coords)
-			if WALL_INTERIOR.has(coords):
-				continue
-			var td: TileData = wall_src.get_tile_data(coords, 0)
-			td.set_collision_polygons_count(0, 1)
-			td.set_collision_polygon_points(0, 0, FULL_TILE_POLYGON)
+	ts.add_source(src, DungeonGeometry.DUNGEON_SOURCE_ID)
 
-	# ── Source 1: plain plank fill (v1) + modulate alternatives ──
-	var fill_src: TileSetAtlasSource = TileSetAtlasSource.new()
-	var fill_texture: Texture2D = load(FILL_SHEET_PATH)
-	if fill_texture == null:
-		push_error("FAILED: cannot load fill sheet " + FILL_SHEET_PATH)
-		return 1
-	fill_src.texture = fill_texture
-	fill_src.texture_region_size = Vector2i(DungeonGeometry.TILE_SIZE, DungeonGeometry.TILE_SIZE)
-	ts.add_source(fill_src, DungeonGeometry.FLOOR_SOURCE_ID)
-	for gy in range(0, FILL_GRID.y):
-		for gx in range(0, FILL_GRID.x):
-			var tile_err: int = _author_fill_tile(fill_src, Vector2i(gx, gy))
-			if tile_err != 0:
-				return tile_err
+	for coords in WALL_RING_TILES:
+		src.create_tile(coords)
+		var td: TileData = src.get_tile_data(coords, 0)
+		td.set_collision_polygons_count(0, 1)
+		td.set_collision_polygon_points(0, 0, FULL_TILE_POLYGON)
 
-	# ── Source 2: synthesized one-sided straight-edge trim ──
-	var edge_src: TileSetAtlasSource = TileSetAtlasSource.new()
-	var edge_canvas: Image = _compose_straight_trim_image()
-	if edge_canvas == null:
-		return 1
-	edge_src.texture = ImageTexture.create_from_image(edge_canvas)
-	edge_src.texture_region_size = Vector2i(DungeonGeometry.TILE_SIZE, DungeonGeometry.TILE_SIZE)
-	ts.add_source(edge_src, DungeonGeometry.EDGE_SOURCE_ID)
-	for gx in range(0, 4):
-		edge_src.create_tile(Vector2i(gx, 0))
+	for coords in FLOOR_TILES:
+		var tile_err: int = _author_floor_tile(src, coords)
+		if tile_err != 0:
+			return tile_err
 
 	# ── Save ──
 	var save_err: Error = ResourceSaver.save(ts, DungeonGeometry.DUNGEON_TILESET_PATH)
@@ -111,68 +80,33 @@ func _build() -> int:
 		push_error("FAILED: ResourceSaver.save err=%d for %s" % [save_err, DungeonGeometry.DUNGEON_TILESET_PATH])
 		return 1
 
-	print("OK: authored %s (%d sources, tile_size=%s)"
-			% [DungeonGeometry.DUNGEON_TILESET_PATH, ts.get_source_count(), str(ts.tile_size)])
+	print("OK: authored %s (%d sources, tile_size=%s, %d wall tiles, %d floor tiles)"
+			% [DungeonGeometry.DUNGEON_TILESET_PATH, ts.get_source_count(),
+			str(ts.tile_size), WALL_RING_TILES.size(), FLOOR_TILES.size()])
 	return 0
 
 
-## Composes the 4 one-sided straight trim tiles (128x32 canvas) from the
-## wall sheet's own corner tiles: straight_top = TL with its left arm
-## replaced by TR's plain-left side; symmetrical for the other sides.
-## Order matches DungeonGeometry EDGE_TRIM_TOP/BOTTOM/LEFT/RIGHT.
-func _compose_straight_trim_image() -> Image:
-	var sheet_tex: Texture2D = load(WALL_SHEET_PATH)
-	if sheet_tex == null:
-		push_error("FAILED: cannot load wall sheet for edge composition")
-		return null
-	var sheet: Image = sheet_tex.get_image()
-	if sheet.is_compressed():
-		sheet.decompress()
-	var tile_px: int = DungeonGeometry.TILE_SIZE
-	var tl: Image = sheet.get_region(Rect2i(tile_px, tile_px, tile_px, tile_px))
-	var tr: Image = sheet.get_region(Rect2i(2 * tile_px, tile_px, tile_px, tile_px))
-	var bl: Image = sheet.get_region(Rect2i(tile_px, 2 * tile_px, tile_px, tile_px))
-	var br: Image = sheet.get_region(Rect2i(2 * tile_px, 2 * tile_px, tile_px, tile_px))
-	var band: int = TRIM_BAND_PX
-
-	var straight_top: Image = tl.duplicate()
-	straight_top.blit_rect(tr, Rect2i(0, 0, band, tile_px), Vector2i(0, 0))
-	var straight_bottom: Image = bl.duplicate()
-	straight_bottom.blit_rect(br, Rect2i(0, 0, band, tile_px), Vector2i(0, 0))
-	var straight_left: Image = tl.duplicate()
-	straight_left.blit_rect(bl, Rect2i(0, 0, tile_px, band), Vector2i(0, 0))
-	var straight_right: Image = tr.duplicate()
-	straight_right.blit_rect(br, Rect2i(0, 0, tile_px, band), Vector2i(0, 0))
-
-	var canvas: Image = Image.create(4 * tile_px, tile_px, false, sheet.get_format())
-	canvas.blit_rect(straight_top, Rect2i(0, 0, tile_px, tile_px), Vector2i(0, 0))
-	canvas.blit_rect(straight_bottom, Rect2i(0, 0, tile_px, tile_px), Vector2i(tile_px, 0))
-	canvas.blit_rect(straight_left, Rect2i(0, 0, tile_px, tile_px), Vector2i(2 * tile_px, 0))
-	canvas.blit_rect(straight_right, Rect2i(0, 0, tile_px, tile_px), Vector2i(3 * tile_px, 0))
-	return canvas
-
-
-## Creates the plain-fill tile plus its four tinted alternatives, verifying
+## Creates a plain-floor tile plus its four tinted alternatives, verifying
 ## that the returned alternative ids match the DungeonGeometry contract.
-func _author_fill_tile(fill_src: TileSetAtlasSource, coords: Vector2i) -> int:
-	fill_src.create_tile(coords)
+func _author_floor_tile(src: TileSetAtlasSource, coords: Vector2i) -> int:
+	src.create_tile(coords)
 
 	# Author order maps 1:1 to the DungeonGeometry alternative constants.
-	var alt_start: int = fill_src.create_alternative_tile(coords)
-	var alt_reward: int = fill_src.create_alternative_tile(coords)
-	var alt_exit: int = fill_src.create_alternative_tile(coords)
-	var alt_door: int = fill_src.create_alternative_tile(coords)
+	var alt_start: int = src.create_alternative_tile(coords)
+	var alt_reward: int = src.create_alternative_tile(coords)
+	var alt_exit: int = src.create_alternative_tile(coords)
+	var alt_door: int = src.create_alternative_tile(coords)
 	if alt_start != DungeonGeometry.FLOOR_ALT_START \
 			or alt_reward != DungeonGeometry.FLOOR_ALT_REWARD \
 			or alt_exit != DungeonGeometry.FLOOR_ALT_EXIT \
 			or alt_door != DungeonGeometry.DOOR_CLOSED_ALT:
-		push_error("FAILED: alternative ids drifted from DungeonGeometry contract at fill tile %s" % str(coords))
+		push_error("FAILED: alternative ids drifted from DungeonGeometry contract at floor tile %s" % str(coords))
 		return 1
 
-	fill_src.get_tile_data(coords, alt_start).modulate = DungeonGeometry.FLOOR_TINT_START
-	fill_src.get_tile_data(coords, alt_reward).modulate = DungeonGeometry.FLOOR_TINT_REWARD
-	fill_src.get_tile_data(coords, alt_exit).modulate = DungeonGeometry.FLOOR_TINT_EXIT
-	var door_td: TileData = fill_src.get_tile_data(coords, alt_door)
+	src.get_tile_data(coords, alt_start).modulate = DungeonGeometry.FLOOR_TINT_START
+	src.get_tile_data(coords, alt_reward).modulate = DungeonGeometry.FLOOR_TINT_REWARD
+	src.get_tile_data(coords, alt_exit).modulate = DungeonGeometry.FLOOR_TINT_EXIT
+	var door_td: TileData = src.get_tile_data(coords, alt_door)
 	door_td.modulate = DungeonGeometry.DOOR_TINT_CLOSED
 	# Alternative tiles do NOT inherit the base tile's physics — the closed
 	# door must carry its own blocking polygon explicitly.
@@ -181,9 +115,9 @@ func _author_fill_tile(fill_src: TileSetAtlasSource, coords: Vector2i) -> int:
 
 	# Base variant (alt 0) must stay untinted: it doubles as the plain floor
 	# AND the open-door look.
-	var base_td: TileData = fill_src.get_tile_data(coords, DungeonGeometry.DOOR_OPEN_ALT)
+	var base_td: TileData = src.get_tile_data(coords, DungeonGeometry.DOOR_OPEN_ALT)
 	if base_td.modulate != Color(1, 1, 1):
-		push_error("FAILED: fill base tile modulate is not plain white at %s" % str(coords))
+		push_error("FAILED: floor base tile modulate is not plain white at %s" % str(coords))
 		return 1
 	return 0
 

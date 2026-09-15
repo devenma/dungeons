@@ -223,13 +223,8 @@ func _place_door_tiles(door: Zone.Door) -> void:
 	# Place door tiles across the whole punched corridor — the full depth of
 	# BOTH zone wall rings (mirrors the generator's punch and on_zone_cleared's
 	# erase). Closed door = dark fill alternative, blocking via tile collision.
-	var tile_pos: Vector2i
-	if door.edge_axis == "v":
-		tile_pos = Vector2i(door.edge_line, door.pos_along)
-	else:
-		tile_pos = Vector2i(door.pos_along, door.edge_line)
 	for cell in _corridor_cells(door):
-		_tilemap.set_cell(2, cell, DungeonGeometry.FLOOR_SOURCE_ID,
+		_tilemap.set_cell(2, cell, DungeonGeometry.DUNGEON_SOURCE_ID,
 				DungeonGeometry.DOOR_FILL_ATLAS, DungeonGeometry.DOOR_CLOSED_ALT)
 
 
@@ -248,7 +243,7 @@ func _corridor_cells(door: Zone.Door) -> Array[Vector2i]:
 		tile_pos = Vector2i(door.pos_along, door.edge_line)
 	var ring: int = DungeonGeometry.WALL_RING_TILES
 	var gap: int = DungeonGeometry.DOOR_GAP_TILES
-	var half_gap: int = gap / 2
+	var half_gap: float = gap / 2.0
 	var cells: Array[Vector2i] = []
 	for dz in range(-ring, ring):
 		for g in range(-half_gap, half_gap + 1):

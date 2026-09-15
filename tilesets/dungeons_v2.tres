@@ -1,0 +1,50 @@
+[gd_resource type="TileSet" format=3 uid="uid://dbcmx1bgdpwbs"]
+
+[ext_resource type="Texture2D" uid="uid://c1axa2q2w4oca" path="res://assets/Examples/Background_min_all_v2_FIXED.png" id="1_tihgd"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_l6w02"]
+texture = ExtResource("1_tihgd")
+texture_region_size = Vector2i(32, 32)
+4:0/0 = 0
+4:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-16, -16, 16, -16, 16, 16, -16, 16)
+5:0/0 = 0
+5:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-16, -16, 16, -16, 16, 16, -16, 16)
+6:0/0 = 0
+6:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-16, -16, 16, -16, 16, 16, -16, 16)
+4:1/0 = 0
+4:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-16, -16, -9, -16, -9, 16, -16, 16)
+6:1/0 = 0
+6:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(9, -16, 16, -16, 16, 16, 9, 16)
+4:2/0 = 0
+4:2/0/physics_layer_0/polygon_0/points = PackedVector2Array(-16, -16, 16, -16, 16, -8, -16, -8)
+5:2/0 = 0
+5:2/0/physics_layer_0/polygon_0/points = PackedVector2Array(-16, -16, 16, -16, 16, -8, -16, -8)
+6:2/0 = 0
+6:2/0/physics_layer_0/polygon_0/points = PackedVector2Array(-16, -16, 16, -16, 16, -8, -16, -8)
+4:4/next_alternative_id = 5
+4:4/0 = 0
+4:4/1 = 1
+4:4/1/modulate = Color(0.6, 1, 0.6, 1)
+4:4/2 = 2
+4:4/2/modulate = Color(1, 0.8, 0.2, 1)
+4:4/3 = 3
+4:4/3/modulate = Color(1, 0.4, 0.4, 1)
+4:4/4 = 4
+4:4/4/modulate = Color(0.4, 0.4, 0.4, 1)
+4:4/4/physics_layer_0/polygon_0/points = PackedVector2Array(-16, -16, 16, -16, 16, 16, -16, 16)
+4:5/next_alternative_id = 5
+4:5/0 = 0
+4:5/1 = 1
+4:5/1/modulate = Color(0.6, 1, 0.6, 1)
+4:5/2 = 2
+4:5/2/modulate = Color(1, 0.8, 0.2, 1)
+4:5/3 = 3
+4:5/3/modulate = Color(1, 0.4, 0.4, 1)
+4:5/4 = 4
+4:5/4/modulate = Color(0.4, 0.4, 0.4, 1)
+4:5/4/physics_layer_0/polygon_0/points = PackedVector2Array(-16, -16, 16, -16, 16, 16, -16, 16)
+
+[resource]
+tile_size = Vector2i(32, 32)
+physics_layer_0/collision_layer = 1
+sources/0 = SubResource("TileSetAtlasSource_l6w02")
