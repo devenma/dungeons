@@ -1,9 +1,10 @@
 extends SceneTree
 
-## Bow assertion (PA/SA/BC/WD): try_attack(RIGHT) fires one arrow into
-## current_scene at player.pos + RIGHT*20; a second call returns false on
-## cooldown; the sword's attack path still works; input bindings match the
-## confirmed decisions. Exit 0 = pass, 1 = fail.
+## Bow assertion (PA/SA/BC/WD): equip-then-act flow (slice 2, EM-1..4) —
+## boot grants the sword, RunManager grants+equips the bow, then
+## try_attack(RIGHT) fires one arrow into current_scene at
+## player.pos + RIGHT*20; a second call refires on full stamina. The
+## interact (F) binding is unchanged. Exit 0 = pass, 1 = fail.
 
 var _failures: int = 0
 
@@ -25,7 +26,8 @@ func _run() -> void:
 	var container: Node2D = Node2D.new()
 	root.add_child(container)
 	current_scene = container
-
+	var run_manager: RunManager = RunManager.new()
+	container.add_child(run_manager)
 	var player_packed: PackedScene = load("res://scenes/player/player.tscn") as PackedScene
 	var player: CharacterBody2D = player_packed.instantiate() as CharacterBody2D
 	container.add_child(player)
@@ -33,10 +35,22 @@ func _run() -> void:
 	for i in range(3):
 		await physics_frame
 
-	# Bow fires once; sword unaffected (SA-2 / BC-1).
-	var bow: Node2D = player.get_node("Weapons/Bow") as Node2D
-	var sword: Node = player.get_node("Weapons/Sword") as Node
+	# Equip-then-act (EM-1/EM-3): boot sword, grant bow, equip bow.
+	run_manager.start_new_run()
+	var bow_data: WeaponData = load("res://resources/weapons/bow_basic.tres") as WeaponData
+	var bow_index: int = run_manager.add_weapon(bow_data)
+	_check(run_manager.equip_weapon(bow_index), "EM-1: equip_weapon(1) accepted")
+	await physics_frame
 
+	var weapons_node: Node2D = player.get_node("Weapons") as Node2D
+	var bow: Node2D = weapons_node.get_child(0) as Node2D
+	if bow == null:
+		print("FAIL: no weapon mounted under Weapons")
+		quit(1)
+		return
+	_check(bow.get("data") == bow_data, "EM-1: mounted weapon data == bow_basic")
+
+	# Bow fires at full stamina (PA-3 / BC-1).
 	var fired: bool = bow.call("try_attack", Vector2.RIGHT) as bool
 	_check(fired, "PA-3/BC-1: bow.try_attack(RIGHT) returns true")
 
@@ -58,19 +72,12 @@ func _run() -> void:
 	_check(refired == true,
 			"PA-3: second call with full stamina refires (no cooldown)")
 
-	var melee_fired: bool = sword.call("try_attack", Vector2.DOWN) as bool
-	_check(melee_fired, "SA-2/WD: sword.try_attack(DOWN) still works")
-
-	# Input bindings (SA-1 + decisions obs #389).
-	var has_secondary: bool = InputMap.has_action("secondary_attack")
-	_check(has_secondary, "SA-1: secondary_attack action defined")
-	if has_secondary:
-		var is_mouse_right: bool = false
-		for input_event in InputMap.action_get_events("secondary_attack"):
-			var mouse := input_event as InputEventMouseButton
-			if mouse != null and mouse.button_index == MOUSE_BUTTON_RIGHT:
-				is_mouse_right = true
-		_check(is_mouse_right, "SA-1: secondary_attack bound to Mouse Right")
+	# Input bindings (SA-1): removed actions stay absent (IC-1) and the
+	# interact binding is unchanged.
+	_check(not InputMap.has_action("secondary_attack"),
+			"SA-1/IC-1: secondary_attack removed from Input Map")
+	_check(not InputMap.has_action("staff_attack"),
+			"IC-1: staff_attack removed from Input Map")
 	var has_interact: bool = InputMap.has_action("interact")
 	if has_interact:
 		var interact_key_f: bool = false
@@ -82,5 +89,5 @@ func _run() -> void:
 		_check(interact_key_f, "interact bound to Key F")
 		_check(single_binding, "interact has exactly one binding (no dual-bound/None)")
 
-	_check(_failures == 0, "bow fires secondary: all checks passed")
+	_check(_failures == 0, "bow fires secondary (equip-then-act): all checks passed")
 	quit(0 if _failures == 0 else 1)

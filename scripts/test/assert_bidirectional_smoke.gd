@@ -1,8 +1,9 @@
 extends SceneTree
 
-## Bidirectional combat smoke (phase 4 milestone): proves HP-2/HP-3/HP-4
-## end-to-end with nonzero damage in both directions, plus the SW-3 aim
-## default and the HC-4 died-once contract. Exit 0 = pass, 1 = fail.
+## Bidirectional combat smoke (phase 4 milestone, equip-then-act slice 2):
+## proves HP-2/HP-3/HP-4 end-to-end with nonzero damage in both directions,
+## plus the SW-3 aim default and the HC-4 died-once contract. The sword is
+## the boot-equipped mount (EM-1/EM-3). Exit 0 = pass, 1 = fail.
 
 var _failures: int = 0
 var _player_died_count: int = 0
@@ -90,8 +91,14 @@ func _build_double(hitbox_offset: Vector2) -> Node2D:
 
 
 func _run() -> void:
+	var container: Node2D = Node2D.new()
+	root.add_child(container)
+	current_scene = container
+	var run_manager: RunManager = RunManager.new()
+	container.add_child(run_manager)
 	var player := (load("res://scenes/player/player.tscn") as PackedScene).instantiate() as Node2D
-	root.add_child(player)
+	container.add_child(player)
+	run_manager.start_new_run()
 
 	# double_a takes the sword hit at +30 x: inside the RIGHT swing box
 	# (sword.tscn: 30x30 shape at offset (23,0) -> reach x in [8, 38]) and
@@ -105,9 +112,13 @@ func _run() -> void:
 	double_b.position = Vector2(100, 0)
 	root.add_child(double_b)
 
-	await _frames(2)
+	await _frames(3)
 
-	var sword := player.get_node("Weapons/Sword") as Node2D
+	# Boot-equip mount (EM-1/EM-3): single mounted weapon is the sword.
+	var sword := (player.get_node("Weapons") as Node2D).get_child(0) as Node2D
+	var sword_data: WeaponData = sword.get("data") as WeaponData
+	_check(sword_data == load("res://resources/weapons/sword_basic.tres")
+			, "EM-1: boot mount is the sword default")
 	var player_health := player.get_node("Health") as HealthComponent
 	var enemy_health := double_a.get_node("Health") as HealthComponent
 	player_health.died.connect(_on_player_died_count)

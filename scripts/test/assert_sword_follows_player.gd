@@ -1,10 +1,12 @@
 extends SceneTree
 
 # Runtime assertion for scene-level transform wiring:
-# the Sword must follow the Player. Regression for the plain-Node "Weapons"
-# container bug — a Node (non-CanvasItem) parent severs the CanvasItem
-# transform chain, leaving the sword at the world origin (map corner) with its
-# hitbox swinging around (0,0) → zero damage.
+# the equipped Sword must follow the Player. Regression for the plain-Node
+# "Weapons" container bug — a Node (non-CanvasItem) parent severs the
+# CanvasItem transform chain, leaving the sword at the world origin
+# (map corner) with its hitbox swinging around (0,0) → zero damage.
+# Slice 2: the sword is dynamically mounted by the EquipmentController
+# (no static Weapons/Sword node); retrieve the mount after the equip.
 # Run: godot --headless -s scripts/test/assert_sword_follows_player.gd
 
 var _fails: int = 0
@@ -30,11 +32,18 @@ func _run() -> void:
 	# wait one frame so _ready/@onready run and transforms propagate.
 	await process_frame
 
-	var sword: Node2D = player.get_node("Weapons/Sword") as Node2D
-	_check(sword != null, "sword exists under Weapons")
+	# Equip-then-act (EM-1/EM-3): no RunManager reachable from a bare
+	# root spawn -> the controller mounts the sword default.
+	var weapons_node: Node2D = player.get_node("Weapons") as Node2D
+	var sword: Node2D = weapons_node.get_child(0) as Node2D
+	_check(sword != null, "sword mounted under Weapons")
 	if sword == null:
 		quit(1)
 		return
+	_check(weapons_node.get_child_count() == 1, "exactly one weapon mounted")
+	var sword_data: WeaponData = sword.get("data") as WeaponData
+	var sword_default: WeaponData = load("res://resources/weapons/sword_basic.tres") as WeaponData
+	_check(sword_data == sword_default, "EM-3: mounted data == sword_basic default")
 	_check(sword.get_node_or_null("Hitbox") != null, "sword hitbox @onready resolved")
 
 	# ── Sword follows the player ──

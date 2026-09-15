@@ -1,9 +1,10 @@
 extends SceneTree
 
-## Staff fire assertion (R-staff-weapon/R-player-attach/R-stamina-gate):
+## Staff fire assertion (R-staff-weapon/R-player-attach/R-stamina-gate,
+## equip-then-act slice 2): RunManager grants+equips the staff, then
 ## staff.try_attack(RIGHT) fires exactly one bolt at player pos + aim*20 at
-## full stamina, refires freely (no cooldown), refuses silently when the
-## pool is below cost, and sword/bow still fire alongside. Exit 0 = pass.
+## full stamina, refires freely (no cooldown), and refuses silently when the
+## pool is below cost. Exit 0 = pass.
 
 var _failures: int = 0
 
@@ -31,6 +32,8 @@ func _run() -> void:
 	var container: Node2D = Node2D.new()
 	root.add_child(container)
 	current_scene = container
+	var run_manager: RunManager = RunManager.new()
+	container.add_child(run_manager)
 	var player_packed: PackedScene = load("res://scenes/player/player.tscn") as PackedScene
 	var player: CharacterBody2D = player_packed.instantiate() as CharacterBody2D
 	container.add_child(player)
@@ -38,20 +41,19 @@ func _run() -> void:
 	for i in range(3):
 		await physics_frame
 
-	var staff: Node2D = player.get_node("Weapons/Staff") as Node2D
+	# Equip-then-act (EM-1/EM-3): boot sword, grant staff, equip staff.
+	run_manager.start_new_run()
+	var staff_data: WeaponData = load("res://resources/weapons/staff_basic.tres") as WeaponData
+	var staff_index: int = run_manager.add_weapon(staff_data)
+	_check(run_manager.equip_weapon(staff_index), "EM-1: equip_weapon(1) accepted")
+	await physics_frame
+	var staff: Node2D = (player.get_node("Weapons") as Node2D).get_child(0) as Node2D
 	if staff == null:
-		print("FAIL: Weapons/Staff missing from player.tscn")
+		print("FAIL: no weapon mounted under Weapons")
 		quit(1)
 		return
-
-	# Three families coexist (R-player-attach): Sword, Bow, Staff all present
-	# and each exposes try_attack.
-	var sword: Node2D = player.get_node("Weapons/Sword") as Node2D
-	var bow: Node2D = player.get_node("Weapons/Bow") as Node2D
-	var has_all: bool = sword != null and bow != null \
-			and sword.has_method("try_attack") and bow.has_method("try_attack") \
-			and staff.has_method("try_attack")
-	_check(has_all, "PA: player.tscn holds Sword, Bow and Staff with try_attack")
+	_check(staff.get("data") == staff_data, "EM-1: mounted data == staff_basic")
+	_check(staff.has_method("try_attack"), "PA: mounted staff exposes try_attack")
 
 	# Full stamina: try_attack(RIGHT) -> true, exactly one bolt at the seam.
 	var fired: bool = staff.call("try_attack", Vector2.RIGHT) as bool
@@ -94,12 +96,17 @@ func _run() -> void:
 		var bolt: Area2D = bolts[0] as Area2D
 		_check(bolt.speed == 280.0, "SF: bolt.speed == staff projectile_speed 280")
 
-	# Regression: sword and bow still fire on the same player.
+	# Regression on the mount contract: re-equipping the sword swaps the
+	# single mounted weapon back (EM-1 regression on this player instance).
+	var sword_data: WeaponData = load("res://resources/weapons/sword_basic.tres") as WeaponData
+	var sword_index: int = run_manager.add_weapon(sword_data)
+	run_manager.equip_weapon(sword_index)
+	await physics_frame
+	var sword: Node2D = (player.get_node("Weapons") as Node2D).get_child(0) as Node2D
+	_check(sword.get("data") == sword_data, "EM-1: re-equip swaps to the sword")
 	stamina.reset_full()
 	var sword_ok: bool = sword.call("try_attack", Vector2.RIGHT) as bool
-	var bow_ok: bool = bow.call("try_attack", Vector2.RIGHT) as bool
 	_check(sword_ok, "SF: regression sword.try_attack fires")
-	_check(bow_ok, "SF: regression bow.try_attack fires")
 
-	_check(_failures == 0, "staff fires: all checks passed")
+	_check(_failures == 0, "staff fires (equip-then-act): all checks passed")
 	quit(0 if _failures == 0 else 1)

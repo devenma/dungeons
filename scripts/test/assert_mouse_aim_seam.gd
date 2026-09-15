@@ -1,9 +1,10 @@
 extends SceneTree
 
-## Mouse-aim seam assertion suite (MA-*): verifies the AimResolver contract
-## with synthetic events, weapon wiring through real player.tscn (sword
-## rotation follows resolved aim, bow arrow spawns at pos + aim*20), and the
-## joypad bindings for attack/secondary_attack. Exit 0 = pass, 1 = fail.
+## Mouse-aim seam assertion suite (MA-*, equip-then-act slice 2): verifies
+## the AimResolver contract with synthetic events and weapon wiring through
+## the mounted weapon on real player.tscn (sword rotation follows resolved
+## aim, bow arrow spawns at pos + aim*20). All weapons gate on "attack"
+## (IC-2); secondary_attack/staff_attack are gone (IC-1). Exit 0 = pass.
 
 var _failures: int = 0
 
@@ -74,11 +75,6 @@ func _run() -> void:
 			and zero_mouse.length() > 0.0,
 			"MA-fallback: result is never zero or NaN")
 
-	var rmb_aim: Vector2 = AimResolver.resolve(
-			_mouse_event(MOUSE_BUTTON_RIGHT), player_pos, Vector2.DOWN, mouse_world)
-	_check(rmb_aim.is_equal_approx(expected_aim),
-			"MA-device-symmetric: RMB (secondary_attack) aims to mouse too")
-
 	var unknown_resolved: Vector2 = AimResolver.resolve(
 			InputEventAction.new(), player_pos, Vector2.DOWN, mouse_world)
 	_check(unknown_resolved == Vector2.ZERO,
@@ -90,6 +86,10 @@ func _run() -> void:
 	root.add_child(container)
 	current_scene = container
 
+	# Equip-then-act (EM-1/EM-3): the scene-instance RunManager lives inside
+	# the current_scene subtree so the controller resolves it.
+	var run_manager: RunManager = RunManager.new()
+	container.add_child(run_manager)
 	var player_packed: PackedScene = load("res://scenes/player/player.tscn") as PackedScene
 	var player: CharacterBody2D = player_packed.instantiate() as CharacterBody2D
 	container.add_child(player)
@@ -99,17 +99,25 @@ func _run() -> void:
 
 	var headless_mouse: Vector2 = Vector2.ZERO
 	var wire_aim: Vector2 = (headless_mouse - player.global_position).normalized()
-	var sword: Node2D = player.get_node("Weapons/Sword") as Node2D
+	run_manager.start_new_run()
+	var container_weapons_node: Node2D = player.get_node("Weapons") as Node2D
+	var sword: Node2D = container_weapons_node.get_child(0) as Node2D
 
 	sword._unhandled_input(_mouse_event(MOUSE_BUTTON_LEFT))
 	_check(sword.rotation == wire_aim.angle(),
 			"MA: injected mouse event -> sword rotation == aim.angle()")
 
-	var bow: Node2D = player.get_node("Weapons/Bow") as Node2D
-	bow._unhandled_input(_mouse_event(MOUSE_BUTTON_RIGHT))
+	# Swap to the bow (single mounted weapon).
+	var bow_data: WeaponData = load("res://resources/weapons/bow_basic.tres") as WeaponData
+	var bow_index: int = run_manager.add_weapon(bow_data)
+	run_manager.equip_weapon(bow_index)
+	await physics_frame
+	var bow: Node2D = (player.get_node("Weapons") as Node2D).get_child(0) as Node2D
+	_check(bow.get("data") == bow_data, "MA: bow mounted after equip")
+	bow._unhandled_input(_mouse_event(MOUSE_BUTTON_LEFT))
 	var arrows: Array = container.get_children().filter(
 			func(node: Node) -> bool: return node is Arrow)
-	_check(arrows.size() == 1, "MA: injected RMB event -> bow fired one arrow")
+	_check(arrows.size() == 1, "MA: injected attack event -> bow fired one arrow")
 	if arrows.size() == 1:
 		var arrow: Area2D = arrows[0] as Area2D
 		var arrow_pos: Vector2 = (arrow as Node2D).global_position
@@ -117,46 +125,27 @@ func _run() -> void:
 		_check(arrow_pos.distance_to(expected_pos) < 1.0,
 				"MA: arrow at pos + aim * 20 (found %s)" % arrow_pos)
 
-	# --- Binding asserts (MA-joypad-bindings).
+	# --- Binding asserts (MA-joypad-bindings, IC-1) ---
 	var attack_events: Array = InputMap.action_get_events("attack")
-	var secondary_events: Array = InputMap.action_get_events("secondary_attack")
 	var attack_pad_buttons: Array[int] = []
-	var secondary_pad_buttons: Array[int] = []
 	for input_event: InputEvent in attack_events:
 		var pad: InputEventJoypadButton = input_event as InputEventJoypadButton
 		if pad != null:
 			attack_pad_buttons.append(pad.button_index)
-	for input_event: InputEvent in secondary_events:
-		var pad: InputEventJoypadButton = input_event as InputEventJoypadButton
-		if pad != null:
-			secondary_pad_buttons.append(pad.button_index)
 	_check(attack_pad_buttons.size() >= 1, "MA-joypad: attack has >=1 joypad button")
-	_check(secondary_pad_buttons.size() >= 1,
-			"MA-joypad: secondary_attack has >=1 joypad button")
-	var distinct: bool = attack_pad_buttons.any(
-			func(btn: int) -> bool: return secondary_pad_buttons.has(btn)) == false
-	_check(distinct, "MA-joypad: attack button 2 != secondary button 3, no dual-binding")
-
-	# --- Staff binding asserts (MA-joypad-bindings-three-actions): the
-	# distinct-button contract spans attack != secondary_attack != staff_attack.
-	var staff_events: Array = InputMap.action_get_events("staff_attack")
-	var staff_keys: Array[int] = []
-	var staff_pad_buttons: Array[int] = []
-	for input_event: InputEvent in staff_events:
-		var key: InputEventKey = input_event as InputEventKey
-		if key != null:
-			staff_keys.append(key.physical_keycode)
-		var pad: InputEventJoypadButton = input_event as InputEventJoypadButton
-		if pad != null:
-			staff_pad_buttons.append(pad.button_index)
-	_check(staff_keys == [81], "MA-joypad: staff_attack has exactly 1 key (Q, physical 81)")
-	_check(staff_pad_buttons.size() == 1,
-			"MA-joypad: staff_attack has exactly 1 joypad button")
-	var staff_distinct: bool = staff_pad_buttons.any(
-			func(btn: int) -> bool:
-				return attack_pad_buttons.has(btn) or secondary_pad_buttons.has(btn)) == false
-	_check(staff_distinct,
-			"MA-joypad: staff pad button 0 != attack 2 != secondary 3, no dual-binding")
+	_check(not InputMap.has_action("secondary_attack"),
+			"IC-1: secondary_attack removed (single attack action)")
+	_check(not InputMap.has_action("staff_attack"),
+			"IC-1: staff_attack removed (single attack action)")
+	var has_swap: bool = InputMap.has_action("swap_weapon")
+	_check(has_swap, "IC-1: swap_weapon exists")
+	if has_swap:
+		var swap_is_tab: bool = false
+		for input_event in InputMap.action_get_events("swap_weapon"):
+			var key := input_event as InputEventKey
+			if key != null and key.physical_keycode == 4194306:
+				swap_is_tab = true
+		_check(swap_is_tab, "IC-1: swap_weapon bound to Tab (physical 4194306)")
 
 	_check(_failures == 0, "mouse-aim seam: all checks passed")
 	quit(0 if _failures == 0 else 1)

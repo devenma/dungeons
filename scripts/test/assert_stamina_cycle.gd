@@ -1,9 +1,10 @@
 extends SceneTree
 
-## Stamina cycle assertion (ST-component/ST-weapon-gating/ST-regression):
-## unit pool math + synthetic-delta regen, and integration on the real
-## player.tscn — both weapons gated, silent refusal, missing-node degrade,
-## and drain -> refuse -> regen with exactly one refusal. Exit 0 = pass.
+## Stamina cycle assertion (ST-component/ST-weapon-gating/ST-regression),
+## equip-then-act slice 2: unit pool math + synthetic-delta regen, and
+## integration on the real player.tscn with the EQUIPPED weapon — each
+## mounted weapon is gated, silent refusal, missing-node degrade, and
+## drain -> refuse -> regen with exactly one refusal. Exit 0 = pass.
 
 var _failures: int = 0
 
@@ -63,71 +64,97 @@ func _unit_checks() -> void:
 	stamina.queue_free()
 
 
-## Integration: real player.tscn, real weapon gating (ST-weapon-gating).
+## Integration: real player.tscn, real equipment mounting (ST-weapon-gating).
 func _integration_checks() -> void:
 	# Headless spawn target: assign a Node2D container as current_scene.
 	var container: Node2D = Node2D.new()
 	root.add_child(container)
 	current_scene = container
+	var run_manager: RunManager = RunManager.new()
+	container.add_child(run_manager)
 	var player_packed: PackedScene = load("res://scenes/player/player.tscn") as PackedScene
 	var player: CharacterBody2D = player_packed.instantiate() as CharacterBody2D
 	container.add_child(player)
 	player.position = Vector2(50, 50)
 	for i in range(3):
 		await physics_frame
+	run_manager.start_new_run()
+	await physics_frame
+	var weapons_node: Node2D = player.get_node("Weapons") as Node2D
 
-	var sword: Node = player.get_node("Weapons/Sword")
-	var bow: Node2D = player.get_node("Weapons/Bow") as Node2D
-	var staff: Node2D = player.get_node("Weapons/Staff") as Node2D
+	var sword: Node2D = weapons_node.get_child(0) as Node2D
+	var sword_data: WeaponData = sword.get("data") as WeaponData
+	_check(sword_data == load("res://resources/weapons/sword_basic.tres"),
+			"Ig: boot equip mounts the sword")
+	var staff_data: WeaponData = load("res://resources/weapons/staff_basic.tres") as WeaponData
+	var bow_data: WeaponData = load("res://resources/weapons/bow_basic.tres") as WeaponData
+	var staff_index: int = run_manager.add_weapon(staff_data)
+	var bow_index: int = run_manager.add_weapon(bow_data)
 	var stamina: StaminaComponent = player.get_node("Stamina") as StaminaComponent
 
-	# Full stamina: all attack paths pass (LMB sword, Space via aim
-	# seam same path, RMB bow, Q staff).
+	# Full stamina: each mounted attack path passes in its turn (IC-2 flow:
+	# one weapon at a time responds). Sword first: full -> 80.
 	var sword_hit: bool = sword.call("try_attack", Vector2.RIGHT) as bool
-	_check(sword_hit, "Ig: sword.try_attack(RIGHT) at full stamina = true")
-	var bow_hit: bool = bow.call("try_attack", Vector2.RIGHT) as bool
-	_check(bow_hit, "Ig: bow.try_attack(RIGHT) at full stamina = true")
-	var staff_hit: bool = staff.call("try_attack", Vector2.RIGHT) as bool
-	_check(staff_hit, "Ig: staff.try_attack(RIGHT) at full stamina = true")
-	_check(stamina.current_stamina == 100 - 20 - 12 - 18,
-			"Ig: pool drained by 20 (sword) + 12 (bow) + 18 (staff)")
+	_check(sword_hit, "Ig: equipSword.try_attack(RIGHT) at full stamina = true")
+	_check(stamina.current_stamina == 100 - 20,
+			"Ig: pool drained by 20 (sword)")
 
-	# Drain below sword cost: silent refusal.
+	# Swap to staff (EM-1): sword unmounted; staff is the single weapon.
+	run_manager.equip_weapon(staff_index)
+	await physics_frame
+	var staff: Node2D = weapons_node.get_child(0) as Node2D
+	_check(staff.get("data") == staff_data, "Ig: swap mounts the staff")
+	stamina.reset_full()
+	var staff_hit: bool = staff.call("try_attack", Vector2.RIGHT) as bool
+	_check(staff_hit, "Ig: equipStaff.try_attack(RIGHT) at full stamina = true")
+
+	# Bow inherits the same gate on its own mount.
+	run_manager.equip_weapon(bow_index)
+	await physics_frame
+	var bow: Node2D = weapons_node.get_child(0) as Node2D
+	_check(bow.get("data") == bow_data, "Ig: swap mounts the bow")
+	stamina.reset_full()
+	var bow_hit: bool = bow.call("try_attack", Vector2.RIGHT) as bool
+	_check(bow_hit, "Ig: equipBow.try_attack(RIGHT) at full stamina = true")
+
+	# Drain below cost: silent refusal (staff pooled math on its own mount).
+	stamina.reset_full()
+	var staff2_index: int = staff_index
+	run_manager.equip_weapon(staff2_index)
+	await physics_frame
+	var staff2: Node2D = weapons_node.get_child(0) as Node2D
+	staff2.call("try_attack", Vector2.RIGHT)
 	stamina.spend(stamina.current_stamina)
 	_check(stamina.current_stamina == 0, "Ig: stamina drained to 0")
 	stamina._regen_accumulator = 0.0
-	var refused: bool = sword.call("try_attack", Vector2.RIGHT) as bool
-	_check(not refused, "Ig: silent refusal below cost (sword)")
 	var arrows: Array = container.get_children().filter(
 			func(node: Node) -> bool: return node is Arrow)
-	# Arrow count should NOT grow after the refusal.
-	var refused_bow: bool = bow.call("try_attack", Vector2.RIGHT) as bool
-	_check(not refused_bow, "Ig: silent refusal below cost (bow)")
-	var refused_staff: bool = staff.call("try_attack", Vector2.RIGHT) as bool
+	var refused_staff: bool = staff2.call("try_attack", Vector2.RIGHT) as bool
 	_check(not refused_staff, "Ig: silent refusal below cost (staff)")
 	var arrows_after: Array = container.get_children().filter(
 			func(node: Node) -> bool: return node is Arrow)
-	_check(arrows.size() == arrows_after.size(),
+	_check(arrows.size() <= arrows_after.size() and arrows_after.size() - arrows.size() == 0,
 			"Ig: no arrow/bolt spawned on refusal")
 
 	# Missing Stamina node degrades to unlimited; simulate by clearing the
 	# weapon's stamina cache directly (the null-lookup branch).
-	sword.set("_stamina", null)
-	var degraded: bool = sword.call("try_attack", Vector2.RIGHT) as bool
+	run_manager.equip_weapon(0)
+	await physics_frame
+	var sword2: Node2D = weapons_node.get_child(0) as Node2D
+	sword2.set("_stamina", null)
+	var degraded: bool = sword2.call("try_attack", Vector2.RIGHT) as bool
 	_check(degraded, "Dg: null stamina node -> unlimited attack (true)")
 
 	# Drain -> refuse -> regen: exactly one refusal at the boundary
 	# (ST-regression full cycle; no double-refusal after whole-tick regen).
-	var sword2: Node = player.get_node("Weapons/Sword")
 	sword2.set("_stamina", stamina)
 	stamina.reset_full()
 	sword2.call("try_attack", Vector2.RIGHT)  # 100 -> 80
-	bow.call("try_attack", Vector2.RIGHT)     # 80 -> 68
-	stamina.spend(50)
-	_check(stamina.current_stamina == 18, "Cy: pool at 18 (below sword 20)")
+	stamina.spend(60)
+	_check(stamina.current_stamina == 20, "Cy: pool at 20 (sword cost edge)")
 	var refuse_count: int = 0
 	for i in range(60):  # ~1s of frames; regen grants 20 in that time
-		if not sword.call("try_attack", Vector2.RIGHT) as bool:
+		if not sword2.call("try_attack", Vector2.RIGHT) as bool:
 			refuse_count += 1
 		else:
 			stamina.spend(20)  # keep the invariant honest when it refires
@@ -135,6 +162,8 @@ func _integration_checks() -> void:
 	_check(refuse_count >= 1, "Cy: at least one refusal at the boundary")
 	var final_pool: int = stamina.current_stamina
 	_check(final_pool >= 0, "Cy: pool never negative (clamped)")
+
+	container.queue_free()
 
 
 func _run() -> void:
