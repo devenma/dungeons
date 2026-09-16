@@ -1,17 +1,17 @@
-[gd_resource type="Resource" script_class="WeaponData" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="WeaponData" format=3 uid="uid://cflu6y1i7qagy"]
 
-[ext_resource type="Script" path="res://resources/weapons/weapon_data.gd" id="1"]
+[ext_resource type="Script" uid="uid://7hkykplxnmie" path="res://resources/weapons/weapon_data.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/projectiles/arrow.tscn" id="2"]
 [ext_resource type="PackedScene" path="res://scenes/weapons/bow.tscn" id="3"]
 
 [resource]
 script = ExtResource("1")
-weapon_name = "Basic Bow"
 weapon_kind = 1
 weapon_scene = ExtResource("3")
+weapon_name = "Basic Bow"
 damage = 8
 attack_speed = 2.0
 knockback = 12.0
+stamina_cost = 12
 projectile_speed = 400.0
 projectile_scene = ExtResource("2")
-stamina_cost = 12
