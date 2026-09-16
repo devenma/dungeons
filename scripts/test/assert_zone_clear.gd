@@ -2,11 +2,14 @@ extends SceneTree
 
 ## Zone-clear assertion (phase 6): a COMBAT zone with 2 slimes spawns them
 ## at inset interior tiles (CZ-2), clears and emits zone_cleared exactly
-## once when both die (CZ-3), and the REWARD stub stays auto-clear without
-## emitting (CZ-4). Exit 0 = pass, 1 = fail.
+## once when both die (CZ-3), and REWARD zones spawn one seeded chest and
+## stay auto-clear without emitting (CZ-4 + RC-2). Exit 0 = pass, 1 = fail.
 
 var _cleared_events: Array[int] = []
+var _grant_events: int = 0
 var _failures: int = 0
+
+const ChestScript: GDScript = preload("res://scripts/dungeon/chest.gd")
 
 
 class FakeLayout:
@@ -27,6 +30,10 @@ func _on_zone_cleared(zone_id: int) -> void:
 	_cleared_events.append(zone_id)
 
 
+func _on_weapon_granted(_weapon_data: WeaponData) -> void:
+	_grant_events += 1
+
+
 func _check(condition: bool, label: String) -> void:
 	if condition:
 		print("PASS: " + label)
@@ -39,6 +46,7 @@ func _run() -> void:
 	var spawner := (load("res://scripts/dungeon/spawner.gd") as GDScript).new() as Node
 	root.add_child(spawner)
 	spawner.connect("zone_cleared", _on_zone_cleared)
+	spawner.connect("weapon_granted", _on_weapon_granted)
 
 	var container := Node2D.new()
 	root.add_child(container)
@@ -60,7 +68,12 @@ func _run() -> void:
 	spawner.call("spawn_content", layout, container)
 	await _frames(2)
 
-	var enemies := container.get_children()
+	# The container now holds enemies AND the REWARD chest; count via the
+	# HealthComponent marker instead of child count.
+	var enemies: Array[Node] = []
+	for child in container.get_children():
+		if child.get_node_or_null("Health") != null:
+			enemies.append(child)
 	_check(enemies.size() == 2, "CZ-1: 2 slimes spawned in COMBAT zone")
 
 	# Interior band per DungeonGeometry: 32px tiles, inset = wall ring +
@@ -89,6 +102,14 @@ func _run() -> void:
 	_check(combat.cleared, "CZ-3: combat zone.cleared = true")
 	_check(reward.cleared, "CZ-4: reward zone auto-cleared")
 	_check(not _cleared_events.has(8), "CZ-4: reward emits no zone_cleared")
+
+	# RC-2: REWARD now spawns exactly one seeded chest (no door gating).
+	var chest_count: int = 0
+	for child in container.get_children():
+		if child.get_script() == ChestScript:
+			chest_count += 1
+	_check(chest_count == 1, "CZ-4/RC-2: one chest spawned in REWARD zone")
+	_check(_grant_events == 0, "RC-2: no granted relay from spawn alone")
 
 	_check(_failures == 0, "zone clear: all checks passed")
 	quit(0 if _failures == 0 else 1)
