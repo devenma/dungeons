@@ -3,7 +3,7 @@ extends Area2D
 ## Floor-exit trigger (EX-4, XT-1..XT-2). Mounted by DungeonManager in the
 ## EXIT zone; tracks the player body and relays `exit_requested` exactly
 ## once on `interact` while the player is inside. The scene never touches
-## RunManager: DungeonManager owns the floor transition.
+## the run state: DungeonManager owns the floor transition.
 
 signal exit_requested
 
