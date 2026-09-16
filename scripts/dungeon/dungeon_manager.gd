@@ -13,7 +13,6 @@ func _get_run_manager():
 	return get_node(run_manager_node_path) if run_manager_node_path else null
 
 var _current_layout
-var _player_in_exit: bool = false
 var _dead_handling: bool = false
 
 # Runtime nodes
@@ -21,11 +20,15 @@ var _dungeon: Node2D
 var _tilemap: TileMap
 var _door_controller: Node
 var _spawner: Node
-var _exit_area: Area2D
+
+# Local alias: referenced by preloaded script instead of any global
+# `ReturnExit`/class_name, which is not registered in headless runs
+# without an editor scan (spawner.gd precedent).
+const ExitScene: PackedScene = preload("res://scenes/dungeon/exit.tscn")
+const ExitScript: GDScript = preload("res://scripts/dungeon/exit_area.gd")
 
 
 func _ready() -> void:
-	set_process_input(true)
 	if floor_data == null:
 		floor_data = FloorData.new()
 	# Hook player death BEFORE the floor starts (DR-1, §44.16).
@@ -132,7 +135,7 @@ func _start_floor() -> void:
 	_spawner.spawn_content(layout, dungeon)
 
 	# 8  Create exit Area2D in EXIT zone
-	_create_exit_area(layout)
+	_spawn_exit(layout)
 
 	# 9  Spawn player in START zone
 	_spawn_player(layout)
@@ -180,7 +183,7 @@ func _initialize_camera_limits(layout) -> void:
 		cam_manager.initialize(layout, player)
 
 
-func _create_exit_area(layout) -> void:
+func _spawn_exit(layout) -> void:
 	# Find EXIT zone
 	var exit_zone = null
 	for z in layout.zones:
@@ -190,34 +193,18 @@ func _create_exit_area(layout) -> void:
 	if exit_zone == null:
 		return
 
-	# Create an Area2D covering the exit zone center
-	_exit_area = Area2D.new()
-	_exit_area.name = "ExitArea"
-
-	var shape := CollisionShape2D.new()
-	var rect := RectangleShape2D.new()
-	# Size = half the zone in pixels
-	var zone_px :Vector2i = exit_zone.tile_rect.size * DungeonGeometry.TILE_SIZE
-	rect.size = Vector2(minf(zone_px.x, 64), minf(zone_px.y, 64))
-	shape.shape = rect
-	_exit_area.add_child(shape)
-
-	# Position at zone center
-	var zone_center := Vector2(
+	var exit := ExitScene.instantiate() as ExitScript
+	# Exit zone center
+	exit.position = Vector2(
 		(exit_zone.tile_rect.position.x + exit_zone.tile_rect.size.x / 2.0) * DungeonGeometry.TILE_SIZE,
 		(exit_zone.tile_rect.position.y + exit_zone.tile_rect.size.y / 2.0) * DungeonGeometry.TILE_SIZE
 	)
-	_exit_area.position = zone_center
-
-	_exit_area.body_entered.connect(_on_exit_body_entered)
-	_exit_area.body_exited.connect(_on_exit_body_exited)
-	# Detect only the player body (layer 2 after the Fase 4 flip).
-	_exit_area.collision_layer = CollisionLayers.WORLD
-	_exit_area.collision_mask = CollisionLayers.PLAYER_BODY
-
-	# Add to dungeon
+	exit.zone_id = exit_zone.id
+	# Relay must be connected BEFORE add_child (§44.16): the scene may emit
+	# synchronously during ready-phase entry.
+	exit.exit_requested.connect(_go_to_next_floor)
 	if _dungeon != null:
-		_dungeon.add_child(_exit_area)
+		_dungeon.add_child(exit)
 
 
 func _clear_floor() -> void:
@@ -231,26 +218,9 @@ func _clear_floor() -> void:
 	_tilemap = null
 	_door_controller = null
 	_spawner = null
-	_exit_area = null
-
-
-func _on_exit_body_entered(body: Node2D) -> void:
-	if body is CharacterBody2D:
-		_player_in_exit = true
-
-
-func _on_exit_body_exited(body: Node2D) -> void:
-	if body is CharacterBody2D:
-		_player_in_exit = false
-
-
-func _input(event: InputEvent) -> void:
-	if _player_in_exit and event.is_action_pressed("interact"):
-		_go_to_next_floor()
 
 
 func _go_to_next_floor() -> void:
-	_player_in_exit = false
 	_start_floor()
 
 

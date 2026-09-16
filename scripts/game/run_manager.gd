@@ -28,10 +28,6 @@ func start_new_run() -> void:
 	weapon_equipped.emit(get_equipped())
 
 
-func next_floor() -> void:
-	current_floor += 1
-
-
 func add_weapon(data: WeaponData) -> int:
 	if data == null:
 		return -1
