@@ -15,3 +15,7 @@ extends Resource
 @export var zone_count_by_floor_depth: Dictionary = {1: [3, 5], 10: [6, 12]}
 @export var enemy_health_multiplier: float = 1.0
 @export var enemy_damage_multiplier: float = 1.0
+## Max START zone size in grid cells (1 cell = CELL_TILES tiles). The merged
+## zone at the origin is cut down to this; the leftover becomes new zones.
+## A zero or negative axis disables the cap.
+@export var start_zone_max_cells: Vector2i = Vector2i(2, 1)
