@@ -51,10 +51,13 @@ roguelite · **P3** pulido y contenido.
 | Capas de colisión | 5 capas centralizadas en `CollisionLayers`. |
 | Stamina | Pool de 100 que se regenera 20/s. Cada ataque cuesta stamina; no hay cooldowns. Se rellena al cambiar de piso o al morir. |
 | Apuntado | Mouse/Space apuntan al cursor; el gamepad apunta hacia donde mira el jugador. |
-| Espada | Melee: ventana de hitbox de 0.15 s, daño 10, coste 20. |
-| Arco | Flecha de 400 px/s, daño 8, coste 12. |
-| Bastón | Proyectil mágico de 280 px/s, daño 14, coste 18 (reutiliza `arrow.gd`). |
+| Espada | Melee: ventana de hitbox de 0.15 s, daño 10, coste 20, knockback 220. |
+| Arco | Flecha de 400 px/s, daño 8, coste 12, knockback 120. |
+| Bastón | Proyectil mágico de 280 px/s, daño 14, coste 18, knockback 140 (reutiliza `arrow.gd`). |
 | Proyectiles | Mueren al impactar al primer enemigo, al chocar con una pared o a los 2 s. |
+| Knockback | `KnockbackComponent`: el golpe empuja al objetivo con velocidad inicial = `knockback` (px/s), que decae a 0 en 0.2 s. Mientras dura, el empuje reemplaza el movimiento propio (stagger). |
+| I-frames | `HealthComponent.invulnerability_seconds`: el jugador ignora golpes durante 0.5 s después de recibir uno; los enemigos no tienen. |
+| Hit flash | `HitFlash`: destello brillante al recibir daño y parpadeo del sprite mientras duran los i-frames. |
 
 ### 1.5. Armas e inventario
 
@@ -69,7 +72,7 @@ roguelite · **P3** pulido y contenido.
 
 | Feature | Detalle |
 |---|---|
-| Slime | 30 HP, velocidad 60, daño 8. Detecta a 120 px, ataca a 20 px con una ventana de 0.2 s y cooldown de 1.2 s. |
+| Slime | 30 HP, velocidad 60, daño 8, knockback 160. Detecta a 120 px, ataca a 20 px con una ventana de 0.2 s y cooldown de 1.2 s. |
 | IA | Persecución en línea recta dentro del radio de detección (sin pathfinding). |
 | Spawn | 2 slimes por zona COMBAT, en tiles interiores (lejos de las paredes). |
 | Datos | `EnemyData` (.tres). |
@@ -85,7 +88,7 @@ roguelite · **P3** pulido y contenido.
 
 ### 1.8. Herramientas de desarrollo
 
-- 25 tests headless (`scripts/test/`), todos pasan.
+- 26 tests headless (`scripts/test/`), todos pasan.
 - `build_dungeon_tileset.gd` regenera el tileset de forma reproducible.
 - Atajo de debug **N** (acción `debug_next_floor`): salta al siguiente piso. Solo corre en builds de debug.
 
@@ -95,12 +98,10 @@ roguelite · **P3** pulido y contenido.
 
 | Problema | Impacto |
 |---|---|
-| El knockback viaja en `DamageInfo` pero nadie lo aplica | Los golpes no se sienten. |
-| El jugador no tiene i-frames | Varios enemigos pueden encadenar daño sin pausa. |
 | `enemy_health/damage_multiplier` no se leen | La dificultad no sube con el piso. |
 | Solo hay animaciones `Idle_Down` / `Walk_Down` | El sprite no mira arriba ni a los lados (solo usa `flip_h`). |
 | La acción `pause` existe pero no hace nada | No hay pausa. |
-| Sin feedback de daño (flash, número, sonido) | Cuesta leer el combate. |
+| Sin números de daño ni sonido al golpear | El combate se lee solo por el destello y el empuje. |
 | El cofre es un `ColorRect` | Placeholder visual. |
 | `guild_tavern.tscn` no está conectada | Escena de hub sin flujo de entrada ni salida. |
 | Sin audio | No hay música ni SFX. |
@@ -122,9 +123,9 @@ roguelite · **P3** pulido y contenido.
 - [ ] Arreglar el solape de zonas en `_merge_cells` (las zonas son bounding boxes del crecimiento, no rectángulos exactos).
 - [ ] Cámara en zonas más chicas que la pantalla: ocultar o atenuar las zonas vecinas (o zoom), para mantener las salas aisladas.
 - [x] Restaurar los tintes del piso (START verde, REWARD dorado, EXIT rojo); vuelven a pasar `assert_plank_floor` y `assert_prebuilt_tileset`.
-- [ ] Aplicar knockback en `enemy.gd` y `player.gd` usando `DamageInfo.knockback` (decae en ~0.15 s).
-- [ ] I-frames para el jugador (~0.5 s) tras recibir daño, con parpadeo del sprite. Va en `HealthComponent` o en un componente `Invulnerability` aparte.
-- [ ] Hit flash (shader o modulate) al recibir daño, para jugador y enemigos.
+- [x] Aplicar knockback en `enemy.gd` y `player.gd` usando `DamageInfo.knockback` (`KnockbackComponent`, decae en 0.2 s).
+- [x] I-frames para el jugador (0.5 s) tras recibir daño, con parpadeo del sprite (`HealthComponent.invulnerability_seconds`).
+- [x] Hit flash al recibir daño, para jugador y enemigos (`HitFlash`, modulate).
 - [ ] Animaciones de 4 direcciones (Idle/Walk Up, Side, Down) en el jugador.
 - [ ] Animación o efecto visual del swing de la espada (hoy solo existe la hitbox).
 - [ ] Pausa: `get_tree().paused` con la acción `pause` y un menú mínimo (Continuar / Salir).
