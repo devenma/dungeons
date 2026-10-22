@@ -3,11 +3,11 @@ extends Node
 
 ## EM-1..4: mounts exactly ONE equipped weapon under Player/Weapons.
 ## Reacts to RunManager.weapon_equipped; the controller never owns weapon
-## behavior (§35) and never references the latent autoload twin (EM-3).
+## behavior (§35). RunManager lives only in main.tscn; there is no autoload (EM-3).
 
 @export var weapons_node_path: NodePath = NodePath("../Weapons")
 ## Path to the scene-instance RunManager in main.tscn (EM-3); unresolved
-## falls through to a current_scene subtree search, never the autoload.
+## falls through to a current_scene subtree search.
 @export var run_manager_path: NodePath = NodePath("../../../RunManager")
 
 ## Fallback weapon mounted when no RunManager is reachable (EM-3):
