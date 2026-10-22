@@ -86,6 +86,7 @@ roguelite · **P3** pulido y contenido.
 
 - 24 tests headless (`scripts/test/`); 22 pasan y 2 fallan por los tintes del tileset (ver §2).
 - `build_dungeon_tileset.gd` regenera el tileset de forma reproducible.
+- Atajo de debug **N** (acción `debug_next_floor`): salta al siguiente piso. Solo corre en builds de debug.
 
 ---
 
@@ -107,6 +108,7 @@ roguelite · **P3** pulido y contenido.
 | `AGENTS.md` describe `secondary_attack` / `staff_attack` | Los docs no coinciden con el esquema real (`attack` + Tab). |
 | Doble `RunManager` (autoload + nodo en escena) | Riesgo de usar la instancia equivocada. |
 | Los `.uid` están en el gitignore | Los UIDs cambian entre máquinas. |
+| La zona START puede medir hasta 40×16 tiles (~3×2 pantallas) | Lenta de recorrer al testear; mitigado con el atajo N. |
 
 ---
 
@@ -114,6 +116,8 @@ roguelite · **P3** pulido y contenido.
 
 ### P0 — Sensación de combate y estabilidad
 
+- [x] Atajo de debug N para saltar de piso sin recorrer la sala.
+- [ ] Limitar el tamaño de la zona START (decidir: tope en el generador o grilla más chica en `floor_data.tres`).
 - [ ] Arreglar los tintes del tileset para que pasen `assert_plank_floor` y `assert_prebuilt_tileset`.
 - [ ] Aplicar knockback en `enemy.gd` y `player.gd` usando `DamageInfo.knockback` (decae en ~0.15 s).
 - [ ] I-frames para el jugador (~0.5 s) tras recibir daño, con parpadeo del sprite. Va en `HealthComponent` o en un componente `Invulnerability` aparte.
