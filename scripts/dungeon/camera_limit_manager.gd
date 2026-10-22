@@ -1,10 +1,22 @@
 extends Node
 
+## Niebla que oculta las zonas vecinas (opcional) / Fog that hides neighbor zones (optional)
+@export var fog_path: NodePath
+
 var _last_transition_time: float = 0.0
 const TRANSITION_COOLDOWN: float = 0.5
 
 var _layout_ref  # FloorLayout, set externally
 var _player_ref # Node2D, comes from dungeon manager
+
+
+# Se busca en cada uso, no con @onready: DungeonManager arma el primer piso
+# antes del _ready de este nodo. / Looked up on use, not @onready: DungeonManager
+# builds the first floor before this node's _ready runs.
+func _get_fog() -> ZoneFog:
+	if fog_path.is_empty():
+		return null
+	return get_node_or_null(fog_path) as ZoneFog
 
 
 func initialize(layout: DungeonGenerator.FloorLayout, player: Node2D) -> void:
@@ -61,6 +73,9 @@ func _set_cam_limits_for_zone(cam: Camera2D, zone) -> void:
 	cam.limit_top = px.y
 	cam.limit_right = px.x + sz.x
 	cam.limit_bottom = px.y + sz.y
+	var fog: ZoneFog = _get_fog()
+	if fog != null:
+		fog.focus(Rect2(Vector2(px), Vector2(sz)))
 	# Wall rings render INSIDE each zone's tile_rect, so the zone's own limits
 	# already frame its complete wall band — no extension needed. The neighbor's
 	# ring stays invisible, keeping rooms isolated (Isaac-style).
