@@ -25,3 +25,9 @@ assets/References/
 
 # Ignore Atlassian IDE files
 .atl
+# Local-only Claude Code context and dev notes (not shared)
+CLAUDE.md
+CLAUDE.local.md
+.claude/
+/scripts/**/README.md
+/resources/**/README.md
