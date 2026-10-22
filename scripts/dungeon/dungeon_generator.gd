@@ -214,36 +214,53 @@ func _merge_cells(rng: RandomNumberGenerator, target_count: int,
 			# Refresh frontier for this zone
 			frontiers[zid] = _get_frontier_cells(zid, cells, grid_w, grid_h)
 
-	# 5  Greedy assign any remaining unassigned cells
+	# 5  Celdas sueltas: crece una zona vecina solo si su caja no pisa otra
+	#    zona; si ninguna puede, la celda arranca una zona nueva (sin solapes).
+	#    Leftover cells: grow a neighbor only if its box stays free of other
+	#    zones; otherwise the cell starts a new zone (no overlaps).
 	if unassigned > 0:
 		for gy in grid_h:
 			for gx in grid_w:
-				if cells[gy][gx].zone_id == -1:
-					var pos := Vector2i(gx, gy)
-					var nbrs := _get_neighbor_positions(pos, grid_w, grid_h)
-					for nb in nbrs:
-						var nid: int = cells[nb.y][nb.x].zone_id
-						if nid != -1:
-							cells[gy][gx].zone_id = nid
-							var z: Zone = zones[nid]
-							z.cell_min = Vector2i(
-								mini(z.cell_min.x, pos.x),
-								mini(z.cell_min.y, pos.y)
-							)
-							z.cell_max = Vector2i(
-								maxi(z.cell_max.x, pos.x + 1),
-								maxi(z.cell_max.y, pos.y + 1)
-							)
-							z.tile_rect = Rect2i(
-								z.cell_min.x * DungeonGeometry.CELL_TILES,
-								z.cell_min.y * DungeonGeometry.CELL_TILES,
-								(z.cell_max.x - z.cell_min.x) * DungeonGeometry.CELL_TILES,
-								(z.cell_max.y - z.cell_min.y) * DungeonGeometry.CELL_TILES
-							)
-							unassigned -= 1
-							break
+				if cells[gy][gx].zone_id != -1:
+					continue
+				var pos := Vector2i(gx, gy)
+				var owner: Zone = null
+				for nb in _get_neighbor_positions(pos, grid_w, grid_h):
+					var nid: int = cells[nb.y][nb.x].zone_id
+					if nid != -1 and _can_grow_to(zones[nid], pos, cells):
+						owner = zones[nid]
+						break
+				if owner == null:
+					owner = _zone_from_cells(zones.size(), pos, pos + Vector2i.ONE)
+					zones.append(owner)
+				_grow_to(owner, pos, cells)
 
 	return zones
+
+
+## ¿La caja de z puede crecer hasta pos sin incluir celdas de otra zona?
+## Can z's box grow to include pos without covering another zone's cells?
+func _can_grow_to(z: Zone, pos: Vector2i, cells: Array) -> bool:
+	var new_min: Vector2i = z.cell_min.min(pos)
+	var new_max: Vector2i = z.cell_max.max(pos + Vector2i.ONE)
+	for gy in range(new_min.y, new_max.y):
+		for gx in range(new_min.x, new_max.x):
+			var cid: int = cells[gy][gx].zone_id
+			if cid != -1 and cid != z.id:
+				return false
+	return true
+
+
+## Agranda z hasta pos y reclama las celdas libres de la caja nueva.
+## Grows z to include pos and claims the free cells in the new box.
+func _grow_to(z: Zone, pos: Vector2i, cells: Array) -> void:
+	z.cell_min = z.cell_min.min(pos)
+	z.cell_max = z.cell_max.max(pos + Vector2i.ONE)
+	z.tile_rect = _tile_rect_for_cells(z.cell_min, z.cell_max)
+	for gy in range(z.cell_min.y, z.cell_max.y):
+		for gx in range(z.cell_min.x, z.cell_max.x):
+			if cells[gy][gx].zone_id == -1:
+				cells[gy][gx].zone_id = z.id
 
 
 func _get_frontier_cells(zone_id: int, cells: Array, grid_w: int,
