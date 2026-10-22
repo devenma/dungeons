@@ -23,8 +23,8 @@ enum WeaponKind {
 ## Kept to avoid breaking existing .tres parsing; future repurpose as the
 ## swing-animation rate.
 @export var attack_speed: float = 1.0
-## Initial push speed (px/s) applied to the target on hit; decays to zero
-## over KnockbackComponent.decay_seconds.
+## Velocidad inicial (px/s) con que empuja al objetivo; frena en KnockbackComponent.decay_seconds
+## Initial push speed (px/s) on the target; stops over KnockbackComponent.decay_seconds
 @export var knockback: float = 0.0
 @export var attack_range: float = 100.0
 ## Stamina cost per attack (ST-data): 0 = free; weapons gate through the

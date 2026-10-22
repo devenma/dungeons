@@ -10,15 +10,17 @@ extends Node
 ## hit are ignored entirely (i-frames).
 
 signal health_changed(current: int, maximum: int)
+## Golpe aceptado (no ignorado por i-frames) / Accepted hit (not swallowed by i-frames)
 signal damage_received(info: DamageInfo)
 signal died
 
 @export var max_health: int = 100
-## I-frames after an accepted hit; 0 = none (enemies).
+## Segundos de invulnerabilidad tras un golpe; 0 = sin i-frames / I-frame seconds after a hit; 0 = none
 @export var invulnerability_seconds: float = 0.0
 
 var current_health: int = 100
 var _dead: bool = false
+# Segundos de i-frames restantes / Remaining i-frame seconds
 var _invulnerable_left: float = 0.0
 
 

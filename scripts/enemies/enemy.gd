@@ -53,7 +53,7 @@ func _physics_process(delta: float) -> void:
 	velocity = Vector2.ZERO
 	if distance <= enemy_data.detect_radius:
 		velocity = to_player.normalized() * enemy_data.speed
-	# An active knockback push overrides the chase (brief stagger).
+	# Un empuje activo reemplaza la persecución (aturdimiento breve) / An active push overrides the chase (brief stagger)
 	var push: Vector2 = _knockback.consume(delta) if _knockback != null else Vector2.ZERO
 	if push != Vector2.ZERO:
 		velocity = push
@@ -72,6 +72,7 @@ func _find_player() -> CharacterBody2D:
 
 func _attack(to_player: Vector2) -> void:
 	_can_attack = false
+	# Empuja al jugador en la dirección del ataque / Push the player along the attack direction
 	_enemy_hitbox.knockback = to_player.normalized() * enemy_data.knockback
 	_enemy_hitbox.begin_swing()
 	_attack_window_timer.start()

@@ -19,7 +19,7 @@ func aim_direction() -> Vector2:
 func _physics_process(delta: float) -> void:
 	var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	velocity = direction * speed
-	# An active knockback push overrides input (brief stagger).
+	# Un empuje activo reemplaza al input (aturdimiento breve) / An active push overrides input (brief stagger)
 	var push: Vector2 = knockback.consume(delta) if knockback != null else Vector2.ZERO
 	if push != Vector2.ZERO:
 		velocity = push

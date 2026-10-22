@@ -562,9 +562,8 @@ func _find_zone(layout: FloorLayout, id: int) -> Zone:
 	return null
 
 
-## Cuts the zone at the grid origin (always the START zone, see
-## _assign_types) down to max_cells. Each cut is a straight line, so the
-## leftover pieces stay rectangular and are appended as new zones.
+## Recorta la zona del origen (siempre START) a max_cells con cortes rectos; los restos son zonas nuevas.
+## Cuts the origin zone (always START) to max_cells with straight cuts; leftovers become new zones.
 func _cap_start_zone(zones: Array, max_cells: Vector2i) -> void:
 	if max_cells.x <= 0 or max_cells.y <= 0:
 		return
@@ -601,6 +600,7 @@ func _zone_from_cells(id: int, cell_min: Vector2i, cell_max: Vector2i) -> Zone:
 	return z
 
 
+## Rango de celdas → rectángulo en tiles / Cell range → tile rect
 func _tile_rect_for_cells(cell_min: Vector2i, cell_max: Vector2i) -> Rect2i:
 	return Rect2i(cell_min * DungeonGeometry.CELL_TILES,
 			(cell_max - cell_min) * DungeonGeometry.CELL_TILES)
@@ -633,8 +633,8 @@ func generate_floor(floor_number: int, base_seed: int,
 		var zones := _merge_cells(retry_rng, target_count, grid_w, grid_h)
 		if zones.is_empty():
 			continue
-		# The zone-count check validates the merge itself; the START cap
-		# below may add zones on top of it.
+		# Se valida con el conteo del merge: el tope de START puede sumar zonas.
+		# Validate with the merge count: the START cap may add zones.
 		var merged_count: int = zones.size()
 		_cap_start_zone(zones, data.start_zone_max_cells)
 

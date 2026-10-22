@@ -9,9 +9,11 @@ extends Node
 ## linearly to zero over `decay_seconds`.
 
 @export var health_node_path: NodePath = NodePath("../Health")
+## Duración del empuje hasta frenar / Time for the push to stop
 @export var decay_seconds: float = 0.2
 
 var _velocity: Vector2 = Vector2.ZERO
+# Desaceleración (px/s²) para frenar en decay_seconds / Deceleration (px/s²) to stop in decay_seconds
 var _decel: float = 0.0
 
 
@@ -28,6 +30,7 @@ func apply(impulse: Vector2) -> void:
 	_decel = impulse.length() / maxf(decay_seconds, 0.001)
 
 
+## Devuelve el empuje de este frame y lo reduce / Returns this frame's push and decays it
 func consume(delta: float) -> Vector2:
 	var current: Vector2 = _velocity
 	_velocity = _velocity.move_toward(Vector2.ZERO, _decel * delta)

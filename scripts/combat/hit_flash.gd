@@ -8,13 +8,16 @@ extends Node
 
 @export var health_node_path: NodePath = NodePath("../Health")
 @export var visual_path: NodePath
+## Color del destello (valores > 1 aclaran) / Flash color (values > 1 brighten)
 @export var flash_color: Color = Color(2.0, 2.0, 2.0, 1.0)
 @export var flash_seconds: float = 0.12
+## Intervalo del parpadeo durante i-frames / Blink interval during i-frames
 @export var blink_interval: float = 0.08
 
 var _health: HealthComponent = null
 var _visual: CanvasItem = null
 var _tween: Tween = null
+# Tiempo acumulado del parpadeo / Accumulated blink time
 var _blink_clock: float = 0.0
 
 

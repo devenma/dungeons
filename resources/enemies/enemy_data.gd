@@ -10,5 +10,5 @@ extends Resource
 @export var detect_radius: float = 120.0
 @export var attack_range: float = 20.0
 @export var attack_cooldown: float = 1.2
-## Initial push speed (px/s) applied to the player on hit; see KnockbackComponent.
+## Velocidad inicial (px/s) con que empuja al jugador al golpear / Initial push speed (px/s) on the player when hitting
 @export var knockback: float = 160.0
