@@ -85,7 +85,7 @@ roguelite · **P3** pulido y contenido.
 
 ### 1.8. Herramientas de desarrollo
 
-- 25 tests headless (`scripts/test/`); 23 pasan y 2 fallan por los tintes del tileset (ver §2).
+- 25 tests headless (`scripts/test/`), todos pasan.
 - `build_dungeon_tileset.gd` regenera el tileset de forma reproducible.
 - Atajo de debug **N** (acción `debug_next_floor`): salta al siguiente piso. Solo corre en builds de debug.
 
@@ -105,7 +105,7 @@ roguelite · **P3** pulido y contenido.
 | `guild_tavern.tscn` no está conectada | Escena de hub sin flujo de entrada ni salida. |
 | Sin audio | No hay música ni SFX. |
 | La muerte reinicia al instante | No hay pantalla de muerte ni resumen de la run. |
-| `assert_plank_floor` y `assert_prebuilt_tileset` fallan | Tintes de las zonas START/REWARD/EXIT desalineados con `DungeonGeometry`. |
+| Una zona más chica que la pantalla (480×270 px) deja ver a sus vecinas | La cámara no puede limitar por debajo del viewport; pasa con zonas de 1 celda, START incluida. |
 | `AGENTS.md` describe `secondary_attack` / `staff_attack` | Los docs no coinciden con el esquema real (`attack` + Tab). |
 | Doble `RunManager` (autoload + nodo en escena) | Riesgo de usar la instancia equivocada. |
 | Los `.uid` están en el gitignore | Los UIDs cambian entre máquinas. |
@@ -120,7 +120,8 @@ roguelite · **P3** pulido y contenido.
 - [x] Atajo de debug N para saltar de piso sin recorrer la sala.
 - [x] Limitar el tamaño de la zona START (`FloorData.start_zone_max_cells`, 2×1 celdas).
 - [ ] Arreglar el solape de zonas en `_merge_cells` (las zonas son bounding boxes del crecimiento, no rectángulos exactos).
-- [ ] Arreglar los tintes del tileset para que pasen `assert_plank_floor` y `assert_prebuilt_tileset`.
+- [ ] Cámara en zonas más chicas que la pantalla: ocultar o atenuar las zonas vecinas (o zoom), para mantener las salas aisladas.
+- [x] Restaurar los tintes del piso (START verde, REWARD dorado, EXIT rojo); vuelven a pasar `assert_plank_floor` y `assert_prebuilt_tileset`.
 - [ ] Aplicar knockback en `enemy.gd` y `player.gd` usando `DamageInfo.knockback` (decae en ~0.15 s).
 - [ ] I-frames para el jugador (~0.5 s) tras recibir daño, con parpadeo del sprite. Va en `HealthComponent` o en un componente `Invulnerability` aparte.
 - [ ] Hit flash (shader o modulate) al recibir daño, para jugador y enemigos.
