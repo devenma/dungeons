@@ -57,9 +57,9 @@ static func floor_atlas_for(tx: int, ty: int) -> Vector2i:
 	return FLOOR_VARIANT_B
 
 # Zone tint alternatives on floor fill tiles (TileData.modulate, author order).
-const FLOOR_ALT_START := 0           # 1 == green
-const FLOOR_ALT_REWARD := 0          # 2 == gold
-const FLOOR_ALT_EXIT := 0            # 3 == red
+const FLOOR_ALT_START := 1           # green
+const FLOOR_ALT_REWARD := 2          # gold
+const FLOOR_ALT_EXIT := 3            # red
 
 # Revised door model (v2, no dedicated door art yet):
 # open door = plain floor tile (base variant), closed door = same floor tile

@@ -137,6 +137,9 @@ func _run() -> void:
 	_check(enemy_health.current_health == 40, "A: enemy HP 50 -> 40 (took 10)")
 
 	# B — enemy hitbox → player hurtbox, two swings (per-swing hit reset).
+	# Player i-frames would swallow the second swing; they have their own
+	# test (assert_hit_feedback), so turn them off for this phase.
+	player_health.invulnerability_seconds = 0.0
 	var enemy_hitbox := double_b.get_node("EnemyHitbox") as Hitbox
 	enemy_hitbox.begin_swing()
 	await _frames(5)
