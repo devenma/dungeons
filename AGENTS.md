@@ -279,6 +279,8 @@ El estado que debe sobrevivir al cambio de piso debe pertenecer al `RunManager` 
 
 No duplicar ese estado dentro de cada escena de piso.
 
+Estado actual: `RunManager` es un nodo de `main.tscn`, no un autoload. Los sistemas que lo necesitan lo reciben por `NodePath` (por ejemplo `DungeonManager.run_manager_node_path`).
+
 ---
 
 # 7. Player
@@ -367,8 +369,7 @@ move_left
 move_right
 
 attack
-secondary_attack
-staff_attack
+swap_weapon
 
 ability_1
 ability_2
@@ -381,6 +382,8 @@ pause
 ```
 
 Las acciones podrán ampliarse conforme aparezcan nuevas mecánicas.
+
+Estado actual del Input Map: `move_*`, `attack`, `swap_weapon` (Tab), `interact` (F), `pause` (Esc) y `debug_next_floor` (N, solo en builds de debug). `ability_1..3` y `dash` todavía no existen.
 
 Las escenas y scripts deben utilizar los nombres de las acciones, no códigos de teclas directamente.
 
@@ -507,6 +510,14 @@ El sistema podrá crecer posteriormente para soportar:
 
 No implementar todas estas características hasta que sean necesarias.
 
+Estado actual:
+
+- `HealthComponent` emite `damage_received(info)` en cada golpe aceptado y soporta i-frames (`invulnerability_seconds`; el jugador usa 0.5 s, los enemigos 0).
+- `KnockbackComponent` (hermano de `Health`) convierte `DamageInfo.knockback` en un empuje en px/s que decae a 0; jugador y enemigo lo usan en lugar de su movimiento mientras dura.
+- `HitFlash` da feedback visual: destello al recibir daño y parpadeo durante los i-frames.
+
+Nuevas reacciones al daño deben escuchar `damage_received` en un componente propio, no agregarse a `Hurtbox` ni a `Player`.
+
 ---
 
 # 13. Armas
@@ -531,14 +542,17 @@ Arco
 Bastón
 ```
 
-Estado actual: las tres familias existen y coexisten bajo el nodo `Weapons` del
-jugador. Cada una individualiza su disparo por una acción de input distinta:
+Estado actual: las tres familias existen, pero el jugador lleva **una sola arma
+montada** a la vez. Todas atacan con la misma acción:
 
 ```text
-Espada  → attack
-Arco    → secondary_attack
-Bastón  → staff_attack
+attack       → ataca con el arma montada
+swap_weapon  → rota entre las armas obtenidas (RunManager.owned_weapons)
 ```
+
+`EquipmentController` instancia `WeaponData.weapon_scene` bajo `Player/Weapons`
+cuando cambia el arma equipada. El jugador empieza con la espada; el arco y el
+bastón se consiguen en los cofres de las zonas REWARD.
 
 El arma debe definir principalmente cómo produce su ataque.
 
@@ -743,7 +757,9 @@ GENERACIÓN LÓGICA (grid-merging)
 
 No generar directamente un conjunto de tiles aleatorios sin una estructura lógica previa.
 
-El piso completo se renderiza en un **TileMap único** que consume el recurso pre-construido `res://tilesets/dungeon.tres` (32×32 px, geometría real de los assets, autorado en el editor): el código solo coloca tiles — no construye tilesets ni colisiones en runtime. `scripts/dungeon/dungeon_geometry.gd` (`DungeonGeometry`) es la fuente única de las constantes de geometría y roles de tiles, y si el recurso falta la generación falla de forma ruidosa (sin fallback). Las habitaciones individuales `.tscn` fueron reemplazadas por un sistema de zonas generadas proceduralmente sobre una grilla.
+El piso completo se renderiza en un **TileMap único** que consume el recurso pre-construido `res://tilesets/dungeons_v2.tres` (32×32 px, geometría real de los assets, autorado en el editor): el código solo coloca tiles — no construye tilesets ni colisiones en runtime. `scripts/dungeon/dungeon_geometry.gd` (`DungeonGeometry`) es la fuente única de las constantes de geometría y roles de tiles, y si el recurso falta la generación falla de forma ruidosa (sin fallback). Las habitaciones individuales `.tscn` fueron reemplazadas por un sistema de zonas generadas proceduralmente sobre una grilla.
+
+Estado actual: la zona START se recorta a `FloorData.start_zone_max_cells` (2×1 celdas por defecto). `ZoneFog` (z_index 1) tapa todo lo que está fuera de la zona actual, y `CameraLimitManager` lo actualiza junto con los límites de cámara. Orden de dibujo: piso y enemigos en z 0, niebla en z 1, jugador en z 2. Las entidades creadas en runtime van bajo `DungeonManager/Dungeon` (como hace el `Spawner`): `DungeonManager` es un `Node`, así que el TileMap se dibuja por encima de todo lo que esté en `World` con z 0.
 
 ---
 
@@ -756,7 +772,7 @@ Responsabilidad:
 - detectar adyacencia entre zonas;
 - asignar tipos de zona (START, COMBAT, REWARD, EXIT);
 - colocar puertas en posiciones irregulares sobre aristas compartidas;
-- renderizar el piso completo en un TileMap consumiendo el `TileSet` pre-construido (`res://tilesets/dungeon.tres`).
+- renderizar el piso completo en un TileMap consumiendo el `TileSet` pre-construido (`res://tilesets/dungeons_v2.tres`).
 
 Flujo conceptual:
 
@@ -1122,12 +1138,12 @@ Tipo de zona (START/COMBAT/REWARD/EXIT)
  ↓
 Puertas en aristas compartidas (posición irregular)
  ↓
-TileMap único (consume res://tilesets/dungeon.tres)
+TileMap único (consume res://tilesets/dungeons_v2.tres)
 ```
 
 La generación produce un piso contiguo sin espacios muertos. Las zonas se asignan a tipos funcionales. Las puertas se colocan en posiciones irregulares — si la arista compartida es suficientemente larga pueden haber múltiples puertas.
 
-Cada celda del grid es de `CELL_TILES × CELL_TILES` tiles (configurable). El TileMap consume el `TileSet` pre-construido `res://tilesets/dungeon.tres` (32×32 px, hojas de assets reales, autorado en el editor; `scripts/tools/build_dungeon_tileset.gd` lo regenera de forma reproducible) — el código solo coloca tiles; `DungeonGeometry` es la fuente única de las constantes de geometría.
+Cada celda del grid es de `CELL_TILES × CELL_TILES` tiles (configurable). El TileMap consume el `TileSet` pre-construido `res://tilesets/dungeons_v2.tres` (32×32 px, hojas de assets reales, autorado en el editor; `scripts/tools/build_dungeon_tileset.gd` lo regenera de forma reproducible) — el código solo coloca tiles; `DungeonGeometry` es la fuente única de las constantes de geometría.
 
 Objetivo:
 
@@ -1223,8 +1239,8 @@ Magic Projectile
 
 Estado actual: el bastón (tercera familia, ranged mágico) está implementado
 como clon del patrón del arco, dispara el proyectil mágico reutilizando
-`arrow.gd` (`magic_bolt.tscn`) y se ataque con `staff_attack`. Sin cooldowns:
-el gating es de stamina únicamente.
+`arrow.gd` (`magic_bolt.tscn`) y ataca con `attack` cuando es el arma montada.
+Sin cooldowns: el gating es de stamina únicamente.
 
 ---
 

@@ -27,7 +27,7 @@ roguelite · **P3** pulido y contenido.
 | Grid-merging | Grilla de 3–6 × 3–5 celdas (8×8 tiles de 32 px cada una). Las celdas se agrupan en zonas rectangulares, sin espacios muertos. |
 | Cantidad de zonas por profundidad | `zone_count_by_floor_depth`: piso 1 → 3–5 zonas, piso 10 → 6–12. |
 | Tipos de zona | 1 START, 1 EXIT y el resto COMBAT o REWARD (`reward_ratio` 0.3). |
-| Validación | BFS START→EXIT. Si falla, reintenta hasta 5 veces y después usa un layout de fallback. |
+| Validación | BFS START→EXIT. Si falla, reintenta hasta 5 veces y después usa un layout de fallback. Cada celda pertenece a exactamente una zona (sin solapes). |
 | Tope de START | La zona START se recorta a `FloorData.start_zone_max_cells` (2×1 celdas = 16×8 tiles por defecto); lo que sobra pasa a ser zonas nuevas. |
 | Determinismo | La misma `(run_seed, floor_number)` produce el mismo piso; cubierto por un test. |
 | Puertas | Posición irregular en las aristas compartidas; varias por arista si es larga (`multi_door_threshold`). |
@@ -39,6 +39,7 @@ roguelite · **P3** pulido y contenido.
 |---|---|
 | Movimiento | 8 direcciones, `speed` 60, Input Map (WASD/flechas). |
 | Cámara por zona | `Camera2D` limitada al rectángulo de la zona actual (estilo Isaac); cambia al cruzar una puerta. |
+| Niebla de zona | `ZoneFog` tapa todo lo que está fuera de la zona actual, así las salas chicas no dejan ver a sus vecinas. |
 | Cruce de puertas | Detección en dos fases (entrar/salir del área): volver atrás no cuenta como cruce. |
 | Bloqueo de combate | Entrar a una zona COMBAT sin limpiar cierra sus puertas hasta matar a todos los enemigos. |
 | Interacción | Acción `interact` (F) para cofres y salida. |
@@ -89,7 +90,8 @@ roguelite · **P3** pulido y contenido.
 
 ### 1.8. Herramientas de desarrollo
 
-- 27 tests headless (`scripts/test/`), todos pasan.
+- 28 tests headless (`scripts/test/`), todos pasan.
+- Los `.uid` y `.import` están versionados, así los UIDs son los mismos en todas las máquinas.
 - `build_dungeon_tileset.gd` regenera el tileset de forma reproducible.
 - Atajo de debug **N** (acción `debug_next_floor`): salta al siguiente piso. Solo corre en builds de debug.
 
@@ -103,14 +105,10 @@ roguelite · **P3** pulido y contenido.
 | Solo hay animaciones `Idle_Down` / `Walk_Down` | El sprite no mira arriba ni a los lados (solo usa `flip_h`). |
 | Sin números de daño ni sonido al golpear | El combate se lee solo por el destello y el empuje. |
 | El cofre es un `ColorRect` | Placeholder visual. |
-| `guild_tavern.tscn` no está conectada | Escena de hub sin flujo de entrada ni salida. |
+| `guild_tavern.tscn` no está conectada y le faltan assets | Escena de hub sin flujo de entrada ni salida; referencia 5 PNG que no están en el repo (`Oven_Base`, `Shops_others_Base`, `DishWasher_base`, `Background_min_all`, `Plantilla_v3`). |
+| `tilesets/dungeon.tres` huérfano | Tileset viejo que no usa nadie y referencia 2 PNG que no existen. |
 | Sin audio | No hay música ni SFX. |
 | La muerte reinicia al instante | No hay pantalla de muerte ni resumen de la run. |
-| Una zona más chica que la pantalla (480×270 px) deja ver a sus vecinas | La cámara no puede limitar por debajo del viewport; pasa con zonas de 1 celda, START incluida. |
-| `AGENTS.md` describe `secondary_attack` / `staff_attack` | Los docs no coinciden con el esquema real (`attack` + Tab). |
-| Doble `RunManager` (autoload + nodo en escena) | Riesgo de usar la instancia equivocada. |
-| Los `.uid` están en el gitignore | Los UIDs cambian entre máquinas. |
-| `_merge_cells` puede dar zonas cuyos rectángulos se solapan (~5% de los layouts) | Celdas que pertenecen a dos zonas: tiles pintados dos veces. Lo detectó `assert_start_zone_cap`. |
 
 ---
 
@@ -120,18 +118,25 @@ roguelite · **P3** pulido y contenido.
 
 - [x] Atajo de debug N para saltar de piso sin recorrer la sala.
 - [x] Limitar el tamaño de la zona START (`FloorData.start_zone_max_cells`, 2×1 celdas).
-- [ ] Arreglar el solape de zonas en `_merge_cells` (las zonas son bounding boxes del crecimiento, no rectángulos exactos).
-- [ ] Cámara en zonas más chicas que la pantalla: ocultar o atenuar las zonas vecinas (o zoom), para mantener las salas aisladas.
+- [x] Arreglar el solape de zonas en `_merge_cells` (0 solapes en 1000 pisos; antes 3.3%).
+- [x] Cámara en zonas más chicas que la pantalla: `ZoneFog` oculta las zonas vecinas.
 - [x] Restaurar los tintes del piso (START verde, REWARD dorado, EXIT rojo); vuelven a pasar `assert_plank_floor` y `assert_prebuilt_tileset`.
 - [x] Aplicar knockback en `enemy.gd` y `player.gd` usando `DamageInfo.knockback` (`KnockbackComponent`, decae en 0.2 s).
 - [x] I-frames para el jugador (0.5 s) tras recibir daño, con parpadeo del sprite (`HealthComponent.invulnerability_seconds`).
 - [x] Hit flash al recibir daño, para jugador y enemigos (`HitFlash`, modulate).
-- [ ] Animaciones de 4 direcciones (Idle/Walk Up, Side, Down) en el jugador.
 - [ ] Animación o efecto visual del swing de la espada (hoy solo existe la hitbox).
 - [x] Pausa: `get_tree().paused` con la acción `pause` y un menú mínimo (Resume / Quit).
-- [ ] Actualizar `AGENTS.md` §13 y §30 al esquema real `attack` + `swap_weapon`.
-- [ ] Quitar `run_manager` de los autoloads (o el nodo de la escena) y dejar una sola instancia.
-- [ ] Commitear los `.uid` (sacarlos de `.gitignore`).
+- [x] Actualizar `AGENTS.md` al esquema real (`attack` + `swap_weapon`, tileset, `RunManager`, knockback/i-frames, niebla).
+- [x] Quitar `run_manager` de los autoloads; queda solo el nodo de `main.tscn`.
+- [x] Versionar los `.uid` y `.import`, alineados con los UIDs que usan las escenas.
+
+### Arte y assets (siguiente bloque)
+
+- [ ] Definir la dirección de arte (paleta, resolución de sprites, estilo de personajes y enemigos).
+- [ ] Sprites del jugador en 4 direcciones (Idle/Walk Up, Side, Down) y animación de ataque.
+- [ ] Sprite del slime y del cofre (hoy son `ColorRect`).
+- [ ] Subir o reemplazar los 5 PNG que faltan en `guild_tavern.tscn`.
+- [ ] Borrar `tilesets/dungeon.tres` (huérfano) o rehacerlo con assets existentes.
 
 ### P1 — Completar el vertical slice
 
