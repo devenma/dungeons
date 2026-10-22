@@ -85,10 +85,11 @@ roguelite · **P3** pulido y contenido.
 | Barra de stamina | `ProgressBar` ligada a `stamina_changed`. |
 | Nombre del arma | Label con el arma equipada. |
 | Toast de recogida | "Picked up: X" durante 1.5 s con fade. |
+| Pausa | Esc (`pause`) pausa el juego y muestra un menú (Resume / Quit); otro Esc o Resume lo cierra. |
 
 ### 1.8. Herramientas de desarrollo
 
-- 26 tests headless (`scripts/test/`), todos pasan.
+- 27 tests headless (`scripts/test/`), todos pasan.
 - `build_dungeon_tileset.gd` regenera el tileset de forma reproducible.
 - Atajo de debug **N** (acción `debug_next_floor`): salta al siguiente piso. Solo corre en builds de debug.
 
@@ -100,7 +101,6 @@ roguelite · **P3** pulido y contenido.
 |---|---|
 | `enemy_health/damage_multiplier` no se leen | La dificultad no sube con el piso. |
 | Solo hay animaciones `Idle_Down` / `Walk_Down` | El sprite no mira arriba ni a los lados (solo usa `flip_h`). |
-| La acción `pause` existe pero no hace nada | No hay pausa. |
 | Sin números de daño ni sonido al golpear | El combate se lee solo por el destello y el empuje. |
 | El cofre es un `ColorRect` | Placeholder visual. |
 | `guild_tavern.tscn` no está conectada | Escena de hub sin flujo de entrada ni salida. |
@@ -128,7 +128,7 @@ roguelite · **P3** pulido y contenido.
 - [x] Hit flash al recibir daño, para jugador y enemigos (`HitFlash`, modulate).
 - [ ] Animaciones de 4 direcciones (Idle/Walk Up, Side, Down) en el jugador.
 - [ ] Animación o efecto visual del swing de la espada (hoy solo existe la hitbox).
-- [ ] Pausa: `get_tree().paused` con la acción `pause` y un menú mínimo (Continuar / Salir).
+- [x] Pausa: `get_tree().paused` con la acción `pause` y un menú mínimo (Resume / Quit).
 - [ ] Actualizar `AGENTS.md` §13 y §30 al esquema real `attack` + `swap_weapon`.
 - [ ] Quitar `run_manager` de los autoloads (o el nodo de la escena) y dejar una sola instancia.
 - [ ] Commitear los `.uid` (sacarlos de `.gitignore`).
