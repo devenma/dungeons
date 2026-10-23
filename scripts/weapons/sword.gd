@@ -11,11 +11,16 @@ extends Node2D
 @export var stamina_node_path: NodePath = NodePath("../../Stamina")
 
 @onready var hitbox: Hitbox = $Hitbox
+# Pivote del visual del swing (opcional) / Swing visual pivot (optional)
+@onready var _swing_pivot: Node2D = get_node_or_null("SwingPivot") as Node2D
 
 const SWING_WINDOW_SECONDS: float = 0.15
+# Arco que barre la hoja durante el swing (rad, ~90°) / Arc the blade sweeps during a swing (rad, ~90°)
+const SWING_ARC: float = 1.6
 
 var _stamina: StaminaComponent = null
 var _window_timer: Timer
+var _swing_tween: Tween = null
 
 
 func _ready() -> void:
@@ -47,7 +52,20 @@ func try_attack(aim_dir: Vector2 = Vector2.ZERO) -> bool:
 	hitbox.knockback = aim.normalized() * data.knockback
 	hitbox.begin_swing()
 	_window_timer.start()
+	_play_swing_visual()
 	return true
+
+
+## Muestra la hoja barriendo el arco mientras dura la hitbox / Shows the blade sweeping the arc while the hitbox is active
+func _play_swing_visual() -> void:
+	if _swing_pivot == null:
+		return
+	if _swing_tween != null:
+		_swing_tween.kill()
+	_swing_pivot.visible = true
+	_swing_pivot.rotation = -SWING_ARC / 2.0
+	_swing_tween = create_tween()
+	_swing_tween.tween_property(_swing_pivot, "rotation", SWING_ARC / 2.0, SWING_WINDOW_SECONDS)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -67,3 +85,5 @@ func _resolve_player_aim() -> Vector2:
 
 func _on_window_timeout() -> void:
 	hitbox.end_swing()
+	if _swing_pivot != null:
+		_swing_pivot.visible = false

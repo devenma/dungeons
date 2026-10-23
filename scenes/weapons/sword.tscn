@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://dhkd81lsvbdol" path="res://scripts/weapons/sword.gd" id="1"]
 [ext_resource type="Script" uid="uid://ccss1am1umlms" path="res://scripts/combat/hitbox.gd" id="2"]
+[ext_resource type="Texture2D" path="res://resources/art/sword.tres" id="3"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_swing"]
 size = Vector2(30, 30)
@@ -19,3 +20,11 @@ script = ExtResource("2")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox" unique_id=1031736435]
 position = Vector2(23, 0)
 shape = SubResource("RectangleShape2D_swing")
+
+[node name="SwingPivot" type="Node2D" parent="."]
+visible = false
+
+[node name="Blade" type="Sprite2D" parent="SwingPivot"]
+position = Vector2(16, 0)
+rotation = 1.5707964
+texture = ExtResource("3")
