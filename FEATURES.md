@@ -109,6 +109,7 @@ roguelite · **P3** pulido y contenido.
 | `tilesets/dungeon.tres` huérfano | Tileset viejo que no usa nadie y referencia 2 PNG que no existen. |
 | Sin audio | No hay música ni SFX. |
 | La muerte reinicia al instante | No hay pantalla de muerte ni resumen de la run. |
+| Arte nuevo sin integrar | La alfombra, la puerta nueva (en `Background_min_all_v2_FIXED.png`) y `Props_Guild_All.aseprite` no se usan: no se regeneró el tileset ni hay escenas que los referencien. |
 
 ---
 
@@ -137,6 +138,18 @@ roguelite · **P3** pulido y contenido.
 - [ ] Sprite del slime y del cofre (hoy son `ColorRect`).
 - [ ] Subir o reemplazar los 5 PNG que faltan en `guild_tavern.tscn`.
 - [ ] Borrar `tilesets/dungeon.tres` (huérfano) o rehacerlo con assets existentes.
+- [ ] Integrar la alfombra, la puerta nueva y `Props_Guild_All` (regenerar el tileset y usarlos en escenas).
+- [ ] Salida: la intención original es una escalera del tileset, no un sprite suelto.
+
+### Deuda de revisión (sin triar)
+
+Hallazgos no bloqueantes de la revisión de `weapon-equip`. Revisar uno por uno y decidir si se arreglan:
+
+- [ ] Latch de un solo uso cuando el pool de armas del cofre está vacío.
+- [ ] Caída silenciosa al pool por defecto (`Spawner.DEFAULT_REWARD_POOL_PATHS`) sin avisar.
+- [ ] Si `RunManager.add_weapon` devuelve un índice < 0, el grant se descarta sin aviso.
+- [ ] Fragilidad de los casts en GDScript con constantes (`as` sobre scripts precargados).
+- [ ] Tests que dependen de input sintético (`Input.parse_input_event`).
 
 ### P1 — Completar el vertical slice
 
@@ -154,6 +167,7 @@ roguelite · **P3** pulido y contenido.
 ### P2 — Profundidad roguelite (Fases 8–9 de `AGENTS.md`)
 
 **Habilidades (Fase 8)**
+- [ ] **Decidir las teclas antes de empezar.** `AGENTS.md` §30 propone Q/W/E, pero W es `move_up` (WASD). Opciones: Q/E/R o 1/2/3.
 - [ ] `AbilityData` (Resource) + un `AbilityController` en el jugador (sin jerarquía de clases todavía).
 - [ ] Ice Nova: AoE con ralentización (primer crowd control).
 - [ ] Fireball: proyectil que reutiliza `arrow.gd` y aplica daño en área al impactar.

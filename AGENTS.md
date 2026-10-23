@@ -1254,6 +1254,8 @@ W → Fireball
 E → Speed Buff
 ```
 
+Pendiente de decisión: W ya es `move_up` (WASD), así que estas teclas no sirven tal cual. Opciones: Q/E/R o 1/2/3, mapeadas a `ability_1..3`. Decidirlo antes de empezar la Fase 8.
+
 El objetivo es validar:
 
 - daño;

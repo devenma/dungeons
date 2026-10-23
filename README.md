@@ -1,6 +1,6 @@
 # Dungeons 🗡️
 
-Dungeon crawler / roguelite 2D desarrollado con **Godot 4.7.1**.
+Dungeon crawler / roguelite 2D desarrollado con **Godot 4.7.2**.
 
 ## Concepto
 
@@ -16,7 +16,7 @@ Un juego de mazmorras generadas proceduralmente donde el jugador avanza a travé
 | Fase 3.5 — Tileset v2 | ✅ | Atlas unificado (`dungeons_v2.tres`) con físicas autoradas en el editor |
 | Fase 4/6 — Enemigos y combate | ✅ | Slime con EnemyData, Health/Hitbox/Hurtbox/DamageInfo, espada, muerte y restart |
 | Fase 7 — Ranged (arco + bastón) | ✅ | Flecha y proyectil mágico sobre la pipeline de proyectiles en común; una sola arma montada (`attack`), Tab (`swap_weapon`) cambia de arma |
-| Fase 8 — Habilidades | ⏳ | En marcha (Ice Nova / Fireball / Speed Buff) |
+| Fase 8 — Habilidades | ⏳ | Pendiente (Ice Nova / Fireball / Speed Buff); falta definir las teclas |
 | Fase 9+ — Progresión, bosses, loot | ⏳ | Pendiente |
 
 ## Cómo ejecutar
@@ -28,7 +28,7 @@ godot --path .
 
 ## Stack
 
-- **Engine**: Godot 4.7.1.stable
+- **Engine**: Godot 4.7.2.stable
 - **Lenguaje**: GDScript
 - **Persistencia SDD**: Engram (compartido via `.engram/`)
 
