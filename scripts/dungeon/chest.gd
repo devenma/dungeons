@@ -19,7 +19,7 @@ const REWARD_SALT: int = 0x5EED
 var _player_inside: bool = false
 var _used: bool = false
 
-@onready var _visual: ColorRect = $VisualColorRect
+@onready var _visual: CanvasItem = $Visual
 
 
 func _ready() -> void:

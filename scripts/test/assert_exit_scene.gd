@@ -75,8 +75,8 @@ func _run() -> void:
 		_check(rect.size == Vector2(64, 64), "EX-2: RectangleShape2D is 64x64")
 	else:
 		_check(false, "EX-2: shape is a RectangleShape2D")
-	_check(instance.get_node_or_null("VisualColorRect") != null,
-			"EX-3: placeholder visual node present")
+	_check(instance.get_node_or_null("Visual") != null,
+			"EX-3: visual node present")
 	var source_text: String = FileAccess.get_file_as_string("res://scripts/dungeon/exit_area.gd")
 	var source_body: String = source_text.substr(0, source_text.find("func "))
 	source_body = source_body.trim_suffix("\n")
