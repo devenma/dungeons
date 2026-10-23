@@ -10,6 +10,7 @@
 [ext_resource type="Resource" path="res://resources/weapons/sword_basic.tres" id="9"]
 [ext_resource type="Script" uid="uid://ma2fid3t54s7" path="res://scripts/ui/weapon_label.gd" id="10"]
 [ext_resource type="Script" uid="uid://cxrcvh316ct8h" path="res://scripts/ui/pickup_toast.gd" id="11"]
+[ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="12"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_b1x3f"]
 bg_color = Color(0, 0, 0, 0.49803922)
@@ -88,6 +89,8 @@ script = ExtResource("11")
 
 [node name="ToastTimer" type="Timer" parent="UI/PickupToast" unique_id=876775800]
 one_shot = true
+
+[node name="PauseMenu" parent="UI" instance=ExtResource("12")]
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1132229216]
 

@@ -224,8 +224,8 @@ func _go_to_next_floor() -> void:
 	_start_floor()
 
 
-# Debug-only shortcut (N): skips the current floor so later floors can be tested
-# without walking the whole START room. Compiled out of release builds.
+# Atajo de debug (N): salta al siguiente piso; no corre en release.
+# Debug-only shortcut (N): skips to the next floor; inactive in release builds.
 func _unhandled_input(event: InputEvent) -> void:
 	if OS.is_debug_build() and event.is_action_pressed("debug_next_floor"):
 		_go_to_next_floor()
