@@ -1,0 +1,5 @@
+# Fin de línea LF en todos los archivos de texto (estándar de Godot): evita que
+# Windows marque como modificados archivos que Godot reescribe sin cambios.
+# LF line endings for all text files (Godot's default): stops Windows from
+# flagging files Godot rewrites without changes.
+* text=auto eol=lf
