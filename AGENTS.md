@@ -1551,6 +1551,58 @@ Una escena puede componerse de otras escenas cuando tenga sentido.
 
 No duplicar estructuras enteras si pueden reutilizarse como componentes.
 
+## 38.1. Arte: slots en `resources/art/`
+
+Los visuales de entidades y objetos no referencian imágenes directamente: cada uno usa un **slot de arte**, un `Texture2D` guardado como recurso en `resources/art/<nombre>.tres` (por ejemplo `slime.tres` o `chest.tres`). Las escenas apuntan al slot, no al PNG.
+
+Para reemplazar un placeholder por arte propio, se cambia **solo el slot**: se apunta el `.tres` al nuevo PNG (o se cambia la región del `AtlasTexture`). No hace falta tocar escenas ni código.
+
+Estado actual: los slots usan placeholders de Kenney Tiny Dungeon (CC0, tiles de 16 px), dibujados a escala entera (×1; la salida ×2). Se reemplazan por arte propio a 32×32 (ver §38.2).
+
+## 38.2. Estándar de pixel art
+
+Decisión: **todo el arte se dibuja sobre una grilla de 32×32 píxeles**, el mismo tamaño que los tiles de piso y pared (`DungeonGeometry.TILE_SIZE`). "32×32" es el tamaño del dibujo en píxeles, no la profundidad de color.
+
+### Tamaños
+
+| Tipo | Tamaño del sprite | Ocupa |
+|---|---|---|
+| Tiles de piso y pared | 32×32 | 1 tile |
+| Jugador, NPCs, enemigos comunes (slime, goblin) | 32×32 | 1 tile |
+| Objetos (cofre, salida, items) | 32×32 | 1 tile |
+| Enemigos grandes (troll, gigante, ogro) | 64×64 | 2×2 tiles |
+| Jefes (dragón, etc.) | 96×96 a 128×128 o más | 3×3 a 4×4 tiles |
+
+Los tamaños grandes van en múltiplos de 32 y no tienen que ser cuadrados (un dragón puede ser 128×80).
+
+### Reglas
+
+- **Misma densidad de píxel en todo el juego.** Una criatura grande se dibuja directamente más grande; nunca se escala un sprite de 32×32 a ×2.
+- **Nunca escalar a factores no enteros** (×1.5, etc.): deforma los píxeles.
+- **Silueta primero.** A 32×32 entran cara (ojos de 1–2 px, expresión simple), ropa, equipo y 3–4 tonos de sombreado por color; no entran texto, joyas chicas ni dedos individuales. Cada enemigo tiene que reconocerse por su forma y colores.
+- **Formato:** PNG con transparencia, sin suavizado. Varias poses o frames del mismo personaje van juntos en una hoja (spritesheet) con celdas del mismo tamaño.
+
+### Animaciones (por personaje de 32×32)
+
+| Animación | Frames |
+|---|---|
+| Idle | 2–4 |
+| Caminar | 4–6 |
+| Ataque | 3–5 |
+
+Cada animación se dibuja en 3 direcciones: abajo, arriba y lado (el otro lado se espeja con `flip_h`). Las criaturas grandes pueden usar menos frames o armarse por partes (cabeza, cuerpo, alas) animadas en Godot, que es más barato que dibujar cada frame.
+
+### Criaturas grandes en el juego
+
+- Cada criatura es una escena que hereda de `enemy_base.tscn` (los jefes van como escenas aparte, §26) con su propio `EnemyData` y su propio arte.
+- **Las colisiones no siguen al dibujo**: `Hurtbox` y `Hitbox` se dimensionan aparte. Un dragón puede tener la zona vulnerable en el cuerpo y cajas de ataque en la cabeza o la cola.
+- **Las puertas miden 1 tile (32 px)**: un enemigo de 64 px no pasa entre zonas. Los enemigos grandes aparecen y pelean en su propia zona.
+- Una celda mide 8×8 tiles (256 px): un jefe de 128 px entra justo; los jefes necesitan una zona BOSS más grande.
+
+### Pantalla
+
+El juego dibuja a 480×270 (unos 15×8 tiles de 32) y se escala a la ventana. La ventana actual (1280×720) es ×2.67, un factor no entero que deforma píxeles; hay que pasar a escala entera (por ejemplo 1920×1080 = ×4) antes de integrar el arte final.
+
 ---
 
 # 39. Datos versus lógica

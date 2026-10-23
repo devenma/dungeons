@@ -37,7 +37,7 @@ roguelite · **P3** pulido y contenido.
 
 | Feature | Detalle |
 |---|---|
-| Movimiento | 8 direcciones, `speed` 60, Input Map (WASD/flechas). |
+| Movimiento | 8 direcciones, `speed` 100 (el slime va a 60), Input Map (WASD/flechas). |
 | Cámara por zona | `Camera2D` limitada al rectángulo de la zona actual (estilo Isaac); cambia al cruzar una puerta. |
 | Niebla de zona | `ZoneFog` tapa todo lo que está fuera de la zona actual, así las salas chicas no dejan ver a sus vecinas. |
 | Cruce de puertas | Detección en dos fases (entrar/salir del área): volver atrás no cuenta como cruce. |
@@ -52,7 +52,7 @@ roguelite · **P3** pulido y contenido.
 | Capas de colisión | 5 capas centralizadas en `CollisionLayers`. |
 | Stamina | Pool de 100 que se regenera 20/s. Cada ataque cuesta stamina; no hay cooldowns. Se rellena al cambiar de piso o al morir. |
 | Apuntado | Mouse/Space apuntan al cursor; el gamepad apunta hacia donde mira el jugador. |
-| Espada | Melee: ventana de hitbox de 0.15 s, daño 10, coste 20, knockback 220. |
+| Espada | Melee: ventana de hitbox de 0.15 s, daño 10, coste 20, knockback 220. Durante la ventana se ve la hoja barriendo un arco de ~90° (slot `sword.tres`). |
 | Arco | Flecha de 400 px/s, daño 8, coste 12, knockback 120. |
 | Bastón | Proyectil mágico de 280 px/s, daño 14, coste 18, knockback 140 (reutiliza `arrow.gd`). |
 | Proyectiles | Mueren al impactar al primer enemigo, al chocar con una pared o a los 2 s. |
@@ -90,7 +90,7 @@ roguelite · **P3** pulido y contenido.
 
 ### 1.8. Herramientas de desarrollo
 
-- 28 tests headless (`scripts/test/`), todos pasan.
+- 29 tests headless (`scripts/test/`), todos pasan.
 - Los `.uid` y `.import` están versionados, así los UIDs son los mismos en todas las máquinas.
 - `build_dungeon_tileset.gd` regenera el tileset de forma reproducible.
 - Atajo de debug **N** (acción `debug_next_floor`): salta al siguiente piso. Solo corre en builds de debug.
@@ -104,7 +104,8 @@ roguelite · **P3** pulido y contenido.
 | `enemy_health/damage_multiplier` no se leen | La dificultad no sube con el piso. |
 | Solo hay animaciones `Idle_Down` / `Walk_Down` | El sprite no mira arriba ni a los lados (solo usa `flip_h`). |
 | Sin números de daño ni sonido al golpear | El combate se lee solo por el destello y el empuje. |
-| El cofre es un `ColorRect` | Placeholder visual. |
+| Slime, cofre, salida y proyectiles usan arte de Kenney | Placeholder hasta tener arte propio; se reemplaza cambiando el slot en `resources/art/`. |
+| Arco y bastón no tienen sprite | No se ve el arma en la mano; la espada solo se ve durante el swing. |
 | `guild_tavern.tscn` no está conectada y le faltan assets | Escena de hub sin flujo de entrada ni salida; referencia 5 PNG que no están en el repo (`Oven_Base`, `Shops_others_Base`, `DishWasher_base`, `Background_min_all`, `Plantilla_v3`). |
 | `tilesets/dungeon.tres` huérfano | Tileset viejo que no usa nadie y referencia 2 PNG que no existen. |
 | Sin audio | No hay música ni SFX. |
@@ -125,7 +126,8 @@ roguelite · **P3** pulido y contenido.
 - [x] Aplicar knockback en `enemy.gd` y `player.gd` usando `DamageInfo.knockback` (`KnockbackComponent`, decae en 0.2 s).
 - [x] I-frames para el jugador (0.5 s) tras recibir daño, con parpadeo del sprite (`HealthComponent.invulnerability_seconds`).
 - [x] Hit flash al recibir daño, para jugador y enemigos (`HitFlash`, modulate).
-- [ ] Animación o efecto visual del swing de la espada (hoy solo existe la hitbox).
+- [x] Efecto visual del swing de la espada (hoja que barre el arco durante la hitbox).
+- [x] Velocidad del jugador de 60 a 100 px/s (antes igual a la del slime).
 - [x] Pausa: `get_tree().paused` con la acción `pause` y un menú mínimo (Resume / Quit).
 - [x] Actualizar `AGENTS.md` al esquema real (`attack` + `swap_weapon`, tileset, `RunManager`, knockback/i-frames, niebla).
 - [x] Quitar `run_manager` de los autoloads; queda solo el nodo de `main.tscn`.
@@ -133,9 +135,14 @@ roguelite · **P3** pulido y contenido.
 
 ### Arte y assets (siguiente bloque)
 
-- [ ] Definir la dirección de arte (paleta, resolución de sprites, estilo de personajes y enemigos).
+- [x] Slots de arte (`resources/art/*.tres`) con placeholders de Kenney para slime, cofre, salida, flecha, proyectil mágico y espada.
+- [x] Definir la resolución del arte: todo a 32×32, criaturas grandes en múltiplos de 32 (`AGENTS.md` §38.2).
+- [ ] Definir paleta de colores y estilo de personajes y enemigos.
+- [ ] Escala de pantalla entera: hoy 480×270 → 1280×720 (×2.67) deforma píxeles; pasar a ×4 (1920×1080) con escalado entero.
+- [ ] Reemplazar los placeholders de Kenney (16 px) por arte propio de 32×32, cambiando solo los slots y ajustando las colisiones al tamaño nuevo.
+- [ ] Jugador a 32×32: hoy sus frames son de 16×16 (revisar si `Player_Sprite_Sheet_V2.png`, sin usar, es la versión nueva).
 - [ ] Sprites del jugador en 4 direcciones (Idle/Walk Up, Side, Down) y animación de ataque.
-- [ ] Sprite del slime y del cofre (hoy son `ColorRect`).
+- [ ] Sprites de arco y bastón en la mano; animación de ataque propia para la espada.
 - [ ] Subir o reemplazar los 5 PNG que faltan en `guild_tavern.tscn`.
 - [ ] Borrar `tilesets/dungeon.tres` (huérfano) o rehacerlo con assets existentes.
 - [ ] Integrar la alfombra, la puerta nueva y `Props_Guild_All` (regenerar el tileset y usarlos en escenas).

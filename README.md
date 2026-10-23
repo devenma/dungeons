@@ -74,3 +74,5 @@ Ver [`AGENTS.md`](AGENTS.md) para la documentación completa de arquitectura y c
 ## Créditos
 
 Desarrollado con [Gentle AI](https://opencode.ai) y SDD (Spec-Driven Development).
+
+Arte placeholder: [Tiny Dungeon](https://kenney.nl/assets/tiny-dungeon) de Kenney (CC0).
