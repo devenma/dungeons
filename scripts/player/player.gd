@@ -1,6 +1,6 @@
 extends CharacterBody2D
 
-@export var speed := 60.0
+@export var speed := 100.0
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var knockback: KnockbackComponent = get_node_or_null("Knockback") as KnockbackComponent
 
