@@ -1,26 +1,31 @@
-# AGENTS.md — Dungeon 2D Procedural Roguelite
+# AGENTS.md — Dungeon 2D con historia
 
-## 1. Propósito del proyecto
+# 1. Propósito del proyecto
 
 Este documento define la arquitectura, convenciones y dirección técnica del videojuego 2D desarrollado con Godot.
 
 Su objetivo principal es mantener la coherencia entre iteraciones de desarrollo y evitar que nuevas mecánicas introduzcan acoplamiento innecesario o contradigan decisiones arquitectónicas existentes.
 
-El juego es un dungeon crawler / roguelite 2D centrado en:
+La fuente de verdad de diseño es [`DECISIONES.md`](DECISIONES.md). Si este documento la contradice, gana `DECISIONES.md` y hay que corregir este documento.
 
-- avanzar a través de pisos generados proceduralmente;
-- explorar habitaciones conectadas;
-- combatir enemigos;
-- conseguir mejoras, armas y habilidades;
-- aumentar progresivamente la dificultad;
-- superar jefes de piso cada cierta cantidad de pisos;
-- construir diferentes builds mediante armas, estadísticas, habilidades, buffs y efectos de control.
+El juego es un **dungeon crawler con historia** 2D centrado en:
+
+- **explorar el dungeon**, que es el núcleo de la experiencia;
+- combatir con un esquema hack n' slash con sensación *beat 'em up* (peso, knockback, hit-stop y combos);
+- avanzar a través de dungeons procedurales armados con salas diseñadas a mano;
+- volver a un **pueblo persistente** con NPCs, tienda y economía;
+- construir el poder del personaje mediante equipo y mejoras, no mediante XP;
+- superar jefes al final de cada dungeon.
+
+Referencias: *Moonlighter* + *Stardew Valley*, con exploración de cámara cenital tipo *Minish Cap* / *A Link to the Past* y paleta de tonos apagados.
+
+La muerte **no borra el progreso**: se pierde la expedición y el loot de la mochila, no el perfil (oro bancado, equipo, desbloqueos y pueblo). Ver D1 en `DECISIONES.md`.
 
 La prioridad durante el desarrollo es construir primero un **vertical slice jugable** y ampliar el sistema progresivamente.
 
 ---
 
-## 2. Principios generales
+# 2. Principios generales
 
 ### 2.1. Priorizar sistemas simples y componibles
 
@@ -64,7 +69,8 @@ Ejemplos:
 - `Player`: controla el personaje.
 - `DungeonGenerator`: genera la estructura procedural.
 - `DungeonManager`: administra el piso actual.
-- `RunManager`: conserva el estado de la partida.
+- `RunManager`: conserva el estado de la expedición.
+- `ProfileState`: conserva el perfil persistente.
 - `HealthComponent`: administra vida.
 - `Hitbox`: representa una fuente de daño.
 - `Hurtbox`: representa una entidad que puede recibir daño.
@@ -78,19 +84,23 @@ La arquitectura principal debe mantenerse aproximadamente así:
 ```text
                          Main
                           │
-             ┌────────────┼────────────┐
-             │            │            │
-             ▼            ▼            ▼
-           World          UI       RunManager
-              │
-              ▼
-        DungeonManager
-              │
-              ├── DungeonGenerator (grid-merging + TileMap)
-              ├── DoorController (zona → zona)
-              ├── Spawner (contenido por zona)
-              ├── TileMap único (3 capas: floor/wall/door)
-              └── ExitArea (transición de piso)
+        ┌─────────────────┼──────────────┬─────────────┐
+        │                 │              │             │
+        ▼                 ▼              ▼             ▼
+  ProfileState          World           UI         RunManager
+  (perfil persistente)    │          (expedición)
+        │                 │
+        │                 ▼
+        │           DungeonManager
+        │                 │
+        │                 ├── DungeonGenerator (grid-merging + TileMap)
+        │                 ├── DoorController (zona → zona)
+        │                 ├── Spawner (contenido por zona)
+        │                 ├── TileMap único (3 capas: floor/wall/door)
+        │                 └── ExitArea (transición de piso)
+        │
+        └── Town (pueblo persistente)
+              └── WorldClock (día/noche)
 
 
                          Player
@@ -113,32 +123,48 @@ La arquitectura principal debe mantenerse aproximadamente así:
                    Enemy
 ```
 
+`ProfileState` es el perfil persistente (oro bancado, equipo, desbloqueos, progreso del pueblo). `RunManager` es **solo** el estado de la expedición (seed, piso actual, loot de la mochila) y muere con ella. `WorldClock` maneja las fases día/noche y `Town` (`scenes/town/`) es la escena del pueblo. No crear managers nuevos para estas responsabilidades: ya tienen dueño.
+
 ## 3.1. Flujo de juego
 
 ```text
-Inicio
+Pueblo (día)
   │
   ▼
-Crear / cargar Run
+Entrar al dungeon (noche)
   │
   ▼
-Generar piso
+Crear / cargar Run (seed, piso, mochila)
   │
   ▼
-Explorar habitaciones
+Explorar zonas y salas
   │
   ▼
-Combatir / conseguir recompensas
+Combatir / conseguir loot
   │
   ▼
-Encontrar salida
+¿Llegaste al final del dungeon?
   │
-  ├── Piso normal ──────► siguiente piso
+  ├── No ──────────────► siguiente piso
   │
-  └── Piso de jefe ─────► derrotar jefe
+  └── Sí ───────────────► pelear con el jefe
                               │
                               ▼
-                         siguiente piso
+                    Volver al pueblo con loot
+                              │
+                              ▼
+              Vender, comprar equipo, avanzar el día
+                              │
+                              ▼
+                         nueva expedición
+
+Muerte durante la expedición
+  │
+  ▼
+Volver al pueblo
+  ├── se pierde el loot de la mochila
+  ├── se re-rollea la seed del dungeon
+  └── se conserva el perfil (oro, equipo, desbloqueos)
 ```
 
 ---
@@ -157,6 +183,11 @@ res://
 │   │
 │   ├── player/
 │   │   └── player.tscn
+│   │
+│   ├── town/
+│   │   └── town.tscn
+│   │
+│   ├── rooms/                       # Plantillas de sala hechas a mano
 │   │
 │   ├── enemies/
 │   │   ├── enemy_base.tscn
@@ -179,6 +210,12 @@ res://
 │   │   ├── player_stats.gd
 │   │   └── player_controller.gd
 │   │
+│   ├── profile/
+│   │   └── profile_state.gd        # Perfil persistente (user://)
+│   │
+│   ├── world/
+│   │   └── world_clock.gd          # Fases día/noche
+│   │
 │   ├── dungeon/
 │   │   ├── dungeon_generator.gd     # Grid-merging + TileMap renderer
 │   │   ├── dungeon_manager.gd       # Orquestación del piso
@@ -196,8 +233,12 @@ res://
 │   ├── enemies/
 │   │   └── enemy.gd
 │   │
-│   ├── resources/
-│   │   └── floor_data.gd
+│   └── resources/
+│       ├── floor_data.gd
+│       └── dungeon_data.gd          # Dungeon: id, pisos, jefe
+│
+├── resources/
+│   └── dungeons/                    # DungeonData (.tres)
 │
 ├── tilesets/
 │
@@ -260,24 +301,35 @@ Debe utilizarse para lógica verdaderamente global.
 
 ## 6.2. RunManager
 
-`RunManager` representa el estado de una partida concreta.
+`RunManager` representa el estado de **una expedición concreta**. No contiene progreso permanente.
 
 Puede contener datos como:
 
 ```text
-current_floor
-player_level
-gold
-current_weapon
-abilities
-upgrades
-enemies_defeated
 run_seed
+current_floor
+weapons_obtained
+current_weapon
+backpack_loot
+enemies_defeated
 ```
 
 El estado que debe sobrevivir al cambio de piso debe pertenecer al `RunManager` o a un sistema equivalente.
 
 No duplicar ese estado dentro de cada escena de piso.
+
+## 6.3. Perfil vs expedición
+
+Dos capas de estado, separadas a propósito (D1 en `DECISIONES.md`):
+
+| Capa | Vive en | Contenido | Persiste |
+|---|---|---|---|
+| Perfil | `ProfileState` (`user://`) | Oro bancado, equipo comprado, desbloqueos, progreso del pueblo | Sí, entre sesiones |
+| Expedición | `RunManager` | Seed del dungeon, piso actual, loot en la mochila | No, muere con la expedición |
+
+Al morir: se vuelve al pueblo, se pierde el loot no asegurado y se re-rollea la seed del dungeon. El equipo equipado, el oro bancado y los desbloqueos quedan. El objeto de retorno usa el mismo camino, pero conserva el loot.
+
+Ninguna capa debe absorber a la otra: `ProfileState` no conoce el piso actual y `RunManager` no guarda oro ni desbloqueos.
 
 ---
 
@@ -358,7 +410,7 @@ Esto permitirá soportar posteriormente:
 
 # 9. Input Map
 
-Acciones iniciales previstas:
+Acciones actuales del Input Map:
 
 ```text
 move_up
@@ -367,20 +419,16 @@ move_left
 move_right
 
 attack
-secondary_attack
-staff_attack
+swap_weapon        # Tab: cambia el arma equipada
 
-ability_1
-ability_2
-ability_3
-
-dash
 interact
+dash               # prevista
 
 pause
+debug_next_floor   # solo builds de debug
 ```
 
-Las acciones podrán ampliarse conforme aparezcan nuevas mecánicas.
+Las acciones podrán ampliarse conforme aparezcan nuevas mecánicas. Los slots de habilidad del arma equipada (activas 1-4, buffs/debuff Q/E/R) están previstos en D12 y todavía no existen.
 
 Las escenas y scripts deben utilizar los nombres de las acciones, no códigos de teclas directamente.
 
@@ -494,6 +542,8 @@ Status Effects
 
 Una entidad con vida debería poder recibir información de daño de forma genérica.
 
+Estado actual: el knockback (`KnockbackComponent`, decae en 0.2 s), los i-frames del jugador (`HealthComponent.invulnerability_seconds`, 0.5 s) y el hit flash (`HitFlash`) ya existen; el hit-stop y el combo de 3 todavía no.
+
 El sistema podrá crecer posteriormente para soportar:
 
 - daño físico;
@@ -531,14 +581,17 @@ Arco
 Bastón
 ```
 
-Estado actual: las tres familias existen y coexisten bajo el nodo `Weapons` del
-jugador. Cada una individualiza su disparo por una acción de input distinta:
+Estado actual: las tres familias existen bajo el nodo `Weapons` del jugador, pero
+se equipa **una sola arma a la vez**, montada por `EquipmentController`. Se arranca
+con la espada; el arco y el bastón se obtienen de cofres en zonas REWARD.
 
 ```text
-Espada  → attack
-Arco    → secondary_attack
-Bastón  → staff_attack
+attack       → ataca con el arma equipada
+swap_weapon  → Tab: cambia el arma equipada
 ```
+
+Todas las armas comparten el mismo slot de arma equipada. Atacar siempre cuesta
+stamina; no hay cooldowns de arma.
 
 El arma debe definir principalmente cómo produce su ataque.
 
@@ -554,15 +607,19 @@ Ejemplo conceptual:
 
 ```text
 WeaponData
-├── name
+├── type
+├── scene
 ├── damage
-├── attack_speed
-├── range
 ├── knockback
-├── crit_chance
-├── cooldown
-└── type
+├── stamina_cost
+└── projectile_data
 ```
+
+`attack_speed` y `cooldown` están deprecados: el gating es la stamina, no un
+cooldown de arma.
+
+El ataque básico del bastón todavía no define si consume maná (D19); si lo hace,
+`WeaponData` suma `mana_cost`.
 
 Ejemplos de recursos:
 
@@ -650,11 +707,32 @@ Enemy
 
 Pero el sistema mágico debe poder evolucionar más allá del ataque básico.
 
+Estado actual: el bastón se ataca con `attack` como cualquier arma equipada (no
+tiene una acción de input propia) y el gating es stamina.
+
 ---
 
 # 18. Ability System
 
-Las habilidades deben ser independientes de las armas.
+Las habilidades **pertenecen al arma equipada**, no son un sistema suelto
+(reframe Albion, D12). Cada arma tiene su propio kit intercambiable:
+
+```text
+Activas        → slots 1-4
+Buffs/debuff   → slots Q/E/R
+```
+
+- Varias opciones por slot; **una sola activa por slot**.
+- La maestría del arma desbloquea opciones nuevas.
+- Cada habilidad declara su coste: **stamina** (físico), **maná** (mágico) o **ambos a la vez** (D19).
+- El coste es atómico: si falta cualquiera de los recursos declarados, la habilidad no se ejecuta.
+- Los ataques físicos de arma siguen costando solo stamina.
+- Sin cooldown, salvo para el slot "ultimate".
+
+El maná todavía no existe en el código: entra con la Fase 8 parte B (`ManaComponent`).
+
+Para el vertical slice alcanza con 1-2 activas + 1 pasiva por arma, pero la
+abstracción de slot se conserva para no reescribir después.
 
 Categorías iniciales:
 
@@ -682,7 +760,7 @@ Ejemplos:
 - aumentar crítico;
 - regeneración;
 - escudo;
-- reducción de cooldown.
+- reducción de coste de stamina.
 
 ---
 
@@ -695,14 +773,19 @@ Ejemplo:
 ```text
 AbilityData
 ├── name
-├── cooldown
+├── slot
+├── stamina_cost
 ├── mana_cost
 ├── cast_time
 ├── damage
 ├── range
-├── effect
-└── projectile
+└── effect
 ```
+
+El coste puede ser **stamina**, **maná** o **ambos** (D19); `mana_cost = 0`
+significa que la habilidad no usa maná. Los cooldowns solo aplican al
+slot "ultimate". `AbilityData` describe el kit del arma equipada, no habilidades
+globales sueltas.
 
 Ejemplos:
 
@@ -743,7 +826,13 @@ GENERACIÓN LÓGICA (grid-merging)
 
 No generar directamente un conjunto de tiles aleatorios sin una estructura lógica previa.
 
-El piso completo se renderiza en un **TileMap único** que consume el recurso pre-construido `res://tilesets/dungeon.tres` (32×32 px, geometría real de los assets, autorado en el editor): el código solo coloca tiles — no construye tilesets ni colisiones en runtime. `scripts/dungeon/dungeon_geometry.gd` (`DungeonGeometry`) es la fuente única de las constantes de geometría y roles de tiles, y si el recurso falta la generación falla de forma ruidosa (sin fallback). Las habitaciones individuales `.tscn` fueron reemplazadas por un sistema de zonas generadas proceduralmente sobre una grilla.
+El piso completo se renderiza en un **TileMap único** que consume el recurso pre-construido `res://tilesets/dungeons_v2.tres` (32×32 px, geometría real de los assets, autorado en el editor): el código solo coloca tiles — no construye tilesets ni colisiones en runtime. `scripts/dungeon/dungeon_geometry.gd` (`DungeonGeometry`) es la fuente única de las constantes de geometría y roles de tiles, y si el recurso falta la generación falla de forma ruidosa (sin fallback). Las habitaciones individuales `.tscn` fueron reemplazadas por un sistema de zonas generadas proceduralmente sobre una grilla.
+
+Dirección (D3): **mundo exterior fijo + dungeons procedurales armadas con salas diseñadas a mano.** El grid-merging sigue definiendo la topología y los tipos de zona; el interior de cada zona sale de un pool de plantillas (`scenes/rooms/`) por tipo y tamaño, elegidas con la seed. El gating es por **llaves y puertas cerradas**, más un objeto que abre un atajo.
+
+Eso impone dos requisitos al generador actual: `zone.tile_rect` debe ser un rectángulo **exacto** (hoy `_merge_cells` puede solapar bounding boxes en ~5% de los layouts) y cada zona debe tener un **tamaño mínimo** (hoy una zona de 1 celda, 256×256 px, es más chica que el viewport de 480×270 px). Ambos son deuda P0 y prerrequisito del pool de plantillas.
+
+Algunas zonas pueden incluir **obstáculos movibles** (bloques, pilares caídos, escombros) que el jugador desplaza gastando **stamina**. No son habilidades: usan el mismo protocolo de gasto que los ataques. Su colocación viene de las plantillas de sala y no pueden romper la solvabilidad (D20).
 
 ---
 
@@ -754,9 +843,12 @@ Responsabilidad:
 - generar la estructura lógica de un piso;
 - crear la grilla de celdas y mergearlas en zonas rectangulares;
 - detectar adyacencia entre zonas;
-- asignar tipos de zona (START, COMBAT, REWARD, EXIT);
+- asignar tipos de zona (START, COMBAT, REWARD, EXIT y, más adelante, BOSS);
 - colocar puertas en posiciones irregulares sobre aristas compartidas;
-- renderizar el piso completo en un TileMap consumiendo el `TileSet` pre-construido (`res://tilesets/dungeon.tres`).
+- elegir la plantilla de sala de cada zona con la seed (`scenes/rooms/`);
+- colocar llaves y puertas cerradas;
+- validar la **solvabilidad** del piso (la llave debe estar antes que su puerta en la ruta), no solo la alcanzabilidad;
+- renderizar el piso completo en un TileMap consumiendo el `TileSet` pre-construido (`res://tilesets/dungeons_v2.tres`).
 
 Flujo conceptual:
 
@@ -780,6 +872,12 @@ asignar tipos (START/EXIT/COMBAT/REWARD)
        │
        ▼
 colocar puertas en aristas compartidas
+       │
+       ▼
+elegir plantillas y colocar llaves/puertas cerradas
+       │
+       ▼
+validar solvabilidad (llave antes que su puerta)
        │
        ▼
 renderizar TileMap (floor/wall/door)
@@ -816,7 +914,10 @@ Boss
 Exit
 ```
 
-Las zonas se generan mediante grid-merging: se divide el piso en una grilla de celdas, se mergean celdas contiguas en clusters rectangulares, y cada cluster recibe un tipo de zona. Todas las celdas pertenecen exactamente a una zona (sin espacios muertos).
+En el código actual existen START, COMBAT, REWARD y EXIT. **BOSS** entra con D10
+(piso de jefe al final de cada dungeon); EVENT y SHOP quedan para más adelante.
+
+Las zonas se generan mediante grid-merging: se divide el piso en una grilla de celdas, se mergean celdas contiguas en clusters rectangulares, y cada cluster recibe un tipo de zona. Todas las celdas deben pertenecer exactamente a una zona (sin espacios muertos); hoy `_merge_cells` puede solapar bounding boxes, deuda P0.
 
 ---
 
@@ -824,12 +925,14 @@ Las zonas se generan mediante grid-merging: se divide el piso en una grilla de c
 
 Las zonas son la unidad funcional del piso. Cada zona tiene:
 
-- un tipo (START, COMBAT, REWARD, EXIT)
+- un tipo (START, COMBAT, REWARD, EXIT; BOSS llega con D10)
 - un rectángulo en la grilla (cell_min/cell_max)
 - un rectángulo en tiles (tile_rect, para renderizado y cámara)
 - una lista de zonas vecinas (por adyacencia de celdas)
 - una lista de puertas que la conectan con sus vecinas
 - un estado cleared (si el contenido fue resuelto)
+
+El `tile_rect` debe ser el rectángulo **exacto** de las celdas de la zona. Hoy `_merge_cells` puede solapar bounding boxes (~5% de los layouts), lo que impide colocar plantillas de sala; es deuda P0. Cada zona necesita además un **tamaño mínimo** para que la cámara y la plantilla funcionen. El gating entre zonas se hace con **llaves y puertas cerradas**.
 
 Las zonas se generan proceduralmente con region-growth a partir de semillas determinísticas. El tamaño de cada zona varía según cuántas celdas se mergearon.
 
@@ -848,11 +951,13 @@ Responsabilidades:
 - crear el TileMap, DoorController, Spawner y wirear señales;
 - administrar la salida (ExitArea);
 - detectar finalización del piso;
-- iniciar transición al siguiente piso.
+- iniciar transición al siguiente piso;
+- respetar el techo de pisos por dungeon (`DungeonData`) y disparar el piso de jefe;
+- al morir, volver al pueblo sin borrar el perfil (`_return_to_town()`); el objeto de retorno usa el mismo camino, pero conserva el loot.
 
 No debe almacenar permanentemente el estado completo de la partida.
 
-Ese estado corresponde al `RunManager`.
+Ese estado corresponde al `RunManager` (expedición) y a `ProfileState` (perfil).
 
 ---
 
@@ -872,9 +977,12 @@ max_doors_per_edge               # Máximo de puertas por arista compartida
 max_generation_retries           # Intentos antes del fallback
 reward_ratio                     # Probabilidad de que una zona no-START/EXIT sea REWARD
 zone_count_by_floor_depth        # Mapa piso → [min, max] de zonas
+start_zone_max_cells             # Tope de celdas de la zona START (2×1 por defecto)
 enemy_health_multiplier
 enemy_damage_multiplier
 ```
+
+Falta un **mínimo de celdas por zona** (prerrequisito de las plantillas de sala, D3). Los multiplicadores `enemy_health_multiplier` y `enemy_damage_multiplier` existen pero **hoy no se leen**: deben consumirse en `Spawner` al instanciar enemigos; hasta entonces la dificultad no escala con el piso.
 
 La dificultad no debe aumentar únicamente mediante multiplicadores de estadísticas.
 
@@ -936,11 +1044,13 @@ Phase 3
 
 El `DungeonGenerator` no debe implementar la lógica interna del boss.
 
-Debe únicamente determinar cuándo corresponde un piso de jefe y qué boss debe aparecer.
+El piso de jefe lo decide `DungeonData` (cantidad de pisos y jefe) junto con el generador; las fases y los ataques viven en la escena del boss.
 
 ---
 
 # 27. Progresión y dificultad
+
+Hay dos capas de progreso (D11): el **equipo del pueblo** es permanente y sobrevive a la muerte (`ProfileState`); las **mejoras de expedición** son temporales y mueren con la run (`RunManager`). No hay XP ni niveles: el poder viene del equipo y de las mejoras.
 
 La progresión debe considerar varias dimensiones:
 
@@ -975,7 +1085,7 @@ Ejemplo melee:
 ```text
 Espada
 + crítico
-+ velocidad de ataque
++ coste de stamina reducido
 + knockback
 + dash
 + sangrado
@@ -997,16 +1107,17 @@ Ejemplo mágico:
 ```text
 Bastón
 + poder mágico
-+ reducción de cooldown
++ coste de stamina reducido
 + congelación
 + AoE
-+ regeneración de mana
++ regeneración de stamina
++ regeneración de maná
 ```
 
 Ejemplo híbrido:
 
 ```text
-Espada
+Espada con su kit
 +
 Ice Nova
 +
@@ -1024,37 +1135,34 @@ La arquitectura de armas, habilidades y upgrades debe permitir estas combinacion
 El primer objetivo jugable es:
 
 ```text
-START
+Pueblo mínimo (tienda)
   │
   ▼
-Habitación de combate
+1 dungeon de 3 pisos
   │
   ▼
-Habitación de combate
+Jefe
   │
   ▼
-Habitación de recompensa
+Volver al pueblo con loot
   │
   ▼
-SALIDA
+Comprar 1 mejora
   │
   ▼
-PISO 2
+Repetir
 ```
 
 Debe contener únicamente:
 
-- movimiento;
-- colisiones;
-- cámara;
-- generación procedural básica;
-- una habitación de combate;
+- movimiento, colisiones y cámara;
+- generación procedural básica con plantillas de sala simples;
+- combate cuerpo a cuerpo (espada) con knockback e i-frames;
 - un enemigo;
-- espada;
-- vida;
-- daño;
-- muerte;
-- transición de piso.
+- un dungeon de 3 pisos con jefe;
+- perfil persistente mínimo y oro;
+- pueblo mínimo con tienda;
+- muerte que vuelve al pueblo sin borrar el perfil.
 
 No introducir inicialmente:
 
@@ -1062,17 +1170,20 @@ No introducir inicialmente:
 - inventario complejo;
 - árboles de habilidades;
 - muchos tipos de enemigos;
-- bosses complejos;
+- bosses complejos (el primero con 1-2 fases);
 - sistemas de loot avanzados;
-- efectos de estado completos.
+- efectos de estado completos;
+- granja ni crafting.
 
-El MVP debe servir para validar el loop fundamental.
+El MVP debe servir para validar el loop fundamental: expedición → recompensa → mejora → nueva expedición.
 
 ---
 
 # 30. Roadmap de desarrollo
 
 ## Fase 1 — Movimiento
+
+**Estado: ✅ hecho.**
 
 Implementar:
 
@@ -1090,6 +1201,8 @@ Objetivo:
 ---
 
 ## Fase 2 — Dungeon estático
+
+**Estado: ✅ hecho.**
 
 Crear manualmente:
 
@@ -1109,6 +1222,8 @@ Objetivo:
 
 ## Fase 3 — Generación procedural (grid-merging + TileMap)
 
+**Estado: ✅ hecho.**
+
 Implementar:
 
 ```text
@@ -1122,12 +1237,14 @@ Tipo de zona (START/COMBAT/REWARD/EXIT)
  ↓
 Puertas en aristas compartidas (posición irregular)
  ↓
-TileMap único (consume res://tilesets/dungeon.tres)
+TileMap único (consume res://tilesets/dungeons_v2.tres)
 ```
 
 La generación produce un piso contiguo sin espacios muertos. Las zonas se asignan a tipos funcionales. Las puertas se colocan en posiciones irregulares — si la arista compartida es suficientemente larga pueden haber múltiples puertas.
 
-Cada celda del grid es de `CELL_TILES × CELL_TILES` tiles (configurable). El TileMap consume el `TileSet` pre-construido `res://tilesets/dungeon.tres` (32×32 px, hojas de assets reales, autorado en el editor; `scripts/tools/build_dungeon_tileset.gd` lo regenera de forma reproducible) — el código solo coloca tiles; `DungeonGeometry` es la fuente única de las constantes de geometría.
+Cada celda del grid es de `CELL_TILES × CELL_TILES` tiles (configurable). El TileMap consume el `TileSet` pre-construido `res://tilesets/dungeons_v2.tres` (32×32 px, hojas de assets reales, autorado en el editor) — el código solo coloca tiles; `DungeonGeometry` es la fuente única de las constantes de geometría.
+
+**Advertencia:** `scripts/tools/build_dungeon_tileset.gd` **no se debe re-ejecutar**. Sobrescribe las colisiones y los ajustes autorados a mano en `tilesets/dungeons_v2.tres`.
 
 Objetivo:
 
@@ -1136,6 +1253,8 @@ Objetivo:
 ---
 
 ## Fase 4 — Primer enemigo
+
+**Estado: ✅ hecho.**
 
 Crear un enemigo básico, por ejemplo un slime.
 
@@ -1154,6 +1273,8 @@ No introducir IA compleja todavía.
 ---
 
 ## Fase 5 — Sistema de daño
+
+**Estado: ✅ hecho.**
 
 Implementar:
 
@@ -1176,6 +1297,8 @@ Enemy → Player
 
 ## Fase 6 — Espada
 
+**Estado: ✅ hecho** (el feel base: knockback, i-frames y hit flash llegaron en el PR #6).
+
 Implementar:
 
 ```text
@@ -1193,13 +1316,14 @@ Damage
 Añadir progresivamente:
 
 - animación;
-- cooldown;
-- hitbox;
+- ventana de hitbox;
 - knockback.
 
 ---
 
 ## Fase 7 — Ranged
+
+**Estado: ✅ hecho.**
 
 Implementar:
 
@@ -1223,19 +1347,25 @@ Magic Projectile
 
 Estado actual: el bastón (tercera familia, ranged mágico) está implementado
 como clon del patrón del arco, dispara el proyectil mágico reutilizando
-`arrow.gd` (`magic_bolt.tscn`) y se ataque con `staff_attack`. Sin cooldowns:
-el gating es de stamina únicamente.
+`arrow.gd` (`magic_bolt.tscn`) y se ataca con `attack` (misma acción que el resto
+de las armas). Sin cooldowns: el gating es de stamina únicamente.
 
 ---
 
 ## Fase 8 — Habilidades
 
-Implementar algunas habilidades representativas:
+**Estado:** parte A ✅ hecha y archivada; parte B ⏳ pendiente.
+
+- **Parte A — `weapon-equip`:** una sola arma equipada a la vez (`EquipmentController`), cambio con Tab.
+- **Parte B — `abilities`:** kits de habilidad por arma (D12).
+  - Recurso de maná (`ManaComponent`) + barra en el HUD + coste dual `stamina_cost` / `mana_cost` en `AbilityData` (D19).
+
+Implementar algunas habilidades representativas del kit del arma:
 
 ```text
-Q → Ice Nova
-W → Fireball
-E → Speed Buff
+Activa 1 → Ice Nova
+Activa 2 → Fireball
+Buff Q   → Speed Buff
 ```
 
 El objetivo es validar:
@@ -1244,29 +1374,70 @@ El objetivo es validar:
 - AoE;
 - control de masas;
 - buffs;
-- cooldowns.
+- coste de recursos (stamina y/o maná) y slots.
 
 ---
 
 ## Fase 9 — Progresión
 
+**Estado: ⏳ pendiente.**
+
 Añadir progresivamente:
 
 ```text
-XP
-Levels
 Loot
 Weapons
 Stats
-Abilities
 Rarities
 Upgrades
-Gold
-Shops
 Elite rooms
-Events
-Bosses
 ```
+
+Sin XP ni niveles: el poder viene del equipo del pueblo y de las mejoras de expedición (D11).
+
+---
+
+## Fase 10 — Pueblo y economía
+
+**Estado: ⏳ pendiente.**
+
+- `ProfileState` persistente en `user://` (oro, equipo, desbloqueos, pueblo).
+- Oro y tienda sobre `scenes/hub/guild_tavern.tscn` / `scenes/town/`.
+- NPCs con diálogo fijo.
+- `WorldClock` con fases día/noche.
+- Retorno al pueblo en vez de wipe al morir.
+
+---
+
+## Fase 11 — Expedición con jefe
+
+**Estado: ⏳ pendiente.**
+
+- `DungeonData` (id, cantidad de pisos, jefe) y techo de 3–4 pisos.
+- Tipo de zona BOSS.
+- Primer boss con 1–2 fases.
+- Objeto de retorno que conserva el loot.
+
+---
+
+## Fase 12 — Plantillas, llaves y solvabilidad
+
+**Estado: ⏳ pendiente.**
+
+- Arreglar `_merge_cells` (rectángulos exactos) y tamaño mínimo de zona.
+- Pool de plantillas de sala en `scenes/rooms/`.
+- Llaves y puertas cerradas.
+- Validación de solvabilidad en el generador.
+
+---
+
+## Fase 13 — Historia
+
+**Estado: ⏳ pendiente.**
+
+- Sistema de diálogo data-driven (`DialogueData`).
+- Escena de cierre al terminar cada dungeon.
+- Localización ES/EN con `tr()`.
 
 ---
 
@@ -1275,31 +1446,17 @@ Bosses
 Cuando haya dudas sobre qué desarrollar a continuación, priorizar:
 
 ```text
-1. Movimiento
-2. Colisiones
-3. Habitación estática
-4. Cámara
-5. Dungeon procedural
-6. Transición de pisos
-7. Enemy base
-8. Health
-9. Hitbox / Hurtbox
-10. Espada
-11. Combate básico
-12. Arco
-13. Proyectiles
-14. Bastón
-15. Habilidades
-16. Buffs / CC
-17. Loot
-18. Progresión
-19. Enemigos adicionales
-20. Elites
-21. Bosses
-22. Builds avanzadas
-23. Balance
-24. UI / polish
+1. Arreglar `_merge_cells` (rectángulos exactos + tamaño mínimo de zona)
+2. Hit-stop + visual del swing + combo de 3
+3. `ProfileState` + oro + `_return_to_town()`
+4. Pueblo mínimo con tienda (scenes/hub/guild_tavern.tscn)
+5. Pool de plantillas de sala
+6. `WorldClock` día/noche + techo de pisos por dungeon + zona BOSS
 ```
+
+El paso 1 es prerrequisito del 5. Los pasos 2 y 3 son independientes entre sí y pueden ir en paralelo.
+
+Fuera de este orden inmediato, el maná (D19) entra junto con los kits de habilidad (Fase 8 parte B) y los obstáculos movibles (D20) entran con el pool de plantillas de sala.
 
 No saltar prematuramente a sistemas posteriores si los sistemas fundamentales todavía no son estables.
 
@@ -1352,6 +1509,10 @@ El parser de Godot 4.7 no puede inferir tipos a través de:
 - arrays anidados (`cells[y][x]`);
 - diccionarios (`dict[key]`);
 - referencias a objetos sin tipo explícito.
+
+## Comentarios bilingües
+
+El código nuevo usa **comentarios bilingües (español / inglés)**. Mantener esa convención al tocar o agregar código, para que el archivo sea legible en ambos idiomas.
 
 ## Señales
 
@@ -1554,7 +1715,7 @@ Ejemplo:
 ```text
 SwordData
     damage = 20
-    attack_speed = 1.2
+    stamina_cost = 15
     knockback = 30
 ```
 
@@ -1565,6 +1726,8 @@ Sword.gd
 ```
 
 determina cómo ejecutar el ataque.
+
+Otros recursos planificados: `DungeonData` (id, cantidad de pisos, jefe) y `DialogueData` (diálogo data-driven del pueblo y la historia).
 
 ---
 
@@ -1676,14 +1839,29 @@ Después:
 [x] Arco
 [x] Proyectiles
 [x] Bastón
-[ ] Habilidades
+[x] Una sola arma equipada + cambio con Tab (weapon-equip, Fase 8 parte A)
+[x] P0 de combate: knockback, i-frames, hit flash y pausa
+[x] Tope de la zona START
+[ ] Habilidades (kits por arma, Fase 8 parte B)
 [ ] Buffs
 [ ] Crowd Control
 [ ] Loot
-[ ] Progresión
+[ ] Progresión (equipo + mejoras, sin XP)
 [ ] Enemigos adicionales
 [ ] Elites
 [ ] Bosses
+```
+
+Pendiente para el vertical slice v2:
+
+```text
+[ ] ProfileState + oro + retorno al pueblo
+[ ] Pueblo mínimo con tienda + WorldClock
+[ ] DungeonData + techo de pisos + zona BOSS
+[ ] Plantillas de sala + llaves + solvabilidad
+[ ] Maná (recurso + barra HUD)
+[ ] Obstáculos movibles con coste de stamina
+[ ] Historia + localización ES/EN
 ```
 
 ---
@@ -1708,6 +1886,9 @@ Cualquier agente que trabaje sobre este repositorio debe:
 14. Mantener este documento actualizado si una decisión arquitectónica importante cambia de forma permanente.
 15. **Toda variable debe declararse con tipo explícito** — no usar `:=` para inferencia cuando el tipo provenga de arrays anidados, diccionarios, o propiedades de objetos sin tipo. Ver sección 32 (Tipado explícito).
 16. **Las señales que emiten eventos sincrónicos** (ej: `spawn_content()` que emite `zone_cleared`) deben conectarse ANTES de la llamada que dispara la emisión.
+17. **Leer [`DECISIONES.md`](DECISIONES.md) antes de proponer arquitectura.** Es la fuente de verdad de diseño aprobada por el equipo.
+18. **Nunca re-ejecutar `scripts/tools/build_dungeon_tileset.gd`.** Sobrescribe las colisiones y los ajustes autorados a mano en `tilesets/dungeons_v2.tres`.
+19. **Si un documento contradice `DECISIONES.md`, gana `DECISIONES.md`** y hay que corregir el documento, no la decisión.
 
 ---
 
@@ -1727,4 +1908,4 @@ y:
 
 priorizar la segunda.
 
-La velocidad de desarrollo importa, pero la arquitectura debe mantenerse suficientemente limpia para que el juego pueda crecer desde el MVP hasta un dungeon crawler roguelite completo sin requerir una reescritura general.
+La velocidad de desarrollo importa, pero la arquitectura debe mantenerse suficientemente limpia para que el juego pueda crecer desde el MVP hasta un dungeon crawler con historia completo sin requerir una reescritura general.

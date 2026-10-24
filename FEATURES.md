@@ -1,11 +1,13 @@
 # FEATURES — Estado del juego y backlog
 
-Inventario de lo que el juego hace **hoy** (verificado contra el código, 2026-10-22) y backlog de
-features para un roguelite de mazmorras. La arquitectura y las reglas están en [`AGENTS.md`](AGENTS.md).
+La dirección vigente del juego está en [`DECISIONES.md`](DECISIONES.md); si este documento la
+contradice, gana `DECISIONES.md`. La arquitectura y las reglas están en [`AGENTS.md`](AGENTS.md).
 
-Leyenda del backlog: `[ ]` pendiente · `[~]` parcial · `[x]` hecho. Prioridad: **P0** bloquea el
-loop básico o la sensación de juego · **P1** completa el vertical slice · **P2** profundidad
-roguelite · **P3** pulido y contenido.
+- **§1** describe lo que el código hace **hoy** (verificado contra el código, 2026-10-24).
+- **§3** es el backlog ya re-sliced para el juego nuevo (dungeon crawler con historia).
+
+Leyenda del backlog: `[ ]` pendiente · `[~]` parcial · `[x]` hecho. Prioridad: **P0** base
+confiable y feel · **P1** vertical slice v2 · **P2** profundidad · **P3** contenido y pulido.
 
 ---
 
@@ -38,7 +40,7 @@ roguelite · **P3** pulido y contenido.
 | Feature | Detalle |
 |---|---|
 | Movimiento | 8 direcciones, `speed` 60, Input Map (WASD/flechas). |
-| Cámara por zona | `Camera2D` limitada al rectángulo de la zona actual (estilo Isaac); cambia al cruzar una puerta. |
+| Cámara por zona | `Camera2D` limitada al rectángulo de la zona actual (cámara fija por sala); cambia al cruzar una puerta. |
 | Cruce de puertas | Detección en dos fases (entrar/salir del área): volver atrás no cuenta como cruce. |
 | Bloqueo de combate | Entrar a una zona COMBAT sin limpiar cierra sus puertas hasta matar a todos los enemigos. |
 | Interacción | Acción `interact` (F) para cofres y salida. |
@@ -49,7 +51,7 @@ roguelite · **P3** pulido y contenido.
 |---|---|
 | Protocolo de daño único | Hitbox/proyectil → Hurtbox → HealthComponent → `died`. Funciona en las dos direcciones (jugador ↔ enemigo). |
 | Capas de colisión | 5 capas centralizadas en `CollisionLayers`. |
-| Stamina | Pool de 100 que se regenera 20/s. Cada ataque cuesta stamina; no hay cooldowns. Se rellena al cambiar de piso o al morir. |
+| Recursos | Stamina 100 (regen 20/s), se rellena al cambiar de piso o al morir. Cada ataque cuesta stamina; no hay cooldowns. Todavía no hay maná (D19). |
 | Apuntado | Mouse/Space apuntan al cursor; el gamepad apunta hacia donde mira el jugador. |
 | Espada | Melee: ventana de hitbox de 0.15 s, daño 10, coste 20, knockback 220. |
 | Arco | Flecha de 400 px/s, daño 8, coste 12, knockback 120. |
@@ -89,8 +91,8 @@ roguelite · **P3** pulido y contenido.
 
 ### 1.8. Herramientas de desarrollo
 
-- 27 tests headless (`scripts/test/`), todos pasan.
-- `build_dungeon_tileset.gd` regenera el tileset de forma reproducible.
+- 27 tests headless (`scripts/test/`), todos verdes.
+- **Advertencia:** no re-ejecutar `scripts/tools/build_dungeon_tileset.gd`. Sobrescribe las colisiones y los ajustes autorados a mano en `tilesets/dungeons_v2.tres`.
 - Atajo de debug **N** (acción `debug_next_floor`): salta al siguiente piso. Solo corre en builds de debug.
 
 ---
@@ -107,7 +109,8 @@ roguelite · **P3** pulido y contenido.
 | Sin audio | No hay música ni SFX. |
 | La muerte reinicia al instante | No hay pantalla de muerte ni resumen de la run. |
 | Una zona más chica que la pantalla (480×270 px) deja ver a sus vecinas | La cámara no puede limitar por debajo del viewport; pasa con zonas de 1 celda, START incluida. |
-| `AGENTS.md` describe `secondary_attack` / `staff_attack` | Los docs no coinciden con el esquema real (`attack` + Tab). |
+| No existen `ProfileState`, oro ni `DungeonData` | La muerte sigue siendo wipe total; no hay economía ni techo de pisos. |
+| No existe maná ni coste dual | Todas las habilidades gastan solo stamina; el maná llega con la Fase 8 parte B (D19). |
 | Doble `RunManager` (autoload + nodo en escena) | Riesgo de usar la instancia equivocada. |
 | Los `.uid` están en el gitignore | Los UIDs cambian entre máquinas. |
 | `_merge_cells` puede dar zonas cuyos rectángulos se solapan (~5% de los layouts) | Celdas que pertenecen a dos zonas: tiles pintados dos veces. Lo detectó `assert_start_zone_cap`. |
@@ -116,48 +119,81 @@ roguelite · **P3** pulido y contenido.
 
 ## 3. Backlog (TODOs)
 
-### P0 — Sensación de combate y estabilidad
+Ya está en `main` y documentado en §1: knockback, i-frames, hit flash, pausa y tope de START (PR #6).
 
-- [x] Atajo de debug N para saltar de piso sin recorrer la sala.
-- [x] Limitar el tamaño de la zona START (`FloorData.start_zone_max_cells`, 2×1 celdas).
-- [ ] Arreglar el solape de zonas en `_merge_cells` (las zonas son bounding boxes del crecimiento, no rectángulos exactos).
-- [ ] Cámara en zonas más chicas que la pantalla: ocultar o atenuar las zonas vecinas (o zoom), para mantener las salas aisladas.
-- [x] Restaurar los tintes del piso (START verde, REWARD dorado, EXIT rojo); vuelven a pasar `assert_plank_floor` y `assert_prebuilt_tileset`.
-- [x] Aplicar knockback en `enemy.gd` y `player.gd` usando `DamageInfo.knockback` (`KnockbackComponent`, decae en 0.2 s).
-- [x] I-frames para el jugador (0.5 s) tras recibir daño, con parpadeo del sprite (`HealthComponent.invulnerability_seconds`).
-- [x] Hit flash al recibir daño, para jugador y enemigos (`HitFlash`, modulate).
-- [ ] Animaciones de 4 direcciones (Idle/Walk Up, Side, Down) en el jugador.
-- [ ] Animación o efecto visual del swing de la espada (hoy solo existe la hitbox).
-- [x] Pausa: `get_tree().paused` con la acción `pause` y un menú mínimo (Resume / Quit).
-- [ ] Actualizar `AGENTS.md` §13 y §30 al esquema real `attack` + `swap_weapon`.
-- [ ] Quitar `run_manager` de los autoloads (o el nodo de la escena) y dejar una sola instancia.
+### P0 — base confiable y feel
+
+**Generador y cámara**
+- [ ] Arreglar el solape de `_merge_cells` (rectángulos exactos) y agregar un tamaño mínimo de zona.
+- [ ] Cámara en zonas más chicas que el viewport: ocultar o atenuar las zonas vecinas (o zoom).
+
+**Feel de combate**
+- [ ] Hit-stop al impactar.
+- [ ] Visual del swing de la espada (hoy solo existe la hitbox).
+- [ ] Combo de 3 golpes en `sword.gd`.
+- [ ] Animaciones de 4 direcciones (Idle/Walk Up, Side, Down).
+
+**Estabilidad y docs**
+- [x] Actualizar `README.md`, `AGENTS.md` y `FEATURES.md` a la dirección v2.
+- [ ] Dejar una sola instancia de `RunManager` (quitar el autoload o el nodo de escena).
 - [ ] Commitear los `.uid` (sacarlos de `.gitignore`).
 
-### P1 — Completar el vertical slice
+### P1 — vertical slice v2
 
+**Perfil, economía y pueblo**
+- [ ] `ProfileState` persistente en `user://` (oro, equipo, desbloqueos, pueblo).
+- [ ] Oro: drops de enemigos (oro y curación) y contador en el HUD.
+- [ ] Retorno al pueblo en vez de wipe (`_return_to_town()`), perdiendo solo el loot de la mochila.
+- [ ] Objeto de retorno que conserva el loot.
+- [ ] Pueblo mínimo con tienda (vender loot, comprar equipo) sobre `scenes/hub/guild_tavern.tscn`.
+- [ ] `WorldClock` con fases día/noche.
+- [ ] Guardado del perfil y de los ajustes (`user://`).
+
+**Expedición y jefe**
+- [ ] `DungeonData` (id, cantidad de pisos, jefe) y techo de 3–4 pisos.
+- [ ] Tipo de zona BOSS.
+- [ ] Primer boss con 1–2 fases (`PhaseController`, ver `AGENTS.md` §26).
+- [ ] Usar los multiplicadores de `FloorData` en `Spawner` al instanciar enemigos.
+- [ ] Escalar `enemies_per_zone` según el piso o el tamaño de la zona.
+
+**Flujo y presentación**
 - [ ] HUD: label de piso actual (`FloorLabel`, previsto en `AGENTS.md` §5).
 - [ ] Pantalla de muerte: piso alcanzado, enemigos derrotados y botón de reintentar.
 - [ ] Menú principal (Jugar / Salir) como escena de entrada.
-- [ ] Dash (acción `dash`) con coste de stamina e i-frames cortos.
-- [ ] Usar los multiplicadores de `FloorData` en `Spawner` al instanciar enemigos.
-- [ ] Escalar `enemies_per_zone` según el piso o el tamaño de la zona.
-- [ ] Sprite real para el cofre, con animación de abrir.
-- [ ] Indicador de "puertas cerradas" y feedback al limpiar la zona (sonido o efecto).
 - [ ] Prompt "F" visible al estar cerca de un cofre o de la salida.
-- [ ] Audio base: música de piso, SFX de golpe, muerte, ataque, recogida y puerta.
+- [ ] Indicador de "puertas cerradas" y feedback al limpiar la zona (sonido o efecto).
+- [ ] Sprite real para el cofre, con animación de abrir.
+- [ ] Transición (fade) entre pisos.
+- [ ] Base de localización ES/EN (`tr()` + CSV) de los textos de UI.
 
-### P2 — Profundidad roguelite (Fases 8–9 de `AGENTS.md`)
+**Audio (último del slice)**
+- [ ] Música de pueblo y de dungeon.
+- [ ] SFX de golpe, muerte, ataque, recogida y puerta.
 
-**Habilidades (Fase 8)**
-- [ ] `AbilityData` (Resource) + un `AbilityController` en el jugador (sin jerarquía de clases todavía).
+### P2 — profundidad
+
+**Mazmorra**
+- [ ] Pool de plantillas de sala en `scenes/rooms/`.
+- [ ] Obstáculos movibles que consumen stamina (D20); su colocación viene de las plantillas de sala.
+- [ ] Llaves y puertas cerradas + validación de solvabilidad en el generador.
+- [ ] Nuevos tipos de zona: EVENT y SHOP.
+- [ ] Minimapa con las zonas visitadas.
+- [ ] Obstáculos y decoración estática dentro de las zonas (pilares, escombros) para variar el combate.
+- [ ] Trampas que usen el protocolo Hitbox (pinchos, explosiones).
+- [ ] Mostrar la seed en pausa o en la pantalla de muerte, y poder introducir una seed.
+
+**Habilidades (Fase 8 parte B, D12)**
+- [ ] `AbilityData` por kit de arma + abstracción de slot (activas 1-4, buffs/debuff Q/E/R).
+- [ ] `ManaComponent` + barra de maná + coste dual (`stamina_cost` / `mana_cost`) en `AbilityData` (D19).
+- [ ] Primer corte: 1-2 activas + 1 pasiva por arma.
 - [ ] Ice Nova: AoE con ralentización (primer crowd control).
 - [ ] Fireball: proyectil que reutiliza `arrow.gd` y aplica daño en área al impactar.
 - [ ] Speed Buff: buff temporal de velocidad.
-- [ ] Acciones `ability_1..3` en el Input Map y en el HUD, con cooldown visible.
+- [ ] Acciones de habilidad en el Input Map y en el HUD.
 
 **Estados y buffs**
 - [ ] Sistema mínimo de status effects (slow, burn, freeze) con duración, aplicado vía `DamageInfo`.
-- [ ] Buffs de stats temporales y permanentes (daño, velocidad, regeneración de stamina).
+- [ ] Buffs de stats temporales y permanentes (daño, velocidad, regeneración de stamina/maná).
 
 **Enemigos**
 - [ ] Segundo enemigo a distancia (dispara proyectiles con el mismo protocolo).
@@ -167,36 +203,36 @@ roguelite · **P3** pulido y contenido.
 - [ ] Elites: variante con más HP, tinte distinto y un modificador.
 
 **Loot y progresión**
-- [ ] Drops de enemigos: oro y curación.
-- [ ] Oro en `RunManager` + contador en el HUD.
 - [ ] `UpgradeData`: mejoras pasivas elegibles (elige 1 de 3) en las zonas REWARD.
 - [ ] Rareza de armas (común/rara/épica) con modificadores de stats.
 - [ ] Variantes de arma (`sword_heavy`, multishot del arco, etc.) como nuevos `.tres`.
-- [ ] XP y niveles (si encaja con el diseño; en muchos roguelites alcanza con el loot).
+- [ ] Meta-progresión: desbloqueos persistentes entre expediciones (D1).
+- [ ] Builds híbridas: sinergias entre arma, habilidad y upgrade (ver `AGENTS.md` §28).
+- [ ] Balance: tabla de DPS por arma/coste y curvas de dificultad por piso.
 
-**Mazmorra**
-- [ ] Nuevos tipos de zona: EVENT, SHOP y BOSS.
-- [ ] Piso de jefe cada N pisos (decidido en `DungeonGenerator`, lógica en la escena del boss).
-- [ ] Primer boss con 2–3 fases (`PhaseController`, ver `AGENTS.md` §26).
-- [ ] Minimapa con las zonas visitadas.
-- [ ] Obstáculos y decoración dentro de las zonas (pilares, trampas) para variar el combate.
-- [ ] Trampas que usen el protocolo Hitbox (pinchos, explosiones).
-- [ ] Mostrar la seed en pausa o en la pantalla de muerte, y poder introducir una seed.
+**Historia y pueblo**
+- [ ] Sistema de diálogo data-driven (`DialogueData`).
+- [ ] NPCs del pueblo con diálogo fijo.
+- [ ] Escena de cierre al terminar cada dungeon.
 
-### P3 — Pulido, meta y contenido
+### P3 — contenido y pulido
 
-- [ ] Screen shake y hit-stop al golpear.
+- [ ] Granja y crafting (solo si se aprueba; hoy fuera del alcance).
+- [ ] Relaciones con NPCs.
+- [ ] HD-2D (luces y normal maps) si se decide.
+- [ ] Screen shake.
 - [ ] Números de daño flotantes.
 - [ ] Partículas de muerte de enemigos.
-- [ ] Transición (fade) entre pisos.
-- [ ] Hub (`guild_tavern.tscn`): punto de partida entre runs.
-- [ ] Meta-progresión: moneda persistente para desbloqueos entre runs.
-- [ ] Guardado: ajustes y meta-progresión (`user://`).
+- [ ] Dash (acción `dash`) con coste de stamina e i-frames cortos.
 - [ ] Opciones: volumen, remapeo de controles y pantalla completa.
 - [ ] Soporte completo de gamepad (apuntado con el stick derecho).
-- [ ] Balance: tabla de DPS por arma/coste y curvas de dificultad por piso.
-- [ ] Builds híbridas: sinergias entre arma, habilidad y upgrade (ver `AGENTS.md` §28).
-- [ ] Localización ES/EN de los textos de UI.
+- [ ] Efectos de estado adicionales y pulido de combate.
+
+### Descartado explícitamente
+
+- **XP y niveles** (D11): el poder viene del equipo y de las mejoras.
+- **Cooperativo** (D6): un jugador.
+- **Agarres y lanzamientos** (D4): fuera del feel buscado.
 
 ---
 
