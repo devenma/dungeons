@@ -28,6 +28,7 @@ roguelite · **P3** pulido y contenido.
 | Cantidad de zonas por profundidad | `zone_count_by_floor_depth`: piso 1 → 3–5 zonas, piso 10 → 6–12. |
 | Tipos de zona | 1 START, 1 EXIT y el resto COMBAT o REWARD (`reward_ratio` 0.3). |
 | Validación | BFS START→EXIT. Si falla, reintenta hasta 5 veces y después usa un layout de fallback. |
+| Tope de START | La zona START se recorta a `FloorData.start_zone_max_cells` (2×1 celdas = 16×8 tiles por defecto); lo que sobra pasa a ser zonas nuevas. |
 | Determinismo | La misma `(run_seed, floor_number)` produce el mismo piso; cubierto por un test. |
 | Puertas | Posición irregular en las aristas compartidas; varias por arista si es larga (`multi_door_threshold`). |
 | Render | Un TileMap único con un tileset pre-autorado (`dungeons_v2.tres`). Paredes con colisión y piso con tinte según el tipo de zona. |
@@ -50,10 +51,13 @@ roguelite · **P3** pulido y contenido.
 | Capas de colisión | 5 capas centralizadas en `CollisionLayers`. |
 | Stamina | Pool de 100 que se regenera 20/s. Cada ataque cuesta stamina; no hay cooldowns. Se rellena al cambiar de piso o al morir. |
 | Apuntado | Mouse/Space apuntan al cursor; el gamepad apunta hacia donde mira el jugador. |
-| Espada | Melee: ventana de hitbox de 0.15 s, daño 10, coste 20. |
-| Arco | Flecha de 400 px/s, daño 8, coste 12. |
-| Bastón | Proyectil mágico de 280 px/s, daño 14, coste 18 (reutiliza `arrow.gd`). |
+| Espada | Melee: ventana de hitbox de 0.15 s, daño 10, coste 20, knockback 220. |
+| Arco | Flecha de 400 px/s, daño 8, coste 12, knockback 120. |
+| Bastón | Proyectil mágico de 280 px/s, daño 14, coste 18, knockback 140 (reutiliza `arrow.gd`). |
 | Proyectiles | Mueren al impactar al primer enemigo, al chocar con una pared o a los 2 s. |
+| Knockback | `KnockbackComponent`: el golpe empuja al objetivo con velocidad inicial = `knockback` (px/s), que decae a 0 en 0.2 s. Mientras dura, el empuje reemplaza el movimiento propio (stagger). |
+| I-frames | `HealthComponent.invulnerability_seconds`: el jugador ignora golpes durante 0.5 s después de recibir uno; los enemigos no tienen. |
+| Hit flash | `HitFlash`: destello brillante al recibir daño y parpadeo del sprite mientras duran los i-frames. |
 
 ### 1.5. Armas e inventario
 
@@ -68,7 +72,7 @@ roguelite · **P3** pulido y contenido.
 
 | Feature | Detalle |
 |---|---|
-| Slime | 30 HP, velocidad 60, daño 8. Detecta a 120 px, ataca a 20 px con una ventana de 0.2 s y cooldown de 1.2 s. |
+| Slime | 30 HP, velocidad 60, daño 8, knockback 160. Detecta a 120 px, ataca a 20 px con una ventana de 0.2 s y cooldown de 1.2 s. |
 | IA | Persecución en línea recta dentro del radio de detección (sin pathfinding). |
 | Spawn | 2 slimes por zona COMBAT, en tiles interiores (lejos de las paredes). |
 | Datos | `EnemyData` (.tres). |
@@ -81,10 +85,11 @@ roguelite · **P3** pulido y contenido.
 | Barra de stamina | `ProgressBar` ligada a `stamina_changed`. |
 | Nombre del arma | Label con el arma equipada. |
 | Toast de recogida | "Picked up: X" durante 1.5 s con fade. |
+| Pausa | Esc (`pause`) pausa el juego y muestra un menú (Resume / Quit); otro Esc o Resume lo cierra. |
 
 ### 1.8. Herramientas de desarrollo
 
-- 24 tests headless (`scripts/test/`); 22 pasan y 2 fallan por los tintes del tileset (ver §2).
+- 27 tests headless (`scripts/test/`), todos pasan.
 - `build_dungeon_tileset.gd` regenera el tileset de forma reproducible.
 - Atajo de debug **N** (acción `debug_next_floor`): salta al siguiente piso. Solo corre en builds de debug.
 
@@ -94,21 +99,18 @@ roguelite · **P3** pulido y contenido.
 
 | Problema | Impacto |
 |---|---|
-| El knockback viaja en `DamageInfo` pero nadie lo aplica | Los golpes no se sienten. |
-| El jugador no tiene i-frames | Varios enemigos pueden encadenar daño sin pausa. |
 | `enemy_health/damage_multiplier` no se leen | La dificultad no sube con el piso. |
 | Solo hay animaciones `Idle_Down` / `Walk_Down` | El sprite no mira arriba ni a los lados (solo usa `flip_h`). |
-| La acción `pause` existe pero no hace nada | No hay pausa. |
-| Sin feedback de daño (flash, número, sonido) | Cuesta leer el combate. |
+| Sin números de daño ni sonido al golpear | El combate se lee solo por el destello y el empuje. |
 | El cofre es un `ColorRect` | Placeholder visual. |
 | `guild_tavern.tscn` no está conectada | Escena de hub sin flujo de entrada ni salida. |
 | Sin audio | No hay música ni SFX. |
 | La muerte reinicia al instante | No hay pantalla de muerte ni resumen de la run. |
-| `assert_plank_floor` y `assert_prebuilt_tileset` fallan | Tintes de las zonas START/REWARD/EXIT desalineados con `DungeonGeometry`. |
+| Una zona más chica que la pantalla (480×270 px) deja ver a sus vecinas | La cámara no puede limitar por debajo del viewport; pasa con zonas de 1 celda, START incluida. |
 | `AGENTS.md` describe `secondary_attack` / `staff_attack` | Los docs no coinciden con el esquema real (`attack` + Tab). |
 | Doble `RunManager` (autoload + nodo en escena) | Riesgo de usar la instancia equivocada. |
 | Los `.uid` están en el gitignore | Los UIDs cambian entre máquinas. |
-| La zona START puede medir hasta 40×16 tiles (~3×2 pantallas) | Lenta de recorrer al testear; mitigado con el atajo N. |
+| `_merge_cells` puede dar zonas cuyos rectángulos se solapan (~5% de los layouts) | Celdas que pertenecen a dos zonas: tiles pintados dos veces. Lo detectó `assert_start_zone_cap`. |
 
 ---
 
@@ -117,14 +119,16 @@ roguelite · **P3** pulido y contenido.
 ### P0 — Sensación de combate y estabilidad
 
 - [x] Atajo de debug N para saltar de piso sin recorrer la sala.
-- [ ] Limitar el tamaño de la zona START (decidir: tope en el generador o grilla más chica en `floor_data.tres`).
-- [ ] Arreglar los tintes del tileset para que pasen `assert_plank_floor` y `assert_prebuilt_tileset`.
-- [ ] Aplicar knockback en `enemy.gd` y `player.gd` usando `DamageInfo.knockback` (decae en ~0.15 s).
-- [ ] I-frames para el jugador (~0.5 s) tras recibir daño, con parpadeo del sprite. Va en `HealthComponent` o en un componente `Invulnerability` aparte.
-- [ ] Hit flash (shader o modulate) al recibir daño, para jugador y enemigos.
+- [x] Limitar el tamaño de la zona START (`FloorData.start_zone_max_cells`, 2×1 celdas).
+- [ ] Arreglar el solape de zonas en `_merge_cells` (las zonas son bounding boxes del crecimiento, no rectángulos exactos).
+- [ ] Cámara en zonas más chicas que la pantalla: ocultar o atenuar las zonas vecinas (o zoom), para mantener las salas aisladas.
+- [x] Restaurar los tintes del piso (START verde, REWARD dorado, EXIT rojo); vuelven a pasar `assert_plank_floor` y `assert_prebuilt_tileset`.
+- [x] Aplicar knockback en `enemy.gd` y `player.gd` usando `DamageInfo.knockback` (`KnockbackComponent`, decae en 0.2 s).
+- [x] I-frames para el jugador (0.5 s) tras recibir daño, con parpadeo del sprite (`HealthComponent.invulnerability_seconds`).
+- [x] Hit flash al recibir daño, para jugador y enemigos (`HitFlash`, modulate).
 - [ ] Animaciones de 4 direcciones (Idle/Walk Up, Side, Down) en el jugador.
 - [ ] Animación o efecto visual del swing de la espada (hoy solo existe la hitbox).
-- [ ] Pausa: `get_tree().paused` con la acción `pause` y un menú mínimo (Continuar / Salir).
+- [x] Pausa: `get_tree().paused` con la acción `pause` y un menú mínimo (Resume / Quit).
 - [ ] Actualizar `AGENTS.md` §13 y §30 al esquema real `attack` + `swap_weapon`.
 - [ ] Quitar `run_manager` de los autoloads (o el nodo de la escena) y dejar una sola instancia.
 - [ ] Commitear los `.uid` (sacarlos de `.gitignore`).

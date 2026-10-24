@@ -8,6 +8,6 @@ script = ExtResource("1")
 weapon_scene = ExtResource("2")
 weapon_name = "Basic Sword"
 attack_speed = 1.5
-knockback = 28.0
+knockback = 220.0
 attack_range = 120.0
 stamina_cost = 20

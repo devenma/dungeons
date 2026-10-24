@@ -562,6 +562,50 @@ func _find_zone(layout: FloorLayout, id: int) -> Zone:
 	return null
 
 
+## Recorta la zona del origen (siempre START) a max_cells con cortes rectos; los restos son zonas nuevas.
+## Cuts the origin zone (always START) to max_cells with straight cuts; leftovers become new zones.
+func _cap_start_zone(zones: Array, max_cells: Vector2i) -> void:
+	if max_cells.x <= 0 or max_cells.y <= 0:
+		return
+	var start_z: Zone = null
+	var next_id: int = 0
+	for z in zones:
+		next_id = maxi(next_id, z.id + 1)
+		if z.cell_min == Vector2i.ZERO:
+			start_z = z
+	if start_z == null:
+		return
+
+	if start_z.cell_max.x - start_z.cell_min.x > max_cells.x:
+		var cut_x: int = start_z.cell_min.x + max_cells.x
+		zones.append(_zone_from_cells(next_id,
+				Vector2i(cut_x, start_z.cell_min.y), start_z.cell_max))
+		next_id += 1
+		start_z.cell_max.x = cut_x
+	if start_z.cell_max.y - start_z.cell_min.y > max_cells.y:
+		var cut_y: int = start_z.cell_min.y + max_cells.y
+		zones.append(_zone_from_cells(next_id,
+				Vector2i(start_z.cell_min.x, cut_y), start_z.cell_max))
+		start_z.cell_max.y = cut_y
+	start_z.tile_rect = _tile_rect_for_cells(start_z.cell_min, start_z.cell_max)
+
+
+func _zone_from_cells(id: int, cell_min: Vector2i, cell_max: Vector2i) -> Zone:
+	var z := Zone.new()
+	z.id = id
+	z.type = Zone.ZoneType.COMBAT  # placeholder, _assign_types decides
+	z.cell_min = cell_min
+	z.cell_max = cell_max
+	z.tile_rect = _tile_rect_for_cells(cell_min, cell_max)
+	return z
+
+
+## Rango de celdas → rectángulo en tiles / Cell range → tile rect
+func _tile_rect_for_cells(cell_min: Vector2i, cell_max: Vector2i) -> Rect2i:
+	return Rect2i(cell_min * DungeonGeometry.CELL_TILES,
+			(cell_max - cell_min) * DungeonGeometry.CELL_TILES)
+
+
 # ── Main entry point ─────────────────────────────────────────────────────────
 
 func generate_floor(floor_number: int, base_seed: int,
@@ -589,6 +633,10 @@ func generate_floor(floor_number: int, base_seed: int,
 		var zones := _merge_cells(retry_rng, target_count, grid_w, grid_h)
 		if zones.is_empty():
 			continue
+		# Se valida con el conteo del merge: el tope de START puede sumar zonas.
+		# Validate with the merge count: the START cap may add zones.
+		var merged_count: int = zones.size()
+		_cap_start_zone(zones, data.start_zone_max_cells)
 
 		# Build layout
 		layout = FloorLayout.new()
@@ -610,7 +658,7 @@ func generate_floor(floor_number: int, base_seed: int,
 		_place_doors(layout, retry_rng, data)
 
 		# Validate
-		var zc := layout.zones.size()
+		var zc: int = merged_count
 		if zc < target_min or zc > target_max:
 			continue
 		if not _validate_connectivity(layout):
