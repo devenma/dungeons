@@ -8,7 +8,9 @@ extends Node2D
 ## Gated only by the player's stamina, spent when each swing starts (no
 ## cooldown timer). Contains no player logic (§35).
 ## Every phase change emits `swing_phase_changed` (the player's attack
-## animation follows it); entering ACTIVE plays the swing's smear VFX.
+## animation follows it); entering ACTIVE plays the swing's smear VFX and
+## its whoosh. The player stays rooted while a swing runs (`is_rooting`),
+## except for the small forward step of the active hit (`step_velocity`).
 
 ## Fase nueva del golpe, su duración (s) y el apuntado / New swing phase, its duration (s) and the aim
 signal swing_phase_changed(phase: SwingState, seconds: float, aim: Vector2)
@@ -28,6 +30,7 @@ const SMEAR_PIVOT: Vector2 = Vector2(32, 49)
 
 @onready var hitbox: Hitbox = $Hitbox
 @onready var _hitbox_shape: CollisionShape2D = $Hitbox/CollisionShape2D
+@onready var _swing_sound: AudioStreamPlayer2D = $SwingSound
 
 var _stamina: StaminaComponent = null
 var _state: SwingState = SwingState.IDLE
@@ -78,12 +81,26 @@ func try_attack(aim_dir: Vector2 = Vector2.ZERO) -> bool:
 	return false
 
 
+## El jugador queda plantado desde la preparación hasta el fin de la recuperación / The player is rooted from anticipation through recovery
+func is_rooting() -> bool:
+	return _state != SwingState.IDLE
+
+
+## Velocidad del paso del golpe activo (px/s); cero fuera de él / Velocity of the active hit's step (px/s); zero outside it
+func step_velocity() -> Vector2:
+	if _state != SwingState.ACTIVE:
+		return Vector2.ZERO
+	var swing: SwingData = data.combo[_combo_step]
+	return _aim.normalized() * swing.step_distance / maxf(swing.active_seconds, 0.001)
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("attack"):
 		var facing: Vector2 = _resolve_player_aim()
 		var aim: Vector2 = AimResolver.resolve(
 				event, global_position, facing, get_global_mouse_position())
-		try_attack(aim)
+		if not _player_holds_attack(aim):
+			try_attack(aim)
 
 
 func _physics_process(delta: float) -> void:
@@ -98,6 +115,9 @@ func _physics_process(delta: float) -> void:
 		SwingState.ANTICIPATION:
 			hitbox.begin_swing()
 			_spawn_smear(swing)
+			if swing.swing_sound != null:
+				_swing_sound.stream = swing.swing_sound
+				_swing_sound.play()
 			_enter(SwingState.ACTIVE, swing.active_seconds)
 		SwingState.ACTIVE:
 			hitbox.end_swing()
@@ -123,6 +143,7 @@ func _start_swing(step: int, aim: Vector2) -> bool:
 	hitbox.damage = swing.damage
 	hitbox.knockback = aim.normalized() * swing.knockback
 	hitbox.hit_stop_seconds = swing.hit_stop_seconds
+	hitbox.camera_shake_pixels = swing.camera_shake_pixels
 	_hitbox_shape.position = swing.hitbox_offset
 	(_hitbox_shape.shape as RectangleShape2D).size = swing.hitbox_size
 	_enter(SwingState.ANTICIPATION, swing.anticipation_seconds)
@@ -152,6 +173,12 @@ func _reset_combo() -> void:
 	_combo_step = 0
 	_chain_left = 0.0
 	_enter(SwingState.IDLE, 0.0)
+
+
+# Rodando o muerto, el jugador retiene el ataque (lo encola o lo descarta) / Rolling or dead, the player holds the attack (buffers or drops it)
+func _player_holds_attack(aim: Vector2) -> bool:
+	var found: Node = get_tree().get_first_node_in_group("player")
+	return found != null and found.has_method("hold_attack") and found.call("hold_attack", aim) as bool
 
 
 func _resolve_player_aim() -> Vector2:

@@ -7,8 +7,6 @@ extends "res://scripts/enemies/enemy_visuals.gd"
 
 const KitSpriteScript: GDScript = preload("res://scripts/visual/kit_sprite.gd")
 
-@export var health_node_path: NodePath = NodePath("../Health")
-
 # Fila (S, E, N o W) hacia la que mira / Row (S, E, N or W) it faces
 var _facing: String = "S"
 # Animación de una pasada en curso (attack, hurt, death); vacío = ninguna / One-shot animation playing (attack, hurt, death); empty = none
@@ -19,9 +17,6 @@ var _one_shot: String = ""
 
 func _ready() -> void:
 	_sprite.animation_finished.connect(_on_animation_finished)
-	var health: HealthComponent = get_node_or_null(health_node_path) as HealthComponent
-	if health != null:
-		health.damage_received.connect(_on_damage_received)
 	_sprite.play("idle_S")
 
 
@@ -50,10 +45,10 @@ func play_death() -> void:
 			-_sprite.offset, global_position)
 
 
-func _on_damage_received(_info: DamageInfo) -> void:
-	# El golpe no corta la telegrafía: lo que se ve es lo que va a pegar / A hit does not cut the telegraph: what you see is what will strike
-	if _one_shot == "":
-		_play_one_shot("hurt")
+# Solo llega si el golpe cortó el ataque; con aguante la telegrafía sigue: lo que se ve es lo que va a pegar
+# Only arrives when the hit cancelled the attack; with poise the telegraph goes on: what you see is what will strike
+func show_stagger(_seconds: float) -> void:
+	_play_one_shot("hurt")
 
 
 func _play_one_shot(animation_base: String) -> void:

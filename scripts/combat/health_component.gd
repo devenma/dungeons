@@ -7,7 +7,8 @@ extends Node
 ## Accepted hits also emit `damage_received(info)`, which feedback
 ## components (KnockbackComponent, HitFlash) listen to. With
 ## `invulnerability_seconds` > 0, hits inside that window after an accepted
-## hit are ignored entirely (i-frames).
+## hit are ignored entirely (i-frames). `grant_invulnerability` adds a
+## separate window (the roll) that also ignores hits but does not blink.
 
 signal health_changed(current: int, maximum: int)
 ## Golpe aceptado (no ignorado por i-frames) / Accepted hit (not swallowed by i-frames)
@@ -23,6 +24,8 @@ var current_health: int = 100
 var _dead: bool = false
 # Segundos de i-frames restantes / Remaining i-frame seconds
 var _invulnerable_left: float = 0.0
+# Segundos de invulnerabilidad otorgada (voltereta), sin parpadeo / Granted invulnerability seconds left (roll), no blink
+var _granted_left: float = 0.0
 
 
 func _ready() -> void:
@@ -32,15 +35,26 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if _invulnerable_left > 0.0:
 		_invulnerable_left = maxf(_invulnerable_left - delta, 0.0)
+	if _granted_left > 0.0:
+		_granted_left = maxf(_granted_left - delta, 0.0)
 
 
 func is_invulnerable() -> bool:
 	return _invulnerable_left > 0.0
 
 
+func is_dead() -> bool:
+	return _dead
+
+
+## Ignora los golpes durante `seconds` sin el parpadeo de los i-frames / Ignores hits for `seconds` without the i-frame blink
+func grant_invulnerability(seconds: float) -> void:
+	_granted_left = maxf(_granted_left, seconds)
+
+
 ## Devuelve true si el golpe se aceptó (no muerto ni en i-frames) / Returns true when the hit was accepted (not dead, not in i-frames)
 func take_damage(info: DamageInfo) -> bool:
-	if _dead or is_invulnerable():
+	if _dead or is_invulnerable() or _granted_left > 0.0:
 		return false
 	current_health = maxi(current_health - info.amount, 0)
 	_invulnerable_left = invulnerability_seconds
@@ -55,5 +69,6 @@ func take_damage(info: DamageInfo) -> bool:
 func reset_health() -> void:
 	_dead = false
 	_invulnerable_left = 0.0
+	_granted_left = 0.0
 	current_health = max_health
 	health_changed.emit(current_health, max_health)

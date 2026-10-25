@@ -3,6 +3,9 @@
 [ext_resource type="Script" uid="uid://7hkykplxnmie" path="res://resources/weapons/weapon_data.gd" id="1"]
 [ext_resource type="PackedScene" uid="uid://d1kuhd4db3mua" path="res://scenes/weapons/sword.tscn" id="2"]
 [ext_resource type="Script" path="res://resources/weapons/swing_data.gd" id="3"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/sword_swing_combo1.tres" id="4"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/sword_swing_combo2.tres" id="5"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/sword_swing_combo3.tres" id="6"]
 
 [sub_resource type="Resource" id="Swing_1"]
 script = ExtResource("3")
@@ -16,6 +19,7 @@ recovery_seconds = 0.22
 chain_window_seconds = 0.25
 hitbox_size = Vector2(30, 30)
 hitbox_offset = Vector2(23, 0)
+swing_sound = ExtResource("4")
 
 [sub_resource type="Resource" id="Swing_2"]
 script = ExtResource("3")
@@ -30,6 +34,7 @@ chain_window_seconds = 0.25
 hitbox_size = Vector2(34, 26)
 hitbox_offset = Vector2(25, 0)
 smear_sheet_prefix = "res://assets/art/vfx/smear_reverse_"
+swing_sound = ExtResource("5")
 
 [sub_resource type="Resource" id="Swing_3"]
 script = ExtResource("3")
@@ -45,6 +50,9 @@ hitbox_size = Vector2(40, 36)
 hitbox_offset = Vector2(28, 0)
 smear_sheet_prefix = "res://assets/art/vfx/smear_overhead_"
 smear_fps = 12.0
+camera_shake_pixels = 3
+step_distance = 8.0
+swing_sound = ExtResource("6")
 
 [resource]
 script = ExtResource("1")

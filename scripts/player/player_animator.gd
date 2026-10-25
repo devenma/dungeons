@@ -3,11 +3,13 @@ extends Node
 ## Elige la animación del jugador (§35: fuera de player.gd). Idle/walk según la velocidad, mirando hacia el
 ## apuntado. Mientras el arma está en un golpe, la hoja de ataque sigue sus fases: cada fase reparte sus frames
 ## en la duración que le da el SwingData, con el peso relativo de las duraciones del JSON del kit, así el
-## frame de golpe coincide siempre con la hitbox. Polvo de pisada en los frames de apoyo de la caminata.
+## frame de golpe coincide siempre con la hitbox. Polvo y sonido de pisada en los frames de apoyo de la caminata.
+## La voltereta no tiene arte propio: juega la caminata acelerada hacia donde rueda, sin pisadas.
 ## Picks the player's animation (§35: kept out of player.gd). Idle/walk from velocity, facing the aim. While
 ## the weapon is mid-swing the attack sheet follows its phases: each phase spreads its frames over the
 ## duration its SwingData gives, weighted by the kit JSON durations, so the hit frame always matches the
-## hitbox. Footstep dust on the walk's contact frames.
+## hitbox. Footstep dust and sound on the walk's contact frames. The roll has no art of its own: it plays
+## the walk sheet sped up toward the roll direction, without footsteps.
 
 const KitSpriteScript: GDScript = preload("res://scripts/visual/kit_sprite.gd")
 const VfxScript: GDScript = preload("res://scripts/visual/vfx.gd")
@@ -28,9 +30,13 @@ const FOOTSTEP_FPS: float = 12.0
 const FOOTSTEP_PIVOT: Vector2 = Vector2(8, 11)
 # z del polvo en el padre del jugador: sobre el piso, debajo del jugador / Dust z in the player's parent: above the floor, below the player
 const FOOTSTEP_Z: int = 1
+# Velocidad de la caminata durante la voltereta (veces la normal) / Walk sheet speed during the roll (times normal)
+const ROLL_ANIMATION_SPEED: float = 2.5
 
 @export var sprite_path: NodePath = NodePath("../AnimatedSprite2D")
 @export var weapons_path: NodePath = NodePath("../Weapons")
+@export var roll_path: NodePath = NodePath("../Roll")
+@export var footstep_sound_path: NodePath = NodePath("../FootstepSound")
 
 # Fila (S, E, N o W) hacia la que mira / Row (S, E, N or W) it faces
 var _facing: String = "S"
@@ -42,6 +48,8 @@ var _phase_elapsed: float = 0.0
 
 @onready var _body: CharacterBody2D = get_parent() as CharacterBody2D
 @onready var _sprite: AnimatedSprite2D = get_node(sprite_path) as AnimatedSprite2D
+@onready var _roll: RollComponent = get_node_or_null(roll_path) as RollComponent
+@onready var _footstep_sound: AudioStreamPlayer2D = get_node_or_null(footstep_sound_path) as AudioStreamPlayer2D
 
 
 func _ready() -> void:
@@ -58,6 +66,10 @@ func _process(delta: float) -> void:
 	if _phase != SwordScript.SwingState.IDLE:
 		_phase_elapsed += delta
 		_sprite.frame = _attack_frame()
+		return
+	if _roll != null and _roll.is_rolling():
+		_facing = KitSpriteScript.row_for(_roll.roll_velocity())
+		_sprite.play("walk_" + _facing, ROLL_ANIMATION_SPEED)
 		return
 	_facing = KitSpriteScript.row_for(_body.call("aim_direction") as Vector2)
 	var state: String = "walk_" if _body.velocity != Vector2.ZERO else "idle_"
@@ -102,5 +114,9 @@ func _attack_frame() -> int:
 func _on_frame_changed() -> void:
 	if not String(_sprite.animation).begins_with("walk_") or not FOOTSTEP_FRAMES.has(_sprite.frame):
 		return
+	if _roll != null and _roll.is_rolling():
+		return
 	VfxScript.play_once(_body.get_parent(), FOOTSTEP_DUST, FOOTSTEP_FRAME_COUNT, FOOTSTEP_FPS,
 			FOOTSTEP_PIVOT, _body.global_position, FOOTSTEP_Z)
+	if _footstep_sound != null:
+		_footstep_sound.play()

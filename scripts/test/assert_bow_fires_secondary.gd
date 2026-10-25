@@ -81,13 +81,18 @@ func _run() -> void:
 	var has_interact: bool = InputMap.has_action("interact")
 	if has_interact:
 		var interact_key_f: bool = false
-		var single_binding: bool = InputMap.action_get_events("interact").size() == 1
+		var key_count: int = 0
+		var pad_south: bool = false
 		for input_event in InputMap.action_get_events("interact"):
 			var key := input_event as InputEventKey
-			if key != null and key.physical_keycode == KEY_F:
-				interact_key_f = true
+			if key != null:
+				key_count += 1
+				interact_key_f = interact_key_f or key.physical_keycode == KEY_F
+			var pad := input_event as InputEventJoypadButton
+			pad_south = pad_south or (pad != null and pad.button_index == JOY_BUTTON_A)
 		_check(interact_key_f, "interact bound to Key F")
-		_check(single_binding, "interact has exactly one binding (no dual-bound/None)")
+		_check(key_count == 1, "interact has exactly one keyboard binding (no dual-bound/None)")
+		_check(pad_south, "interact bound to gamepad A/south (D8)")
 
 	_check(_failures == 0, "bow fires secondary (equip-then-act): all checks passed")
 	quit(0 if _failures == 0 else 1)

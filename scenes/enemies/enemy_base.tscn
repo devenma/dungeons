@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=15 format=3]
 
 [ext_resource type="Script" path="res://scripts/enemies/enemy.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/combat/hurtbox.gd" id="2"]
@@ -8,6 +8,9 @@
 [ext_resource type="Script" path="res://scripts/combat/hit_flash.gd" id="6"]
 [ext_resource type="Script" path="res://scripts/enemies/enemy_visuals.gd" id="7"]
 [ext_resource type="Script" path="res://scripts/visual/hit_vfx.gd" id="8"]
+[ext_resource type="Script" path="res://scripts/audio/health_sounds.gd" id="9"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/hit_flesh.tres" id="10"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/enemy_death_squelch.tres" id="11"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
 size = Vector2(14, 8)
@@ -69,3 +72,16 @@ target_mask = 8
 [node name="CollisionShape2D" type="CollisionShape2D" parent="EnemyHitbox"]
 position = Vector2(0, -10)
 shape = SubResource("RectangleShape2D_attack")
+
+[node name="HealthSounds" type="Node2D" parent="."]
+script = ExtResource("9")
+
+[node name="HurtSound" type="AudioStreamPlayer2D" parent="HealthSounds"]
+stream = ExtResource("10")
+volume_db = -3.0
+bus = &"SFX"
+
+[node name="DeathSound" type="AudioStreamPlayer2D" parent="HealthSounds"]
+stream = ExtResource("11")
+volume_db = -4.0
+bus = &"SFX"

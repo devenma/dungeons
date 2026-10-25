@@ -1,9 +1,11 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/enemies/enemy_base.tscn" id="1"]
 [ext_resource type="Resource" path="res://resources/enemies/errante_data.tres" id="2"]
 [ext_resource type="Script" path="res://scripts/enemies/kit_enemy_visuals.gd" id="3"]
 [ext_resource type="Script" path="res://scripts/visual/kit_sprite.gd" id="4"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/hit_bone.tres" id="5"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/bone_collapse.tres" id="6"]
 
 [node name="Errante" instance=ExtResource("1")]
 enemy_data = ExtResource("2")
@@ -15,3 +17,11 @@ script = ExtResource("3")
 script = ExtResource("4")
 sheet_prefix = "res://assets/art/enemies/errante_"
 animations = PackedStringArray("idle", "walk", "attack", "hurt", "death")
+
+[node name="HurtSound" parent="HealthSounds"]
+stream = ExtResource("5")
+volume_db = -4.0
+
+[node name="DeathSound" parent="HealthSounds"]
+stream = ExtResource("6")
+volume_db = -5.0

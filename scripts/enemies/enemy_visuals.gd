@@ -2,10 +2,10 @@ extends Node2D
 
 ## Visual de un enemigo de sprite fijo (slime): aplaste/estiramiento con tweens sobre sus hijos, sin frames
 ## nuevos. El origen es el ancla de los pies, así el aplaste apoya en el piso. enemy.gd le avisa el
-## movimiento, el ataque y la muerte; kit_enemy_visuals.gd cambia esto por las hojas del kit.
+## movimiento, el ataque, el aturdimiento y la muerte; kit_enemy_visuals.gd cambia esto por las hojas del kit.
 ## Fixed-sprite enemy visual (slime): squash/stretch tweens over its children, no new frames. The origin
-## is the feet anchor, so the squash rests on the floor. enemy.gd tells it about movement, attacks and
-## death; kit_enemy_visuals.gd swaps this for the kit sheets.
+## is the feet anchor, so the squash rests on the floor. enemy.gd tells it about movement, attacks,
+## staggers and death; kit_enemy_visuals.gd swaps this for the kit sheets.
 
 const VfxScript: GDScript = preload("res://scripts/visual/vfx.gd")
 const DEATH_BURST: Texture2D = preload("res://assets/art/vfx/death_blood_dust.png")
@@ -27,6 +27,8 @@ const IDLE_HALF_CYCLE_SECONDS: float = 0.45
 const ATTACK_STRETCH: Vector2 = Vector2(0.85, 1.2)
 # Duración del estirón de ataque (s) / Attack stretch duration (s)
 const ATTACK_SECONDS: float = 0.2
+# Escala del aplaste al quedar aturdido / Squash scale when staggered
+const STAGGER_SQUASH: Vector2 = Vector2(1.3, 0.75)
 # Escala final al morir (charco) / Final scale when dying (puddle)
 const DEATH_SQUASH: Vector2 = Vector2(1.5, 0.1)
 # Duración del aplaste de muerte (s) / Death squash duration (s)
@@ -50,6 +52,14 @@ func show_attack(_facing: Vector2, telegraph_seconds: float) -> void:
 	_restart_tween()
 	_tween.tween_property(self, "scale", ATTACK_STRETCH, telegraph_seconds + ATTACK_SECONDS / 2.0)
 	_tween.tween_property(self, "scale", Vector2.ONE, ATTACK_SECONDS / 2.0)
+	_tween.finished.connect(_loop_idle)
+
+
+## Un golpe lo aturdió `seconds`: corta el ataque visible / A hit staggered it for `seconds`: cuts the visible attack
+func show_stagger(seconds: float) -> void:
+	_restart_tween()
+	_tween.tween_property(self, "scale", STAGGER_SQUASH, seconds * 0.25)
+	_tween.tween_property(self, "scale", Vector2.ONE, seconds * 0.75)
 	_tween.finished.connect(_loop_idle)
 
 

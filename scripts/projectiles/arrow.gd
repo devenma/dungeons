@@ -5,10 +5,11 @@ extends Area2D
 ## overlaps (PH-1), frees on hit, on world contact (PL-1), or when its
 ## lifetime expires (PL-2). Reuses the standard Hurtbox protocol; carries
 ## no player logic (§35). Flies with the flight sheet of the nearest
-## direction and plays its impact sheet on a hit or a wall.
+## direction and plays its impact sheet and sound on a hit or a wall.
 
 const KitSpriteScript: GDScript = preload("res://scripts/visual/kit_sprite.gd")
 const VfxScript: GDScript = preload("res://scripts/visual/vfx.gd")
+const SfxScript: GDScript = preload("res://scripts/audio/sfx.gd")
 # Ángulo hacia el que mira cada hoja de vuelo (rad) / Angle each flight sheet faces (rad)
 const ROW_ANGLES: Dictionary = {"E": 0.0, "S": PI / 2.0, "W": PI, "N": -PI / 2.0}
 # z del impacto: encima de enemigos y jugador / Impact z: above enemies and player
@@ -38,6 +39,7 @@ const TARGET_MASK: int = CollisionLayers.ENEMY_HURTBOX | CollisionLayers.WORLD
 @export var impact_fps: float = 15.0
 
 @onready var _visual: AnimatedSprite2D = $Visual
+@onready var _impact_sound: AudioStreamPlayer2D = $ImpactSound
 
 var _living: bool = true
 
@@ -102,6 +104,7 @@ func _spawn_impact() -> void:
 	var cell: float = impact_sheet.get_height()
 	VfxScript.play_once(get_parent(), impact_sheet, int(impact_sheet.get_width() / cell), impact_fps,
 			Vector2(cell, cell) / 2.0, global_position, IMPACT_Z)
+	SfxScript.play_detached(_impact_sound)
 
 
 func _on_lifetime_timeout() -> void:

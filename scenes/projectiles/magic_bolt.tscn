@@ -1,6 +1,7 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/projectiles/arrow.gd" id="1"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/magic_bolt_impact.tres" id="3"]
 [ext_resource type="Texture2D" path="res://assets/art/vfx/bolt_impact.png" id="2"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_bolt"]
@@ -18,3 +19,8 @@ impact_sheet = ExtResource("2")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("RectangleShape2D_bolt")
+
+[node name="ImpactSound" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("3")
+volume_db = -5.0
+bus = &"SFX"

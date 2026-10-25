@@ -15,3 +15,4 @@ attack_range = 320.0
 stamina_cost = 18
 projectile_speed = 280.0
 projectile_scene = ExtResource("2")
+aim_spread_max_degrees = 16.0

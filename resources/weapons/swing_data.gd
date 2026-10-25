@@ -13,6 +13,11 @@ extends Resource
 @export var stamina_cost: int = 20
 ## Congelación al impactar (s) / Freeze on impact (s)
 @export var hit_stop_seconds: float = 0.06
+## Temblor de cámara al impactar (px enteros); 0 = sin temblor / Camera shake on impact (whole px); 0 = no shake
+@export var camera_shake_pixels: int = 0
+## Paso hacia adelante durante el golpe activo (px); el resto del golpe el jugador queda plantado
+## Forward step during the active hit (px); for the rest of the swing the player stays rooted
+@export var step_distance: float = 4.0
 
 ## Preparación antes de que la hitbox se active (s) / Wind-up before the hitbox turns on (s)
 @export var anticipation_seconds: float = 0.18
@@ -33,3 +38,5 @@ extends Resource
 @export var smear_sheet_prefix: String = "res://assets/art/vfx/smear_slash_"
 ## Velocidad del smear (frames/s) / Smear speed (frames/s)
 @export var smear_fps: float = 14.0
+## Sonido del tajo, al activarse la hitbox; null = mudo / Swing whoosh, when the hitbox turns on; null = silent
+@export var swing_sound: AudioStream

@@ -5,7 +5,8 @@ extends Area2D
 ## begin_swing()/end_swing() toggle monitoring via set_deferred (HP-4) so a
 ## target already overlapping at arm time is caught. Each target is hit at
 ## most once per swing; _hit_targets is reset when a new swing begins.
-## An accepted hit triggers HitStop for `hit_stop_seconds` (D4).
+## An accepted hit triggers HitStop for `hit_stop_seconds` (D4) and, with
+## `camera_shake_pixels` > 0, shakes every camera in the "camera_shake" group.
 
 const HitStopScript: GDScript = preload("res://scripts/combat/hit_stop.gd")
 
@@ -17,6 +18,8 @@ const HitStopScript: GDScript = preload("res://scripts/combat/hit_stop.gd")
 @export var target_mask: int = CollisionLayers.ENEMY_HURTBOX
 ## Congelación al impactar (s); 0 = sin hit-stop / Freeze on impact (s); 0 = no hit-stop
 @export var hit_stop_seconds: float = 0.0
+## Temblor de cámara al impactar (px enteros); 0 = sin temblor / Camera shake on impact (whole px); 0 = no shake
+@export var camera_shake_pixels: int = 0
 
 var _hit_targets: Array[Area2D] = []
 
@@ -47,3 +50,5 @@ func _on_area_entered(area: Area2D) -> void:
 		return
 	if hurtbox.take_hit(DamageInfo.new(damage, knockback)):
 		HitStopScript.apply(get_tree(), hit_stop_seconds)
+		if camera_shake_pixels > 0:
+			get_tree().call_group("camera_shake", "shake", camera_shake_pixels)

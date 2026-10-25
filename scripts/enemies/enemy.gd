@@ -4,8 +4,12 @@ extends CharacterBody2D
 ## chase in a straight line within detect_radius, attack with a short
 ## EnemyHitbox window on cooldown (not contact damage). An attack first
 ## stands still for EnemyData.telegraph_seconds (the drawn wind-up), then
-## opens the hitbox. Death stops the AI and collisions, plays the Visuals
-## death and then frees the enemy. Data-driven via EnemyData.
+## opens the hitbox. An accepted hit staggers it for EnemyData.stagger_seconds:
+## the attack in progress is cancelled and it neither chases nor attacks until
+## the stagger and the knockback push are over. With poise_while_attacking a
+## hit during the telegraph or the open hitbox does not cancel the attack.
+## Death stops the AI and collisions, plays the Visuals death and then frees
+## the enemy. Data-driven via EnemyData.
 
 const EnemyVisualsScript: GDScript = preload("res://scripts/enemies/enemy_visuals.gd")
 
@@ -24,10 +28,13 @@ var _attack_window_timer: Timer
 var _attack_cooldown_timer: Timer
 # Segundos de telegrafía que faltan para abrir la hitbox; 0 = sin preparar / Telegraph seconds left before the hitbox opens; 0 = not winding up
 var _telegraph_left: float = 0.0
+# Segundos de aturdimiento que faltan / Stagger seconds left
+var _stagger_left: float = 0.0
 
 
 func _ready() -> void:
 	health.died.connect(_on_health_died)
+	health.damage_received.connect(_on_damage_received)
 
 	if enemy_data != null:
 		health.max_health = enemy_data.health
@@ -60,21 +67,23 @@ func _physics_process(delta: float) -> void:
 		to_player = player.global_position - global_position
 		distance = to_player.length()
 	velocity = Vector2.ZERO
+	_stagger_left = maxf(_stagger_left - delta, 0.0)
+	var push: Vector2 = _knockback.consume(delta) if _knockback != null else Vector2.ZERO
 	var winding_up: bool = _telegraph_left > 0.0
+	# Aturdido o empujado no actúa; una telegrafía con aguante sigue / Staggered or pushed it does not act; a poised telegraph goes on
+	var reeling: bool = _stagger_left > 0.0 or (push != Vector2.ZERO and not winding_up)
 	if winding_up:
 		_telegraph_left -= delta
 		if _telegraph_left <= 0.0:
 			_open_attack_window()
-	elif distance <= enemy_data.detect_radius:
+	elif not reeling and distance <= enemy_data.detect_radius:
 		velocity = to_player.normalized() * enemy_data.speed
-	# Un empuje activo reemplaza la persecución (aturdimiento breve) / An active push overrides the chase (brief stagger)
-	var push: Vector2 = _knockback.consume(delta) if _knockback != null else Vector2.ZERO
 	if push != Vector2.ZERO:
 		velocity = push
 	if velocity != Vector2.ZERO:
 		move_and_slide()
 	_visuals.show_motion(velocity, to_player)
-	if not winding_up and distance <= enemy_data.attack_range and _can_attack:
+	if not winding_up and not reeling and distance <= enemy_data.attack_range and _can_attack:
 		_attack(to_player)
 
 
@@ -99,6 +108,20 @@ func _attack(to_player: Vector2) -> void:
 func _open_attack_window() -> void:
 	_enemy_hitbox.begin_swing()
 	_attack_window_timer.start()
+
+
+func _on_damage_received(_info: DamageInfo) -> void:
+	# El golpe letal no aturde: died lo sigue en el mismo frame / A lethal hit does not stagger: died follows in the same frame
+	if enemy_data == null or health.current_health == 0 or enemy_data.stagger_seconds <= 0.0:
+		return
+	var committed: bool = _telegraph_left > 0.0 or not _attack_window_timer.is_stopped()
+	if committed and enemy_data.poise_while_attacking:
+		return
+	_telegraph_left = 0.0
+	_attack_window_timer.stop()
+	_enemy_hitbox.end_swing()
+	_stagger_left = enemy_data.stagger_seconds
+	_visuals.show_stagger(enemy_data.stagger_seconds)
 
 
 func _on_attack_window_timeout() -> void:

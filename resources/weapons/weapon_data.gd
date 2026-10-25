@@ -41,3 +41,10 @@ enum WeaponKind {
 @export var projectile_speed: float = 0.0
 ## Escena del proyectil (arrow.tscn, magic_bolt.tscn) / Projectile scene (arrow.tscn, magic_bolt.tscn)
 @export var projectile_scene: PackedScene = null
+## Desvío máximo del disparo hacia cada lado al moverse (grados); 0 = siempre preciso
+## Max shot deviation to each side while moving (degrees); 0 = always accurate
+@export var aim_spread_max_degrees: float = 0.0
+## Tiempo moviéndose hasta llegar al desvío máximo (s) / Time moving to reach the max spread (s)
+@export var aim_spread_grow_seconds: float = 0.25
+## Tiempo quieto para cerrar el desvío del máximo a 0 (s) / Time standing still to close the spread from max to 0 (s)
+@export var aim_spread_settle_seconds: float = 0.5

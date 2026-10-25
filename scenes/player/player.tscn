@@ -10,6 +10,13 @@
 [ext_resource type="Resource" path="res://resources/weapons/sword_basic.tres" id="10"]
 [ext_resource type="Script" path="res://scripts/combat/knockback_component.gd" id="11"]
 [ext_resource type="Script" path="res://scripts/combat/hit_flash.gd" id="12"]
+[ext_resource type="Script" path="res://scripts/player/roll_component.gd" id="14"]
+[ext_resource type="Script" path="res://scripts/visual/camera_shake.gd" id="15"]
+[ext_resource type="Script" path="res://scripts/audio/health_sounds.gd" id="16"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/player_hurt.tres" id="17"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/player_death.tres" id="18"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/dash_whoosh.tres" id="19"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/footstep_stone.tres" id="20"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
 size = Vector2(12, 6)
@@ -26,6 +33,9 @@ script = ExtResource("1")
 [node name="Camera2D" type="Camera2D" parent="." unique_id=461443296]
 position_smoothing_enabled = true
 position_smoothing_speed = 10.0
+
+[node name="Shake" type="Node" parent="Camera2D"]
+script = ExtResource("15")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=895176558]
 script = ExtResource("2")
@@ -69,3 +79,29 @@ script = ExtResource("13")
 [node name="EquipmentController" type="Node" parent="."]
 script = ExtResource("9")
 default_weapon_data = ExtResource("10")
+
+[node name="Roll" type="Node" parent="."]
+script = ExtResource("14")
+
+[node name="RollSound" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("19")
+volume_db = -7.0
+bus = &"SFX"
+
+[node name="FootstepSound" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("20")
+volume_db = -14.0
+bus = &"SFX"
+
+[node name="HealthSounds" type="Node2D" parent="."]
+script = ExtResource("16")
+
+[node name="HurtSound" type="AudioStreamPlayer2D" parent="HealthSounds"]
+stream = ExtResource("17")
+volume_db = -3.0
+bus = &"SFX"
+
+[node name="DeathSound" type="AudioStreamPlayer2D" parent="HealthSounds"]
+stream = ExtResource("18")
+volume_db = -2.0
+bus = &"SFX"

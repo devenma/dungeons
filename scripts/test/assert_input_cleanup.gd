@@ -60,13 +60,18 @@ func _run() -> void:
 	_check(has_swap, "IC-1: swap_weapon action exists")
 	if has_swap:
 		var is_tab: bool = false
-		var event_count: int = InputMap.action_get_events("swap_weapon").size()
+		var key_count: int = 0
+		var is_pad_north: bool = false
 		for input_event in InputMap.action_get_events("swap_weapon"):
 			var key := input_event as InputEventKey
-			if key != null and key.physical_keycode == 4194306:
-				is_tab = true
+			if key != null:
+				key_count += 1
+				is_tab = is_tab or key.physical_keycode == 4194306
+			var pad := input_event as InputEventJoypadButton
+			is_pad_north = is_pad_north or (pad != null and pad.button_index == JOY_BUTTON_Y)
 		_check(is_tab, "IC-1: swap_weapon bound to Tab (physical 4194306)")
-		_check(event_count == 1, "IC-1: swap_weapon has exactly one binding")
+		_check(key_count == 1, "IC-1: swap_weapon has exactly one keyboard binding")
+		_check(is_pad_north, "IC-1: swap_weapon bound to gamepad Y/north (D8)")
 
 	# --- Rig: player.tscn + scene-instance RunManager (EM-3 flow) ---
 	var container: Node2D = Node2D.new()
