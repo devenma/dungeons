@@ -9,6 +9,8 @@ cd "$(dirname "$0")"
 
 # Binario de Godot; se puede pisar con la variable GODOT / Godot binary; override with GODOT
 GODOT="${GODOT:-$HOME/tools/godot/Godot_v4.7.2-stable_win64_console.exe}"
+# Tiempo máximo por test, en s; uno colgado cuenta como falla / Max time per test, in s; a hung test fails
+TEST_TIMEOUT="${TEST_TIMEOUT:-180}"
 if [ ! -x "$GODOT" ]; then
 	echo "No encuentro Godot en $GODOT (definí GODOT=/ruta/al/binario)" >&2
 	exit 1
@@ -24,7 +26,9 @@ case "${1:-game}" in
 		fail=0
 		log="$(mktemp)"
 		for t in scripts/test/*${filter}*.gd; do
-			if "$GODOT" --headless --path . -s "$t" >"$log" 2>&1; then
+			# Un SCRIPT ERROR corta el test pero Godot puede salir con 0: también cuenta como falla /
+			# A SCRIPT ERROR aborts the test but Godot may still exit 0: it counts as a failure too
+			if timeout "$TEST_TIMEOUT" "$GODOT" --headless --path . -s "$t" >"$log" 2>&1 && ! grep -q "SCRIPT ERROR" "$log"; then
 				pass=$((pass + 1))
 				echo "OK    $t"
 			else
