@@ -37,7 +37,7 @@ asumía pendiente:
 | I-frames del jugador (0.5 s) + parpadeo | **D4** |
 | Hit flash (`HitFlash`) en jugador y enemigos | **D4** |
 | Menú de pausa (Esc: Resume / Quit) | Cierra un P0 y habilita una build jugable |
-| Tope de la zona START (`start_zone_max_cells`, 2×1 celdas) | Hace el testeo menos tedioso |
+| Tope de la zona START (`start_zone_max_cells`, 2×2 celdas) | Hace el testeo menos tedioso |
 | Tintes de piso restaurados | 27 tests headless, todos verdes |
 
 Lo que **no** cambió: todas las decisiones de este documento siguen abiertas. Nada del P0 tocó la capa de
@@ -131,18 +131,17 @@ Eso da la sensación Zelda de "sala diseñada" sin perder el orden procedural.
 llaves, el problema pasa a ser de **solvabilidad**: la llave tiene que estar antes que su puerta en la
 ruta. Esa validación va en el generador, no en runtime. Es la parte no trivial de esta decisión.
 
-**[PRERREQUISITO]** Antes de meter plantillas de sala hay que arreglar dos cosas del generador, ya
-anotadas en `FEATURES.md` P0:
+**[PRERREQUISITO]** ✅ **Resuelto.** Antes de meter plantillas de sala había que arreglar dos cosas del
+generador, ya anotadas en `FEATURES.md` P0:
 
-1. **`_merge_cells` produce rectángulos que se solapan.** La zona es el *bounding box* de las celdas que
-   ganó, y el paso de asignación greedy (`dungeon_generator.gd`, ~líneas 222-247) expande ese bbox sin
-   verificar celdas ajenas. Resultado: ~5% de los layouts tienen celdas pintadas dos veces.
-   `assert_start_zone_cap` ya lo detecta (hoy solo comprueba que el tope de START no agregue solapes
-   nuevos). Con plantillas de sala esto deja de ser cosmético: una plantilla necesita un rectángulo
-   exacto.
-2. **Una zona de 1 celda (8×8 tiles = 256×256 px) es más chica que el viewport (480×270 px).** La cámara
-   no puede limitar por debajo del viewport y se ven las zonas vecinas. Una plantilla de sala impone un
-   tamaño mínimo y resuelve el problema de paso.
+1. **`_merge_cells` producía rectángulos que se solapaban.** La zona era el *bounding box* de las celdas
+   que ganó, y el paso de asignación greedy expandía ese bbox sin verificar celdas ajenas (~2.3% de los
+   layouts medidos). Se reemplazó el crecimiento por regiones por una **partición guillotina con seed**:
+   todo corte atraviesa el rectángulo completo, así que dos zonas no pueden compartir una celda y el bbox
+   siempre coincide con sus propias celdas. Cubierto por `assert_zone_rects`.
+2. **Una zona de 1 celda (256×256 px) era más chica que el viewport (480×270 px).** Ahora
+   `FloorData.zone_min_cells` (2×2 celdas = 512×512 px) es el mínimo de la partición: ningún corte genera
+   una zona menor, y la cámara puede limitar en ambos ejes.
 
 Con esos dos arreglos la topología queda confiable y el pool de plantillas es una capa encima, no una
 reescritura.
@@ -329,8 +328,8 @@ validación de solvabilidad necesitan conocerlos cuando existan las plantillas.
 
 ## Si se aprueban D1–D4: orden técnico sugerido
 
-1. **Arreglar `_merge_cells`** (rectángulos exactos y tamaño mínimo de zona). Desbloquea D3 y evita que
-   cualquier capa nueva herede el bug de solape.
+1. ~~**Arreglar `_merge_cells`** (rectángulos exactos y tamaño mínimo de zona)~~ ✅ hecho: partición
+   guillotina + `FloorData.zone_min_cells`. Desbloquea D3.
 2. **Hit-stop + visual del swing + combo de 3** (D4). Todo local a `sword.gd` y al combate, sin tocar
    estado. El feel se cierra antes de meter contenido.
 3. **`ProfileState` + oro + `_return_to_town()`** (D1, D11). Es el cambio más chico de los grandes.
@@ -351,7 +350,7 @@ Fuera de este orden inmediato: **D19 (maná)** entra junto con los kits de habil
 |---|---|---|
 | `RunManager` | Seed, piso, armas, arma equipada | Se parte en `ProfileState` (persistente) + `RunManager` (expedición) |
 | `DungeonManager._on_player_died()` | `start_new_run()`: wipe total | Pasa a `_return_to_town()`, conservando perfil |
-| Generador (grid-merging) | Topología + zonas + BFS START→EXIT; `_merge_cells` puede solapar bboxes | Primero rectángulos exactos y tamaño mínimo de sala; después pool de plantillas y solvabilidad con llaves |
+| Generador (grid-merging) | Topología + zonas + BFS START→EXIT; partición exacta con mínimo 2×2 (hecho) | Pool de plantillas y solvabilidad con llaves |
 | `Spawner` | 2 slimes fijos por zona COMBAT | Oleadas y cantidad por piso (D4, D10) |
 | Tipos de zona | START, COMBAT, REWARD, EXIT | Suma BOSS (D10) y, más adelante, EVENT/SHOP |
 | Pisos | Infinitos | Techo por dungeon (`DungeonData`) |
@@ -370,10 +369,10 @@ Está en `FEATURES.md` P0 (no es un hallazgo oculto), pero impacta directo el di
 
 | Deuda | Condiciona |
 |---|---|
-| Solape de zonas en `_merge_cells` (~5% de los layouts) | **D3**: sin rectángulos exactos no se pueden colocar plantillas de sala |
-| Zonas más chicas que el viewport muestran a las vecinas | **D3**: una plantilla impone un tamaño mínimo de sala |
+| ~~Solape de zonas en `_merge_cells` (~5% de los layouts)~~ | ✅ resuelto: partición guillotina + `assert_zone_rects` |
+| ~~Zonas más chicas que el viewport muestran a las vecinas~~ | ✅ resuelto: `zone_min_cells` 2×2 = 512×512 px |
 | `enemy_health/damage_multiplier` de `FloorData` no se leen | **D10/D11**: la dificultad todavía no escala con el piso |
-| `_merge_cells` y `_cap_start_zone` reconstruyen la grilla por bbox | **D3**: cualquier cambio de topología tiene que mantener ese contrato o reemplazarlo |
+| `_cap_start_zone` reconstruye la grilla por bbox | **D3**: cualquier cambio de topología tiene que mantener ese contrato o reemplazarlo |
 
 ---
 

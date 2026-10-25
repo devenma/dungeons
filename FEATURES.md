@@ -26,11 +26,12 @@ confiable y feel · **P1** vertical slice v2 · **P2** profundidad · **P3** con
 
 | Feature | Detalle |
 |---|---|
-| Grid-merging | Grilla de 3–6 × 3–5 celdas (8×8 tiles de 32 px cada una). Las celdas se agrupan en zonas rectangulares, sin espacios muertos. |
+| Grid-merging | Grilla de 4–8 × 4–6 celdas (8×8 tiles de 32 px cada una). Partición guillotina con seed: zonas rectangulares exactas, sin solapes ni espacios muertos. |
 | Cantidad de zonas por profundidad | `zone_count_by_floor_depth`: piso 1 → 3–5 zonas, piso 10 → 6–12. |
 | Tipos de zona | 1 START, 1 EXIT y el resto COMBAT o REWARD (`reward_ratio` 0.3). |
 | Validación | BFS START→EXIT. Si falla, reintenta hasta 5 veces y después usa un layout de fallback. |
-| Tope de START | La zona START se recorta a `FloorData.start_zone_max_cells` (2×1 celdas = 16×8 tiles por defecto); lo que sobra pasa a ser zonas nuevas. |
+| Tope de START | `FloorData.start_zone_max_cells` (2×2 celdas = 16×16 tiles por defecto): el generador aísla la esquina START a ese tamaño. |
+| Tamaño mínimo de zona | `FloorData.zone_min_cells` (2×2 celdas = 512×512 px, contiene el viewport de 480×270). La partición nunca genera zonas menores. |
 | Determinismo | La misma `(run_seed, floor_number)` produce el mismo piso; cubierto por un test. |
 | Puertas | Posición irregular en las aristas compartidas; varias por arista si es larga (`multi_door_threshold`). |
 | Render | Un TileMap único con un tileset pre-autorado (`dungeons_v2.tres`). Paredes con colisión y piso con tinte según el tipo de zona. |
@@ -91,7 +92,7 @@ confiable y feel · **P1** vertical slice v2 · **P2** profundidad · **P3** con
 
 ### 1.8. Herramientas de desarrollo
 
-- 27 tests headless (`scripts/test/`), todos verdes.
+- 28 tests headless (`scripts/test/`), todos verdes.
 - **Advertencia:** no re-ejecutar `scripts/tools/build_dungeon_tileset.gd`. Sobrescribe las colisiones y los ajustes autorados a mano en `tilesets/dungeons_v2.tres`.
 - Atajo de debug **N** (acción `debug_next_floor`): salta al siguiente piso. Solo corre en builds de debug.
 
@@ -108,24 +109,22 @@ confiable y feel · **P1** vertical slice v2 · **P2** profundidad · **P3** con
 | `guild_tavern.tscn` no está conectada | Escena de hub sin flujo de entrada ni salida. |
 | Sin audio | No hay música ni SFX. |
 | La muerte reinicia al instante | No hay pantalla de muerte ni resumen de la run. |
-| Una zona más chica que la pantalla (480×270 px) deja ver a sus vecinas | La cámara no puede limitar por debajo del viewport; pasa con zonas de 1 celda, START incluida. |
 | No existen `ProfileState`, oro ni `DungeonData` | La muerte sigue siendo wipe total; no hay economía ni techo de pisos. |
 | No existe maná ni coste dual | Todas las habilidades gastan solo stamina; el maná llega con la Fase 8 parte B (D19). |
 | Doble `RunManager` (autoload + nodo en escena) | Riesgo de usar la instancia equivocada. |
 | Los `.uid` están en el gitignore | Los UIDs cambian entre máquinas. |
-| `_merge_cells` puede dar zonas cuyos rectángulos se solapan (~5% de los layouts) | Celdas que pertenecen a dos zonas: tiles pintados dos veces. Lo detectó `assert_start_zone_cap`. |
 
 ---
 
 ## 3. Backlog (TODOs)
 
-Ya está en `main` y documentado en §1: knockback, i-frames, hit flash, pausa y tope de START (PR #6).
+Ya está en `main` y documentado en §1: knockback, i-frames, hit flash, pausa y tope de START (PR #6), más el generador de partición exacta con mínimo 2×2.
 
 ### P0 — base confiable y feel
 
 **Generador y cámara**
-- [ ] Arreglar el solape de `_merge_cells` (rectángulos exactos) y agregar un tamaño mínimo de zona.
-- [ ] Cámara en zonas más chicas que el viewport: ocultar o atenuar las zonas vecinas (o zoom).
+- [x] Arreglar el solape de `_merge_cells` (rectángulos exactos) y agregar un tamaño mínimo de zona.
+- [x] Cámara en zonas más chicas que el viewport: resuelto por el mínimo de 2×2 celdas (512×512 px > 480×270).
 
 **Feel de combate**
 - [ ] Hit-stop al impactar.

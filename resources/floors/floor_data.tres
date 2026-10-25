@@ -5,10 +5,10 @@
 [resource]
 script = ExtResource("1")
 floor_number = 1
-grid_min_w = 3
-grid_max_w = 6
-grid_min_h = 3
-grid_max_h = 5
+grid_min_w = 4
+grid_max_w = 8
+grid_min_h = 4
+grid_max_h = 6
 zone_count_min = 3
 zone_count_max = 5
 multi_door_threshold = 100
@@ -21,3 +21,5 @@ zone_count_by_floor_depth = {
 }
 enemy_health_multiplier = 1.0
 enemy_damage_multiplier = 1.0
+zone_min_cells = Vector2i(2, 2)
+start_zone_max_cells = Vector2i(2, 2)
