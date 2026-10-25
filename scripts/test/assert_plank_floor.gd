@@ -1,7 +1,7 @@
 extends SceneTree
 
-# Render-contract assertions for the prebuilt dungeon tileset (Phase 6,
-# task 6.1, prebuilt-tileset). Two test layers exist:
+# Render-contract assertions for the prebuilt dungeon tileset. Two test
+# layers exist:
 #
 #   - scripts/test/assert_prebuilt_tileset.gd
 #       resource-only contract of res://tilesets/dungeons_v2.tres.

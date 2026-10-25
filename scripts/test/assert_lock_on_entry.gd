@@ -5,14 +5,12 @@ extends SceneTree
 #   2. Entering an uncleared COMBAT zone locks its doors.
 #   3. Clearing the zone re-opens its doors (no leftover door tiles).
 #   4. Re-entering a cleared zone does NOT re-lock.
-#   5. Real render sanity (Phase 3/4, prebuilt-tileset): generate_floor on a
+#   5. Real render sanity (prebuilt tileset): generate_floor on a
 #      fixed seed renders tiles from the prebuilt .tres — wall cells use
 #      source 0, fill uses source 1, closed combat doors place the dark fill
 #      alternative on layer 2 across EXACTLY the punched corridor (full depth,
 #      2 tiles — shared formula) and layer 2 is empty again on zone clear.
-#      Phase 6 review: _corridor_cells iterated range(-DEPTH, DEPTH) and
-#      painted 4 tiles (2 over unpunched cells outside the corridor); the
-#      exact set-equality checks below pin the closed tiles to the corridor.
+#      Exact set-equality checks pin the closed tiles to the corridor.
 # Run: godot --headless -s scripts/test/assert_lock_on_entry.gd
 
 var _fails: int = 0

@@ -3,9 +3,8 @@ extends SceneTree
 ## Run: godot --headless -s scripts/test/assert_start_zone_cap.gd
 ## START zone cap: across many seeds the START zone never exceeds
 ## FloorData.start_zone_max_cells, there is exactly one START and one EXIT,
-## EXIT stays reachable, and the cap covers the same cells as the uncapped
-## layout without adding overlaps. (Merged zones can already overlap
-## without the cap — known _merge_cells bug, see FEATURES.md.)
+## EXIT stays reachable, and the zones still cover the whole grid without
+## overlaps. (Grid size depends on the START carve, so no uncapped comparison.)
 ## Exit 0 = pass, 1 = fail.
 
 const SEEDS: int = 60
@@ -27,9 +26,6 @@ func _initialize() -> void:
 
 func _check_layout(seed_value: int, floor_number: int, data: FloorData, cap: Vector2i) -> void:
 	var layout: DungeonGenerator.FloorLayout = _generate(seed_value, floor_number, data)
-	var uncapped_data: FloorData = data.duplicate() as FloorData
-	uncapped_data.start_zone_max_cells = Vector2i.ZERO
-	var uncapped: DungeonGenerator.FloorLayout = _generate(seed_value, floor_number, uncapped_data)
 	var tag: String = "seed %d floor %d" % [seed_value, floor_number]
 
 	var starts: int = 0
@@ -45,13 +41,10 @@ func _check_layout(seed_value: int, floor_number: int, data: FloorData, cap: Vec
 	_check(starts == 1 and exits == 1, "%s: one START and one EXIT" % tag)
 	_check(start_size.x <= cap.x and start_size.y <= cap.y,
 			"%s: START %s within cap %s" % [tag, start_size, cap])
-	var capped_cov: Dictionary = _coverage(layout)
-	var uncapped_cov: Dictionary = _coverage(uncapped)
-	_check(capped_cov.keys().size() == uncapped_cov.keys().size()
-			and capped_cov.keys().all(func(c: Vector2i) -> bool: return uncapped_cov.has(c)),
-			"%s: cap covers the same cells" % tag)
-	_check(_overlaps(capped_cov) <= _overlaps(uncapped_cov),
-			"%s: cap adds no overlapping cells" % tag)
+	var coverage: Dictionary = _coverage(layout)
+	_check(coverage.size() == layout.grid_w * layout.grid_h,
+			"%s: zones cover the whole grid" % tag)
+	_check(_overlaps(coverage) == 0, "%s: no overlapping cells" % tag)
 	_check(_reachable(layout), "%s: EXIT reachable from START" % tag)
 
 

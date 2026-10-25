@@ -24,13 +24,12 @@ var _zones: Dictionary = {}   # zone_id -> Zone
 var _pending_crossings: Dictionary = {}  # door.id -> source_zone_id (single player)
 
 
-func initialize(layout, tilemap: TileMap) -> void:
+func initialize(layout: DungeonGenerator.FloorLayout, tilemap: TileMap) -> void:
 	_tilemap = tilemap
 	_doors = layout.doors
-	for z in layout.zones:
+	for z: Zone in layout.zones:
 		_zones[z.id] = z
 
-	# Build zone -> doors lookup
 	for d in _doors:
 		var door: Zone.Door = d
 		if not _zone_doors.has(door.zone_a_id):
@@ -40,11 +39,11 @@ func initialize(layout, tilemap: TileMap) -> void:
 		_zone_doors[door.zone_a_id].append(d)
 		_zone_doors[door.zone_b_id].append(d)
 
-	# Create invisible Area2D per door for crossing detection
-	_create_door_areas(layout)
+	_create_door_areas()
 
 
-func _create_door_areas(_layout) -> void:
+## Un Area2D invisible por puerta para detectar el cruce / One invisible Area2D per door to detect the crossing
+func _create_door_areas() -> void:
 	for d in _doors:
 		var door: Zone.Door = d
 		var area := Area2D.new()
@@ -53,7 +52,7 @@ func _create_door_areas(_layout) -> void:
 		# The door spans the punched corridor: the full depth of both wall
 		# rings plus one tile of margin past each end so a combat lock placed
 		# at exit time is never laid over the player body.
-		var depth_px: float = (DungeonGeometry.DOOR_CORRIDOR_DEPTH_TILES) * TILE_SIZE
+		var depth_px: float = DungeonGeometry.DOOR_CORRIDOR_DEPTH_TILES * TILE_SIZE
 		if door.edge_axis == "v":
 			rect.size = Vector2(depth_px, DungeonGeometry.DOOR_GAP_TILES * TILE_SIZE)
 		else:
@@ -61,21 +60,20 @@ func _create_door_areas(_layout) -> void:
 		shape.shape = rect
 		area.add_child(shape)
 
-		# Position at door tile center (in pixels)
 		var tile_pos: Vector2i
 		if door.edge_axis == "v":
 			tile_pos = Vector2i(door.edge_line, door.pos_along)
 		else:
 			tile_pos = Vector2i(door.pos_along, door.edge_line)
 
-		# Area2D world position = tile center in pixels
-		var vectorX:float = tile_pos.x * TILE_SIZE / 1.0 if door.edge_axis == "v" else tile_pos.x * TILE_SIZE + TILE_SIZE / 2.0
-		var vectorY:float = tile_pos.y * TILE_SIZE + TILE_SIZE / 2.0 if door.edge_axis == "v" else tile_pos.y * TILE_SIZE / 1.0
-
-		area.position = Vector2(vectorX, vectorY)
+		# Centrada sobre la línea del borde y en el medio del tile de la puerta, en px
+		# Centred on the edge line and in the middle of the door tile, in px
+		var x_px: float = tile_pos.x * TILE_SIZE / 1.0 if door.edge_axis == "v" else tile_pos.x * TILE_SIZE + TILE_SIZE / 2.0
+		var y_px: float = tile_pos.y * TILE_SIZE + TILE_SIZE / 2.0 if door.edge_axis == "v" else tile_pos.y * TILE_SIZE / 1.0
+		area.position = Vector2(x_px, y_px)
 
 		area.name = "DoorArea_%d" % door.id
-		# Detect only the player body (layer 2 after the Fase 4 flip).
+		# Detect only the player body.
 		area.collision_layer = CollisionLayers.WORLD
 		area.collision_mask = CollisionLayers.PLAYER_BODY
 		add_child(area)
@@ -231,11 +229,8 @@ func _place_door_tiles(door: Zone.Door) -> void:
 func _corridor_cells(door: Zone.Door) -> Array[Vector2i]:
 	# The punched corridor: offsets -R..R-1 cross-axis from the edge line
 	# (R = WALL_RING_TILES; total depth 2R = DOOR_CORRIDOR_DEPTH_TILES) across
-	# the DOOR_GAP_TILES row/tile centered on pos_along. MUST stay identical
-	# to the generator's _punch_doors derivation (R-door-gap-normalize: the
-	# two files must not diverge in this math). Found in the Phase 6 review:
-	# this loop previously iterated range(-DEPTH, DEPTH) and painted 4 tiles,
-	# 2 of them over unpunched cells outside the corridor.
+	# the DOOR_GAP_TILES row centered on pos_along. Must match the wall-band
+	# part of the generator's _punch_doors (R-door-gap-normalize).
 	var tile_pos: Vector2i
 	if door.edge_axis == "v":
 		tile_pos = Vector2i(door.edge_line, door.pos_along)
@@ -262,8 +257,8 @@ func on_zone_cleared(zone_id: int) -> void:
 		var d: Zone.Door = door
 		if not d.combat_locked:
 			continue
-		# Only open if the OTHER side is also cleared (or not combat)
-		# For now: open ALL combat_locked doors touching this zone
+		# Se abren todas las puertas con traba de la zona, aunque la vecina sea COMBAT sin limpiar
+		# Every locked door of the zone opens, even if the neighbour is an uncleared COMBAT
 		d.state = 0  # OPEN
 
 		# Remove door tiles from layer 2 — the whole punched corridor,
