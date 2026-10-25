@@ -20,5 +20,7 @@ extends Resource
 @export var knockback: float = 160.0
 ## Congelación al golpear al jugador (s) / Freeze when hitting the player (s)
 @export var hit_stop_seconds: float = 0.06
+## Preparación quieto antes de abrir la hitbox (s); 0 = golpe inmediato / Standing wind-up before the hitbox opens (s); 0 = instant hit
+@export var telegraph_seconds: float = 0.0
 ## Botín que suelta al morir; null = nada / Loot dropped on death; null = nothing
 @export var drop_table: DropTable

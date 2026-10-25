@@ -27,3 +27,9 @@ extends Resource
 ## Hitbox size and centre in px, in sword space (+x = aim direction)
 @export var hitbox_size: Vector2 = Vector2(30, 30)
 @export var hitbox_offset: Vector2 = Vector2(23, 0)
+
+## Hojas del smear: <prefijo><S|E|N|W>.png, celdas de 64 px; arranca con la hitbox
+## Smear sheets: <prefix><S|E|N|W>.png, 64 px cells; starts with the hitbox
+@export var smear_sheet_prefix: String = "res://assets/art/vfx/smear_slash_"
+## Velocidad del smear (frames/s) / Smear speed (frames/s)
+@export var smear_fps: float = 14.0

@@ -1,8 +1,8 @@
 extends Node
 
 ## Spawns floor content per zone type (CZ-1..CZ-4):
-##   COMBAT — enemies_per_zone instances of enemy_scene at random interior
-##            tiles; tracks deaths; the zone clears and emits zone_cleared
+##   COMBAT — enemies_per_zone enemies, each picked from enemy_scenes with
+##            the zone's seeded rng, at random interior tiles; tracks deaths; the zone clears and emits zone_cleared
 ##            exactly once when the count reaches 0. Each death rolls the
 ##            enemy's EnemyData.drop_table into `loot_found`.
 ##   REWARD — one seeded chest on an interior tile; the zone stays
@@ -36,8 +36,11 @@ const DEFAULT_REWARD_POOL_PATHS: Array[String] = [
 	"res://resources/weapons/staff_basic.tres",
 ]
 
-## Enemigo de las zonas COMBAT / COMBAT zone enemy
-@export var enemy_scene: PackedScene = preload("res://scenes/enemies/slime.tscn")
+## Enemigos posibles de las zonas COMBAT, sorteados con la seed / Possible COMBAT zone enemies, picked with the seed
+@export var enemy_scenes: Array[PackedScene] = [
+	preload("res://scenes/enemies/slime.tscn"),
+	preload("res://scenes/enemies/errante.tscn"),
+]
 ## Enemigos por zona COMBAT / Enemies per COMBAT zone
 @export var enemies_per_zone: int = 2
 @export var chest_scene: PackedScene = preload("res://scenes/dungeon/chest.tscn")
@@ -72,6 +75,7 @@ func _spawn_combat(layout, zone: Zone, parent_node: Node) -> void:
 	_remaining_by_zone[zone.id] = enemies_per_zone
 	for i in range(enemies_per_zone):
 		var tile: Vector2i = _random_interior_tile(rng, zone)
+		var enemy_scene: PackedScene = enemy_scenes[rng.randi_range(0, enemy_scenes.size() - 1)]
 		var enemy: CharacterBody2D = enemy_scene.instantiate() as CharacterBody2D
 		var health := enemy.get_node("Health") as HealthComponent
 		# Connect BEFORE add_child: death could fire as soon as it enters
@@ -89,7 +93,8 @@ func _spawn_combat(layout, zone: Zone, parent_node: Node) -> void:
 
 func _random_interior_tile(rng: RandomNumberGenerator, zone: Zone) -> Vector2i:
 	var inset := Vector2i(INTERIOR_INSET_TILES, INTERIOR_INSET_TILES)
-	var min_tile: Vector2i = zone.tile_rect.position + inset
+	# Bajo la pared norte también queda su cara de 2 filas / Below the north wall sits its 2-row face too
+	var min_tile: Vector2i = zone.tile_rect.position + inset + Vector2i(0, DungeonGeometry.NORTH_FACE_ROWS)
 	var max_tile: Vector2i = zone.tile_rect.end - inset - Vector2i(1, 1)
 	if max_tile.x < min_tile.x or max_tile.y < min_tile.y:
 		# Zone too small for the inset — fall back to its center tile.

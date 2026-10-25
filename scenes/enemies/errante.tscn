@@ -1,0 +1,17 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/enemies/enemy_base.tscn" id="1"]
+[ext_resource type="Resource" path="res://resources/enemies/errante_data.tres" id="2"]
+[ext_resource type="Script" path="res://scripts/enemies/kit_enemy_visuals.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/visual/kit_sprite.gd" id="4"]
+
+[node name="Errante" instance=ExtResource("1")]
+enemy_data = ExtResource("2")
+
+[node name="Visuals" parent="."]
+script = ExtResource("3")
+
+[node name="Sprite" type="AnimatedSprite2D" parent="Visuals"]
+script = ExtResource("4")
+sheet_prefix = "res://assets/art/enemies/errante_"
+animations = PackedStringArray("idle", "walk", "attack", "hurt", "death")

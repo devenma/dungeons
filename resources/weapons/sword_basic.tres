@@ -29,6 +29,7 @@ recovery_seconds = 0.24
 chain_window_seconds = 0.25
 hitbox_size = Vector2(34, 26)
 hitbox_offset = Vector2(25, 0)
+smear_sheet_prefix = "res://assets/art/vfx/smear_reverse_"
 
 [sub_resource type="Resource" id="Swing_3"]
 script = ExtResource("3")
@@ -42,6 +43,8 @@ recovery_seconds = 0.42
 chain_window_seconds = 0.0
 hitbox_size = Vector2(40, 36)
 hitbox_offset = Vector2(28, 0)
+smear_sheet_prefix = "res://assets/art/vfx/smear_overhead_"
+smear_fps = 12.0
 
 [resource]
 script = ExtResource("1")

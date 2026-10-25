@@ -7,8 +7,18 @@ extends Node2D
 ## Missing the window or failing the stamina cost resets to the first swing.
 ## Gated only by the player's stamina, spent when each swing starts (no
 ## cooldown timer). Contains no player logic (§35).
+## Every phase change emits `swing_phase_changed` (the player's attack
+## animation follows it); entering ACTIVE plays the swing's smear VFX.
+
+## Fase nueva del golpe, su duración (s) y el apuntado / New swing phase, its duration (s) and the aim
+signal swing_phase_changed(phase: SwingState, seconds: float, aim: Vector2)
 
 enum SwingState { IDLE, ANTICIPATION, ACTIVE, RECOVERY }
+
+const KitSpriteScript: GDScript = preload("res://scripts/visual/kit_sprite.gd")
+const VfxScript: GDScript = preload("res://scripts/visual/vfx.gd")
+# Pivote del smear: los pies del personaje en la celda de 64 (README del pack) / Smear pivot: the character's feet in the 64 cell (pack README)
+const SMEAR_PIVOT: Vector2 = Vector2(32, 49)
 
 @export var data: WeaponData
 
@@ -30,6 +40,8 @@ var _chain_left: float = 0.0
 # Golpe siguiente pedido durante active/recovery, con su apuntado / Next swing requested during active/recovery, with its aim
 var _queued: bool = false
 var _queued_aim: Vector2 = Vector2.ZERO
+# Apuntado del golpe actual / Current swing aim
+var _aim: Vector2 = Vector2.RIGHT
 
 
 func _ready() -> void:
@@ -85,6 +97,7 @@ func _physics_process(delta: float) -> void:
 	match _state:
 		SwingState.ANTICIPATION:
 			hitbox.begin_swing()
+			_spawn_smear(swing)
 			_enter(SwingState.ACTIVE, swing.active_seconds)
 		SwingState.ACTIVE:
 			hitbox.end_swing()
@@ -98,16 +111,6 @@ func _physics_process(delta: float) -> void:
 				_chain_left = swing.chain_window_seconds
 
 
-func _draw() -> void:
-	# Placeholder swing visual until the sword has art: faint box while
-	# winding up, solid while the hitbox is on.
-	if _state != SwingState.ANTICIPATION and _state != SwingState.ACTIVE:
-		return
-	var size: Vector2 = (_hitbox_shape.shape as RectangleShape2D).size
-	var alpha: float = 0.25 if _state == SwingState.ANTICIPATION else 0.7
-	draw_rect(Rect2(_hitbox_shape.position - size / 2.0, size), Color(0.85, 0.82, 0.75, alpha))
-
-
 func _start_swing(step: int, aim: Vector2) -> bool:
 	var swing: SwingData = data.combo[step]
 	if _stamina != null and not _stamina.try_spend(swing.stamina_cost):
@@ -115,6 +118,7 @@ func _start_swing(step: int, aim: Vector2) -> bool:
 		return false
 	_combo_step = step
 	_chain_left = 0.0
+	_aim = aim
 	rotation = aim.angle()
 	hitbox.damage = swing.damage
 	hitbox.knockback = aim.normalized() * swing.knockback
@@ -128,7 +132,18 @@ func _start_swing(step: int, aim: Vector2) -> bool:
 func _enter(state: SwingState, seconds: float) -> void:
 	_state = state
 	_phase_left = seconds
-	queue_redraw()
+	swing_phase_changed.emit(state, seconds, _aim)
+
+
+# El smear no rota con la espada: cada dirección tiene su hoja; hacia N va detrás del jugador.
+# The smear does not rotate with the sword: each direction has its own sheet; toward N it goes behind the player.
+func _spawn_smear(swing: SwingData) -> void:
+	var row: String = KitSpriteScript.row_for(_aim)
+	var sheet: Texture2D = load(swing.smear_sheet_prefix + row + ".png")
+	var z: int = -1 if row == "N" else 1
+	# Celdas cuadradas de 64 px / Square 64 px cells
+	VfxScript.play_once(self, sheet, sheet.get_width() / sheet.get_height(), swing.smear_fps,
+			SMEAR_PIVOT, global_position, z)
 
 
 func _reset_combo() -> void:

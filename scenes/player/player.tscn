@@ -1,7 +1,8 @@
 [gd_scene format=3 uid="uid://dyfdu3qmosn35"]
 
 [ext_resource type="Script" uid="uid://dniv7631dh2o4" path="res://scripts/player/player.gd" id="1"]
-[ext_resource type="Texture2D" uid="uid://darqbqq8jje0i" path="res://assets/Examples/Old/Player_Base_Down_Full_min.png" id="2_dovo2"]
+[ext_resource type="Script" path="res://scripts/visual/kit_sprite.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/player/player_animator.gd" id="13"]
 [ext_resource type="Script" uid="uid://5lfh4iwav4kq" path="res://scripts/combat/hurtbox.gd" id="3"]
 [ext_resource type="Script" uid="uid://cwbxq6ncoqixu" path="res://scripts/combat/health_component.gd" id="4"]
 [ext_resource type="Script" uid="uid://bddhxc25eexs6" path="res://scripts/combat/stamina_component.gd" id="7"]
@@ -10,62 +11,14 @@
 [ext_resource type="Script" path="res://scripts/combat/knockback_component.gd" id="11"]
 [ext_resource type="Script" path="res://scripts/combat/hit_flash.gd" id="12"]
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_dovo2"]
-atlas = ExtResource("2_dovo2")
-region = Rect2(0, 0, 16, 16)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_gmlin"]
-atlas = ExtResource("2_dovo2")
-region = Rect2(0, 32, 16, 16)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_lvxji"]
-atlas = ExtResource("2_dovo2")
-region = Rect2(16, 32, 16, 16)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_p47bc"]
-atlas = ExtResource("2_dovo2")
-region = Rect2(32, 32, 16, 16)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_75vfm"]
-atlas = ExtResource("2_dovo2")
-region = Rect2(48, 32, 16, 16)
-
-[sub_resource type="SpriteFrames" id="SpriteFrames_kmatr"]
-animations = [{
-"frames": [{
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_dovo2")
-}],
-"loop": 1,
-"name": &"Idle_Down",
-"speed": 5.0
-}, {
-"frames": [{
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_gmlin")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_lvxji")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_p47bc")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_75vfm")
-}],
-"loop": 1,
-"name": &"Walk_Down",
-"speed": 5.0
-}]
-
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
 size = Vector2(12, 6)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hurtbox"]
-size = Vector2(7, 9)
+size = Vector2(10, 20)
 
 [node name="Player" type="CharacterBody2D" unique_id=929287210 groups=["player"]]
-z_index = 1
+z_index = 2
 collision_layer = 2
 collision_mask = 5
 script = ExtResource("1")
@@ -75,11 +28,12 @@ position_smoothing_enabled = true
 position_smoothing_speed = 10.0
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=895176558]
-sprite_frames = SubResource("SpriteFrames_kmatr")
-animation = &"Idle_Down"
+script = ExtResource("2")
+sheet_prefix = "res://assets/art/characters/adventurer_"
+animations = PackedStringArray("idle", "walk", "attack")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=917985610]
-position = Vector2(0, 5)
+position = Vector2(0, -3)
 shape = SubResource("RectangleShape2D_body")
 
 [node name="Hurtbox" type="Area2D" parent="." unique_id=1758036033]
@@ -90,7 +44,7 @@ script = ExtResource("3")
 layer_bit = 8
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox" unique_id=990877774]
-position = Vector2(0.5, 0.5)
+position = Vector2(0, -12)
 shape = SubResource("RectangleShape2D_hurtbox")
 
 [node name="Health" type="Node" parent="." unique_id=615333564]
@@ -108,6 +62,9 @@ visual_path = NodePath("../AnimatedSprite2D")
 script = ExtResource("7")
 
 [node name="Weapons" type="Node2D" parent="." unique_id=657842418]
+
+[node name="PlayerAnimator" type="Node" parent="."]
+script = ExtResource("13")
 
 [node name="EquipmentController" type="Node" parent="."]
 script = ExtResource("9")

@@ -2,8 +2,12 @@ extends CharacterBody2D
 
 ## Base enemy behavior (ES-1..ES-4): locate the player via group lookup,
 ## chase in a straight line within detect_radius, attack with a short
-## EnemyHitbox window on cooldown (not contact damage). Death frees the
-## enemy. Data-driven via EnemyData.
+## EnemyHitbox window on cooldown (not contact damage). An attack first
+## stands still for EnemyData.telegraph_seconds (the drawn wind-up), then
+## opens the hitbox. Death stops the AI and collisions, plays the Visuals
+## death and then frees the enemy. Data-driven via EnemyData.
+
+const EnemyVisualsScript: GDScript = preload("res://scripts/enemies/enemy_visuals.gd")
 
 # Tiempo con la hitbox de ataque activa (s) / Time the attack hitbox stays on (s)
 const ATTACK_WINDOW_SECONDS: float = 0.2
@@ -13,10 +17,13 @@ const ATTACK_WINDOW_SECONDS: float = 0.2
 @onready var health: HealthComponent = $Health
 @onready var _enemy_hitbox: Hitbox = $EnemyHitbox
 @onready var _knockback: KnockbackComponent = get_node_or_null("Knockback") as KnockbackComponent
+@onready var _visuals: EnemyVisualsScript = $Visuals
 
 var _can_attack: bool = true
 var _attack_window_timer: Timer
 var _attack_cooldown_timer: Timer
+# Segundos de telegrafía que faltan para abrir la hitbox; 0 = sin preparar / Telegraph seconds left before the hitbox opens; 0 = not winding up
+var _telegraph_left: float = 0.0
 
 
 func _ready() -> void:
@@ -53,7 +60,12 @@ func _physics_process(delta: float) -> void:
 		to_player = player.global_position - global_position
 		distance = to_player.length()
 	velocity = Vector2.ZERO
-	if distance <= enemy_data.detect_radius:
+	var winding_up: bool = _telegraph_left > 0.0
+	if winding_up:
+		_telegraph_left -= delta
+		if _telegraph_left <= 0.0:
+			_open_attack_window()
+	elif distance <= enemy_data.detect_radius:
 		velocity = to_player.normalized() * enemy_data.speed
 	# Un empuje activo reemplaza la persecución (aturdimiento breve) / An active push overrides the chase (brief stagger)
 	var push: Vector2 = _knockback.consume(delta) if _knockback != null else Vector2.ZERO
@@ -61,7 +73,8 @@ func _physics_process(delta: float) -> void:
 		velocity = push
 	if velocity != Vector2.ZERO:
 		move_and_slide()
-	if distance <= enemy_data.attack_range and _can_attack:
+	_visuals.show_motion(velocity, to_player)
+	if not winding_up and distance <= enemy_data.attack_range and _can_attack:
 		_attack(to_player)
 
 
@@ -76,9 +89,16 @@ func _attack(to_player: Vector2) -> void:
 	_can_attack = false
 	# Empuja al jugador en la dirección del ataque / Push the player along the attack direction
 	_enemy_hitbox.knockback = to_player.normalized() * enemy_data.knockback
+	_attack_cooldown_timer.start()
+	_visuals.show_attack(to_player, enemy_data.telegraph_seconds)
+	_telegraph_left = enemy_data.telegraph_seconds
+	if _telegraph_left <= 0.0:
+		_open_attack_window()
+
+
+func _open_attack_window() -> void:
 	_enemy_hitbox.begin_swing()
 	_attack_window_timer.start()
-	_attack_cooldown_timer.start()
 
 
 func _on_attack_window_timeout() -> void:
@@ -90,4 +110,10 @@ func _on_attack_cooldown_timeout() -> void:
 
 
 func _on_health_died() -> void:
+	set_physics_process(false)
+	_enemy_hitbox.end_swing()
+	# Diferido: died llega dentro de callbacks de física / Deferred: died fires inside physics callbacks
+	$CollisionShape2D.set_deferred("disabled", true)
+	$Hurtbox.set_deferred("monitorable", false)
+	await _visuals.play_death()
 	queue_free()
