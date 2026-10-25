@@ -640,6 +640,20 @@ máximo en 0,25 s moviéndose y se cierra a 0 en 0,5 s quieto. Dos marcas en el 
 | El Cosido | 1,0 | 0 | Siempre | 0,25 | Ventana: la cuchilla clavada en el piso, 1,0 s de recuperación. |
 | La Madre (D21) | 0,65–1,5 | 0 (solo el corte de la *Nana*) | Siempre | 0 | Ver D21. |
 
+**Dificultad v1 (en curso, rama `feat/dificultad-v1`).** Respuesta a "muy fácil, pocos enemigos, casi no
+pegan". Es un paso previo al presupuesto + oleadas de D22, que lo reemplaza.
+
+| Parámetro | Antes | Ahora |
+|---|---|---|
+| Enemigos por zona COMBAT | 2 fijos | 3 por pantalla de sala, +1 por piso después del 1.º, tope 8 |
+| Persecución | dentro de `detect_radius` | en toda su zona (`territory`), además de `detect_radius` |
+| Acercamiento | en línea recta, se apilan | rodean: cada uno entra con su ángulo (−0,9 / 0 / 0,9 rad) y cierra derecho a 96 px |
+| Daño del slime / cadencia | 8 / 1,2 s | 12 / 1,0 s |
+| Daño del errante | 14 | 22, con embestida de 150 px/s durante el activo (~30 px) y rango 40 |
+| I-frames del jugador tras un golpe | 0,5 s | 0,35 s |
+
+Sigue sin haber regeneración de vida: la vida solo vuelve al volver al guild.
+
 **Reglas de diseño para todo enemigo nuevo**
 1. Todo golpe que daña tiene ≥0,35 s de anticipación con telegrafía visible en el saturado reservado (D5).
 2. Un golpe único tiene ≤0,3 s de activo (los i-frames de la rodada), así siempre se puede rodar. Lo que dura
