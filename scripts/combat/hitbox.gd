@@ -8,6 +8,9 @@ extends Area2D
 
 @export var damage: int = 10
 @export var knockback: Vector2 = Vector2.ZERO
+## Hit-stop requested for each landed hit, in seconds (D4).
+## Hit-stop pedido por cada golpe conectado, en segundos (D4).
+@export var hit_stop_seconds: float = 0.06
 @export var target_mask: int = CollisionLayers.ENEMY_HURTBOX
 
 var _hit_targets: Array[Area2D] = []
@@ -37,4 +40,4 @@ func _on_area_entered(area: Area2D) -> void:
 	var hurtbox := area as Hurtbox
 	if hurtbox == null:
 		return
-	hurtbox.take_hit(DamageInfo.new(damage, knockback))
+	hurtbox.take_hit(DamageInfo.new(damage, knockback, hit_stop_seconds))
