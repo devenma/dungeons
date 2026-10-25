@@ -44,9 +44,18 @@ func take_damage(info: DamageInfo) -> void:
 	_invulnerable_left = invulnerability_seconds
 	health_changed.emit(current_health, max_health)
 	damage_received.emit(info)
+	_apply_hit_stop(info)
 	if current_health == 0:
 		_dead = true
 		died.emit()
+
+
+## D4: an accepted hit asks for a brief global freeze (presentation).
+## D4: un golpe aceptado pide un congelamiento global breve (presentación).
+func _apply_hit_stop(info: DamageInfo) -> void:
+	var tree: SceneTree = get_tree()
+	if tree != null:
+		HitStop.trigger(tree, info.hit_stop_seconds)
 
 
 func reset_health() -> void:

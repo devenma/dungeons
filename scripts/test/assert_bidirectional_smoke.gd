@@ -130,6 +130,11 @@ func _run() -> void:
 	_check(absf(sword.rotation - PI / 2.0) < 0.01, "C: aim defaults Down (rotation = PI/2)")
 
 	# A — player sword → enemy hurtbox (HP-3, nonzero Player→Enemy damage).
+	# Let the combo window expire first so this is a fresh first hit: the
+	# previous swing already advanced the chain (D4).
+	# Dejar vencer la ventana del combo para que este sea el primer golpe: el
+	# swing anterior ya avanzó la cadena (D4).
+	await create_timer(0.5).timeout
 	swung = sword.call("try_attack", Vector2.RIGHT) as bool
 	await _frames(5)
 	_check(swung, "A: try_attack(RIGHT) accepted")

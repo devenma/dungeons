@@ -163,17 +163,16 @@ El punto clave: **la mayor parte de esto ya está hecho.** El PR #6 implementó 
 | Knockback | **Hecho**: `KnockbackComponent`, decae en 0.2 s, stagger |
 | I-frames del jugador | **Hecho**: 0.5 s en `HealthComponent.invulnerability_seconds` |
 | Hit flash | **Hecho**: `HitFlash` con destello + parpadeo |
-| Hit-stop | Pendiente |
-| Visual del swing de espada | Pendiente (solo existe la hitbox) |
+| Hit-stop | **Hecho**: `HitStop` congela `Engine.time_scale` 0.05–0.09 s |
+| Visual del swing de espada | **Hecho**: arco procedural en `sword.gd` (sin arte) |
 | Animaciones 4 direcciones | Pendiente: solo `Idle_Down` / `Walk_Down` |
-| Combo de 3 | Pendiente |
+| Combo de 3 | **Hecho**: ventana 0.45 s, daño/knockback/hit-stop escalados |
 
 Orden actualizado (lo que quedó después del PR #6):
-1. **Hit-stop** al impactar: es lo único del "feel" base que falta.
-2. **Visual del swing** de la espada.
-3. **Combo de 3**: máquina de estados en `sword.gd` (swing 1 → ventana → swing 2 → swing 3, con distinto
-   hitbox, daño y knockback). Reusa el `KnockbackComponent` que ya existe; cada golpe solo cambia el
-   `DamageInfo`.
+1. ~~**Hit-stop** al impactar~~ ✅ hecho.
+2. ~~**Visual del swing** de la espada~~ ✅ hecho (arco procedural).
+3. ~~**Combo de 3**: máquina de estados en `sword.gd`~~ ✅ hecho: ventana de 0.45 s; daño, knockback y
+   hit-stop escalan por golpe y el `DamageInfo` lleva el peso del impacto.
 4. **Animaciones de 4 direcciones** (arte, no código).
 
 Oleadas por sala salen casi gratis después: las puertas ya se bloquean al entrar y se abren al limpiar.
@@ -330,8 +329,7 @@ validación de solvabilidad necesitan conocerlos cuando existan las plantillas.
 
 1. ~~**Arreglar `_merge_cells`** (rectángulos exactos y tamaño mínimo de zona)~~ ✅ hecho: partición
    guillotina + `FloorData.zone_min_cells`. Desbloquea D3.
-2. **Hit-stop + visual del swing + combo de 3** (D4). Todo local a `sword.gd` y al combate, sin tocar
-   estado. El feel se cierra antes de meter contenido.
+2. ~~**Hit-stop + visual del swing + combo de 3** (D4)~~ ✅ hecho. Todo quedó local al combate y a `sword.gd`. El feel se cierra antes de meter contenido.
 3. ~~**`ProfileState` + oro + `_return_to_town()`** (D1, D11)~~ ✅ hecho.
 4. **Pueblo mínimo con tienda** (D2), sobre `scenes/hub/guild_tavern.tscn`.
 5. **Pool de plantillas de sala** (D3), ya con el generador confiable.
@@ -357,7 +355,7 @@ Fuera de este orden inmediato: **D19 (maná)** entra junto con los kits de habil
 | Oro / perfil | No existen | ✅ `ProfileState` + oro; falta la tienda |
 | Textos de UI | Hardcodeados | `tr()` + traducciones (D16) |
 | `scenes/hub/guild_tavern.tscn` | Huérfana, sin flujo | Base del pueblo (D2) |
-| Combate | Knockback, i-frames y hit flash hechos | Falta hit-stop, swing visual, combo y 4 direcciones (D4) |
+| Combate | Knockback, i-frames, hit flash, hit-stop, swing visual y combo de 3 hechos | Faltan las animaciones de 4 direcciones (D4) |
 | `StaminaComponent` | Único recurso de combate | Se suma `ManaComponent`; habilidades con coste dual (D19) |
 | Obstáculos de zona | No existen | Obstáculos movibles con coste de stamina, colocados por plantilla (D20) |
 
