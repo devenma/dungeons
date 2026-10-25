@@ -1,0 +1,13 @@
+[gd_resource type="AudioStreamRandomizer" format=3]
+
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/bone_collapse_01.wav" id="1_cvgsx"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/bone_collapse_02.wav" id="2_o451t"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/bone_collapse_03.wav" id="3_4bgy2"]
+
+[resource]
+random_pitch = 1.08
+random_volume_offset_db = 1.5
+streams_count = 3
+stream_0/stream = ExtResource("1_cvgsx")
+stream_1/stream = ExtResource("2_o451t")
+stream_2/stream = ExtResource("3_4bgy2")

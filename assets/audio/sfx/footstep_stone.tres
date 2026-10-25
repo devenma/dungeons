@@ -1,0 +1,15 @@
+[gd_resource type="AudioStreamRandomizer" format=3]
+
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/footstep_stone_01.wav" id="1_kbmtu"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/footstep_stone_02.wav" id="2_msxju"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/footstep_stone_03.wav" id="3_j3gd8"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/footstep_stone_04.wav" id="4_oc77e"]
+
+[resource]
+random_pitch = 1.08
+random_volume_offset_db = 1.5
+streams_count = 4
+stream_0/stream = ExtResource("1_kbmtu")
+stream_1/stream = ExtResource("2_msxju")
+stream_2/stream = ExtResource("3_j3gd8")
+stream_3/stream = ExtResource("4_oc77e")

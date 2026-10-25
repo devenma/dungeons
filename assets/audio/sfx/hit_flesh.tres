@@ -1,0 +1,13 @@
+[gd_resource type="AudioStreamRandomizer" format=3]
+
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/hit_flesh_01.wav" id="1_egmbw"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/hit_flesh_02.wav" id="2_r8ir5"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/hit_flesh_03.wav" id="3_srocv"]
+
+[resource]
+random_pitch = 1.08
+random_volume_offset_db = 1.5
+streams_count = 3
+stream_0/stream = ExtResource("1_egmbw")
+stream_1/stream = ExtResource("2_r8ir5")
+stream_2/stream = ExtResource("3_srocv")

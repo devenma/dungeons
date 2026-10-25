@@ -1,0 +1,13 @@
+[gd_resource type="AudioStreamRandomizer" format=3]
+
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/arrow_impact_01.wav" id="1_qmrra"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/arrow_impact_02.wav" id="2_dv04b"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/arrow_impact_03.wav" id="3_i675o"]
+
+[resource]
+random_pitch = 1.08
+random_volume_offset_db = 1.5
+streams_count = 3
+stream_0/stream = ExtResource("1_qmrra")
+stream_1/stream = ExtResource("2_dv04b")
+stream_2/stream = ExtResource("3_i675o")
