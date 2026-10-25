@@ -3,6 +3,9 @@ extends Node
 @export var player_node_path: NodePath
 @export var run_manager_node_path: NodePath
 @export var floor_data: FloorData
+## Gold awarded per defeated enemy (S5).
+## Oro otorgado por cada enemigo derrotado (S5).
+@export var gold_per_enemy: int = 5
 
 @onready var player: Node2D = get_node(player_node_path)
 
@@ -126,6 +129,9 @@ func _start_floor() -> void:
 	if _spawner.has_signal("weapon_granted"):
 		_spawner.weapon_granted.connect(_on_weapon_granted)
 
+	if _spawner.has_signal("enemy_defeated"):
+		_spawner.enemy_defeated.connect(_on_enemy_defeated)
+
 	if _door_controller.has_signal("zone_entered"):
 		var cam_manager :Node = _find_camera_limit_manager()
 		if cam_manager != null and cam_manager.has_method("_on_zone_entered"):
@@ -142,6 +148,14 @@ func _start_floor() -> void:
 
 	# 10  Initialize camera limits
 	_initialize_camera_limits(layout)
+
+
+func _on_enemy_defeated(_zone_id: int) -> void:
+	# S5: every kill banks gold through the single RunManager seam.
+	# S5: cada muerte banca oro por el único seam de RunManager.
+	var run_manager: Node = _get_run_manager()
+	if run_manager != null:
+		run_manager.add_gold(gold_per_enemy)
 
 
 func _on_weapon_granted(data: WeaponData) -> void:

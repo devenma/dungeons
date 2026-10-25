@@ -17,7 +17,7 @@ config/icon="res://icon.svg"
 
 [autoload]
 
-run_manager="res://scripts/game/run_manager.gd"
+profile_state="*res://scripts/profile/profile_state.gd"
 
 [display]
 

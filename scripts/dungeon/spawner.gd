@@ -11,6 +11,9 @@ extends Node
 ## spawn_content is called (§44.16).
 
 signal zone_cleared(zone_id: int)
+## Reports every enemy death so the economy layer can award gold (S5).
+## Reporta cada muerte para que la capa de economía otorgue oro (S5).
+signal enemy_defeated(zone_id: int)
 ## Relay-only grant event: the chest emits `granted`, the Spawner re-emits
 ## it as `weapon_granted`; DungeonManager binds RunManager to it (PF-1).
 signal weapon_granted(weapon_data: WeaponData)
@@ -131,6 +134,7 @@ func _on_chest_granted(data: WeaponData) -> void:
 
 
 func _on_enemy_died(zone_id: int) -> void:
+	enemy_defeated.emit(zone_id)
 	if not _remaining_by_zone.has(zone_id):
 		return
 	var remaining: int = _remaining_by_zone[zone_id] - 1
