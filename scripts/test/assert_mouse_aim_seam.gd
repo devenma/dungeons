@@ -1,6 +1,6 @@
 extends SceneTree
 
-## Mouse-aim seam assertion suite (MA-*, equip-then-act slice 2): verifies
+## Mouse-aim seam assertion suite (MA-*): verifies
 ## the AimResolver contract with synthetic events and weapon wiring through
 ## the mounted weapon on real player.tscn (sword rotation follows resolved
 ## aim, bow arrow spawns at pos + aim*20). All weapons gate on "attack"

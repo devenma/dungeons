@@ -2,10 +2,12 @@ class_name DamageInfo
 extends RefCounted
 
 ## Damage payload routed from a Hitbox to a Hurtbox (§10 protocol).
-## Carries amount plus the knockback impulse direction; knockback is threaded
-## but not applied yet (Fase 4).
+## Carries the amount plus the knockback impulse, which KnockbackComponent
+## turns into a short push.
 
+# Daño (puntos de vida) / Damage (health points)
 var amount: int
+# Empuje inicial (px/s, con dirección) / Initial push (px/s, directed)
 var knockback: Vector2
 
 

@@ -12,6 +12,7 @@ extends Node2D
 ## unlimited attacks (ST-weapon-gating).
 @export var stamina_node_path: NodePath = NodePath("../../Stamina")
 
+# Distancia del jugador a la que nace el proyectil (px) / Distance from the player where the projectile spawns (px)
 const SPAWN_OFFSET: float = 20.0
 
 var _stamina: StaminaComponent = null
@@ -20,7 +21,7 @@ var _stamina: StaminaComponent = null
 func _ready() -> void:
 	# Standalone fallback: static .tres binding removed to break the
 	# bow_basic.tres <-> bow.tscn load cycle; mount injection sets data
-	# before _ready (EM-1, slice 2).
+	# before _ready (EM-1).
 	if data == null:
 		data = load("res://resources/weapons/bow_basic.tres") as WeaponData
 	_stamina = get_node_or_null(stamina_node_path) as StaminaComponent
@@ -39,7 +40,7 @@ func try_attack(aim_dir: Vector2 = Vector2.ZERO) -> bool:
 	var arrow := packed.instantiate() as Arrow
 	if arrow == null:
 		return false
-	var player := get_tree().get_first_node_in_group("player") as Node2D
+	var player: Node2D = get_tree().get_first_node_in_group("player") as Node2D
 	var origin: Vector2 = player.global_position if player != null else global_position
 	arrow.damage = data.damage
 	arrow.knockback = aim * data.knockback

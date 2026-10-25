@@ -3,11 +3,11 @@ extends Node
 
 ## EM-1..4: mounts exactly ONE equipped weapon under Player/Weapons.
 ## Reacts to RunManager.weapon_equipped; the controller never owns weapon
-## behavior (§35) and never references the latent autoload twin (EM-3).
+## behavior (§35).
 
 @export var weapons_node_path: NodePath = NodePath("../Weapons")
-## Path to the scene-instance RunManager in main.tscn (EM-3); unresolved
-## falls through to a current_scene subtree search, never the autoload.
+## Path to the RunManager node in main.tscn (EM-3); unresolved falls
+## through to a current_scene subtree search.
 @export var run_manager_path: NodePath = NodePath("../../../RunManager")
 
 ## Fallback weapon mounted when no RunManager is reachable (EM-3):
@@ -26,8 +26,8 @@ func _ready() -> void:
 	# emissions (Player subtree readies first in main.tscn, §44.16).
 	if _run_manager != null:
 		_run_manager.weapon_equipped.connect(_on_weapon_equipped)
-		# R1 mitigation: read the current equip once so an emission missed
-		# before this connection cannot leave an empty mount.
+		# Read the current equip once so an emission missed before this
+		# connection cannot leave an empty mount.
 		_mount(_run_manager.get_equipped())
 	else:
 		_mount(default_weapon_data)

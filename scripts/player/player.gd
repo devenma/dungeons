@@ -1,6 +1,10 @@
 extends CharacterBody2D
 
-@export var speed := 60.0
+## Movimiento en 8 direcciones y orientación; el resto vive en componentes hijos (§35).
+## 8-direction movement and facing; everything else lives in child components (§35).
+
+## Velocidad de caminata (px/s) / Walk speed (px/s)
+@export var speed: float = 60.0
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var knockback: KnockbackComponent = get_node_or_null("Knockback") as KnockbackComponent
 
@@ -24,7 +28,6 @@ func _physics_process(delta: float) -> void:
 	if push != Vector2.ZERO:
 		velocity = push
 	move_and_slide()
-	# animaciones
 	if direction != Vector2.ZERO:
 		last_move_direction = direction.normalized()
 		sprite.play("Walk_Down")

@@ -22,8 +22,7 @@ func _check(condition: bool, label: String) -> void:
 
 func _spawn_rig() -> Dictionary:
 	# Headless rig: container (current_scene) -> scene RunManager + player.
-	# The controller resolves the RunManager via the current_scene search
-	# (EM-3): never the autoload twin.
+	# The controller resolves the RunManager via the current_scene search (EM-3).
 	var container: Node2D = Node2D.new()
 	root.add_child(container)
 	current_scene = container

@@ -9,7 +9,9 @@ extends Node
 
 signal stamina_changed(current: int, maximum: int)
 
+## Stamina máxima (puntos) / Max stamina (points)
 @export var max_stamina: int = 100
+## Regeneración (puntos/s) / Regeneration (points/s)
 @export var stamina_regen_per_second: float = 20.0
 
 var current_stamina: int = 100

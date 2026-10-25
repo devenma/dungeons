@@ -14,6 +14,7 @@ signal health_changed(current: int, maximum: int)
 signal damage_received(info: DamageInfo)
 signal died
 
+## Vida máxima (puntos) / Max health (points)
 @export var max_health: int = 100
 ## Segundos de invulnerabilidad tras un golpe; 0 = sin i-frames / I-frame seconds after a hit; 0 = none
 @export var invulnerability_seconds: float = 0.0
@@ -37,9 +38,10 @@ func is_invulnerable() -> bool:
 	return _invulnerable_left > 0.0
 
 
-func take_damage(info: DamageInfo) -> void:
+## Devuelve true si el golpe se aceptó (no muerto ni en i-frames) / Returns true when the hit was accepted (not dead, not in i-frames)
+func take_damage(info: DamageInfo) -> bool:
 	if _dead or is_invulnerable():
-		return
+		return false
 	current_health = maxi(current_health - info.amount, 0)
 	_invulnerable_left = invulnerability_seconds
 	health_changed.emit(current_health, max_health)
@@ -47,6 +49,7 @@ func take_damage(info: DamageInfo) -> void:
 	if current_health == 0:
 		_dead = true
 		died.emit()
+	return true
 
 
 func reset_health() -> void:

@@ -1,6 +1,6 @@
 extends SceneTree
 
-## Bow assertion (PA/SA/BC/WD): equip-then-act flow (slice 2, EM-1..4) —
+## Bow assertion (PA/SA/BC/WD): equip-then-act flow (EM-1..4) —
 ## boot grants the sword, RunManager grants+equips the bow, then
 ## try_attack(RIGHT) fires one arrow into current_scene at
 ## player.pos + RIGHT*20; a second call refires on full stamina. The

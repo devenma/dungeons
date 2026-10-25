@@ -9,7 +9,7 @@ extends Node
 ## linearly to zero over `decay_seconds`.
 
 @export var health_node_path: NodePath = NodePath("../Health")
-## Duración del empuje hasta frenar / Time for the push to stop
+## Duración del empuje hasta frenar (s) / Time for the push to stop (s)
 @export var decay_seconds: float = 0.2
 
 var _velocity: Vector2 = Vector2.ZERO

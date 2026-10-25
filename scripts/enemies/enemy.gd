@@ -5,6 +5,7 @@ extends CharacterBody2D
 ## EnemyHitbox window on cooldown (not contact damage). Death frees the
 ## enemy. Data-driven via EnemyData.
 
+# Tiempo con la hitbox de ataque activa (s) / Time the attack hitbox stays on (s)
 const ATTACK_WINDOW_SECONDS: float = 0.2
 
 @export var enemy_data: EnemyData
@@ -25,6 +26,7 @@ func _ready() -> void:
 		health.max_health = enemy_data.health
 		health.reset_health()
 		_enemy_hitbox.damage = enemy_data.damage
+		_enemy_hitbox.hit_stop_seconds = enemy_data.hit_stop_seconds
 
 	_attack_window_timer = Timer.new()
 	_attack_window_timer.one_shot = true
@@ -44,7 +46,7 @@ func _physics_process(delta: float) -> void:
 	if enemy_data == null:
 		velocity = Vector2.ZERO
 		return
-	var player := _find_player()
+	var player: CharacterBody2D = _find_player()
 	var to_player: Vector2 = Vector2.ZERO
 	var distance: float = INF
 	if player != null:

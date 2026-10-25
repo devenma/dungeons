@@ -5,10 +5,18 @@ extends Area2D
 ## begin_swing()/end_swing() toggle monitoring via set_deferred (HP-4) so a
 ## target already overlapping at arm time is caught. Each target is hit at
 ## most once per swing; _hit_targets is reset when a new swing begins.
+## An accepted hit triggers HitStop for `hit_stop_seconds` (D4).
 
+const HitStopScript: GDScript = preload("res://scripts/combat/hit_stop.gd")
+
+## Daño por golpe (puntos de vida) / Damage per hit (health points)
 @export var damage: int = 10
+## Empuje inicial del golpe (px/s, con dirección) / Initial push of the hit (px/s, directed)
 @export var knockback: Vector2 = Vector2.ZERO
+## Capas de Hurtbox que puede golpear (CollisionLayers) / Hurtbox layers it can hit (CollisionLayers)
 @export var target_mask: int = CollisionLayers.ENEMY_HURTBOX
+## Congelación al impactar (s); 0 = sin hit-stop / Freeze on impact (s); 0 = no hit-stop
+@export var hit_stop_seconds: float = 0.0
 
 var _hit_targets: Array[Area2D] = []
 
@@ -37,4 +45,5 @@ func _on_area_entered(area: Area2D) -> void:
 	var hurtbox := area as Hurtbox
 	if hurtbox == null:
 		return
-	hurtbox.take_hit(DamageInfo.new(damage, knockback))
+	if hurtbox.take_hit(DamageInfo.new(damage, knockback)):
+		HitStopScript.apply(get_tree(), hit_stop_seconds)

@@ -1,6 +1,6 @@
 extends SceneTree
 
-## Bidirectional combat smoke (phase 4 milestone, equip-then-act slice 2):
+## Bidirectional combat smoke:
 ## proves HP-2/HP-3/HP-4 end-to-end with nonzero damage in both directions,
 ## plus the SW-3 aim default and the HC-4 died-once contract. The sword is
 ## the boot-equipped mount (EM-1/EM-3). Exit 0 = pass, 1 = fail.
@@ -24,6 +24,15 @@ func _check(condition: bool, label: String) -> void:
 
 func _frames(count: int) -> void:
 	for i in range(count):
+		await physics_frame
+
+
+## Waits until the sword's combo is fully over (idle, chain window closed),
+## so the next try_attack starts again from swing 1.
+func _wait_sword_rest(sword: Node2D) -> void:
+	for i in range(120):
+		if int(sword.get("_state")) == 0 and float(sword.get("_chain_left")) <= 0.0:
+			return
 		await physics_frame
 
 
@@ -128,10 +137,12 @@ func _run() -> void:
 	await _frames(3)
 	_check(swung, "C: try_attack() accepted")
 	_check(absf(sword.rotation - PI / 2.0) < 0.01, "C: aim defaults Down (rotation = PI/2)")
+	await _wait_sword_rest(sword)
 
 	# A — player sword → enemy hurtbox (HP-3, nonzero Player→Enemy damage).
+	# Combo swing 1 (10 dmg) lands after its anticipation; wait it out.
 	swung = sword.call("try_attack", Vector2.RIGHT) as bool
-	await _frames(5)
+	await _wait_sword_rest(sword)
 	_check(swung, "A: try_attack(RIGHT) accepted")
 	_check(absf(sword.rotation) < 0.01, "A: sword rotated to RIGHT")
 	_check(enemy_health.current_health == 40, "A: enemy HP 50 -> 40 (took 10)")

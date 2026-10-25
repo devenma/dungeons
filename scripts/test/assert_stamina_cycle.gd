@@ -147,6 +147,11 @@ func _integration_checks() -> void:
 
 	# Drain -> refuse -> regen: exactly one refusal at the boundary
 	# (ST-regression full cycle; no double-refusal after whole-tick regen).
+	# Let the Dg swing finish so the next attack is a fresh combo swing 1.
+	for i in range(120):
+		if int(sword2.get("_state")) == 0 and float(sword2.get("_chain_left")) <= 0.0:
+			break
+		await physics_frame
 	sword2.set("_stamina", stamina)
 	stamina.reset_full()
 	sword2.call("try_attack", Vector2.RIGHT)  # 100 -> 80

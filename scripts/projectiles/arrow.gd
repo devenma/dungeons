@@ -6,21 +6,27 @@ extends Area2D
 ## lifetime expires (PL-2). Reuses the standard Hurtbox protocol; carries
 ## no player logic (§35).
 
+# Capa propia: ninguna; nadie detecta al proyectil / Own layer: none; nothing detects the projectile
 const SPAWN_LAYER: int = 0
+# Choca con hurtboxes enemigas y con paredes / Hits enemy hurtboxes and walls
 const TARGET_MASK: int = CollisionLayers.ENEMY_HURTBOX | CollisionLayers.WORLD
 
+## Daño (puntos de vida); el arma lo pisa con WeaponData.damage / Damage (health points); the weapon overrides it with WeaponData.damage
 @export var damage: int = 8
+## Empuje inicial (px/s, con dirección) / Initial push (px/s, directed)
 @export var knockback: Vector2 = Vector2.ZERO
+## Velocidad (px/s) / Speed (px/s)
 @export var speed: float = 400.0
 @export var direction: Vector2 = Vector2.RIGHT
+## Vida máxima antes de desaparecer (s) / Max lifetime before vanishing (s)
 @export var max_lifetime: float = 2.0
 
 var _living: bool = true
 
 
 func _ready() -> void:
-	# NOTE: keep monitorable=true — with layer 0 no other area can see the
-	# arrow, but monitorable=false stops body_entered (wall) detection.
+	# Keep monitorable=true: with layer 0 no other area can see the arrow,
+	# but monitorable=false stops body_entered (wall) detection.
 	set_deferred("collision_layer", SPAWN_LAYER)
 	set_deferred("collision_mask", TARGET_MASK)
 	set_deferred("monitoring", true)

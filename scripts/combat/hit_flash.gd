@@ -7,11 +7,13 @@ extends Node
 ## `self_modulate`, so the two never fight.
 
 @export var health_node_path: NodePath = NodePath("../Health")
+## Nodo que destella y parpadea / Node that flashes and blinks
 @export var visual_path: NodePath
 ## Color del destello (valores > 1 aclaran) / Flash color (values > 1 brighten)
 @export var flash_color: Color = Color(2.0, 2.0, 2.0, 1.0)
+## Duración del destello (s) / Flash duration (s)
 @export var flash_seconds: float = 0.12
-## Intervalo del parpadeo durante i-frames / Blink interval during i-frames
+## Intervalo del parpadeo durante i-frames (s) / Blink interval during i-frames (s)
 @export var blink_interval: float = 0.08
 
 var _health: HealthComponent = null
