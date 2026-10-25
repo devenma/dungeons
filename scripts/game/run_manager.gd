@@ -2,30 +2,79 @@ class_name RunManager
 extends Node
 
 ## Run state owner (§6.2): everything that must survive a floor transition
-## and reset on death lives here. Inventory state (RI-1) is authoritative for
-## weapon equip; mutations always precede emissions (§44.16).
+## and reset on death lives here, including the backpack and its gold.
+## Inventory state (RI-1) is authoritative for weapon equip; mutations
+## always precede emissions (§44.16).
 
 signal inventory_changed(weapons: Array[WeaponData])
 signal weapon_equipped(data: WeaponData)
 signal weapon_granted(data: WeaponData)
+## Cambió el contenido o el oro de la mochila / Backpack items or gold changed
+signal backpack_changed
+## Botín recién agregado, para el toast / Freshly added loot, for the toast
+signal loot_added(items: Array[ItemData], gold: int)
 
 ## Fallback weapon used when the scene graph does not inject one (headless
 ## tests instantiate run_manager.gd without main.tscn).
 const DEFAULT_WEAPON_PATH: String = "res://resources/weapons/sword_basic.tres"
+## Slots de la mochila / Backpack slots
+const BACKPACK_SLOTS: int = 20
+## Consumible que, al morir, te devuelve al gremio con el botín (D1) / Consumable that returns you to the guild with your loot on death (D1)
+const BLUE_STONE: ItemData = preload("res://resources/items/blue_stone.tres")
 
+## Arma inicial si no llegan armas base; null = DEFAULT_WEAPON_PATH / Starting weapon when no base weapons arrive; null = DEFAULT_WEAPON_PATH
 @export var default_weapon: WeaponData
 
+## Seed de la expedición; cada piso deriva la suya (§37) / Expedition seed; each floor derives its own (§37)
 var run_seed: int = 0
+## 0 = en el gremio, 1+ = piso actual / 0 = in the guild, 1+ = current floor
 var current_floor: int = 0
+## Armas de esta expedición: las del perfil + las recogidas / This expedition's weapons: the profile's + the picked-up ones
 var owned_weapons: Array[WeaponData] = []
 var equipped_index: int = 0
+## Botín de la expedición: se pierde al morir sin piedra azul / Expedition loot: lost on death without a blue stone
+var backpack: Inventory = Inventory.new(BACKPACK_SLOTS)
+## Oro sin bancar que se lleva encima / Unbanked gold carried on the expedition
+var backpack_gold: int = 0
 
 
-func start_new_run() -> void:
+func _init() -> void:
+	backpack.changed.connect(backpack_changed.emit)
+
+
+## La mochila no se toca: sobrevive a la piedra azul y a volver al gremio sin depositar.
+## The backpack is left alone: it survives a blue stone and returning to the guild undeposited.
+func start_new_run(base_weapons: Array[WeaponData] = []) -> void:
 	run_seed = randi()
 	current_floor = 0
-	reset_inventory()
+	reset_inventory(base_weapons)
 	weapon_equipped.emit(get_equipped())
+
+
+## shortcut: lo que no entra en la mochila llena se pierde; avisar en el toast cuando haya más loot.
+## shortcut: loot that does not fit a full backpack is lost; surface it in the toast once loot grows.
+func add_loot(items: Array[ItemData], gold: int) -> void:
+	for item in items:
+		backpack.add(item)
+	backpack_gold += maxi(gold, 0)
+	backpack_changed.emit()
+	loot_added.emit(items, gold)
+
+
+func consume_blue_stone() -> bool:
+	return backpack.remove(BLUE_STONE, 1)
+
+
+func lose_backpack() -> void:
+	backpack_gold = 0
+	backpack.clear()
+
+
+func take_backpack_gold() -> int:
+	var gold: int = backpack_gold
+	backpack_gold = 0
+	backpack_changed.emit()
+	return gold
 
 
 func add_weapon(data: WeaponData) -> int:
@@ -56,11 +105,13 @@ func get_equipped() -> WeaponData:
 	return owned_weapons[equipped_index]
 
 
-func reset_inventory() -> void:
-	var weapon_data: WeaponData = _default_data()
-	var base: Array[WeaponData] = []
-	if weapon_data != null:
-		base.append(weapon_data)
+## Sin base_weapons (perfil ausente) se arranca con el arma por defecto / Without base_weapons (no profile) start with the default weapon
+func reset_inventory(base_weapons: Array[WeaponData] = []) -> void:
+	var base: Array[WeaponData] = base_weapons.duplicate()
+	if base.is_empty():
+		var weapon_data: WeaponData = _default_data()
+		if weapon_data != null:
+			base.append(weapon_data)
 	owned_weapons = base
 	equipped_index = 0
 	inventory_changed.emit(owned_weapons)

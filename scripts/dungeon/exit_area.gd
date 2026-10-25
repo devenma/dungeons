@@ -7,6 +7,7 @@ extends Area2D
 
 signal exit_requested
 
+## Zona EXIT donde está montada / EXIT zone it is mounted in
 @export var zone_id: int = 0
 
 var _player_inside: bool = false

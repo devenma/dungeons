@@ -39,8 +39,8 @@ func _interact_event() -> InputEventKey:
 
 
 func _press_interact(exit: Area2D) -> void:
-	# Headless: routed straight into _unhandled_input (physical-keycode
-	# binding is the reliable action-match path per prior apply lessons).
+	# Headless: routed straight into _unhandled_input; `interact` is bound by
+	# physical keycode, so the synthetic event action-matches.
 	exit._unhandled_input(_interact_event())
 
 

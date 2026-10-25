@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="EnemyData" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://resources/enemies/enemy_data.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/items/slime_drops.tres" id="2"]
 
 [resource]
 script = ExtResource("1")
@@ -10,3 +11,4 @@ damage = 8
 detect_radius = 120.0
 attack_range = 20.0
 attack_cooldown = 1.2
+drop_table = ExtResource("2")

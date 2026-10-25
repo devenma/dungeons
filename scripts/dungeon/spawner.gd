@@ -3,7 +3,8 @@ extends Node
 ## Spawns floor content per zone type (CZ-1..CZ-4):
 ##   COMBAT — enemies_per_zone instances of enemy_scene at random interior
 ##            tiles; tracks deaths; the zone clears and emits zone_cleared
-##            exactly once when the count reaches 0.
+##            exactly once when the count reaches 0. Each death rolls the
+##            enemy's EnemyData.drop_table into `loot_found`.
 ##   REWARD — one seeded chest on an interior tile; the zone stays
 ##            auto-clear (cleared=true, no door gating).
 ##   START / EXIT — no content.
@@ -14,6 +15,9 @@ signal zone_cleared(zone_id: int)
 ## Relay-only grant event: the chest emits `granted`, the Spawner re-emits
 ## it as `weapon_granted`; DungeonManager binds RunManager to it (PF-1).
 signal weapon_granted(weapon_data: WeaponData)
+## Relay-only loot event (chests and enemy drops); DungeonManager binds
+## RunManager.add_loot to it.
+signal loot_found(items: Array[ItemData], gold: int)
 
 const TILE_SIZE: int = DungeonGeometry.TILE_SIZE
 # Local alias: referenced by preloaded script instead of the global
@@ -32,16 +36,23 @@ const DEFAULT_REWARD_POOL_PATHS: Array[String] = [
 	"res://resources/weapons/staff_basic.tres",
 ]
 
+## Enemigo de las zonas COMBAT / COMBAT zone enemy
 @export var enemy_scene: PackedScene = preload("res://scenes/enemies/slime.tscn")
+## Enemigos por zona COMBAT / Enemies per COMBAT zone
 @export var enemies_per_zone: int = 2
 @export var chest_scene: PackedScene = preload("res://scenes/dungeon/chest.tscn")
+## Armas que puede dar el cofre; vacío = DEFAULT_REWARD_POOL_PATHS / Weapons the chest can grant; empty = DEFAULT_REWARD_POOL_PATHS
 @export var chest_weapon_pool: Array[WeaponData] = []
 
 var _zone_by_id: Dictionary = {}         # zone_id -> Zone
 var _remaining_by_zone: Dictionary = {}  # zone_id -> alive enemies
+## Tiradas de botín de enemigos, sembradas por piso / Enemy loot rolls, seeded per floor
+var _loot_rng: RandomNumberGenerator = RandomNumberGenerator.new()
 
 
 func spawn_content(layout, parent_node: Node) -> void:
+	var floor_seed: int = layout.floor_seed
+	_loot_rng.seed = floor_seed ^ ChestScript.LOOT_SALT
 	for zone in layout.zones:
 		var z := zone as Zone
 		_zone_by_id[z.id] = z
@@ -61,11 +72,14 @@ func _spawn_combat(layout, zone: Zone, parent_node: Node) -> void:
 	_remaining_by_zone[zone.id] = enemies_per_zone
 	for i in range(enemies_per_zone):
 		var tile: Vector2i = _random_interior_tile(rng, zone)
-		var enemy := enemy_scene.instantiate() as CharacterBody2D
+		var enemy: CharacterBody2D = enemy_scene.instantiate() as CharacterBody2D
 		var health := enemy.get_node("Health") as HealthComponent
 		# Connect BEFORE add_child: death could fire as soon as it enters
 		# the tree (CC-2).
 		health.died.connect(_on_enemy_died.bind(zone.id))
+		var enemy_data: EnemyData = enemy.get("enemy_data") as EnemyData
+		if enemy_data != null and enemy_data.drop_table != null:
+			health.died.connect(_on_enemy_loot.bind(enemy_data.drop_table))
 		enemy.position = Vector2(
 			tile.x * TILE_SIZE + TILE_SIZE / 2.0,
 			tile.y * TILE_SIZE + TILE_SIZE / 2.0
@@ -110,6 +124,7 @@ func _spawn_reward(layout, zone: Zone, parent_node: Node) -> void:
 	# Connect BEFORE add_child: a grant could fire as soon as the chest
 	# is in the tree and the player is inside (§44.16).
 	chest.granted.connect(_on_chest_granted)
+	chest.loot_found.connect(loot_found.emit)
 	parent_node.add_child(chest)
 	# REWARD stays auto-clear: no door gating, no zone_cleared emission.
 	zone.cleared = true
@@ -128,6 +143,13 @@ func _effective_weapon_pool() -> Array[WeaponData]:
 
 func _on_chest_granted(data: WeaponData) -> void:
 	weapon_granted.emit(data)
+
+
+func _on_enemy_loot(table: DropTable) -> void:
+	var items: Array[ItemData] = table.roll_items(_loot_rng)
+	var gold: int = table.roll_gold(_loot_rng)
+	if not items.is_empty() or gold > 0:
+		loot_found.emit(items, gold)
 
 
 func _on_enemy_died(zone_id: int) -> void:

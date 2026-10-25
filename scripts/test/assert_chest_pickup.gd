@@ -48,8 +48,7 @@ func _interact_event() -> InputEventKey:
 
 func _press_interact(chest: Area2D) -> void:
 	# Headless: routed straight into _unhandled_input. `interact` is bound
-	# via physical_keycode, so the synthetic event action-matches (the
-	# keycode-bound path is the unreliable one per prior apply lessons).
+	# via physical_keycode, so the synthetic event action-matches.
 	chest._unhandled_input(_interact_event())
 
 
@@ -59,9 +58,9 @@ func _on_spawn_grant(data: WeaponData) -> void:
 
 
 ## Builds a fresh Spawner + container, spawns content for the given zones
-## and returns everything needed to probe or clean up the run. The actual
-## production DungeonManager handler is wired (mirroring step 6) against
-## the production-holder RunManager, so PF-1 runs for real.
+## and returns everything needed to probe or clean up the run. The real
+## DungeonManager handler is wired as in _start_floor against the
+## production-holder RunManager, so PF-1 runs for real.
 func _spawn_run(floor_seed: int, zones: Array, production_holder: Node) -> Dictionary:
 	_relay_count = 0
 	_last_relay_data = null
@@ -137,9 +136,8 @@ func _make_production_nodes(rm: RunManager) -> Node:
 
 
 func _run() -> void:
-	# Physics needs an in-tree RunManager? No: chest grants route through
-	# the standalone production holder; the HUD block uses its own
-	# in-tree sibling (root/RunManager) to exercise signal-driven updates.
+	# Chest grants route through the standalone production holder; the HUD
+	# block uses its own in-tree root/RunManager for signal-driven updates.
 	var run_manager_state: RunManager = RunManager.new()
 	run_manager_state.name = "ProductionRunManager"
 	var production_holder: Node = _make_production_nodes(run_manager_state)
@@ -276,7 +274,11 @@ func _run() -> void:
 	_check(toast.text == "Picked up: %s" % staff.weapon_name,
 			"PF-3: reused label shows the latest grant (one toast)")
 	toast._on_toast_timeout()
-	await _frames(3)
+	# El tween avanza en process, no en physics: varios physics_frame pueden caer antes de
+	# un solo process y dejar alpha en 1.0. Se espera en tiempo de juego a que termine.
+	# The tween steps on process, not physics: several physics_frames can land before one
+	# process step and leave alpha at 1.0. Wait in game time until the fade is over.
+	await create_timer(ToastScript.FADE_SECONDS + 0.1).timeout
 	_check(toast.modulate.a < 1.0, "PF-3: toast fades after the timer")
 	holder.queue_free()
 	production_holder.free()

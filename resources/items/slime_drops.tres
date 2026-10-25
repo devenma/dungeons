@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="DropTable" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://resources/items/drop_table.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/items/slime_gel.tres" id="2"]
+[ext_resource type="Resource" path="res://resources/items/bone_shard.tres" id="3"]
+[ext_resource type="Resource" path="res://resources/items/blue_stone.tres" id="4"]
+
+[resource]
+script = ExtResource("1")
+items = Array[Resource]([ExtResource("2"), ExtResource("3"), ExtResource("4")])
+chances = Array[float]([0.6, 0.2, 0.05])
+gold_min = 1
+gold_max = 3
