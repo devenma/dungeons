@@ -92,7 +92,7 @@ confiable y feel · **P1** vertical slice v2 · **P2** profundidad · **P3** con
 
 ### 1.8. Herramientas de desarrollo
 
-- 31 tests headless (`scripts/test/`), todos verdes.
+- 33 tests headless (`scripts/test/`), todos verdes.
 - **Advertencia:** no re-ejecutar `scripts/tools/build_dungeon_tileset.gd`. Sobrescribe las colisiones y los ajustes autorados a mano en `tilesets/dungeons_v2.tres`.
 - Atajo de debug **N** (acción `debug_next_floor`): salta al siguiente piso. Solo corre en builds de debug.
 
@@ -127,9 +127,9 @@ Ya está en `main` y documentado en §1: knockback, i-frames, hit flash, pausa y
 - [x] Cámara en zonas más chicas que el viewport: resuelto por el mínimo de 2×2 celdas (512×512 px > 480×270).
 
 **Feel de combate**
-- [ ] Hit-stop al impactar.
-- [ ] Visual del swing de la espada (hoy solo existe la hitbox).
-- [ ] Combo de 3 golpes en `sword.gd`.
+- [x] Hit-stop al impactar.
+- [x] Visual del swing de la espada (arco procedural, sin arte).
+- [x] Combo de 3 golpes en `sword.gd`.
 - [ ] Animaciones de 4 direcciones (Idle/Walk Up, Side, Down).
 
 **Estabilidad y docs**

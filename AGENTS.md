@@ -542,7 +542,7 @@ Status Effects
 
 Una entidad con vida debería poder recibir información de daño de forma genérica.
 
-Estado actual: el knockback (`KnockbackComponent`, decae en 0.2 s), los i-frames del jugador (`HealthComponent.invulnerability_seconds`, 0.5 s) y el hit flash (`HitFlash`) ya existen; el hit-stop y el combo de 3 todavía no.
+Estado actual: el knockback (`KnockbackComponent`, decae en 0.2 s), los i-frames del jugador (`HealthComponent.invulnerability_seconds`, 0.5 s), el hit flash (`HitFlash`), el hit-stop (`HitStop`, en `HealthComponent`) y el combo de 3 (`sword.gd`) ya existen; el swing se dibuja con un arco procedural. Falta el arte de las animaciones de 4 direcciones.
 
 El sistema podrá crecer posteriormente para soportar:
 
@@ -1450,7 +1450,7 @@ Cuando haya dudas sobre qué desarrollar a continuación, priorizar:
 
 ```text
 1. ~~Arreglar `_merge_cells` (rectángulos exactos + tamaño mínimo de zona)~~ ✅ hecho
-2. Hit-stop + visual del swing + combo de 3
+2. ~~Hit-stop + visual del swing + combo de 3~~ ✅ hecho
 3. ~~`ProfileState` + oro + `_return_to_town()`~~ ✅ hecho
 4. Pueblo mínimo con tienda (scenes/hub/guild_tavern.tscn)
 5. Pool de plantillas de sala
