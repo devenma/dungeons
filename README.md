@@ -29,9 +29,9 @@ Morir no borra el progreso: perdés el loot que llevabas en la mochila y la seed
 | Fase 7 — Ranged (arco + bastón) | ✅ | Una sola arma equipada a la vez; `attack` ataca y Tab (`swap_weapon`) cambia el arma; arco y bastón salen de cofres en zonas REWARD |
 | P0 — Combate y estabilidad | ✅ | Knockback (decae en 0.2 s), i-frames del jugador (0.5 s), hit flash y menú de pausa con Esc (PR #6) |
 | Fase 8 — Habilidades | ⏳ | Parte A (`weapon-equip`) archivada; parte B (`abilities`, kits por arma) pendiente |
-| Fase 9+ — Progresión, pueblo y jefes | ⏳ | Pendiente: perfil persistente, oro, pueblo, economía y bosses |
+| Fase 9+ — Progresión, pueblo y jefes | ⏳ | Perfil persistente, oro y retorno al pueblo ✅; pendiente: tienda/economía, progresión de equipo y bosses |
 
-Los tests headless pasan: **28 tests verdes** (`scripts/test/`).
+Los tests headless pasan: **31 tests verdes** (`scripts/test/`).
 
 ## Cómo ejecutar
 
@@ -69,7 +69,7 @@ Main
 └── UI (CanvasLayer)
 ```
 
-`ProfileState` guarda lo que sobrevive a la muerte: oro bancado, equipo comprado, desbloqueos y progreso del pueblo. `RunManager` es **solo** el estado de una expedición (seed del dungeon, piso actual, loot de la mochila) y muere con ella. `WorldClock` maneja las fases día/noche y `Town` (`scenes/town/`) es la escena del pueblo, todavía sin flujo completo; su base natural es `scenes/hub/guild_tavern.tscn`.
+`ProfileState` guarda lo que sobrevive a la muerte: oro bancado, equipo comprado, desbloqueos y progreso del pueblo. `RunManager` es **solo** el estado de una expedición (seed del dungeon, piso actual, loot de la mochila) y muere con ella. `WorldClock` maneja las fases día/noche y `Town` (`scenes/town/town.tscn`) es el pueblo mínimo (placeholder: se vuelve al morir y `interact` reinicia la expedición). La vieja `scenes/hub/guild_tavern.tscn` no carga: le faltan PNGs en el repo.
 
 El piso se genera mediante **grid-merging**: se divide el área en una grilla, se mergean celdas contiguas en zonas, y cada zona recibe un tipo funcional (START, COMBAT, REWARD, EXIT). Todo el piso se renderiza en un TileMap único que consume el tileset pre-construido `res://tilesets/dungeons_v2.tres` (atlas `assets/Examples/Background_min_all_v2_FIXED.png`, 32px, físicas de pared autoradas en el editor). Las puertas se colocan en posiciones irregulares sobre aristas compartidas. La dirección es conservar esa topología y llenar el interior de cada zona con plantillas de sala hechas a mano (`scenes/rooms/`).
 
@@ -90,7 +90,7 @@ Orden técnico sugerido (detalle y justificación en [`DECISIONES.md`](DECISIONE
 
 1. ~~Arreglar `_merge_cells`: rectángulos exactos y tamaño mínimo de zona.~~ ✅ hecho (partición guillotina, mínimo 2×2 celdas).
 2. Hit-stop + visual del swing + combo de 3.
-3. `ProfileState` + oro + `_return_to_town()`.
+3. ~~`ProfileState` + oro + `_return_to_town()`.~~ ✅ hecho.
 4. Pueblo mínimo con tienda, sobre `scenes/hub/guild_tavern.tscn`.
 5. Pool de plantillas de sala, ya con el generador confiable.
 6. `WorldClock` día/noche + techo de pisos por dungeon + zona BOSS.

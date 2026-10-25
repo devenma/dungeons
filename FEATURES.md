@@ -92,7 +92,7 @@ confiable y feel · **P1** vertical slice v2 · **P2** profundidad · **P3** con
 
 ### 1.8. Herramientas de desarrollo
 
-- 28 tests headless (`scripts/test/`), todos verdes.
+- 31 tests headless (`scripts/test/`), todos verdes.
 - **Advertencia:** no re-ejecutar `scripts/tools/build_dungeon_tileset.gd`. Sobrescribe las colisiones y los ajustes autorados a mano en `tilesets/dungeons_v2.tres`.
 - Atajo de debug **N** (acción `debug_next_floor`): salta al siguiente piso. Solo corre en builds de debug.
 
@@ -109,7 +109,7 @@ confiable y feel · **P1** vertical slice v2 · **P2** profundidad · **P3** con
 | `guild_tavern.tscn` no está conectada | Escena de hub sin flujo de entrada ni salida. |
 | Sin audio | No hay música ni SFX. |
 | La muerte reinicia al instante | No hay pantalla de muerte ni resumen de la run. |
-| No existen `ProfileState`, oro ni `DungeonData` | La muerte sigue siendo wipe total; no hay economía ni techo de pisos. |
+| No existen `DungeonData` ni la tienda | No hay techo de pisos ni economía de compra/venta; el pueblo es un placeholder. |
 | No existe maná ni coste dual | Todas las habilidades gastan solo stamina; el maná llega con la Fase 8 parte B (D19). |
 | Doble `RunManager` (autoload + nodo en escena) | Riesgo de usar la instancia equivocada. |
 | Los `.uid` están en el gitignore | Los UIDs cambian entre máquinas. |
@@ -140,13 +140,13 @@ Ya está en `main` y documentado en §1: knockback, i-frames, hit flash, pausa y
 ### P1 — vertical slice v2
 
 **Perfil, economía y pueblo**
-- [ ] `ProfileState` persistente en `user://` (oro, equipo, desbloqueos, pueblo).
-- [ ] Oro: drops de enemigos (oro y curación) y contador en el HUD.
-- [ ] Retorno al pueblo en vez de wipe (`_return_to_town()`), perdiendo solo el loot de la mochila.
+- [x] `ProfileState` persistente en `user://` (oro, equipo; desbloqueos y pueblo llegan con D2).
+- [~] Oro: drops de enemigos y contador en el HUD (hecho el oro; falta la curación).
+- [x] Retorno al pueblo en vez de wipe (`_return_to_town()`), perdiendo el loot de la run.
 - [ ] Objeto de retorno que conserva el loot.
-- [ ] Pueblo mínimo con tienda (vender loot, comprar equipo) sobre `scenes/hub/guild_tavern.tscn`.
+- [ ] Pueblo mínimo con tienda (vender loot, comprar equipo). El placeholder vive en `scenes/town/town.tscn`; `scenes/hub/guild_tavern.tscn` no carga (le faltan PNGs).
 - [ ] `WorldClock` con fases día/noche.
-- [ ] Guardado del perfil y de los ajustes (`user://`).
+- [~] Guardado en `user://`: perfil hecho (`profile.json`); ajustes pendientes.
 
 **Expedición y jefe**
 - [ ] `DungeonData` (id, cantidad de pisos, jefe) y techo de 3–4 pisos.

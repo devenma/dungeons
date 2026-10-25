@@ -80,10 +80,10 @@ Dos capas de estado, explícitas y separadas:
 Al morir: volvés al pueblo, perdés el loot no asegurado, se re-rollea la seed del dungeon. El equipo
 equipado, el oro bancado y los desbloqueos quedan.
 
-**[IMPACTO]** Hoy `DungeonManager._on_player_died()` llama a `RunManager.start_new_run()`, que hace
-`randi()`, `current_floor = 0` y `reset_inventory()`. Es un wipe total. El cambio es quirúrgico: un
-`ProfileState` nuevo y reemplazar esa llamada por un `_return_to_town()`. No hay que reescribir el
-generador.
+**[IMPACTO]** ✅ **Hecho.** `DungeonManager._on_player_died()` llamaba a `RunManager.start_new_run()`, que
+hacía `randi()`, `current_floor = 0` y `reset_inventory()`: wipe total. Ahora `_return_to_town()` recarga
+la escena del pueblo y el perfil (`ProfileState`) sobrevive en el autoload. El loot de la run muere con la
+escena. No hubo que reescribir el generador.
 
 **Alternativas descartadas:**
 - *Perder todo menos los desbloqueos* (roguelite clásico): pelea con el pueblo persistente y con Stardew.
@@ -332,7 +332,7 @@ validación de solvabilidad necesitan conocerlos cuando existan las plantillas.
    guillotina + `FloorData.zone_min_cells`. Desbloquea D3.
 2. **Hit-stop + visual del swing + combo de 3** (D4). Todo local a `sword.gd` y al combate, sin tocar
    estado. El feel se cierra antes de meter contenido.
-3. **`ProfileState` + oro + `_return_to_town()`** (D1, D11). Es el cambio más chico de los grandes.
+3. ~~**`ProfileState` + oro + `_return_to_town()`** (D1, D11)~~ ✅ hecho.
 4. **Pueblo mínimo con tienda** (D2), sobre `scenes/hub/guild_tavern.tscn`.
 5. **Pool de plantillas de sala** (D3), ya con el generador confiable.
 6. **`WorldClock` día/noche + techo de pisos por dungeon + zona BOSS** (D2, D10).
@@ -348,13 +348,13 @@ Fuera de este orden inmediato: **D19 (maná)** entra junto con los kits de habil
 
 | Sistema | Estado | Qué cambia si se aprueban D1–D4 |
 |---|---|---|
-| `RunManager` | Seed, piso, armas, arma equipada | Se parte en `ProfileState` (persistente) + `RunManager` (expedición) |
-| `DungeonManager._on_player_died()` | `start_new_run()`: wipe total | Pasa a `_return_to_town()`, conservando perfil |
+| `RunManager` | Seed, piso, armas, arma equipada | ✅ partido: `ProfileState` (persistente) + `RunManager` (expedición) |
+| `DungeonManager._on_player_died()` | `start_new_run()`: wipe total | ✅ pasa a `_return_to_town()`, conservando el perfil |
 | Generador (grid-merging) | Topología + zonas + BFS START→EXIT; partición exacta con mínimo 2×2 (hecho) | Pool de plantillas y solvabilidad con llaves |
 | `Spawner` | 2 slimes fijos por zona COMBAT | Oleadas y cantidad por piso (D4, D10) |
 | Tipos de zona | START, COMBAT, REWARD, EXIT | Suma BOSS (D10) y, más adelante, EVENT/SHOP |
 | Pisos | Infinitos | Techo por dungeon (`DungeonData`) |
-| Oro / perfil | No existen | `ProfileState` + oro + tienda |
+| Oro / perfil | No existen | ✅ `ProfileState` + oro; falta la tienda |
 | Textos de UI | Hardcodeados | `tr()` + traducciones (D16) |
 | `scenes/hub/guild_tavern.tscn` | Huérfana, sin flujo | Base del pueblo (D2) |
 | Combate | Knockback, i-frames y hit flash hechos | Falta hit-stop, swing visual, combo y 4 direcciones (D4) |
