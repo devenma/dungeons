@@ -1,8 +1,8 @@
 extends SceneTree
 
-## Zone-clear assertion (phase 6): a COMBAT zone with 2 slimes spawns them
+## Zone-clear assertion (phase 6): a one-screen COMBAT zone spawns 3 enemies
 ## at inset interior tiles (CZ-2), clears and emits zone_cleared exactly
-## once when both die (CZ-3), and REWARD zones spawn one seeded chest and
+## once when all die (CZ-3), and REWARD zones spawn one seeded chest and
 ## stay auto-clear without emitting (CZ-4 + RC-2). Exit 0 = pass, 1 = fail.
 
 var _cleared_events: Array[int] = []
@@ -15,6 +15,7 @@ const ChestScript: GDScript = preload("res://scripts/dungeon/chest.gd")
 class FakeLayout:
 	var zones: Array = []
 	var floor_seed: int = 0
+	var floor_number: int = 1
 
 
 func _initialize() -> void:
@@ -74,7 +75,7 @@ func _run() -> void:
 	for child in container.get_children():
 		if child.get_node_or_null("Health") != null:
 			enemies.append(child)
-	_check(enemies.size() == 2, "CZ-1: 2 slimes spawned in COMBAT zone")
+	_check(enemies.size() == 3, "CZ-1: 3 enemies (one screen) spawned in COMBAT zone")
 
 	# Interior band per DungeonGeometry: 32px tiles, inset = wall ring +
 	# floor edge (2 tiles). Spawn px range for tile_rect (2, 2, 10, 10):
