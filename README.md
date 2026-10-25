@@ -31,7 +31,7 @@ Morir no borra el progreso: perdés el loot que llevabas en la mochila y la seed
 | Fase 8 — Habilidades | ⏳ | Parte A (`weapon-equip`) archivada; parte B (`abilities`, kits por arma) pendiente |
 | Fase 9+ — Progresión, pueblo y jefes | ⏳ | Pendiente: perfil persistente, oro, pueblo, economía y bosses |
 
-Los tests headless pasan: **27 tests verdes** (`scripts/test/`).
+Los tests headless pasan: **28 tests verdes** (`scripts/test/`).
 
 ## Cómo ejecutar
 
@@ -88,14 +88,14 @@ Ver [`AGENTS.md`](AGENTS.md) para la documentación completa de arquitectura y c
 
 Orden técnico sugerido (detalle y justificación en [`DECISIONES.md`](DECISIONES.md)):
 
-1. Arreglar `_merge_cells`: rectángulos exactos y tamaño mínimo de zona.
+1. ~~Arreglar `_merge_cells`: rectángulos exactos y tamaño mínimo de zona.~~ ✅ hecho (partición guillotina, mínimo 2×2 celdas).
 2. Hit-stop + visual del swing + combo de 3.
 3. `ProfileState` + oro + `_return_to_town()`.
 4. Pueblo mínimo con tienda, sobre `scenes/hub/guild_tavern.tscn`.
 5. Pool de plantillas de sala, ya con el generador confiable.
 6. `WorldClock` día/noche + techo de pisos por dungeon + zona BOSS.
 
-El paso 1 es prerrequisito del 5. Los pasos 2 y 3 son independientes entre sí y pueden ir en paralelo.
+El paso 1 ya está hecho y era prerrequisito del 5. Los pasos 2 y 3 son independientes entre sí y pueden ir en paralelo.
 
 ## Créditos
 

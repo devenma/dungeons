@@ -830,7 +830,7 @@ El piso completo se renderiza en un **TileMap único** que consume el recurso pr
 
 Dirección (D3): **mundo exterior fijo + dungeons procedurales armadas con salas diseñadas a mano.** El grid-merging sigue definiendo la topología y los tipos de zona; el interior de cada zona sale de un pool de plantillas (`scenes/rooms/`) por tipo y tamaño, elegidas con la seed. El gating es por **llaves y puertas cerradas**, más un objeto que abre un atajo.
 
-Eso impone dos requisitos al generador actual: `zone.tile_rect` debe ser un rectángulo **exacto** (hoy `_merge_cells` puede solapar bounding boxes en ~5% de los layouts) y cada zona debe tener un **tamaño mínimo** (hoy una zona de 1 celda, 256×256 px, es más chica que el viewport de 480×270 px). Ambos son deuda P0 y prerrequisito del pool de plantillas.
+Eso imponía dos requisitos al generador, **ya resueltos**: `zone.tile_rect` es un rectángulo **exacto** (partición guillotina con seed: sin solapes ni huecos) y cada zona respeta un **tamaño mínimo** (`FloorData.zone_min_cells`, 2×2 celdas = 512×512 px, que contiene el viewport de 480×270 px). Con eso el pool de plantillas es una capa encima, no una reescritura.
 
 Algunas zonas pueden incluir **obstáculos movibles** (bloques, pilares caídos, escombros) que el jugador desplaza gastando **stamina**. No son habilidades: usan el mismo protocolo de gasto que los ataques. Su colocación viene de las plantillas de sala y no pueden romper la solvabilidad (D20).
 
@@ -862,7 +862,7 @@ crear seed
 dimensionar grilla
        │
        ▼
-mergear celdas en zonas (region growth)
+partir la grilla en zonas rectangulares (partición guillotina)
        │
        ▼
 detectar vecinos
@@ -917,7 +917,7 @@ Exit
 En el código actual existen START, COMBAT, REWARD y EXIT. **BOSS** entra con D10
 (piso de jefe al final de cada dungeon); EVENT y SHOP quedan para más adelante.
 
-Las zonas se generan mediante grid-merging: se divide el piso en una grilla de celdas, se mergean celdas contiguas en clusters rectangulares, y cada cluster recibe un tipo de zona. Todas las celdas deben pertenecer exactamente a una zona (sin espacios muertos); hoy `_merge_cells` puede solapar bounding boxes, deuda P0.
+Las zonas se generan mediante grid-merging: se divide el piso en una grilla de celdas y se parte en zonas rectangulares con cortes guillotina; cada zona recibe un tipo de zona. Todas las celdas pertenecen exactamente a una zona (sin solapes ni espacios muertos).
 
 ---
 
@@ -932,7 +932,7 @@ Las zonas son la unidad funcional del piso. Cada zona tiene:
 - una lista de puertas que la conectan con sus vecinas
 - un estado cleared (si el contenido fue resuelto)
 
-El `tile_rect` debe ser el rectángulo **exacto** de las celdas de la zona. Hoy `_merge_cells` puede solapar bounding boxes (~5% de los layouts), lo que impide colocar plantillas de sala; es deuda P0. Cada zona necesita además un **tamaño mínimo** para que la cámara y la plantilla funcionen. El gating entre zonas se hace con **llaves y puertas cerradas**.
+El `tile_rect` es el rectángulo **exacto** de las celdas de la zona (partición guillotina con seed, sin solapes). Cada zona respeta además un **tamaño mínimo** (`FloorData.zone_min_cells`, 2×2 celdas por defecto) para que la cámara y la plantilla funcionen. El gating entre zonas se hace con **llaves y puertas cerradas**.
 
 Las zonas se generan proceduralmente con region-growth a partir de semillas determinísticas. El tamaño de cada zona varía según cuántas celdas se mergearon.
 
@@ -977,12 +977,13 @@ max_doors_per_edge               # Máximo de puertas por arista compartida
 max_generation_retries           # Intentos antes del fallback
 reward_ratio                     # Probabilidad de que una zona no-START/EXIT sea REWARD
 zone_count_by_floor_depth        # Mapa piso → [min, max] de zonas
-start_zone_max_cells             # Tope de celdas de la zona START (2×1 por defecto)
+zone_min_cells                   # Tamaño mínimo de zona en celdas (2×2 por defecto)
+start_zone_max_cells             # Tope de celdas de la zona START (2×2 por defecto)
 enemy_health_multiplier
 enemy_damage_multiplier
 ```
 
-Falta un **mínimo de celdas por zona** (prerrequisito de las plantillas de sala, D3). Los multiplicadores `enemy_health_multiplier` y `enemy_damage_multiplier` existen pero **hoy no se leen**: deben consumirse en `Spawner` al instanciar enemigos; hasta entonces la dificultad no escala con el piso.
+`zone_min_cells` fija el **mínimo de celdas por zona** (2×2 = 512×512 px): la partición guillotina nunca genera zonas menores. Los multiplicadores `enemy_health_multiplier` y `enemy_damage_multiplier` existen pero **hoy no se leen**: deben consumirse en `Spawner` al instanciar enemigos; hasta entonces la dificultad no escala con el piso.
 
 La dificultad no debe aumentar únicamente mediante multiplicadores de estadísticas.
 
@@ -1424,7 +1425,7 @@ Sin XP ni niveles: el poder viene del equipo del pueblo y de las mejoras de expe
 
 **Estado: ⏳ pendiente.**
 
-- Arreglar `_merge_cells` (rectángulos exactos) y tamaño mínimo de zona.
+- [x] Arreglar `_merge_cells` (rectángulos exactos) y tamaño mínimo de zona: hecho con partición guillotina + `FloorData.zone_min_cells`.
 - Pool de plantillas de sala en `scenes/rooms/`.
 - Llaves y puertas cerradas.
 - Validación de solvabilidad en el generador.
@@ -1446,7 +1447,7 @@ Sin XP ni niveles: el poder viene del equipo del pueblo y de las mejoras de expe
 Cuando haya dudas sobre qué desarrollar a continuación, priorizar:
 
 ```text
-1. Arreglar `_merge_cells` (rectángulos exactos + tamaño mínimo de zona)
+1. ~~Arreglar `_merge_cells` (rectángulos exactos + tamaño mínimo de zona)~~ ✅ hecho
 2. Hit-stop + visual del swing + combo de 3
 3. `ProfileState` + oro + `_return_to_town()`
 4. Pueblo mínimo con tienda (scenes/hub/guild_tavern.tscn)
@@ -1454,7 +1455,7 @@ Cuando haya dudas sobre qué desarrollar a continuación, priorizar:
 6. `WorldClock` día/noche + techo de pisos por dungeon + zona BOSS
 ```
 
-El paso 1 es prerrequisito del 5. Los pasos 2 y 3 son independientes entre sí y pueden ir en paralelo.
+El paso 1 ya está hecho y era prerrequisito del 5. Los pasos 2 y 3 son independientes entre sí y pueden ir en paralelo.
 
 Fuera de este orden inmediato, el maná (D19) entra junto con los kits de habilidad (Fase 8 parte B) y los obstáculos movibles (D20) entran con el pool de plantillas de sala.
 
