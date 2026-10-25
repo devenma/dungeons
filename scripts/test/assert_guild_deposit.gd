@@ -1,7 +1,8 @@
 extends SceneTree
 
 ## Guild assertion: the storage chest (real `interact` with the player on it)
-## moves the backpack into guild storage, banks the carried gold and saves;
+## opens the backpack panel, whose Store all button moves the backpack into
+## guild storage, banks the carried gold and saves;
 ## the expedition door starts floor 1; enemy and chest loot reach the
 ## backpack through the Spawner relay. Exit 0 = pass, 1 = fail.
 
@@ -66,6 +67,11 @@ func _run() -> void:
 	player.global_position = chest.global_position
 	await _frames(3)
 	_press_interact(chest)
+	var panel: Control = main.get_node("UI/BackpackPanel")
+	_check(panel.visible and run_manager.backpack.count_of(gel) == 2, "chest: opens the panel without depositing")
+	var deposit_button: Button = panel.get_node("%DepositButton")
+	deposit_button.pressed.emit()
+	panel.call("set_open", false)
 	_check(run_manager.backpack.is_empty() and run_manager.backpack_gold == 0, "deposit: backpack emptied")
 	_check(profile.storage.count_of(gel) == 2 and profile.storage.count_of(stone) == 1,
 			"deposit: items moved to guild storage")

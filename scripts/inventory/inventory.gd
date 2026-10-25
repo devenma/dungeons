@@ -90,6 +90,25 @@ func move_all_to(target: Inventory) -> void:
 	changed.emit()
 
 
+## Mueve hasta `amount` unidades del slot `index` a target; lo que no entra queda en el slot. Devuelve lo movido.
+## Moves up to `amount` units of slot `index` into target; whatever does not fit stays in the slot. Returns the moved count.
+func move_slot_to(index: int, target: Inventory, amount: int) -> int:
+	if index < 0 or index >= slots.size() or amount <= 0:
+		return 0
+	var item: ItemData = slots[index]["item"]
+	var count: int = slots[index]["count"]
+	var wanted: int = mini(amount, count)
+	var moved: int = wanted - target.add(item, wanted)
+	if moved == 0:
+		return 0
+	if moved == count:
+		slots.remove_at(index)
+	else:
+		slots[index]["count"] = count - moved
+	changed.emit()
+	return moved
+
+
 func to_dict() -> Dictionary:
 	var saved: Array = []
 	for slot in slots:

@@ -4,13 +4,14 @@ extends SceneTree
 ## one-shot on `interact`, spawned ONLY in REWARD zones through the
 ## Spawner on interior tiles (auto-clear), seeded for reproducible grant
 ## selection, and a grant flows into RunManager inventory + auto-equip
-## with HUD feedback (label refresh + one toast). Exit 0 = pass, 1 = fail.
+## with HUD feedback (icon refresh + one toast). Exit 0 = pass, 1 = fail.
 
 const ChestScript: GDScript = preload("res://scripts/dungeon/chest.gd")
 const SpawnerScript: GDScript = preload("res://scripts/dungeon/spawner.gd")
 const DmScript: GDScript = preload("res://scripts/dungeon/dungeon_manager.gd")
 const ToastScript: GDScript = preload("res://scripts/ui/pickup_toast.gd")
-const LabelScript: GDScript = preload("res://scripts/ui/weapon_label.gd")
+const WeaponVisuals: GDScript = preload("res://scripts/ui/weapon_visuals.gd")
+const HudScene: PackedScene = preload("res://scenes/ui/hud.tscn")
 
 var _failures: int = 0
 var _relay_count: int = 0
@@ -247,32 +248,43 @@ func _run() -> void:
 	root.add_child(hud_rm)
 	var holder := Node.new()
 	root.add_child(holder)
-	var toast: Label = ToastScript.new()
-	toast.set("run_manager_node_path", NodePath("../../RunManager"))
-	holder.add_child(toast)
-	var weapon_label: Label = LabelScript.new()
-	weapon_label.set("run_manager_node_path", NodePath("../../RunManager"))
-	holder.add_child(weapon_label)
-	_check(weapon_label.text == hud_rm.get_equipped().weapon_name,
-			"PF-2: label boot value reads get_equipped()")
+	var hud: Control = HudScene.instantiate()
+	holder.add_child(hud)
+	var toast: PanelContainer = hud.get_node("ToastArea/PickupToast")
+	var toast_text: Label = hud.get_node("%Text")
+	var toast_icons: HBoxContainer = hud.get_node("%Icons")
+	var weapon_icon: TextureRect = hud.get_node("WeaponFrame/WeaponIcon")
+	_check(weapon_icon.texture != null
+			and weapon_icon.texture == WeaponVisuals.icon(hud_rm.get_equipped()),
+			"PF-2: weapon icon boot value reads get_equipped()")
 	var toast_timer: Timer = toast.get_node_or_null("ToastTimer") as Timer
 	_check(toast_timer != null and toast_timer.one_shot,
 			"PF-3: toast has a one-shot fade timer")
 
-	# Live label refresh via the weapon_equipped signal chain.
+	# Live icon refresh via the weapon_equipped signal chain.
 	hud_rm.add_weapon(load("res://resources/weapons/bow_basic.tres"))
 	hud_rm.equip_weapon(hud_rm.owned_weapons.size() - 1)
-	_check(weapon_label.text == hud_rm.get_equipped().weapon_name,
-			"PF-2: label refreshed on weapon_equipped")
+	_check(weapon_icon.texture == WeaponVisuals.icon(hud_rm.get_equipped()),
+			"PF-2: icon refreshed on weapon_equipped")
 
-	# One toast per grant: a single reused label shows the newest grant.
+	# One toast per grant: a single reused panel shows the newest grant.
+	var picked_prefix: String = tr("ui.hud.picked_up") % ""
 	toast._on_weapon_granted(_last_relay_data)
-	_check(toast.text.begins_with("Picked up: "), "PF-3: toast text set on grant")
+	_check(toast_text.text.begins_with(picked_prefix), "PF-3: toast text set on grant")
 	_check(toast.modulate.a == 1.0, "PF-3: toast visible after grant")
 	var staff: WeaponData = load("res://resources/weapons/staff_basic.tres")
 	toast._on_weapon_granted(staff)
-	_check(toast.text == "Picked up: %s" % staff.weapon_name,
-			"PF-3: reused label shows the latest grant (one toast)")
+	_check(toast_text.text == tr("ui.hud.picked_up") % WeaponVisuals.display_name(staff),
+			"PF-3: reused panel shows the latest grant (one toast)")
+	_check(toast_icons.get_child_count() == 1, "PF-3: toast shows one icon for one weapon")
+	var gel: ItemData = load("res://resources/items/slime_gel.tres")
+	var loot: Array[ItemData] = [gel]
+	toast._on_loot_added(loot, 3)
+	_check(toast_icons.get_child_count() == 3,
+			"PF-3: loot appends item and gold icons to the visible toast")
+	_check(toast_text.text.contains(gel.display_name())
+			and toast_text.text.contains(tr("ui.hud.gold_amount") % 3),
+			"PF-3: loot names come from tr()")
 	toast._on_toast_timeout()
 	# El tween avanza en process, no en physics: varios physics_frame pueden caer antes de
 	# un solo process y dejar alpha en 1.0. Se espera en tiempo de juego a que termine.

@@ -1,10 +1,14 @@
-[gd_resource type="Resource" script_class="ItemData" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="ItemData" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://resources/items/item_data.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/art/items/vial_aguante.png" id="2"]
 
 [resource]
 script = ExtResource("1")
 id = &"slime_gel"
-name_key = "Slime Gel"
+name_key = "item.slime_gel.name"
+desc_key = "item.slime_gel.desc"
+icon = ExtResource("2")
+rarity = 1
 max_stack = 20
 value = 2

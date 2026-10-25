@@ -1,7 +1,7 @@
 extends SceneTree
 
 ## Inventory assertion: stacking up to max_stack, capacity overflow,
-## all-or-nothing remove, move_all_to leftovers and dict round trip with
+## all-or-nothing remove, move_all_to / move_slot_to leftovers and dict round trip with
 ## invalid entries skipped. Exit 0 = pass, 1 = fail.
 
 const InventoryScript: GDScript = preload("res://scripts/inventory/inventory.gd")
@@ -68,6 +68,12 @@ func _run() -> void:
 	source.move_all_to(big)
 	_check(source.is_empty() and big.count_of(gel) == 3 and big.count_of(stone) == 2,
 			"move_all_to: everything moved when it fits")
+
+	var pocket: Inventory = InventoryScript.new(1)
+	pocket.add(gel, 18)
+	_check(big.move_slot_to(1, pocket, 3) == 2 and big.count_of(gel) == 1 and pocket.count_of(gel) == 20,
+			"move_slot_to: partial fit moves what fits, the rest stays in the slot")
+	_check(big.move_slot_to(1, pocket, 1) == 0 and big.count_of(gel) == 1, "move_slot_to: full target moves nothing")
 
 	_check(_failures == 0, "inventory: all checks passed")
 	quit(0 if _failures == 0 else 1)

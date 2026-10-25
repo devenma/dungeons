@@ -1,10 +1,14 @@
-[gd_resource type="Resource" script_class="ItemData" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="ItemData" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://resources/items/item_data.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/art/items/huesos_dedo.png" id="2"]
 
 [resource]
 script = ExtResource("1")
 id = &"bone_shard"
-name_key = "Bone Shard"
+name_key = "item.bone_shard.name"
+desc_key = "item.bone_shard.desc"
+icon = ExtResource("2")
+rarity = 1
 max_stack = 20
 value = 3

@@ -1,0 +1,436 @@
+keys,es,en
+ui.hud.health,Vida,Health
+ui.hud.stamina,Aguante,Stamina
+ui.hud.mana,Maná,Mana
+ui.hud.gold,Oro: %d,Gold: %d
+ui.hud.floor,Piso %d,Floor %d
+ui.hud.floor_of,Piso %d de %d,Floor %d of %d
+ui.hud.weapon,Arma: %s,Weapon: %s
+ui.hud.blue_stones,Piedras azules: %d,Blue stones: %d
+ui.hud.picked_up,Recogido: %s,Picked up: %s
+ui.hud.no_stamina,Sin aliento,Out of breath
+ui.hud.no_mana,Sin maná,Out of mana
+ui.hud.pack_full,La mochila no da para más.,Your pack can't take any more.
+ui.hud.zone_locked,Las puertas se cierran.,The doors seal shut.
+ui.hud.zone_cleared,Silencio. Por ahora.,Silence. For now.
+ui.hud.door_locked,Cerrada. Hace falta una llave.,Locked. You need a key.
+ui.hud.key_obtained,"Tienes una llave. Algo, en este piso, está cerrado para ti.",You have a key. Something on this floor is locked against you.
+ui.hud.shortcut_opened,Se abre un atajo hacia arriba.,A shortcut opens upwards.
+ui.prompt.interact,%s Interactuar,%s Interact
+ui.prompt.talk,%s Hablar,%s Talk
+ui.prompt.open,%s Abrir,%s Open
+ui.prompt.pick_up,%s Recoger,%s Pick up
+ui.prompt.descend,%s Bajar,%s Go down
+ui.prompt.push,%s Empujar (gasta aguante),%s Push (costs stamina)
+ui.prompt.unlock,%s Abrir con llave,%s Unlock
+ui.inventory.title,Mochila,Pack
+ui.inventory.equipped,Equipado,Equipped
+ui.inventory.empty,Nada. Todavía.,Nothing. Yet.
+ui.inventory.use,Usar,Use
+ui.inventory.equip,Equipar,Equip
+ui.inventory.unequip,Quitar,Unequip
+ui.inventory.drop,Tirar,Drop
+ui.inventory.inspect,Examinar,Inspect
+ui.inventory.drop_confirm,"¿Tirarlo? Abajo, lo que se tira no se recupera.","Drop it? Down here, what you drop stays dropped."
+ui.inventory.value,Valor: %d oro,Value: %d gold
+ui.inventory.lost_on_death,Se pierde si mueres sin piedra azul.,Lost if you die without a blue stone.
+ui.inventory.slot_weapon,Arma,Weapon
+ui.inventory.slot_head,Cabeza,Head
+ui.inventory.slot_body,Cuerpo,Body
+ui.inventory.slot_hands,Manos,Hands
+ui.inventory.slot_feet,Pies,Feet
+ui.inventory.slot_cloak,Capa,Cloak
+ui.storage.title,Almacén del gremio,Guild storage
+ui.storage.deposit,Guardar,Store
+ui.storage.withdraw,Retirar,Take
+ui.storage.deposit_all,Guardar todo,Store all
+ui.storage.deposit_gold,Guardar oro,Bank gold
+ui.storage.gold_banked,Oro guardado: %d,Banked gold: %d
+ui.storage.safe_hint,Lo que guardes aquí no se pierde al morir.,Whatever you store here is kept when you die.
+ui.storage.full,El almacén está lleno.,Storage is full.
+ui.shop.buy,Comprar,Buy
+ui.shop.sell,Vender,Sell
+ui.shop.price,%d oro,%d gold
+ui.shop.not_enough,No te alcanza.,You can't afford it.
+ui.shop.confirm_sell_relic,Las reliquias no vuelven. ¿Vender igual?,Relics don't come back. Sell anyway?
+ui.shop.merchant_title,Lo de la Urraca,The Magpie's
+ui.shop.blacksmith_title,Fragua,Forge
+ui.shop.healer_title,Enfermería,Infirmary
+ui.shop.upgrade,Mejorar,Upgrade
+ui.shop.heal,Curar (%d oro),Heal (%d gold)
+ui.dialogue.continue,Continuar,Continue
+ui.dialogue.leave,Irse,Leave
+ui.dialogue.bounties,Encargos,Bounties
+ui.guild.name,Gremio del Farol,The Lantern Guild
+ui.guild.descend,Bajar a la Boca,Go down the Mouth
+ui.guild.descend_confirm,¿Bajar? Lo que lleves encima puede quedarse abajo.,Go down? Whatever you carry may stay below.
+ui.guild.day,Día %d,Day %d
+ui.guild.phase_day,Día,Day
+ui.guild.phase_night,Noche,Night
+ui.guild.return_title,De vuelta en el gremio,Back at the guild
+ui.guild.return_summary,Traes %d objetos y %d de oro.,You bring back %d items and %d gold.
+ui.dungeon.crypt.name,Cripta de San Ulmo,Crypt of Saint Ulmo
+ui.dungeon.crypt.floor_1,Las Galerías de Nichos,The Niche Galleries
+ui.dungeon.crypt.floor_2,El Osario,The Ossuary
+ui.dungeon.crypt.floor_3,La Fosa Común,The Common Pit
+ui.floor.title,Piso %d,Floor %d
+ui.floor.descend_prompt,Bajar al piso %d,Go down to floor %d
+ui.floor.descending.1,Bajas. El aire se pone tibio.,Down you go. The air turns warm.
+ui.floor.descending.2,Hay más escalones que la última vez.,There are more steps than last time.
+ui.floor.descending.3,"Abajo, alguien canta.","Below, someone is singing."
+ui.floor.descending.4,Huele a leche agria y a carne vieja.,It smells of sour milk and old meat.
+ui.boss.warning,Algo enorme respira al otro lado.,Something huge is breathing on the other side.
+ui.boss.defeated,%s ha caído.,%s has fallen.
+ui.boss.victory_title,SOBREVIVISTE,YOU SURVIVED
+ui.boss.return,Volver al gremio con el botín,Return to the guild with the loot
+ui.death.title,HAS MUERTO,YOU ARE DEAD
+ui.death.no_stone.subtitle,El Farol te arrastra de vuelta. Tus cosas se quedan abajo.,The Lantern drags you back. Your things stay below.
+ui.death.no_stone.lost,Perdido: la mochila y todo lo que equipaste en esta expedición.,Lost: your pack and everything you equipped this expedition.
+ui.death.kept,"Se conserva: oro guardado, almacén y desbloqueos.","Kept: banked gold, storage and unlocks."
+ui.death.with_stone.title,LA PIEDRA SE ROMPE,THE STONE BREAKS
+ui.death.with_stone.subtitle,"La piedra azul se hiela en tu mano y te arrastra hasta el Farol, con todo lo que llevas.","The blue stone freezes in your hand and drags you to the Lantern, with everything you carry."
+ui.death.with_stone.kept,Conservas la mochila. Se gastó 1 piedra azul.,You keep your pack. 1 blue stone spent.
+ui.death.with_stone.cost,Algo se quedó abajo igual. No sabes qué.,Something stayed below anyway. You don't know what.
+ui.death.killed_by,Te mató: %s,Killed by: %s
+ui.death.floor_reached,Llegaste al piso %d de %s,Reached floor %d of %s
+ui.death.enemies_killed,Enemigos abatidos: %d,Enemies felled: %d
+ui.death.seed_rerolled,La Boca cambió de forma.,The Mouth has changed shape.
+ui.death.continue,Volver al gremio,Return to the guild
+ui.pause.title,PAUSA,PAUSED
+ui.pause.resume,Continuar,Resume
+ui.pause.options,Opciones,Options
+ui.pause.quit,Salir,Quit
+ui.pause.quit_confirm,¿Salir? Se pierde el progreso de la expedición en curso.,Quit? Progress on the current expedition will be lost.
+ui.pause.hint,"El mundo espera. Lo de abajo, no tanto.","The world can wait. What's below, less so."
+ui.options.title,Opciones,Options
+ui.options.language,Idioma,Language
+ui.options.music_volume,Volumen de música,Music volume
+ui.options.sfx_volume,Volumen de efectos,Effects volume
+ui.options.fullscreen,Pantalla completa,Fullscreen
+ui.options.controls,Controles,Controls
+ui.menu.new_game,Nueva partida,New game
+ui.menu.continue,Continuar,Continue
+ui.menu.options,Opciones,Options
+ui.menu.quit,Salir,Quit
+ui.menu.tagline,Lo enterrado vuelve.,What is buried comes back.
+ui.tutorial.move,Usa %s para moverte.,Use %s to move.
+ui.tutorial.attack,%s para atacar. Cada golpe gasta aguante.,%s to attack. Every swing costs stamina.
+ui.tutorial.stamina,Sin aguante no hay golpe. Retrocede y respira.,"No stamina, no swing. Back off and breathe."
+ui.tutorial.swap,%s para cambiar de arma.,%s to swap weapons.
+ui.tutorial.interact,%s para interactuar.,%s to interact.
+ui.tutorial.telegraph,"Cuando un enemigo se detiene y se prepara, apártate.","When an enemy stops and winds up, get out of the way."
+ui.tutorial.doors,"Al entrar en una sala con enemigos, las puertas se cierran hasta que no quede nadie.",Enter a room with enemies and the doors seal until nothing is left standing.
+ui.tutorial.chest,"Los cofres de las salas tranquilas guardan armas. A veces, otra cosa.",Chests in the quiet rooms hold weapons. Sometimes something else.
+ui.tutorial.exit,Busca la escalera para bajar al siguiente piso.,Find the stairs to go down to the next floor.
+ui.tutorial.death_rule,"Si mueres sin piedra azul, pierdes lo que llevas. Lo que guardes en el almacén queda a salvo.",Die without a blue stone and you lose what you carry. What you store in the guild is safe.
+ui.tutorial.blue_stone,"Si mueres con una piedra azul en la mochila, vuelves al gremio con todo lo que llevas.",Die with a blue stone in your pack and you return to the guild with everything you carry.
+ui.tutorial.mana,"El maná alimenta lo mágico; el aguante, lo físico. Algunas habilidades piden los dos.","Mana fuels the magical; stamina, the physical. Some abilities need both."
+ui.tutorial.push,Algunos escombros se pueden empujar. Cuesta aguante.,Some rubble can be pushed. It costs stamina.
+ui.tutorial.storage,Guarda en el almacén lo que no quieras perder.,Store what you can't afford to lose.
+ui.tutorial.shop,La Urraca compra cualquier cosa. La herrera y la Hermana venden lo que hace falta para volver.,The Magpie buys anything. The blacksmith and the Sister sell what you need to come back.
+ui.tutorial.dismiss,%s para cerrar,%s to close
+ui.common.yes,Sí,Yes
+ui.common.no,No,No
+ui.common.back,Volver,Back
+ui.common.confirm,Confirmar,Confirm
+ui.common.cancel,Cancelar,Cancel
+ui.common.close,Cerrar,Close
+npc.guildmaster.name,Maese Odran Vell,Master Odran Vell
+npc.guildmaster.role,Maestro del gremio,Guild master
+npc.guildmaster.greet.1,"Sigues respirando. Lo anoto con tinta, que la sangre se borra.",Still breathing. I'll write it in ink; blood fades.
+npc.guildmaster.greet.2,"El Farol arde. Mientras arda, baja cuando quieras.","The Lantern's burning. While it burns, go down whenever you like."
+npc.guildmaster.greet.3,¿Vienes a guardar algo o a que te diga que no bajes? Lo segundo dejé de hacerlo hace años.,"Here to store something, or for me to tell you not to go down? I stopped doing the second years ago."
+npc.guildmaster.death.1,El Farol te devolvió. Tus cosas no: la Boca cobra.,The Lantern gave you back. Not your things: the Mouth takes its fee.
+npc.guildmaster.death.2,"Te encontramos al pie del Farol, temblando y con las manos vacías. Bebe algo. Después anota lo que perdiste, para llorarlo bien.","We found you at the foot of the Lantern, shaking, empty-handed. Drink something. Then list what you lost, so you can mourn it properly."
+npc.guildmaster.death.3,Otra raya junto a tu nombre. Ya tienes más rayas que nombre.,Another tally mark by your name. You've more marks than name by now.
+npc.guildmaster.return_stone.1,"Volviste por piedra, y con todo. Siéntate un rato. Dime cómo se llamaba tu madre.","You came back by stone, and with everything. Sit for a while. Tell me your mother's name."
+npc.guildmaster.victory.1,Manos llenas. Guárdalo antes de que la Urraca lo huela.,Full hands. Store it before the Magpie smells it.
+npc.guildmaster.victory.2,La fosa calla. Esta noche casi nadie soñó con la canción. Casi.,The pit is quiet. Almost nobody dreamed the song tonight. Almost.
+npc.guildmaster.idle.1,"Cuarenta y tres nombres este invierno. Cuarenta y cuatro si cuento a la mujer de Tomé, y no la cuento.","Forty-three names this winter. Forty-four if I count Tomé's wife, and I don't."
+npc.guildmaster.idle.2,El Farol pide más piedra cada mes. No me mires así: no sé qué come.,The Lantern wants more stone every month. Don't look at me like that: I don't know what it eats.
+npc.guildmaster.idle.3,Perdí el brazo en el segundo piso. A veces todavía me pica. A veces lo oigo rascar.,I lost the arm on the second floor. Sometimes it still itches. Sometimes I hear it scratching.
+npc.guildmaster.storage.open,"El almacén. Lo que dejas aquí no lo pierdes al morir. Lo que llevas abajo, sí.","The storage. What you leave here you keep when you die. What you take below, you don't."
+npc.guildmaster.storage.deposit,Guardado. Con llave y con nombre.,Stored. Under lock and under name.
+npc.guildmaster.storage.withdraw,"Llévatelo. Y tráelo de vuelta, si puedes.","Take it. And bring it back, if you can."
+npc.guildmaster.storage.full,"No cabe más. Vende o tira algo: esto es un almacén, no una tumba.","No more room. Sell or toss something: this is a storeroom, not a tomb."
+npc.merchant.name,"Ilse, la Urraca",Ilse the Magpie
+npc.merchant.role,Prestamista y reducidora,Fence and moneylender
+npc.merchant.greet.1,"¿Qué me traes hoy? Si todavía tiene dueño, no quiero saberlo.","What have you brought me? If it still has an owner, I don't want to know."
+npc.merchant.greet.2,"Pasa, pasa. Los muertos no regatean; tú sí. Por eso me caes bien.","Come in, come in. The dead don't haggle; you do. That's why I like you."
+npc.merchant.greet.3,Huele a cripta. Huele a negocio.,Smells like crypt. Smells like business.
+npc.merchant.death.1,"Volviste sin nada. Qué lástima. Para mí, digo.","Back with nothing. What a shame. For me, I mean."
+npc.merchant.death.2,"Lo que perdiste ahí abajo lo vas a volver a ver, colgado de otro cadáver. Cómpralo barato.","What you lost down there you'll see again, hanging off another corpse. Buy it back cheap."
+npc.merchant.death.3,"La próxima, lleva una piedra azul. Te hago precio. No te hago fiado.","Next time, take a blue stone. I'll give you a price. I won't give you credit."
+npc.merchant.victory.1,"¡Dientes de oro! Bueno, eran de alguien. Ahora son de alguien más.","Gold teeth! Well, they were someone's. Now they're someone else's."
+npc.merchant.victory.2,"¿La corona de la Madre? No, no me la vendas. Hay cosas que cobran intereses.","The Mother's crown? No, don't sell it to me. Some things charge interest."
+npc.merchant.idle.1,"Compro, vendo, no pregunto. Es el único oficio que sobrevivió al fin del mundo, aparte del tuyo.","I buy, I sell, I don't ask. Only trade that survived the end of the world, besides yours."
+npc.merchant.idle.2,Ese anillo lo vendí tres veces. Siempre vuelve. Igual que sus dueños.,I've sold that ring three times. It always comes back. Like its owners.
+npc.merchant.idle.3,No me fío de nadie que no tenga deudas. Tú me caes muy bien.,I don't trust anyone without debts. I like you very much.
+npc.merchant.shop.open,"Mira sin tocar. Si tocas, pagas.","Look, don't touch. Touch it and you pay."
+npc.merchant.shop.buy,Hecho. No hay devoluciones; ni de cosas ni de gente.,"Done. No returns; not of things, not of people."
+npc.merchant.shop.sell,"Te doy esto. No es justo, pero el mundo tampoco.","Here's what I'll give. It isn't fair, but neither is the world."
+npc.merchant.shop.no_money,Sin oro no hay trato. Vuelve a bajar.,"No gold, no deal. Go back down."
+npc.merchant.shop.full,"Llevas la mochila llena. Vende antes de comprar, que no soy tu mula.",Your pack is full. Sell before you buy; I'm not your mule.
+npc.merchant.shop.leave,"Vuelve con los bolsillos llenos. O no vuelvas, y le vendo a otro lo que dejes.","Come back with full pockets. Or don't, and I'll sell what you leave to someone else."
+npc.blacksmith.name,Hesse Brun,Hesse Brun
+npc.blacksmith.role,Herrera,Blacksmith
+npc.blacksmith.greet.1,¿QUÉ? Ah. Tú. Deja el arma en el yunque.,WHAT? Oh. You. Put the weapon on the anvil.
+npc.blacksmith.greet.2,El hierro de ataúd es bueno. Ya está acostumbrado a guardar cosas muertas.,Coffin iron is good. It's used to holding dead things.
+npc.blacksmith.greet.3,Habla fuerte o habla con las manos.,Speak up or speak with your hands.
+npc.blacksmith.death.1,"Volviste sin el arma. Un arma mía, ahí abajo, en otra mano. Me arde.","You came back without the weapon. A weapon of mine, down there, in another hand. It burns me."
+npc.blacksmith.death.2,Te forjo otra. Para eso estoy. Para eso estás.,I'll forge you another. That's what I'm for. That's what you're for.
+npc.blacksmith.death.3,No mires tanto el fuego. A los que vuelven les gusta demasiado el calor.,Don't stare at the fire so much. The ones who come back like the warmth too much.
+npc.blacksmith.victory.1,Buen acero. Mucha sangre seca en el filo. Eso se limpia. Lo otro no.,Good steel. Lots of dried blood on the edge. That cleans off. The rest doesn't.
+npc.blacksmith.victory.2,Hierro de la fosa. Lo voy a fundir dos veces. Por si acaso.,Iron from the pit. I'll melt it twice. Just in case.
+npc.blacksmith.idle.1,"Toqué las campanas toda esa noche, para avisar. No sirvió. Solo me quedé sorda.","I rang the bells all that night, to warn people. It did nothing. I just went deaf."
+npc.blacksmith.idle.2,Los clavos de cripta salen torcidos. Como si alguien los hubiera empujado desde adentro.,Crypt nails come out bent. As if someone had pushed them from inside.
+npc.blacksmith.idle.3,"Golpe, golpe. Sigue latiendo. El yunque, digo.","Clang, clang. Still beating. The anvil, I mean."
+npc.blacksmith.shop.open,Armas. Armaduras. Arreglos. Paga primero.,Weapons. Armour. Repairs. Pay first.
+npc.blacksmith.shop.buy,Pesa. Tiene que pesar.,It's heavy. It has to be.
+npc.blacksmith.shop.upgrade,Lo templo con agua de pozo. Sale más duro. Sale más frío.,I'll quench it in well water. It comes out harder. It comes out colder.
+npc.blacksmith.shop.no_money,Sin oro no calienta el fuego. Ni yo.,"No gold, no heat in the forge. Or in me."
+npc.blacksmith.shop.leave,Que el filo te dure más que a mí el oído.,May your edge last longer than my hearing did.
+npc.healer.name,Hermana Ancel,Sister Ancel
+npc.healer.role,Curandera,Healer
+npc.healer.greet.1,Siéntate. Déjame ver qué traes abierto.,Sit. Let me see what you've brought back open.
+npc.healer.greet.2,"Dios no contesta, pero el hilo de tripa sí. Ven.","God doesn't answer, but gut thread does. Come."
+npc.healer.greet.3,"Si te duele, es que todavía es tuyo.","If it hurts, it's still yours."
+npc.healer.death.1,Respira. Cuenta los dedos. ¿Cuántos? Bien. Eran esos.,Breathe. Count your fingers. How many? Good. That's how many there were.
+npc.healer.death.2,Volviste con frío por dentro. Así vuelven todos los que trae el Farol.,You came back cold inside. Everyone the Lantern brings back comes back like that.
+npc.healer.death.3,Recé por ti. No sé a quién.,I prayed for you. I don't know to whom.
+npc.healer.victory.1,Casi no hay que coser. Eso me asusta más que la sangre.,Hardly any stitching needed. That frightens me more than the blood.
+npc.healer.victory.2,La partera de la fosa… Agna. Era de mi orden. La rezábamos en maitines.,The midwife in the pit… Agna. She was of my order. We prayed for her at matins.
+npc.healer.idle.1,"Hiervo las vendas dos veces. La primera, por la fiebre. La segunda, por lo que vive en la fiebre.",I boil the bandages twice. Once for the fever. Once for what lives in the fever.
+npc.healer.idle.2,Anoto lo que le falta a cada uno que vuelve por piedra. Mi libro ya es más largo que el de Odran.,I note what each stone-returner is missing. My book is already longer than Odran's.
+npc.healer.idle.3,"Láudano para el dolor, para dormir y para no soñar. Lo tercero es lo que más piden.","Laudanum for pain, for sleep and for not dreaming. The third is what they ask for most."
+npc.healer.shop.open,"Vendas, láudano, tónicos. Milagros no; se acabaron.","Bandages, laudanum, tonics. No miracles; we ran out."
+npc.healer.shop.buy,Úsalo antes de necesitarlo. Después suele ser tarde.,Use it before you need it. After is usually too late.
+npc.healer.shop.heal,"No te muevas. Esto va a doler. Bien: sigue doliendo, sigue siendo tuyo.","Don't move. This will hurt. Good: it still hurts, it's still yours."
+npc.healer.shop.no_money,"Sin oro no hay láudano. Las oraciones son gratis, pero no cierran heridas.","No gold, no laudanum. Prayers are free, but they don't close wounds."
+npc.healer.shop.leave,"Vuelve con todo puesto. O vuelve, al menos.",Come back with everything attached. Or just come back.
+npc.questgiver.name,Maren Tull,Maren Tull
+npc.questgiver.role,Escriba y cartógrafo,Scribe and cartographer
+npc.questgiver.greet.1,Hay encargos nuevos en la pared. Algunos los dejaron los vivos.,New bounties on the wall. Some were posted by the living.
+npc.questgiver.greet.2,¿Trajiste el mapa? No importa. Mañana estará mal.,Did you bring the map? Doesn't matter. Tomorrow it'll be wrong.
+npc.questgiver.greet.3,Dibujé la cripta cuarenta veces. Nunca me sale la misma.,I've drawn the crypt forty times. It never comes out the same.
+npc.questgiver.death.1,Marqué dónde caíste. Otra cruz. El mapa ya parece una lápida.,I've marked where you fell. Another cross. The map looks like a gravestone already.
+npc.questgiver.death.2,¿Ese pasillo no estaba ayer? Ya sé. Lo anoto.,That corridor wasn't there yesterday? I know. I'm writing it down.
+npc.questgiver.death.3,El encargo sigue abierto. Los encargos no se mueren.,The bounty is still open. Bounties don't die.
+npc.questgiver.victory.1,"Encargo cumplido. Firma aquí. No, con tinta.","Bounty done. Sign here. No, in ink."
+npc.questgiver.victory.2,"Llegaste al fondo de la fosa. Cuéntamelo todo: el ancho, el olor, cuánto cantaba.","You reached the bottom of the pit. Tell me everything: how wide, the smell, how much she sang."
+npc.questgiver.idle.1,Perdí dos dedos midiendo una puerta que se cerró sola.,I lost two fingers measuring a door that closed by itself.
+npc.questgiver.idle.2,"Si un pasillo se mueve, el mapa está bien. El que se equivoca es el pasillo.","If a corridor moves, the map is right. The corridor is wrong."
+npc.questgiver.idle.3,"Pagan poco. Pagan en comida. Pagan, que ya es raro.","They pay little. They pay in food. They pay, which is rare enough."
+npc.questgiver.quest.board,"Encargos del gremio. Elige uno que puedas cumplir, o uno que valga la pena no cumplir.","Guild bounties. Pick one you can finish, or one worth failing."
+npc.questgiver.quest.accept,"Tuyo. Si no vuelves, se lo doy a otro. Es lo mismo, con otro nombre.","Yours. If you don't come back, I'll give it to someone else. Same thing, different name."
+npc.questgiver.quest.complete,Pagado. Tachado. Siguiente.,Paid. Crossed out. Next.
+npc.questgiver.quest.none,No hay encargos hoy. Es muy buena o muy mala noticia.,No bounties today. That's either very good or very bad news.
+npc.refugee_nela.name,Nela,Nela
+npc.refugee_nela.role,Refugiada,Refugee
+npc.refugee_nela.greet.1,¿Viste a mi papá? Lleva un pañuelo rojo. Se llama Bastián.,Have you seen my dad? He wears a red scarf. His name is Bastián.
+npc.refugee_nela.greet.2,Hoy conté los escalones de la Boca. Son más que ayer.,I counted the steps of the Mouth today. There are more than yesterday.
+npc.refugee_nela.greet.3,"Si lo ves, dile que le guardé el pan.","If you see him, tell him I saved his bread."
+npc.refugee_nela.death.1,"Volviste. Él también va a volver, ¿no? Tú volviste.","You came back. He'll come back too, right? You did."
+npc.refugee_nela.death.2,"Tienes tierra en los ojos. Papá también tenía, la última noche.","You've got dirt in your eyes. Dad did too, the last night."
+npc.refugee_nela.death.3,No llores. La Hermana dice que llorar gasta agua.,Don't cry. Sister says crying wastes water.
+npc.refugee_nela.victory.1,¿Había un pañuelo rojo? ¿Seguro? Mira otra vez.,Was there a red scarf? Are you sure? Look again.
+npc.refugee_nela.victory.2,"Anoche no cantó. Dormí toda la noche. Fue feo, no estoy acostumbrada.",She didn't sing last night. I slept the whole night. It felt wrong; I'm not used to it.
+npc.refugee_nela.idle.1,Una señora canta abajo. Papá decía que es una nana.,A lady sings down there. Dad said it's a lullaby.
+npc.refugee_nela.idle.2,Tomé dice que no hay que abrirle a la gente que vuelve. ¿Y si es mi papá?,Tomé says you mustn't open the door to people who come back. What if it's my dad?
+npc.refugee_nela.idle.3,El pan ya está duro. Se lo voy a remojar.,The bread's gone hard. I'll soak it for him.
+npc.refugee_tome.name,Tomé,Tomé
+npc.refugee_tome.role,"Refugiado, sepulturero","Refugee, gravedigger"
+npc.refugee_tome.greet.1,Buenas. ¿Ya enterraste a alguien hoy? Yo sí. A la de siempre.,Morning. Buried anyone today? I have. The usual one.
+npc.refugee_tome.greet.2,"La pala no descansa, y yo tampoco.","The shovel doesn't rest, and neither do I."
+npc.refugee_tome.greet.3,No pises ahí. Ahí está ella. Por ahora.,Don't step there. She's there. For now.
+npc.refugee_tome.death.1,Volviste de abajo. Ella también vuelve. Pero tú golpeas la puerta más bonito.,"You came back from below. So does she. You knock nicer, though."
+npc.refugee_tome.death.2,"Si un día no te levantas, te entierro yo. Hondo. Bien hondo, que te cueste.","If one day you don't get up, I'll bury you myself. Deep. Deep enough to make it hard."
+npc.refugee_tome.death.3,Tienes la misma cara que ella la segunda semana.,You've got the same face she had the second week.
+npc.refugee_tome.victory.1,"Si mataste a la que canta, a lo mejor mi Rosa se queda quieta. A lo mejor.","If you killed the one who sings, maybe my Rosa will stay put. Maybe."
+npc.refugee_tome.victory.2,"Anoche no vino. Primera vez en ocho años. Dejé la puerta abierta, por si acaso. Soy un viejo idiota.","She didn't come last night. First time in eight years. I left the door open, just in case. I'm an old fool."
+npc.refugee_tome.idle.1,Cuarenta años casados. Ocho enterrándola. Lo segundo cuesta más.,Forty years married. Eight burying her. The second part is harder.
+npc.refugee_tome.idle.2,Ya no hay leña para quemarla. Y aunque hubiera.,There's no wood left to burn her. And even if there were.
+npc.refugee_tome.idle.3,Cada vez vuelve más entera. La semana pasada me dijo mi nombre.,She comes back more whole each time. Last week she said my name.
+item.category.arma,Arma,Weapon
+item.category.armadura,Armadura,Armour
+item.category.accesorio,Accesorio,Trinket
+item.category.consumible,Consumible,Consumable
+item.category.material,Material,Material
+item.category.botin,Botín,Loot
+item.category.llave,Llave,Key
+item.category.reliquia,Reliquia,Relic
+item.espada_oxidada.name,Espada oxidada,Rusted sword
+item.espada_oxidada.desc,La primera que te dan. La última que te quitan.,The first one they give you. The last one they take.
+item.espada_mellada.name,Espada mellada,Notched sword
+item.espada_mellada.desc,Cada mella es un hueso que no cedió.,Every notch is a bone that would not give.
+item.espada_del_verdugo.name,Espada del verdugo,Executioner's sword
+item.espada_del_verdugo.desc,El canal nunca se secó del todo.,The groove never fully dried.
+item.cuchilla.name,Cuchilla de carnicero,Butcher's cleaver
+item.cuchilla.desc,Hecha para carne que no se defiende.,Made for meat that does not fight back.
+item.lanza.name,Lanza con trapo,Rag-tied spear
+item.lanza.desc,El trapo atado era de alguien.,The rag tied to it belonged to someone.
+item.arco.name,Arco de tejo,Yew bow
+item.arco.desc,La empuñadura todavía está pegajosa.,The grip is still sticky.
+item.ballesta.name,Ballesta de guardia,Warden's crossbow
+item.ballesta.desc,"Lenta de cargar, rápida para callar.","Slow to load, quick to silence."
+item.baston_hueso.name,Bastón de hueso,Bone staff
+item.baston_hueso.desc,El cráneo de la punta a veces mira.,The skull on top sometimes looks back.
+item.baston_carne.name,Bastón de carne,Flesh staff
+item.baston_carne.desc,Late. No lo apoyes contra la piel.,It pulses. Do not rest it against your skin.
+item.daga.name,Daga de hueso,Bone-hilted dagger
+item.daga.desc,"Corta, callada, sucia.","Short, quiet, filthy."
+item.capucha.name,Capucha raída,Frayed hood
+item.capucha.desc,Huele a la cabeza anterior.,It smells of the previous head.
+item.capa_harapienta.name,Capa harapienta,Rag cloak
+item.capa_harapienta.desc,Abriga poco y esconde mucho.,Keeps little warmth and hides a lot.
+item.jubon_cuero.name,Jubón de cuero,Leather jerkin
+item.jubon_cuero.desc,Cuero curtido con quién sabe qué.,Leather tanned with who knows what.
+item.amuleto_hueso.name,Talismán de hueso,Bone charm
+item.amuleto_hueso.desc,Los surcos forman un nombre que nadie lee.,The grooves spell a name nobody can read.
+item.anillo_hierro.name,Anillo de hierro,Iron ring
+item.anillo_hierro.desc,Deja el dedo verde y frío.,Leaves the finger green and cold.
+item.anillo_sello.name,Anillo de sello,Signet ring
+item.anillo_sello.desc,La casa del sello ya no existe.,The house on the seal no longer exists.
+item.amuleto.name,Amuleto del ojo,Eye amulet
+item.amuleto.desc,El ojo pintado no parpadea.,The painted eye never blinks.
+item.piedra_azul.name,Piedra azul,Blue stone
+item.piedra_azul.desc,"Lo único frío de abajo. Si mueres con ella, te devuelve al gremio con todo lo que llevas. Algo cobra.",The only cold thing below. Die holding it and it takes you back to the guild with everything you carry. Something gets paid.
+item.venda.name,Venda sucia,Dirty bandage
+item.venda.desc,Ya la usó otro. Igual para la sangre.,Someone used it before. It still stops the bleeding.
+item.vial_salud.name,Vial de sangre,Blood vial
+item.vial_salud.desc,"Espeso, tibio, devuelve vida.","Thick, lukewarm, gives life back."
+item.vial_aguante.name,Vial de bilis,Bile vial
+item.vial_aguante.desc,Amarga y quema; las piernas vuelven.,Bitter and burning; your legs come back.
+item.vial_mana.name,Vial turbio,Murky vial
+item.vial_mana.desc,Algo se mueve en el fondo.,Something moves at the bottom.
+item.pan_duro.name,Pan duro,Stale bread
+item.pan_duro.desc,Con moho. Es comida.,Mouldy. It is still food.
+item.carne_podrida.name,Carne podrida,Rotten meat
+item.carne_podrida.desc,Alimenta y enferma en partes iguales.,Feeds and sickens in equal measure.
+item.hierbas.name,Atado de hierbas,Herb bundle
+item.hierbas.desc,Amargas; calman la fiebre de la herida.,Bitter; they calm a wound's fever.
+item.antorcha.name,Antorcha,Torch
+item.antorcha.desc,"Aleja la oscuridad, no lo que vive en ella.","Keeps the dark away, not what lives in it."
+item.antidoto.name,Antídoto,Antidote
+item.antidoto.desc,Sellado con lacre de un boticario muerto.,Sealed with a dead apothecary's wax.
+item.monedas_cobre.name,Monedas de cobre,Copper coins
+item.monedas_cobre.desc,Verdes de tanto tocar muertos.,Green from passing through dead hands.
+item.monedas_plata.name,Monedas de plata,Silver coins
+item.monedas_plata.desc,"Ennegrecidas, pero suenan bien.","Tarnished, but they ring true."
+item.monedas_oro.name,Monedas de oro,Gold coins
+item.monedas_oro.desc,Alguien murió contándolas.,Someone died counting these.
+item.gema_roja.name,Gema roja,Red gem
+item.gema_roja.desc,Del color de lo que costó sacarla.,The colour of what it cost to dig out.
+item.gema_verde.name,Gema verde,Green gem
+item.gema_verde.desc,"Fría, aunque la tengas en el puño.","Cold, even clenched in your fist."
+item.gema_violeta.name,Drusa violeta,Violet geode
+item.gema_violeta.desc,"Creció en la oscuridad, sobre algo.","It grew in the dark, on top of something."
+item.llave_hierro.name,Llave de hierro,Iron key
+item.llave_hierro.desc,Abre una puerta de este piso.,Opens a door on this floor.
+item.llave_hueso.name,Llave de hueso,Bone key
+item.llave_hueso.desc,Tallada de un fémur; abre lo que no debería.,Carved from a femur; opens what should stay shut.
+item.llave_sangrienta.name,Llave ensangrentada,Bloody key
+item.llave_sangrienta.desc,Se la sacaste de la mano a alguien.,You pried it from someone's hand.
+item.dientes.name,Dientes,Teeth
+item.dientes.desc,Alguien los junta. No preguntes para qué.,Someone collects them. Do not ask why.
+item.ojos_en_frasco.name,Ojos en frasco,Eyes in a jar
+item.ojos_en_frasco.desc,Siguen tu mano cuando lo agitas.,They follow your hand when you shake it.
+item.huesos_dedo.name,Huesos de dedo,Finger bones
+item.huesos_dedo.desc,Sin anillos. Ya los sacaste.,No rings left. You already took them.
+item.oreja_cortada.name,Oreja cortada,Severed ear
+item.oreja_cortada.desc,"Trofeo, prueba o advertencia.","A trophy, a proof, or a warning."
+item.idolo_culto.name,Ídolo del culto,Cult idol
+item.idolo_culto.desc,Seis ojos y ninguno cerrado.,Six eyes and none of them closed.
+item.simbolo_culto.name,Sigilo del culto,Cult sigil
+item.simbolo_culto.desc,Hierro rojo que gotea aunque esté seco.,Red iron that drips though it is dry.
+item.vela_cabo.name,Cabos de vela,Candle stubs
+item.vela_cabo.desc,Grasa de origen dudoso.,Tallow of doubtful origin.
+item.carta_vieja.name,Carta vieja,Old letter
+item.carta_vieja.desc,Nunca llegó. Quien la esperaba tampoco.,It never arrived. Neither did whoever awaited it.
+item.mapa.name,Mapa rasgado,Torn map
+item.mapa.desc,La cruz roja no marca un tesoro.,The red cross does not mark treasure.
+item.cuchilla_del_cosido.name,Cuchilla del Cosido,Stitched's cleaver
+item.cuchilla_del_cosido.desc,Todavía tiene hilo enredado en el filo. No sale.,Thread is still tangled in the edge. It won't come off.
+item.martillo_de_campana.name,Martillo de campana,Bell hammer
+item.martillo_de_campana.desc,Hecho con el badajo de San Ulmo. Cada golpe suena a funeral.,Made from Saint Ulmo's bell clapper. Every blow rings like a funeral.
+item.jaula_de_craneo.name,Jaula de cráneo,Skull cage
+item.jaula_de_craneo.desc,Del guardia osario. Las brasas se apagaron. Casi.,From an ossuary guard. The embers went out. Almost.
+item.mortaja_cosida.name,Mortaja cosida,Stitched shroud
+item.mortaja_cosida.desc,Abriga. No preguntes a quién abrigaba antes.,It's warm. Don't ask who it kept warm before.
+item.peto_de_tapa_de_ataud.name,Peto de tapa de ataúd,Coffin-lid breastplate
+item.peto_de_tapa_de_ataud.desc,Madera zunchada con hierro. Por dentro todavía tiene arañazos.,Iron-banded wood. There are still scratches on the inside.
+item.laudano.name,Láudano,Laudanum
+item.laudano.desc,Ya no duele. Ya nada importa tanto. Recupera vida despacio.,It stops hurting. Nothing matters as much. Restores health slowly.
+item.frasco_de_bilis.name,Frasco de bilis,Bile flask
+item.frasco_de_bilis.desc,"Bilis de escupebilis en un frasco. Arrojado, deja un charco que corroe.","Bile-spitter bile in a jar. Thrown, it leaves a corroding pool."
+item.esquirla_azul.name,Esquirla azul,Blue shard
+item.esquirla_azul.desc,Un trozo de piedra azul. Tres hacen una. El Farol también las come.,A sliver of blue stone. Three make one. The Lantern eats them too.
+item.anillo_de_boda.name,Anillo de boda,Wedding ring
+item.anillo_de_boda.desc,Tiene dos nombres grabados. Uno está tachado con la uña.,Two names engraved. One scratched out with a fingernail.
+item.obolo_de_plomo.name,Óbolo de plomo,Lead obol
+item.obolo_de_plomo.desc,La moneda que se pone en la boca del muerto. Esta estaba debajo de la lengua.,The coin placed in a dead mouth. This one was under the tongue.
+item.muneca_de_trapo.name,Muñeca de trapo,Rag doll
+item.muneca_de_trapo.desc,"Cosida a mano, con un solo ojo de botón. Pesa más de lo que debería.","Hand-sewn, one button eye. Heavier than it should be."
+item.llave_del_osario.name,Llave del osario,Ossuary key
+item.llave_del_osario.desc,La llevaba el hermano mayor colgada del cuello. Abre el atajo.,The eldest brother wore it round his neck. Opens the shortcut.
+item.corona_de_velas.name,Corona de velas,Candle crown
+item.corona_de_velas.desc,Lo que llevaba la Madre de la Fosa. Las velas están apagadas y la cera sigue tibia.,"What the Mother of the Pit wore. The candles are out, and the wax is still warm."
+item.aguja_del_cosido.name,Aguja del Cosido,Stitched's needle
+item.aguja_del_cosido.desc,"Larga como un dedo, curva como una costilla. Remendó a cien muertos.","Long as a finger, curved like a rib. It mended a hundred dead."
+item.mascara_de_piel.name,Máscara de piel,Skin mask
+item.mascara_de_piel.desc,La máscara de un cultista de la herida. Llora sangre cuando está cerca de la fosa.,A cultist of the wound's mask. It weeps blood near the pit.
+item.incensario_apagado.name,Incensario apagado,Cold censer
+item.incensario_apagado.desc,"Huele a incienso y a carne. Si lo sacudes, se oye un latido.",Smells of incense and meat. Shake it and you hear a heartbeat.
+item.campana_sin_badajo.name,Campana sin badajo,Clapperless bell
+item.campana_sin_badajo.desc,No puede sonar. A veces suena.,It can't ring. Sometimes it rings.
+item.libro_de_nombres.name,Libro de nombres,Book of names
+item.libro_de_nombres.desc,"Una lista de vecinos de Hondoval en tinta vieja. El tuyo está al final, con letra fresca.","A list of Hondoval folk in old ink. Yours is at the end, freshly written."
+enemy.errante.name,Cadáver errante,Wandering corpse
+enemy.errante.desc,"Vecinos de Hondoval que todavía llevan su mortaja. El Aliento los mantiene tibios y blandos. Caminan hacia el calor, y el calor eres tú.","Hondoval folk still in their shrouds. The Breath keeps them warm and soft. They walk towards warmth, and the warmth is you."
+enemy.errante.death.1,Cae de rodillas. Lo que tenía adentro termina de salir.,It drops to its knees. What was inside finishes coming out.
+enemy.errante.death.2,Por fin se queda quieto. Nadie va a venir a enterrarlo.,Finally still. Nobody will come to bury it.
+enemy.reptante.name,Reptante,Crawler
+enemy.reptante.desc,Un torso sin piernas que corre sobre brazos de demasiadas articulaciones. Arrastra su propia columna. Salta a la cara.,A legless torso running on arms with too many joints. It drags its own spine. It goes for the face.
+enemy.reptante.death.1,Los brazos se quiebran hacia el lado que no deben.,The arms snap the way they shouldn't.
+enemy.reptante.death.2,"La columna se suelta en vértebras, una por una.","The spine comes loose, vertebra by vertebra."
+enemy.escupebilis.name,Escupebilis,Bile-spitter
+enemy.escupebilis.desc,"Un buche enorme de bilis sobre dos piernas flacas. Dentro del saco, una cara empuja para salir.","A huge sac of bile on two thin legs. Inside the sac, a face pushes to get out."
+enemy.escupebilis.death.1,El saco revienta. La cara de adentro queda mirando el techo.,The sac bursts. The face inside is left staring at the ceiling.
+enemy.escupebilis.death.2,La bilis humea en el piso. No la pises.,The bile smokes on the floor. Don't step in it.
+enemy.guardia.name,Guardia osario,Ossuary guard
+enemy.guardia.desc,Un cráneo con jaula de hierro y brasas en las cuencas. Sigue custodiando la puerta de abajo con una tapa de ataúd por escudo. En el escudo hay un brazo clavado; nadie sabe de quién.,"An iron-caged skull with embers in its sockets, still guarding the way down with a coffin lid for a shield. There's an arm nailed to the shield; nobody knows whose."
+enemy.guardia.death.1,La armadura se desarma en una pila de huesos. La guardia terminó.,The armour collapses into a heap of bones. The watch is over.
+enemy.guardia.death.2,La jaula rueda. Las brasas tardan en apagarse.,The cage rolls away. The embers take a while to die.
+enemy.rata.name,Rata de osario,Ossuary rat
+enemy.rata.desc,"Rosadas, peladas, con el lomo abierto y la columna al aire. Se crían en los huesos y nunca vienen solas.","Pink, hairless, backs split open with the spine showing. They breed in the bones and never come alone."
+enemy.rata.death.1,Revienta como una fruta pasada.,It bursts like overripe fruit.
+enemy.rata.death.2,Una menos. Se oyen diez más.,One fewer. You can hear ten more.
+enemy.cultista.name,Cultista de la herida,Cultist of the wound
+enemy.cultista.desc,"Creen que el mundo es una herida y que abajo es donde cicatriza. Usan máscaras de piel de los muertos que ""devolvieron"" y levantan a los caídos para la Madre.","They believe the world is a wound and below is where it heals. They wear skin masks from the dead they ""returned"", and raise the fallen for the Mother."
+enemy.cultista.death.1,La túnica se desinfla vacía. La máscara sigue llorando.,"The robe deflates, empty. The mask keeps weeping."
+enemy.cultista.death.2,"""Ella no era la Madre…"", susurra. ""Era solo una hija.""","""She wasn't the Mother…"" it whispers. ""Only a daughter."""
+enemy.cosido.name,El Cosido,The Stitched
+enemy.cosido.desc,"El hermano mayor del osario cosía a los muertos para que las familias pudieran enterrarlos enteros. Después del Aliento siguió cosiendo. Ahora está hecho de todos los que intentó arreglar. La segunda cabeza es la de su aprendiz, y todavía grita.","The eldest ossuary brother stitched the dead so families could bury them whole. After the Breath he kept stitching. Now he is made of everyone he tried to mend. The second head is his apprentice's, and it still screams."
+enemy.cosido.death.1,Las costuras ceden. Los muertos que lo formaban caen cada uno por su lado.,The seams give. The dead he was made of fall each their own way.
+enemy.cosido.death.2,"La segunda cabeza deja de gritar. Por primera vez en años, parece aliviada.","The second head stops screaming. For the first time in years, it looks relieved."
+enemy.cosido.intro_titulo,El Cosido,The Stitched
+enemy.cosido.intro_subtitulo,Hermano mayor del osario,Eldest brother of the ossuary
+enemy.cosido.bark.1,¡No te muevas! Te falta un poco. Yo te arreglo.,Hold still! You're missing a bit. I'll fix you.
+enemy.cosido.bark.2,Enteros. Todos enteros para el entierro.,Whole. All of them whole for the burial.
+enemy.madre.name,La Madre de la Fosa,The Mother of the Pit
+enemy.madre.desc,"Agna Sorel, partera, se quedó con los muertos de la Gran Fiebre y la enterraron con ellos sin saber si respiraba. Con el Aliento, la fosa entera se fundió a su alrededor. Junta a los muertos, los acuna y les canta. Lleva como corona las velas que el pueblo encendió por ellos.","Agna Sorel, a midwife, stayed with the Great Fever dead and was buried with them, nobody sure she was still breathing. With the Breath the whole pit fused around her. She gathers the dead, cradles them and sings. She wears as a crown the candles the town lit for them."
+enemy.madre.death.1,Las velas se apagan una por una. La canción se corta a mitad de verso.,The candles go out one by one. The song breaks off mid-verse.
+enemy.madre.death.2,"Se hunde en la pila. Por un momento, suena como una mujer cansada.","She sinks into the heap. For a moment, she sounds like a tired woman."
+enemy.madre.intro_titulo,La Madre de la Fosa,The Mother of the Pit
+enemy.madre.intro_subtitulo,"Agna Sorel, la que se quedó","Agna Sorel, who stayed"
+enemy.madre.fase2,La fosa vomita a sus hijos.,The pit vomits up its children.
+enemy.madre.bark.1,Shh… ya está. Ya está. Aquí abajo nadie tiene frío.,Shh… there now. There now. Nobody is cold down here.
+enemy.madre.bark.2,Otro más. Hay sitio. Siempre hay sitio.,One more. There's room. There's always room.
+enemy.madre.bark.3,¿Por qué lloras? Ya estás en casa.,Why are you crying? You're home now.
+item.slime_gel.name,Gel de limo,Slime gel
+item.slime_gel.desc,Tibio. Se mueve un poco cuando no lo miras.,Warm. It moves a little when you are not looking.
+item.bone_shard.name,Astilla de hueso,Bone shard
+item.bone_shard.desc,Afilada por algo que mordía.,Sharpened by something that chewed.
+item.silver_ring.name,Anillo de plata,Silver ring
+item.silver_ring.desc,El dedo que lo llevaba no vino con él.,The finger that wore it did not come along.
+ui.hud.gold_amount,%d oro,%d gold

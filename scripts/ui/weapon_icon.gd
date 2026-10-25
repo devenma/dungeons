@@ -1,11 +1,13 @@
-extends Label
+extends TextureRect
 
-## PF-2: HUD label showing the equipped weapon's name. Updated on every
+## PF-2: HUD icon of the equipped weapon. Updated on every
 ## `weapon_equipped`; the boot value is read directly from RunManager in
-## `_ready` because UI readies AFTER DungeonManager (the label intentionally
+## `_ready` because UI readies AFTER DungeonManager (the icon intentionally
 ## misses the boot equip emission — §3(a)).
 
-@export var run_manager_node_path: NodePath = NodePath("../../RunManager")
+const WeaponVisuals: GDScript = preload("res://scripts/ui/weapon_visuals.gd")
+
+@export var run_manager_node_path: NodePath = NodePath("../../../../RunManager")
 
 
 func _ready() -> void:
@@ -17,4 +19,4 @@ func _ready() -> void:
 
 
 func _on_weapon_equipped(data: WeaponData) -> void:
-	text = data.weapon_name if data != null else ""
+	texture = WeaponVisuals.icon(data)

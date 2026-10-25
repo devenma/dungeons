@@ -38,15 +38,16 @@ alignment = 1
 
 [node name="Title" type="Label" parent="Panel"]
 layout_mode = 2
-text = "PAUSED"
+theme_type_variation = &"HeaderLabel"
+text = "ui.pause.title"
 horizontal_alignment = 1
 
 [node name="ResumeButton" type="Button" parent="Panel"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Resume"
+text = "ui.pause.resume"
 
 [node name="QuitButton" type="Button" parent="Panel"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Quit"
+text = "ui.pause.quit"
