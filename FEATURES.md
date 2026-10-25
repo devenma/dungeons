@@ -35,7 +35,8 @@ confiable y feel · **P1** vertical slice v2 · **P2** profundidad · **P3** con
 | Tope de START | La zona START se recorta primero en el origen a `FloorData.start_zone_max_cells` (2×2 celdas = 16×16 tiles por defecto); si es menor que `min_zone_cells`, gana el mínimo. |
 | Determinismo | La misma `(run_seed, floor_number)` produce el mismo piso; cubierto por un test. |
 | Puertas | Posición irregular en las aristas compartidas; varias por arista si es larga (`multi_door_threshold`). |
-| Render | Un TileMap único con un tileset pre-autorado (`dungeons_v2.tres`). Paredes con colisión y piso con tinte según el tipo de zona. |
+| Render | Un TileMap único con el tileset de la cripta oscura (`crypt_dark.tres`): tope + cara de 2 filas en la pared norte, topes en las laterales y la sur, piso periódico por `(tx % 3, ty % 3)` con AO al pie de las paredes, puertas en hueco o en arco y escalera de bajada en la salida. Las paredes bloquean su tile completo. |
+| Ambiente | `floor_dressing.gd`, sembrado por la seed: una antorcha encendida por zona en la cara norte (dos si es ancha) con luz que solo toca personajes, soportes apagados, objetos colgados, telarañas y calcos de piso. |
 
 ### 1.3. Exploración
 
@@ -55,13 +56,14 @@ confiable y feel · **P1** vertical slice v2 · **P2** profundidad · **P3** con
 | Capas de colisión | 5 capas centralizadas en `CollisionLayers`. |
 | Recursos | Stamina 100 (regen 20/s), se rellena al cambiar de piso o al morir. Cada ataque cuesta stamina; no hay cooldowns. Todavía no hay maná (D19). |
 | Apuntado | Mouse/Space apuntan al cursor; el gamepad apunta hacia donde mira el jugador. |
-| Espada | Melee, combo de 3 golpes (`WeaponData.combo`, un `SwingData` por golpe): preparación → hitbox activa → recuperación. Atacar durante el golpe activo o la recuperación encadena el siguiente; también hay 0.25 s de margen al terminar. Perder el margen o no tener stamina vuelve al golpe 1. Daño 10 / 12 / 22, coste 20 / 20 / 30, knockback 220 / 260 / 420; el 3.º es más lento. Visual provisorio: el rectángulo de la hitbox. |
+| Espada | Melee, combo de 3 golpes (`WeaponData.combo`, un `SwingData` por golpe): preparación → hitbox activa → recuperación. Atacar durante el golpe activo o la recuperación encadena el siguiente; también hay 0.25 s de margen al terminar. Perder el margen o no tener stamina vuelve al golpe 1. Daño 10 / 12 / 22, coste 20 / 20 / 30, knockback 220 / 260 / 420; el 3.º es más lento. Cada golpe juega la animación de ataque del jugador sincronizada con sus fases y un smear por dirección (corte, revés y golpe de arriba). |
 | Arco | Flecha de 400 px/s, daño 8, coste 12, knockback 120. |
 | Bastón | Proyectil mágico de 280 px/s, daño 14, coste 18, knockback 140 (reutiliza `arrow.gd`). |
-| Proyectiles | Mueren al impactar al primer enemigo, al chocar con una pared o a los 2 s. |
+| Proyectiles | Mueren al impactar al primer enemigo, al chocar con una pared o a los 2 s. Vuelan con la hoja de su dirección (flecha o bolo de bilis) y dejan un efecto de impacto. |
 | Knockback | `KnockbackComponent`: el golpe empuja al objetivo con velocidad inicial = `knockback` (px/s), que decae a 0 en 0.2 s. Mientras dura, el empuje reemplaza el movimiento propio (stagger). |
 | I-frames | `HealthComponent.invulnerability_seconds`: el jugador ignora golpes durante 0.5 s después de recibir uno; los enemigos no tienen. |
 | Hit flash | `HitFlash`: destello brillante al recibir daño y parpadeo del sprite mientras duran los i-frames. |
+| Sangre | `HitVfx`: cada golpe aceptado a un enemigo saca una chispa, un chorro de sangre hacia el empuje y una mancha en el piso que dura todo el piso. |
 | Hit-stop | `HitStop`: cada golpe aceptado de una `Hitbox` congela el juego (`Engine.time_scale` 0.05) durante `hit_stop_seconds`: espada 60 / 70 / 110 ms por golpe del combo, slime 60 ms (`EnemyData`). Varios golpes no se suman: gana el fin más tardío. Las flechas y proyectiles todavía no lo usan. |
 
 ### 1.5. Armas e inventario
@@ -79,9 +81,11 @@ confiable y feel · **P1** vertical slice v2 · **P2** profundidad · **P3** con
 
 | Feature | Detalle |
 |---|---|
-| Slime | 30 HP, velocidad 60, daño 8, knockback 160. Detecta a 120 px, ataca a 20 px con una ventana de 0.2 s y cooldown de 1.2 s. |
+| Slime | 30 HP, velocidad 60, daño 8, knockback 160. Detecta a 120 px, ataca a 20 px con una ventana de 0.2 s y cooldown de 1.2 s. Sprite fijo con aplaste/estiramiento por tween. |
+| Cadáver errante | 55 HP, velocidad 28, daño 14, knockback 260. Detecta a 140 px, ataca a 22 px: se queda quieto 0.6 s alzando el brazo (telegrafía) antes de abrir la hitbox; cooldown de 1.8 s. Animaciones del kit en 4 direcciones; al morir queda su cuerpo en el piso. |
 | IA | Persecución en línea recta dentro del radio de detección (sin pathfinding). |
-| Spawn | 2 slimes por zona COMBAT, en tiles interiores (lejos de las paredes). |
+| Spawn | 2 enemigos por zona COMBAT, sorteados con la seed de la lista `Spawner.enemy_scenes` (slime y errante), en tiles interiores (lejos de las paredes). |
+| Muerte | Corta la IA y las colisiones, juega la muerte (animación o aplaste + estallido de sangre) y recién después libera al enemigo. |
 | Datos | `EnemyData` (.tres). |
 
 ### 1.7. UI
@@ -98,9 +102,10 @@ confiable y feel · **P1** vertical slice v2 · **P2** profundidad · **P3** con
 
 ### 1.8. Herramientas de desarrollo
 
-- 35 tests headless (`scripts/test/`), todos verdes.
+- 37 tests headless (`scripts/test/`), todos verdes.
 - Vista previa del estilo de arte: `scenes/preview/art_preview.tscn` (no está en `main.tscn`); su tileset sale de `scripts/tools/build_art_preview_tileset.gd`.
-- **Advertencia:** `tilesets/dungeons_v2.tres` se edita solo en el editor: sus colisiones están ajustadas a mano.
+- Tileset del juego: `tools/art/build_crypt_atlas.py` arma el atlas y `scripts/tools/build_crypt_tileset.gd` genera `tilesets/crypt_dark.tres`.
+- **Advertencia:** `tilesets/crypt_dark.tres` se genera con `scripts/tools/build_crypt_tileset.gd` (colisiones desde `DungeonGeometry.is_solid_atlas`): no editarlo a mano, se pisa al regenerar.
 - Atajo de debug **N** (acción `debug_next_floor`): salta al siguiente piso. Solo corre en builds de debug.
 
 ---
@@ -110,7 +115,6 @@ confiable y feel · **P1** vertical slice v2 · **P2** profundidad · **P3** con
 | Problema | Impacto |
 |---|---|
 | `enemy_health/damage_multiplier` no se leen | La dificultad no sube con el piso. |
-| Solo hay animaciones `Idle_Down` / `Walk_Down` | El sprite no mira arriba ni a los lados (solo usa `flip_h`). |
 | Sin números de daño ni sonido al golpear | El combate se lee solo por el destello y el empuje. |
 | El cofre es un `ColorRect` | Placeholder visual. |
 | Sin audio | No hay música ni SFX. |
@@ -133,9 +137,9 @@ Ya está en `main` y documentado en §1: knockback, i-frames, hit flash, pausa y
 
 **Feel de combate**
 - [x] Hit-stop al impactar.
-- [ ] Visual del swing de la espada (hoy es un rectángulo provisorio sobre la hitbox).
+- [x] Visual del swing de la espada (smear por golpe y dirección).
 - [x] Combo de 3 golpes en `sword.gd`.
-- [ ] Animaciones de 4 direcciones (Idle/Walk Up, Side, Down).
+- [x] Animaciones de 4 direcciones del jugador (idle, caminar y ataque).
 
 **Estabilidad y docs**
 - [x] Actualizar `README.md`, `AGENTS.md` y `FEATURES.md` a la dirección v2.
@@ -202,7 +206,8 @@ Ya está en `main` y documentado en §1: knockback, i-frames, hit flash, pausa y
 
 **Enemigos**
 - [ ] Segundo enemigo a distancia (dispara proyectiles con el mismo protocolo).
-- [ ] Tercer enemigo con carga o embestida (telegrafía su ataque).
+- [x] Enemigo que telegrafía su ataque (cadáver errante).
+- [ ] Tercer enemigo con carga o embestida.
 - [ ] Pathfinding básico (NavigationRegion2D o A* sobre la grilla) para no quedarse trabado en paredes.
 - [ ] Tabla de spawn por piso en `FloorData` (qué enemigos aparecen y con qué peso).
 - [ ] Elites: variante con más HP, tinte distinto y un modificador.

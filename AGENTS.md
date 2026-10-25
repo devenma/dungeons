@@ -188,7 +188,7 @@ res://
 │   ├── guild/
 │   │   └── guild.tscn               # Hub: almacén y puerta de expedición
 │   │
-│   ├── dungeon/                     # chest.tscn, exit.tscn
+│   ├── dungeon/                     # chest.tscn, exit.tscn, wall_torch.tscn
 │   │
 │   ├── rooms/                       # Plantillas de sala hechas a mano
 │   │
@@ -238,6 +238,8 @@ res://
 │   │   ├── door_controller.gd       # Puertas y transiciones entre zonas
 │   │   ├── camera_limit_manager.gd  # Límites de cámara por zona
 │   │   ├── spawner.gd               # Spawn de contenido por tipo de zona
+│   │   ├── floor_dressing.gd        # Ambiente sembrado: antorchas, objetos colgados, calcos
+│   │   ├── dungeon_geometry.gd      # Constantes de geometría y roles de tiles
 │   │   └── zone.gd                  # Data structures: Zone, Door, ZoneType
 │   │
 │   ├── combat/
@@ -253,7 +255,8 @@ res://
 │   ├── preview/                     # Scripts y shader de la vista previa de arte
 │   │
 │   ├── tools/
-│   │   └── build_art_preview_tileset.gd
+│   │   ├── build_art_preview_tileset.gd
+│   │   └── build_crypt_tileset.gd   # Genera tilesets/crypt_dark.tres
 │   │
 │   └── resources/
 │       ├── floor_data.gd
@@ -278,7 +281,7 @@ res://
 │   └── sfx/
 │
 ├── tools/
-│   └── art/                         # Pipeline de arte fuera del motor (export_room.py)
+│   └── art/                         # Pipeline de arte fuera del motor (export_room.py, build_crypt_atlas.py)
 │
 └── ui/
 ```
@@ -580,7 +583,7 @@ Status Effects
 
 Una entidad con vida debería poder recibir información de daño de forma genérica.
 
-Estado actual: el knockback (`KnockbackComponent`, decae en 0.2 s), los i-frames del jugador (`HealthComponent.invulnerability_seconds`, 0.5 s), el hit flash (`HitFlash`), el hit-stop (`HitStop`, congela `Engine.time_scale` 60-110 ms por golpe aceptado, sin acumularse) y el combo de 3 de la espada (`WeaponData.combo` con un `SwingData` por golpe) ya existen.
+Estado actual: el knockback (`KnockbackComponent`, decae en 0.2 s), los i-frames del jugador (`HealthComponent.invulnerability_seconds`, 0.5 s), el hit flash (`HitFlash`), el hit-stop (`HitStop`, congela `Engine.time_scale` 60-110 ms por golpe aceptado, sin acumularse) y el combo de 3 de la espada (`WeaponData.combo` con un `SwingData` por golpe) ya existen. Cada golpe emite `swing_phase_changed`: `PlayerAnimator` reparte los frames de la animación de ataque en las fases del `SwingData` (preparación, golpe, recuperación) y la espada lanza el smear al activar la hitbox. `HitVfx` saca chispa, sangre y manchas de piso en cada golpe aceptado.
 
 El sistema podrá crecer posteriormente para soportar:
 
@@ -864,7 +867,7 @@ GENERACIÓN LÓGICA (grid-merging)
 
 No generar directamente un conjunto de tiles aleatorios sin una estructura lógica previa.
 
-El piso completo se renderiza en un **TileMap único** que consume el recurso pre-construido `res://tilesets/dungeons_v2.tres` (32×32 px, geometría real de los assets, autorado en el editor): el código solo coloca tiles — no construye tilesets ni colisiones en runtime. `scripts/dungeon/dungeon_geometry.gd` (`DungeonGeometry`) es la fuente única de las constantes de geometría y roles de tiles, y si el recurso falta la generación falla de forma ruidosa (sin fallback). Las habitaciones individuales `.tscn` fueron reemplazadas por un sistema de zonas generadas proceduralmente sobre una grilla.
+El piso completo se renderiza en un **TileMap único** que consume el recurso pre-construido `res://tilesets/crypt_dark.tres` (cripta oscura, 32×32 px; atlas `assets/art/environment/crypt/crypt_tiles.png` armado por `tools/art/build_crypt_atlas.py`, `.tres` generado por `scripts/tools/build_crypt_tileset.gd`): el código solo coloca tiles — no construye tilesets ni colisiones en runtime. `scripts/dungeon/dungeon_geometry.gd` (`DungeonGeometry`) es la fuente única de las constantes de geometría y roles de tiles, y si el recurso falta la generación falla de forma ruidosa (sin fallback). Las habitaciones individuales `.tscn` fueron reemplazadas por un sistema de zonas generadas proceduralmente sobre una grilla.
 
 Dirección (D3): **mundo exterior fijo + dungeons procedurales armadas con salas diseñadas a mano.** El grid-merging sigue definiendo la topología y los tipos de zona; el interior de cada zona sale de un pool de plantillas (`scenes/rooms/`) por tipo y tamaño, elegidas con la seed. El gating es por **llaves y puertas cerradas**, más un objeto que abre un atajo.
 
@@ -886,7 +889,17 @@ Responsabilidad:
 - elegir la plantilla de sala de cada zona con la seed (`scenes/rooms/`);
 - colocar llaves y puertas cerradas;
 - validar la **solvabilidad** del piso (la llave debe estar antes que su puerta en la ruta), no solo la alcanzabilidad;
-- renderizar el piso completo en un TileMap consumiendo el `TileSet` pre-construido (`res://tilesets/dungeons_v2.tres`).
+- renderizar el piso completo en un TileMap consumiendo el `TileSet` pre-construido (`res://tilesets/crypt_dark.tres`).
+
+Reglas del render (BIBLIA_ARTE §1-3), todas en `DungeonGeometry`:
+
+- Cada zona pinta su anillo dentro de su `tile_rect`: la fila norte es un **tope** visto desde arriba y debajo van las **2 filas de cara** de la pared norte, justo donde empieza el piso; las paredes laterales y la sur muestran solo su tope (la sur, sin cara exterior si otra zona queda abajo).
+- Piso y topes son periódicos de 96 px: la variante sale de `(tx % 3, ty % 3)`.
+- Las losas junto a una pared usan su variante con oclusión (AO) al pie de la pared.
+- Puerta lateral = hueco en las dos paredes (`door_e` / `door_w`); puerta norte = pasillo entre los topes y arco en la cara de la zona de abajo. Cerrada: vuelve la pared (con colisión) y el arco muestra la puerta trabada.
+- La salida es una escalera de bajada de 2×3 tiles en el centro de la zona EXIT.
+- Las paredes bloquean su tile completo: la cara norte frena los pies en el borde del piso.
+- `floor_dressing.gd` agrega, sembrado por la seed, una antorcha encendida por zona en la cara norte (con `PointLight2D` que solo toca personajes; tiles y calcos tienen `light_mask = 0`), soportes apagados, objetos colgados y calcos de piso.
 
 Flujo conceptual:
 
@@ -1277,14 +1290,14 @@ Tipo de zona (START/COMBAT/REWARD/EXIT)
  ↓
 Puertas en aristas compartidas (posición irregular)
  ↓
-TileMap único (consume res://tilesets/dungeons_v2.tres)
+TileMap único (consume res://tilesets/crypt_dark.tres)
 ```
 
 La generación produce un piso contiguo sin espacios muertos. Las zonas se asignan a tipos funcionales. Las puertas se colocan en posiciones irregulares — si la arista compartida es suficientemente larga pueden haber múltiples puertas.
 
-Cada celda del grid es de `CELL_TILES × CELL_TILES` tiles (configurable). El TileMap consume el `TileSet` pre-construido `res://tilesets/dungeons_v2.tres` (32×32 px, hojas de assets reales, autorado en el editor) — el código solo coloca tiles; `DungeonGeometry` es la fuente única de las constantes de geometría.
+Cada celda del grid es de `CELL_TILES × CELL_TILES` tiles (configurable). El TileMap consume el `TileSet` pre-construido `res://tilesets/crypt_dark.tres` (cripta oscura, 32×32 px) — el código solo coloca tiles; `DungeonGeometry` es la fuente única de las constantes de geometría y roles de tiles.
 
-**Advertencia:** `tilesets/dungeons_v2.tres` se edita solo en el editor: sus colisiones están ajustadas a mano.
+**Advertencia:** `tilesets/crypt_dark.tres` se genera con `scripts/tools/build_crypt_tileset.gd` (colisiones desde `DungeonGeometry.is_solid_atlas`): no editarlo a mano, se pisa al regenerar.
 
 Objetivo:
 
@@ -1788,7 +1801,7 @@ Cada animación se dibuja en **4 direcciones** (abajo, arriba, izquierda y derec
 
 ### Pantalla
 
-El juego dibuja a 480×270 (unos 15×8 tiles de 32) y se escala a la ventana. La ventana actual (1280×720) es ×2.67, un factor no entero que deforma píxeles; hay que pasar a escala entera (por ejemplo 1920×1080 = ×4) antes de integrar el arte final.
+El juego dibuja a 480×270 (unos 15×8 tiles de 32) y se escala a la ventana con **escala entera** (`stretch/mode = viewport`, `scale_mode = integer`, ventana de 1920×1080 = ×4). Si la pantalla no da para ×4, usa el mayor entero que entra, con bordes.
 
 ---
 
@@ -1943,7 +1956,7 @@ Después:
 [ ] Crowd Control
 [x] Loot (mochila, almacén del guild, tablas de botín)
 [ ] Progresión (equipo + mejoras, sin XP)
-[ ] Enemigos adicionales
+[x] Enemigos adicionales (cadáver errante)
 [ ] Elites
 [ ] Bosses
 ```
@@ -1984,7 +1997,7 @@ Cualquier agente que trabaje sobre este repositorio debe:
 15. **Toda variable debe declararse con tipo explícito** — no usar `:=` para inferencia cuando el tipo provenga de arrays anidados, diccionarios, o propiedades de objetos sin tipo. Ver sección 32 (Tipado explícito).
 16. **Las señales que emiten eventos sincrónicos** (ej: `spawn_content()` que emite `zone_cleared`) deben conectarse ANTES de la llamada que dispara la emisión.
 17. **Leer [`DECISIONES.md`](DECISIONES.md) antes de proponer arquitectura.** Es la fuente de verdad de diseño aprobada por el equipo.
-18. **`tilesets/dungeons_v2.tres` se edita solo en el editor.** Sus colisiones están ajustadas a mano; no generarlo por script.
+18. **`tilesets/crypt_dark.tres` se genera con `scripts/tools/build_crypt_tileset.gd`** Sus colisiones salen de `DungeonGeometry.is_solid_atlas`; no editarlo a mano porque se pisa al regenerar.
 19. **Si un documento contradice `DECISIONES.md`, gana `DECISIONES.md`** y hay que corregir el documento, no la decisión.
 
 ## 44.1. Organización y comentarios
@@ -2019,7 +2032,7 @@ Copiar el estilo del archivo que se toca: nombres, densidad de comentarios y for
 - Antes de dar algo por terminado: correr todos los tests headless (`scripts/test/`) y reportar el resultado real, con la salida de los que fallen.
 - Las capturas de prueba no se commitean: van en los comentarios del PR.
 - El arte nuevo sale con las herramientas de arte (kit de personajes y linter de pixel art, puntaje ≥ 90) y sigue `BIBLIA_ARTE.md`. Ningún archivo del repo apunta a rutas fuera del repo.
-- `tilesets/dungeons_v2.tres` se edita solo en el editor (colisiones ajustadas a mano).
+- `tilesets/crypt_dark.tres` se genera con `scripts/tools/build_crypt_tileset.gd` (colisiones desde `DungeonGeometry.is_solid_atlas`): no editarlo a mano, se pisa al regenerar.
 
 ---
 

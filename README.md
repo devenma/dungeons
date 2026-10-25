@@ -24,11 +24,11 @@ El juego arranca en un guild. Morir no borra el progreso: perdés todo lo de la 
 | Fase 1 — Movimiento | ✅ | Player con movimiento 8 direcciones, cámara con límites, colisiones |
 | Fase 2 — Dungeon estático | ✅ | 3 habitaciones conectadas con puertas y transición de cámara |
 | Fase 3 — Generación procedural | ✅ | Grid-merging + TileMap único con zonas, puertas irregulares, cámara por zona |
-| Fase 3.5 — Tileset v2 | ✅ | Atlas unificado (`dungeons_v2.tres`) con físicas autoradas en el editor |
-| Fase 4/6 — Enemigos y combate | ✅ | Slime con EnemyData, Health/Hitbox/Hurtbox/DamageInfo, espada, muerte |
+| Fase 3.5 — Tileset de la cripta | ✅ | `crypt_dark.tres`: pared norte con cara de 2 filas, topes laterales y sur, AO al pie de las paredes, puertas en arco y escalera de salida; antorchas y calcos sembrados por la seed |
+| Fase 4/6 — Enemigos y combate | ✅ | Slime y cadáver errante con EnemyData, Health/Hitbox/Hurtbox/DamageInfo, espada, muerte con animación |
 | Fase 7 — Ranged (arco + bastón) | ✅ | Una sola arma equipada a la vez; `attack` ataca y Tab (`swap_weapon`) cambia el arma; arco y bastón salen de cofres en zonas REWARD |
 | P0 — Combate y estabilidad | ✅ | Knockback (decae en 0.2 s), i-frames del jugador (0.5 s), hit flash y menú de pausa con Esc (PR #6) |
-| Combate v2 | ✅ | Hit-stop y combo de 3 de la espada (`SwingData`) |
+| Combate v2 | ✅ | Hit-stop y combo de 3 de la espada (`SwingData`), con animación de ataque, smear, chispa y sangre |
 | Fase 8 — Habilidades | ⏳ | Parte A (`weapon-equip`) archivada; parte B (`abilities`, kits por arma) pendiente |
 | Fase 10 — Guild y economía | ⏳ | Hecho: perfil persistente (`user://profile.json`), oro, loot, mochila y almacén (I), piedra azul, guild como hub. Falta: tienda, NPCs, día/noche |
 | Fase 9, 11+ — Progresión y jefes | ⏳ | Pendiente: mejoras, `DungeonData`, zona BOSS y bosses |
@@ -72,9 +72,9 @@ Main
 
 `ProfileState` guarda lo que sobrevive a la muerte: oro bancado, almacén del guild, armas aseguradas y desbloqueos. `RunManager` es **solo** el estado de una expedición (seed del dungeon, piso actual, loot de la mochila, oro encima y armas recogidas) y muere con ella. `Guild` (`scenes/guild/`) es el hub donde arranca el juego; `WorldClock` (día/noche) todavía no existe.
 
-El piso se genera mediante **grid-merging**: se divide el área en una grilla, se mergean celdas contiguas en zonas, y cada zona recibe un tipo funcional (START, COMBAT, REWARD, EXIT). Todo el piso se renderiza en un TileMap único que consume el tileset pre-construido `res://tilesets/dungeons_v2.tres` (atlas `assets/Examples/Background_min_all_v2_FIXED.png`, 32px, físicas de pared autoradas en el editor). Las puertas se colocan en posiciones irregulares sobre aristas compartidas. La dirección es conservar esa topología y llenar el interior de cada zona con plantillas de sala hechas a mano (`scenes/rooms/`).
+El piso se genera mediante **grid-merging**: se divide el área en una grilla, se mergean celdas contiguas en zonas, y cada zona recibe un tipo funcional (START, COMBAT, REWARD, EXIT). Todo el piso se renderiza en un TileMap único que consume el tileset pre-construido `res://tilesets/crypt_dark.tres` (cripta oscura, atlas `assets/art/environment/crypt/crypt_tiles.png`, 32px; lo genera `scripts/tools/build_crypt_tileset.gd`). Las puertas se colocan en posiciones irregulares sobre aristas compartidas. La dirección es conservar esa topología y llenar el interior de cada zona con plantillas de sala hechas a mano (`scenes/rooms/`).
 
-**Advertencia:** `tilesets/dungeons_v2.tres` se edita solo en el editor: sus colisiones están ajustadas a mano.
+**Advertencia:** `tilesets/crypt_dark.tres` se genera con `scripts/tools/build_crypt_tileset.gd` (colisiones desde `DungeonGeometry.is_solid_atlas`): no editarlo a mano, se pisa al regenerar.
 
 Ver [`AGENTS.md`](AGENTS.md) para la documentación completa de arquitectura y convenciones de código.
 
@@ -90,7 +90,7 @@ Ver [`AGENTS.md`](AGENTS.md) para la documentación completa de arquitectura y c
 Orden técnico sugerido (detalle y justificación en [`DECISIONES.md`](DECISIONES.md)):
 
 1. ✅ Arreglar `_merge_cells`: rectángulos exactos y tamaño mínimo de zona.
-2. ✅ Hit-stop + combo de 3 (falta el arte del swing).
+2. ✅ Hit-stop + combo de 3, con el arte del swing.
 3. ✅ `ProfileState` + oro + inventario + piedra azul + vuelta al guild (`_return_to_guild()`).
 4. Guild con tienda, en `scenes/guild/`.
 5. Pool de plantillas de sala, ya con el generador confiable.

@@ -206,7 +206,7 @@ no `flip_h`. Ese es el costo real de esta decisión y hay que resolverlo antes d
 ### D5 — Arte: ¿16 o 32 px? ¿HD-2D? [DECIDIDO]
 
 **Decidido el 2026-10-24:**
-- Tiles de 32×32, que ya es lo que usa el proyecto (`tilesets/dungeons_v2.tres`).
+- Tiles de 32×32 (`tilesets/crypt_dark.tres`, la cripta oscura).
 - Personajes en un lienzo de **48×48**, con enemigos grandes de 96 y jefes de 128 o más.
 - El estilo del entorno es la **cripta oscura**: la cripta "suave" (rampas de 8 tonos, losas irregulares sin
   grilla visible, luz de antorcha en anillos, sin dither) con una pasada *Fear & Hunger* más oscura y sucia.
@@ -418,7 +418,7 @@ fueron propagados; los de proceso siguen abiertos.
    propagado a `AGENTS.md` §18–§19 y `FEATURES.md` P2. Ver D12.
 2. **La Fase 8 tiene dos partes**: `weapon-equip` (parte A, cerrada y archivada) y `abilities`
    (parte B, próximo candidato técnico; suma el maná de D19).
-3. **`tilesets/dungeons_v2.tres` se edita solo en el editor**: sus polígonos de colisión están ajustados a
+3. **(histórico)** `tilesets/dungeons_v2.tres` se editaba solo en el editor; el 2026-10-25 lo reemplazó `crypt_dark.tres`, generado por script. Antes: sus polígonos de colisión estaban ajustados a
    mano. El script que lo generaba se eliminó el 2026-10-24.
 4. **Split del TileMap en nodos `TileMapLayer`** (floor / walls / door): diferido dos veces. Hoy sigue el
    TileMap único de tres capas.
