@@ -7,13 +7,15 @@ propuestas vigentes hasta que el equipo las revise.
 **Revisión 3:** 2026-10-24. Se suma el maná como segundo recurso (D19) y los obstáculos movibles (D20).
 **Revisión 4:** 2026-10-24. D5 pasa a decidida (32 px de tile, personajes de 48×48, entorno "cripta
 suave") y se crea la biblia de arte (D7).
+**Revisión 5:** 2026-10-25. Se suman las propuestas del slice de San Ulmo: jefe (D21), techo de pisos y
+`DungeonData` (D22), sala de cura con precio (D23) y números de sensación de combate (D24).
 **Alcance:** define el juego que queremos hacer. Las decisiones cerradas acá mandan sobre `AGENTS.md`,
 `README.md` y `FEATURES.md` en todo lo que contradigan; esos documentos se actualizan **después** de la
 validación, no antes.
 
 ## Cómo leer este documento
 
-Cada decisión tiene un ID (`D1`…`D18`) para poder citarla en la discusión.
+Cada decisión tiene un ID (`D1`…`D24`) para poder citarla en la discusión.
 
 | Marca | Significado |
 |---|---|
@@ -89,12 +91,14 @@ almacén, las armas aseguradas y los desbloqueos quedan.
   desbloqueos.
 - **Piedra azul:** es un consumible. Si morís con una en la mochila, se gasta y te teletransporta al guild
   **con** el loot. Sale como loot y más adelante se puede comprar. Es el "objeto de retorno" de D10.
+  También se puede ofrecer en el altar de cura (D23), y el jefe suelta una (D21).
 
 **[IMPACTO]** Hecho. `DungeonManager._on_player_died()` llama a `_return_to_guild()`: si hay piedra azul
 en la mochila la gasta, conserva mochila y oro encima y asegura en `ProfileState` las armas recogidas; si
 no, vacía la mochila. En los dos casos `RunManager.start_new_run()` re-rollea la seed y arranca con las
-armas del perfil, y el perfil se guarda en `user://profile.json`. En el guild, el cofre del almacén pasa
-la mochila al almacén y banca el oro. El generador no se tocó.
+armas del perfil, y el perfil se guarda en `user://profile.json`. En el guild, el cofre del almacén abre
+la mochila y el almacén: se pasan objetos en las dos direcciones (pila o de a uno) y "Guardar todo" deposita
+la mochila y banca el oro. El generador no se tocó.
 
 **Alternativas descartadas:**
 - *Perder todo menos los desbloqueos* (roguelite clásico): pelea con el pueblo persistente y con Stardew.
@@ -148,14 +152,17 @@ ruta. Esa validación va en el generador, no en runtime. Es la parte no trivial 
 
 **[PRERREQUISITO, resuelto]** Antes de meter plantillas de sala había que arreglar dos cosas del generador.
 Ya están arregladas: `_merge_cells` corta la grilla en rectángulos exactos (cortes guillotina) y
-`FloorData.min_zone_cells` (2×2 celdas = 512×512 px) fija el tamaño mínimo; `validate_layout()` lo verifica:
+`FloorData.min_zone_cells` fija el tamaño mínimo; `validate_layout()` lo verifica:
 
 1. **`_merge_cells` producía rectángulos que se solapaban.** La zona era el *bounding box* de las celdas que
    ganó, y el paso de asignación greedy expandía ese bbox sin verificar celdas ajenas: ~5% de los
    layouts tenían celdas pintadas dos veces. Con plantillas de sala esto deja de ser cosmético: una
    plantilla necesita un rectángulo exacto. Lo cubre `assert_zone_partition`.
 2. **Una zona de 1 celda (8×8 tiles = 256×256 px) era más chica que el viewport (480×270 px).** La cámara
-   no puede limitar por debajo del viewport y se veían las zonas vecinas.
+   no puede limitar por debajo del viewport y se veían las zonas vecinas. Primero se subió el mínimo a
+   2×2 celdas; después, por feedback del equipo ("las salas son muy grandes, mucha caminata"), cada
+   celda pasó a ser **una pantalla de sala** (15×9 tiles = 480×288 px) con mínimo 1×1, y la cámara se
+   desliza a la zona nueva al cruzar una puerta en vez de saltar.
 
 Con esos dos arreglos la topología quedó confiable y el pool de plantillas es una capa encima, no una
 reescritura.
@@ -198,6 +205,8 @@ Agarrar/lanzar queda afuera; sin co-op (D6) no hay razón para tenerlo.
 
 **[IMPACTO de arte]** Personajes de lado con cámara cenital obligan a **cuatro direcciones de animación**,
 no `flip_h`. Ese es el costo real de esta decisión y hay que resolverlo antes de encargar arte.
+
+Los números objetivo (plantado, rodada, dispersión, stagger por enemigo) están en **D24**.
 
 ---
 
@@ -258,6 +267,8 @@ Varios dungeons de 3–4 pisos, jefe al final, y un objeto para volver al pueblo
 conoce START, COMBAT, REWARD y EXIT. El objeto de retorno reusa el mismo camino que la muerte, pero
 conservando el loot.
 
+Concretado para San Ulmo en **D21** (jefe) y **D22** (techo de pisos y `DungeonData`).
+
 ### D11 — ¿Cómo se hace más fuerte el personaje? [PROPUESTA]
 
 Equipo del pueblo como progreso permanente + mejoras temporales en cada expedición. Sin XP ni niveles: el
@@ -307,8 +318,8 @@ desesperado. Falta confirmarlo formalmente para pasar a [DECIDIDO].
 
 Español e inglés, preparados desde ahora.
 
-**[IMPACTO]** Los textos de UI están hardcodeados en escenas y scripts ("Picked up: X"). Retrofittear es
-barato hoy e innecesariamente caro más adelante: pasada de `tr()` + CSV cuando se toque el HUD.
+**[IMPACTO]** Hecho el 2026-10-25: HUD, mochila, pausa, guild y tienda usan `tr()` con `locale/strings.csv`
+(español por defecto). Pendiente decidir "tú" o "vos": los textos usan "tú" neutro y los documentos "vos".
 
 ### D17 — ¿Próximo hito y para cuándo? [PROPUESTA]
 
@@ -362,6 +373,289 @@ validación de solvabilidad necesitan conocerlos cuando existan las plantillas.
 
 ---
 
+## SLICE — la Cripta de San Ulmo: jefe, pisos, cura y combate
+
+Propuestas de contenido para cerrar el hito de D17. Salen del bestiario
+(`_quizas_usemos/00_base/bestiary_V3/bestiary.md`) y del lore (`_quizas_usemos/07_textos/lore.md`), los dos en
+estado PROPUESTA. Todos los números son **valores de tuning**: se fijan en `.tres` y se ajustan jugando.
+
+Unidades: la **celda-pantalla** es la celda de la grilla del cambio en curso, de 15×9 tiles (480×288 px), con
+anillo de pared de 1 tile y cara norte de 2 filas. El interior pisable de una celda mide 13×5 tiles. Si el
+cambio aterriza con otro tamaño, las medidas en tiles se reescalan y los tiempos no cambian.
+
+### D21 — Jefe de la cripta: la Madre de la Fosa [PROPUESTA]
+
+Es Agna Sorel, fundida con la fosa común. Es el jefe del piso 3 de San Ulmo (D22). Está **fija**: no se mueve,
+el jugador elige la distancia y ella castiga cada distancia con un ataque distinto. Tiene 2 fases. El sprite
+mide 144×128 y tiene 3 poses (reposo, A, B), según el bestiario.
+
+**Arena (zona BOSS)**
+
+| Elemento | Valor |
+|---|---|
+| Tamaño | 2×2 celdas-pantalla = 30×18 tiles (960×576 px); interior pisable de 28×14 tiles (896×448 px) |
+| Puertas | 1 sola, en la pared sur, desde la antesala (D22, D23). Se cierra al entrar, como en COMBAT. |
+| La Madre | Anclada al **centro-norte**, con la pila contra la cara norte. Su huella sólida es de 6×4 tiles (192×128 px). |
+| Pilares-vela | 4 pilares sólidos de 1×1 tile. Los 2 interiores están a ±5 tiles del eje, 7 filas bajo la pila; los 2 exteriores a ±10 tiles, 10 filas bajo la pila. Bloquean el vómito y los proyectiles. |
+| Peligros | Charcos de bilis (del vómito, fase 2) y, en la fase 2, escombro de los pilares interiores (decorativo, no sólido) |
+| Cámara | Sigue al jugador dentro de los límites de la zona con un sesgo del 25% hacia el torso de la Madre. Lejos de ella, la Madre puede quedar fuera de cuadro; por eso a más de 200 px solo usa *Manos de la fosa*, que se telegrafía bajo el jugador. |
+
+Se cambia el "centro de la zona" del bestiario por el centro-norte: una Madre fija que mira siempre al sur
+necesita solo las 3 poses frontales. En el centro tendría que girar, y eso pide arte en 4 direcciones de un
+sprite de 144 px (D4).
+
+**Stats base:** 600 HP (300 por fase). Nunca se aturde y es inmune al knockback (D24). Su golpe congela
+120 ms (`hit_stop_seconds`). Hurtboxes:
+
+| Hurtbox | Cuándo | Multiplicador |
+|---|---|---|
+| Torso (96×48 px, en el borde frontal de la pila, al alcance de la espada) | Siempre | ×1,0 |
+| Manos clavadas (32×32 px cada una) | Recuperación de *Golpe doble* | ×1,5 |
+| Núcleo del pecho | Recuperación de *Vómito* | ×2,0 |
+
+**Ataques.** Los tiempos son anticipación / activo / recuperación, en segundos, con el valor de la fase 1 y
+después el de la fase 2. La telegrafía usa el saturado reservado (D5): brasa del pecho, velas de la corona y
+grietas en el piso.
+
+| Ataque | Fase | Antic. | Activo | Recup. | Daño | Telegrafía | Cómo se evita | Castigo |
+|---|---|---|---|---|---|---|---|---|
+| **Golpe doble** (pose A) | 1-2 | 1,2 / 0,95 | 0,15 | 1,0 / 0,8 | 30 | Alza los dos brazos con las garras abajo, grita y la grieta del pecho pasa a brasa. Dos rectángulos de 128×96 px se oscurecen a cada costado de la pila. | Quedarse al frente de la pila (una franja segura de 160 px) o lejos. También se puede rodar a través del golpe. | Las manos quedan clavadas: ×1,5 durante la recuperación. Entran los golpes 1+2 del combo (1,04 s). |
+| **Barrido** | 1-2 | 0,8 / 0,65 | 0,2 | 0,6 / 0,5 | 22 | Echa un brazo atrás y las velas se inclinan hacia ese lado. Un arco de 120° y 128 px de radio desde el torso. | Salir de los 128 px o rodar a través (ventana de 0,1 s). | Recuperación corta: entra 1 golpe. Castiga al que se planta al frente para evitar el golpe doble. |
+| **Manos de la fosa** | 1-2 | 0,9 / 0,75 por mano | 0,2 | 0,45 entre manos | 18 c/u | Grieta roja de 24 px de radio bajo el jugador, que se ilumina hasta que sale la mano. Son 3 manos en la fase 1 y 5 en la fase 2, en secuencia. | Seguir moviéndose; rodar si la grieta te alcanza. | Mientras dura la secuencia ella queda quieta y el torso recibe golpes normales (unos 2 s). |
+| **Vómito de la fosa** (pose B) | 2 | 1,5 | 1,2 | 1,6 | 10 por tick (cada 0,5 s) | Abre los brazos en cruz, echa la cabeza atrás y se abre el pecho con el núcleo encendido. El cono se marca en el piso. | Salir del cono (70°, 224 px) o ponerse detrás de un pilar. **No se puede rodar a través.** | El núcleo queda abierto: ×2 durante 1,6 s. Entra el combo completo (el 3.º golpe pega entre 1,38 y 1,50 s). |
+| **Nana** | 2 | 1,0 | 3,0 | 1,2 | 30 (abrazo) | Las velas de la corona pasan a blanco amarillento, abre la boca y canta (cue de audio obligatorio). | Durante los 3 s el jugador **no regenera stamina** y es atraído a 25 px/s (caminando a 60 se resiste). Al terminar, si el jugador está a menos de 64 px del torso, lo abraza: 30 de daño y knockback de 300. | Si recibe 60 de daño mientras canta, la nana se corta y queda aturdida 1,5 s, la mayor ventana de la pelea. |
+
+Selección de ataques: por distancia al torso (<128 px: golpe doble o barrido; 128–200 px: cualquiera;
+>200 px: solo manos), sin repetir el mismo ataque 3 veces seguidas. La pausa entre ataques es de 0,6–1,0 s en
+la fase 1 y de 0,3–0,6 s en la fase 2.
+
+**Fase 2 (≤50% HP, 300 HP)**
+- Transición de 2,5 s, invulnerable: grita, empuja al jugador con un knockback radial de 300 desde el torso,
+  colapsan los 2 pilares interiores y la corona arde más fuerte, que es la señal de fase para siempre.
+- Las anticipaciones bajan ~20% (tabla) y se suman *Vómito* y *Nana*.
+- **Adds:** de los bordes de la pila salen 2 errantes "a medio formar" (35 HP en lugar de 55, misma
+  telegrafía de 0,6 s) cada 18 s, con un máximo de 3 vivos. No sueltan botín, así no se farmean. Cuando muere
+  la Madre se desploman todos.
+
+**Rodada y stamina** (números de D24)
+- Todo golpe único de la Madre dura ≤0,2 s activo, menos que los 0,3 s de i-frames de la rodada: siempre
+  se puede rodar a través con buen timing. Lo sostenido (vómito, nana, charcos) se esquiva por posición.
+- Presupuesto de 100 de stamina: un combo completo (70) + 1 rodada (25) siempre alcanza; combo + 2 rodadas
+  no. Después de cada ventana de castigo, el ataque siguiente tiene ≥0,65 s de anticipación, así que el
+  jugador que vació el combo llega a rodar.
+- La *Nana* castiga la codicia: quien entra con poca stamina no puede rodar el abrazo y tiene que salir
+  caminando.
+- El combo no se cancela con rodada (D24): las ventanas están medidas para que un combo empezado al inicio de
+  la recuperación termine antes del siguiente golpe activo.
+
+**Muerte y botín**
+- Secuencia de 3 s: se apagan las velas una por una, el pecho se cierra y se hunde en la pila, que se
+  desmorona. Los adds caen con ella y la puerta se abre.
+- Botín: **Corona de velas** (trofeo único, solo en la primera vez; `ItemData` de valor 200, "sigue tibia"),
+  80–120 de oro y 1 piedra azul garantizada (D1).
+- Aparece la **Escalera del Farol** donde estaba la pila: vuelve al guild con todo (D22).
+- En las vueltas siguientes se cambia la corona por 40–60 de oro extra.
+
+**[IMPACTO]**
+- `Zone.ZoneType` suma `BOSS`. El generador corta una zona de 2×2 celdas en el último piso y la deja con una
+  sola puerta (D22).
+- `DungeonData` con techo de pisos y `boss_scene` (D22).
+- Escena `scenes/bosses/madre_fosa.tscn` (AGENTS §26), con `HealthComponent`, varias `Hurtbox` con
+  multiplicador, una `Hitbox` por ataque, un `AttackController` que lee un `Resource` por ataque (antic/
+  activo/recup, daño, forma, fases y peso) y un `PhaseController` escuchando `health_changed`.
+- `Hurtbox` necesita un multiplicador de daño y poder activarse por ventana.
+- Escena de charco reutilizable (`Hitbox` periódica con vida útil), compartida con el escupebilis.
+- `StaminaComponent.suppress_regen(seconds)` para la *Nana*.
+- La atracción es una velocidad externa que suma `player.gd`, como el knockback pero sostenida.
+- Barra de vida del jefe en el HUD.
+- `Spawner` instancia el jefe en la zona BOSS. El cierre de puertas reutiliza el de COMBAT.
+- La cámara gana el sesgo hacia un objetivo (`CameraLimitManager`) solo en la zona BOSS.
+
+### D22 — Techo de pisos y DungeonData [PROPUESTA]
+
+Concreta D10 para el primer dungeon. **San Ulmo tiene 3 pisos**, y el jefe está al final del 3.º. El techo
+vive en `DungeonData` (de 3 a 4 pisos), así los dungeons siguientes del lore (Cloacas, Mina del Rey) pueden
+tener 4.
+
+**Qué suma cada piso** (la variedad gana a los multiplicadores, AGENTS §25)
+
+| Piso | Lore | Zonas | Enemigos que entran | Presupuesto por celda | Élite | EVENT (D23) | Final |
+|---|---|---|---|---|---|---|---|
+| 1 | Galerías de Nichos | 5–7 | Errante, reptante, ratas | 4 | No | 25% | EXIT (escalera) |
+| 2 | Osario | 6–8 | + Escupebilis, guardia osario | 5 | El Cosido, garantizado, en una zona propia de 2×2 | 50% | EXIT |
+| 3 | Fosa Común | 6–8 + antesala + BOSS | + Cultista de la herida | 6 | El Cosido al 25% | Antesala garantizada | BOSS (D21) |
+
+Coste de amenaza: errante 2, reptante 2, grupo de ratas (5–8) 3, escupebilis 3, guardia osario 3,
+cultista 4. Una zona gasta `presupuesto × celdas`, con un tope de 3 celdas. Reglas del sorteo:
+- Máximo 1 cultista por zona.
+- Los enemigos a distancia (escupebilis, cultista) no superan 1/3 del presupuesto.
+- Las zonas de ≥2 celdas reparten el presupuesto en 2 oleadas (60/40). La 2.ª sale al limpiar la 1.ª.
+
+Multiplicadores de vida y daño por piso: 1,0/1,0, 1,1/1,1 y 1,2/1,15. Son chicos a propósito: la escala viene
+del pool. El slime sale del pool de la cripta y se queda solo para los tests.
+
+**Cómo se llega al jefe**
+- En el último piso (`current_floor == floors.size()`) el generador no pone EXIT. Pone **BOSS** en la zona más
+  lejana de START por BFS, forzando un corte de 2×2 celdas.
+- BOSS tiene **una sola puerta**, desde la **antesala**: una zona de 1×1 celda con el altar de D23, sin
+  enemigos.
+- `validate_layout()` suma estas reglas: BOSS existe y mide ≥2×2, tiene 1 puerta, su único vecino con puerta
+  es la antesala, no es vecina de START y todas las zonas se alcanzan desde START sin cruzar BOSS.
+- Al entrar se cierra la puerta. Hay una intro de 1,5 s (las velas se encienden, aparece la barra de vida) y
+  después la pelea. Morir ahí es una muerte normal (D1).
+
+**Vuelta al guild después del jefe**
+- La **Escalera del Farol** (D21) usa el mismo camino que la piedra azul, pero sin gastar ninguna: conserva
+  la mochila y el oro encima, y asegura en el perfil las armas recogidas.
+- Además marca `ProfileState.dungeons_cleared[&"san_ulmo"]` y avanza el día (`WorldClock`, D2). Queda lugar
+  para la escena de cierre (D14).
+- La expedición siguiente arranca en el piso 1 con seed nueva. Saltar pisos en un dungeon ya limpio (el
+  atajo de D3) queda para después.
+
+**[IMPACTO]**
+- `scripts/resources/dungeon_data.gd` con `id`, `name_key`, `floors: Array[FloorData]` (el tamaño es el
+  techo), `boss_scene` y `boss_zone_cells` (2×2), más `resources/dungeons/san_ulmo.tres`.
+- `FloorData` suma `enemy_pool` (un `Resource` por entrada: escena, coste, peso y tamaño de grupo),
+  `threat_budget_per_cell`, `elite_scene` + `elite_chance` y `event_chance`.
+- `Spawner` pasa de "2 fijos por zona" a presupuesto + oleadas y **lee los multiplicadores**, lo que cierra la
+  deuda del P0.
+- `RunManager` guarda el `DungeonData` de la expedición. `DungeonManager` elige `floors[current_floor - 1]` y
+  deja de incrementar pisos sin techo.
+- `debug_next_floor` en el último piso salta a la antesala.
+- Tests: techo de pisos, BOSS válido en N seeds y vuelta al guild con loot.
+
+### D23 — Sala de cura con precio (zona EVENT) [PROPUESTA]
+
+En la cripta no hay pociones gratis: curarse **cuesta algo de la expedición**. Es una zona EVENT de 1×1 celda
+sin enemigos. Las puertas no se cierran. En el centro hay un **Altar del Voto**, el de las velas que el pueblo
+encendía en la fosa. Un solo uso: cura **toda la vida y toda la stamina** (y el maná, cuando exista, D19) a
+cambio de 1 de 3 ofrendas.
+
+| Ofrenda | Coste | Regla |
+|---|---|---|
+| **Carne** | −20% de la vida máxima base para el resto de la expedición | Acumulable hasta 3 veces (el piso es el 40% de la vida base). Cura hasta el nuevo máximo. Se recupera al volver al guild. |
+| **Diezmo** | Objetos de la mochila | El altar elige: toma unidades de mayor `ItemData.value` hasta sumar el diezmo del piso (15 / 25 / 40). Si la mochila no llega, se la lleva entera. Excluye la piedra azul y los trofeos. Muestra qué se lleva antes de confirmar. |
+| **Piedra azul** | 1 piedra azul | Sin otro coste. Se pierde el seguro de D1: morir después cuesta toda la mochila. |
+
+**Frecuencia:** como máximo 1 EVENT por piso: 25% en el piso 1, 50% en el 2, y en el 3 la antesala garantizada
+(D22). Solo se asigna a zonas de 1×1 que no sean START, EXIT ni BOSS.
+
+**Reglas**
+- No se puede usar con la vida y la stamina llenas: muestra "No necesitás cura" y no gasta nada.
+- Después de una ofrenda se apagan las velas, la zona queda resuelta y el altar no se puede volver a usar.
+- Lo ofrecido no vuelve nunca, ni con piedra azul ni al limpiar el dungeon.
+- La penalización de Carne es estado de expedición (`RunManager`): sobrevive al cambio de piso y muere con la
+  run (D1, D11).
+
+**UI**
+- `interact` (F) en el altar abre un panel que pausa el juego, como el menú de pausa.
+- Tiene 3 tarjetas en fila: el nombre, el coste concreto (el % de vida, la lista de objetos del diezmo o
+  "Piedras: N") y una vista previa de la vida, por ejemplo "62/100 → 80/80".
+- `move_left/right` elige, `attack` o `interact` confirma y `pause` cancela.
+- Las opciones que no se pueden usar quedan grises con el motivo. Textos con `tr()` (D16).
+
+**Casos borde**
+
+| Caso | Resultado |
+|---|---|
+| Mochila vacía | Diezmo en gris: "La mochila está vacía". |
+| Sin piedra azul | Piedra en gris: "No tenés piedra azul". |
+| Carne ya ofrecida 3 veces | Carne en gris: "No te queda nada que dar". |
+| Las tres en gris | El panel muestra "El altar no acepta nada más" y no cura. |
+| Mochila con solo piedras azules | Diezmo en gris (la piedra no cuenta para el diezmo); queda la opción Piedra. |
+| Varias piedras | Se gasta una. |
+| Diezmo con valor menor al del piso | Se lleva toda la mochila. El panel lo avisa en rojo antes de confirmar. |
+
+**Alternativas consideradas**
+- *Pozo de agua negra* (cura o envenena al azar): el azar puro frustra en un combate pesado y pide efectos de
+  estado, que no existen.
+- *Cirujano del osario* (NPC que cose por oro): pide NPC y diálogo dentro del dungeon. Su lugar es el guild
+  (Hermana Ancel).
+- *Capilla de velas con oleadas* (cura al sobrevivir): repite la zona COMBAT y no tiene precio, solo tiempo.
+- *Banquete podrido* (cura con náusea que baja la regeneración de stamina): pide modificadores de stamina y
+  comida. Es buena candidata a 4.ª ofrenda.
+- *Sanguijuelas* (cura en el tiempo a cambio de drenaje): pide daño periódico y efectos de estado (AGENTS §12).
+- *La marca de la Madre* (cura ahora y el jefe se hace más fuerte): pide estado entre pisos y modificadores del
+  jefe. Tiene mucho peso narrativo; se guarda para cuando D21 exista, como ofrenda exclusiva de la antesala.
+
+**[IMPACTO]**
+- `Zone.ZoneType` suma `EVENT`. El generador lo asigna con `FloorData.event_chance` y lo valida en
+  `validate_layout()`.
+- Escena `scenes/dungeon/altar.tscn`, interactuable como el cofre, y panel `scenes/ui/altar_panel.tscn` con
+  `process_mode` ALWAYS.
+- `RunManager.flesh_offerings: int`, aplicado al arrancar cada piso. `HealthComponent` necesita poder cambiar
+  `max_health` en runtime.
+- `Inventory` necesita "quitar por valor hasta N", y `ItemData.value` ya existe. El conteo de piedras azules
+  ya existe para la muerte (D1).
+- Test `assert_altar_offerings`: las 3 ofrendas y los casos borde de la tabla.
+
+### D24 — Sensación de combate: números objetivo [PROPUESTA]
+
+Concreta D4 ("pesado = comprometerse") en números. Son **valores de tuning**: los de "en curso" son los que se
+están implementando y los demás son propuestas. Viven en `WeaponData`/`SwingData`/`EnemyData` o en
+`RollComponent`, y se tocan desde el Inspector.
+
+**Plantado en melee (en curso)**
+- Durante la anticipación, el activo y la recuperación de cada golpe de espada el jugador **no camina**. El
+  input solo actualiza la orientación para el golpe siguiente.
+- Solo avanza el paso del golpe (`SwingData.step_distance`): 4 px en los golpes 1 y 2 y 8 px en el 3.º,
+  durante el activo.
+- **No se puede rodar durante un golpe.** Sí en el margen de encadenado (0,25 s), que ya no planta.
+
+| Golpe | Antic. | Activo | Recup. | Daño | Stamina | Knockback | Hit-stop | Temblor |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 0,18 | 0,10 | 0,22 | 10 | 20 | 220 | 60 ms | 0 |
+| 2 | 0,20 | 0,10 | 0,24 | 12 | 20 | 260 | 70 ms | 0 |
+| 3 | 0,34 | 0,12 | 0,42 | 22 | 30 | 420 | 110 ms | 3 px |
+
+**Dispersión a distancia (en curso).** Moverse no impide disparar, pero abre la dispersión: crece hasta el
+máximo en 0,25 s moviéndose y se cierra a 0 en 0,5 s quieto. Dos marcas en el punto de mira la muestran.
+
+| Arma | Dispersión máx. (a cada lado) | Velocidad | Daño | Stamina | Hit-stop propuesto |
+|---|---|---|---|---|---|
+| Arco | 12° | 400 px/s | 8 | 12 | 40 ms (hoy sin hit-stop) |
+| Bastón | 16° | 280 px/s | 14 | 18 | 50 ms (hoy sin hit-stop) |
+
+**Rodada (en curso, reemplaza al dash previsto)**
+
+| Parámetro | Valor |
+|---|---|
+| Duración / distancia | 0,4 s / 64 px (160 px/s, contra 60 caminando) |
+| I-frames | 0,3 s desde el inicio; los últimos 0,1 s quedan expuestos. Sin parpadeo. |
+| Coste | 25 de stamina, con `try_spend` y sin cooldown |
+| Reglas | No se cancela, no se rueda plantado ni durante un empuje, y el ataque pedido rodando sale al terminar. |
+
+**Stagger y aguante por enemigo.** `stagger_seconds` (en curso) es el tiempo que el golpe corta la acción;
+`poise_while_attacking` (en curso) hace que los golpes no corten una telegrafía ya comprometida;
+`knockback_scale` es propuesta.
+
+| Enemigo | Telegrafía | `stagger_seconds` | Aguante al atacar | `knockback_scale` | Nota |
+|---|---|---|---|---|---|
+| Rata de osario | casi nula | 0,4 | No | 1,5 | El golpe la saca volando; vale la pena el área. |
+| Reptante | 0,35 | 0,5 | No | 1,2 | Frágil: un golpe corta el salto. |
+| Cadáver errante | 0,6 | 0,3 (en curso) | Sí (en curso) | 0,8 | No se lo interrumpe una vez que alza el brazo. |
+| Escupebilis | 0,8 | 0,4 | No | 1,0 | Alcanzarlo corta el escupitajo. |
+| Guardia osario | 0,7 | 0,3 | Sí | 0,5 | El escudo frontal (120°) bloquea: 0 de daño, rebote de 120 para el jugador y 40 ms de hit-stop. El 3.º golpe del combo rompe la guardia: 0,8 s de stagger con el escudo bajo. |
+| Cultista de la herida | 1,0 / 0,5 | 0,5 | No | 1,0 | Golpearlo corta la invocación: es su contra. |
+| El Cosido | 1,0 | 0 | Siempre | 0,25 | Ventana: la cuchilla clavada en el piso, 1,0 s de recuperación. |
+| La Madre (D21) | 0,65–1,5 | 0 (solo el corte de la *Nana*) | Siempre | 0 | Ver D21. |
+
+**Reglas de diseño para todo enemigo nuevo**
+1. Todo golpe que daña tiene ≥0,35 s de anticipación con telegrafía visible en el saturado reservado (D5).
+2. Un golpe único tiene ≤0,3 s de activo (los i-frames de la rodada), así siempre se puede rodar. Lo que dura
+   más se esquiva por posición y se marca en el piso.
+3. Cada ataque deja una recuperación castigable. Los ataques de más de 25 de daño dejan una de ≥0,6 s.
+4. Los golpes al jugador congelan entre 60 y 120 ms (el errante 90, la Madre 120). El temblor de cámara va en
+   px enteros (pixel art, AGENTS §38.1): el 3.º golpe 3 px y el golpe doble de la Madre 4 px.
+
+**[IMPACTO]**
+- Plantado, dispersión, rodada, `stagger_seconds` y `poise_while_attacking` ya están en implementación.
+- `EnemyData.knockback_scale` es nuevo: lo aplica `KnockbackComponent`.
+- El bloqueo frontal del guardia pide que `Hurtbox` conozca la orientación (un componente de guardia).
+- El hit-stop de los proyectiles es sumar `hit_stop_seconds` a `WeaponData` y llamarlo en `arrow.gd`.
+
+---
+
 ## Si se aprueban D1–D4: orden técnico sugerido
 
 1. ✅ **Arreglar `_merge_cells`** (rectángulos exactos y tamaño mínimo de zona). Desbloquea D3 y evita que
@@ -388,7 +682,7 @@ Fuera de este orden inmediato: **D19 (maná)** entra junto con los kits de habil
 | `DungeonManager._on_player_died()` | `_return_to_guild()` con regla de piedra azul | Hecho (D1) |
 | Generador (grid-merging) | Topología + zonas rectangulares exactas de tamaño mínimo + `validate_layout()` | Pool de plantillas y solvabilidad con llaves |
 | `Spawner` | 2 slimes fijos por zona COMBAT | Oleadas y cantidad por piso (D4, D10) |
-| Tipos de zona | START, COMBAT, REWARD, EXIT | Suma BOSS (D10) y, más adelante, EVENT/SHOP |
+| Tipos de zona | START, COMBAT, REWARD, EXIT | Suma BOSS (D10, D21) y EVENT (D23); SHOP más adelante |
 | Pisos | Infinitos | Techo por dungeon (`DungeonData`) |
 | Oro / perfil | `ProfileState` + oro + almacén del guild | Falta la tienda (D2) |
 | Textos de UI | Hardcodeados | `tr()` + traducciones (D16) |
@@ -439,4 +733,5 @@ fueron propagados; los de proceso siguen abiertos.
 ## Estado de la documentación
 
 `README.md`, `AGENTS.md` y `FEATURES.md` quedaron alineados con D1–D20 el 2026-10-24. Si aparece una
-contradicción nueva, gana este documento y se corrige el otro.
+contradicción nueva, gana este documento y se corrige el otro. D21–D24 (2026-10-25) son propuestas y
+todavía no se propagaron.
