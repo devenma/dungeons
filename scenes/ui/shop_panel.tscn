@@ -1,0 +1,110 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/shop_panel.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/art/ui/caja_dialogo.png" id="2_box"]
+[ext_resource type="Resource" path="res://resources/shop/fence_shop.tres" id="3_shop"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_focus"]
+draw_center = false
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.55, 0.45, 0.32, 1)
+
+[sub_resource type="Theme" id="Theme_shop"]
+default_font_size = 11
+Button/styles/focus = SubResource("StyleBoxFlat_focus")
+Button/colors/font_color = Color(0.78, 0.72, 0.62, 1)
+Button/colors/font_hover_color = Color(0.95, 0.85, 0.6, 1)
+Button/colors/font_focus_color = Color(0.95, 0.85, 0.6, 1)
+Button/colors/font_pressed_color = Color(1, 0.9, 0.65, 1)
+Label/colors/font_color = Color(0.78, 0.72, 0.62, 1)
+
+[sub_resource type="LabelSettings" id="LabelSettings_title"]
+font_size = 11
+font_color = Color(0.92, 0.8, 0.55, 1)
+
+[sub_resource type="LabelSettings" id="LabelSettings_line"]
+font_size = 11
+font_color = Color(0.62, 0.58, 0.52, 1)
+
+[node name="ShopPanel" type="Control"]
+process_mode = 3
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme = SubResource("Theme_shop")
+script = ExtResource("1_script")
+shop_data = ExtResource("3_shop")
+
+[node name="Box" type="NinePatchRect" parent="."]
+layout_mode = 0
+offset_left = 100.0
+offset_top = 36.0
+offset_right = 380.0
+offset_bottom = 234.0
+texture = ExtResource("2_box")
+patch_margin_left = 6
+patch_margin_top = 6
+patch_margin_right = 6
+patch_margin_bottom = 6
+
+[node name="Margin" type="MarginContainer" parent="Box"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="Rows" type="VBoxContainer" parent="Box/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="Title" type="Label" parent="Box/Margin/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+label_settings = SubResource("LabelSettings_title")
+
+[node name="Line" type="Label" parent="Box/Margin/Rows"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 22)
+layout_mode = 2
+label_settings = SubResource("LabelSettings_line")
+autowrap_mode = 3
+
+[node name="Gold" type="Label" parent="Box/Margin/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="BuyButton" type="Button" parent="Box/Margin/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+alignment = 0
+
+[node name="SellTitle" type="Label" parent="Box/Margin/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+label_settings = SubResource("LabelSettings_title")
+
+[node name="Scroll" type="ScrollContainer" parent="Box/Margin/Rows"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="SellList" type="VBoxContainer" parent="Box/Margin/Rows/Scroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 0
+
+[node name="Hint" type="Label" parent="Box/Margin/Rows"]
+layout_mode = 2
+text = "[F] / [Esc]"
+label_settings = SubResource("LabelSettings_line")
+horizontal_alignment = 2

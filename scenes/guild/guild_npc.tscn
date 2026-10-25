@@ -1,0 +1,31 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/guild/guild_npc.gd" id="1_npc"]
+[ext_resource type="Script" path="res://scripts/visual/kit_sprite.gd" id="2_kit"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_talk"]
+size = Vector2(36, 24)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_feet"]
+size = Vector2(12, 6)
+
+[node name="GuildNpc" type="Area2D"]
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_npc")
+
+[node name="TalkArea" type="CollisionShape2D" parent="."]
+position = Vector2(0, -2)
+shape = SubResource("RectangleShape2D_talk")
+
+[node name="Sprite" type="AnimatedSprite2D" parent="."]
+script = ExtResource("2_kit")
+animations = PackedStringArray("idle")
+looping = PackedStringArray("idle")
+
+[node name="Body" type="StaticBody2D" parent="."]
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Body"]
+position = Vector2(0, -3)
+shape = SubResource("RectangleShape2D_feet")

@@ -1,0 +1,42 @@
+[
+ {
+  "name": "grime",
+  "x": 69,
+  "y": 92
+ },
+ {
+  "name": "ao",
+  "x": 64,
+  "y": 78
+ },
+ {
+  "name": "torch_rings",
+  "x": 32,
+  "y": 20
+ },
+ {
+  "name": "gloom",
+  "x": 283,
+  "y": 7
+ },
+ {
+  "name": "blood",
+  "x": 140,
+  "y": 58
+ },
+ {
+  "name": "vignette",
+  "x": 32,
+  "y": 0
+ },
+ {
+  "name": "wall_shadow",
+  "x": 63,
+  "y": 16
+ },
+ {
+  "name": "contact",
+  "x": 67,
+  "y": 104
+ }
+]

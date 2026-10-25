@@ -1,0 +1,74 @@
+{
+ "anvil": [
+  13,
+  22
+ ],
+ "banner_torn": [
+  11,
+  1
+ ],
+ "barrel": [
+  10,
+  26
+ ],
+ "barrel_broken": [
+  16,
+  22
+ ],
+ "blood_pool": [
+  9,
+  6
+ ],
+ "bone_s": [
+  5,
+  5
+ ],
+ "chest": [
+  14,
+  22
+ ],
+ "cot": [
+  23,
+  24
+ ],
+ "cot_dead": [
+  23,
+  24
+ ],
+ "counter": [
+  76,
+  32
+ ],
+ "fireplace": [
+  37,
+  64
+ ],
+ "forge": [
+  19,
+  36
+ ],
+ "gate": [
+  33,
+  66
+ ],
+ "notice_board": [
+  23,
+  34
+ ],
+ "planks": [
+  12,
+  10
+ ],
+ "torch_out": [
+  7,
+  26
+ ],
+ "window_boarded": [
+  16,
+  34
+ ],
+ "window_eyes": [
+  16,
+  34
+ ]
+}

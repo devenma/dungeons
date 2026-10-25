@@ -1,9 +1,18 @@
 extends Area2D
 
 ## Punto de interacción repetible del gremio: emite `interacted` con `interact` si el jugador lo pisa.
+## Un hijo `Hint` opcional se muestra solo mientras el jugador está encima.
 ## Repeatable guild interaction spot: emits `interacted` on `interact` while the player overlaps it.
+## An optional `Hint` child only shows while the player is on it.
 
 signal interacted
+
+@onready var _hint: CanvasItem = get_node_or_null("Hint") as CanvasItem
+
+
+func _physics_process(_delta: float) -> void:
+	if _hint != null:
+		_hint.visible = _player_overlaps()
 
 
 func _unhandled_input(event: InputEvent) -> void:

@@ -3,8 +3,10 @@ extends Node
 
 ## Perfil persistente (§6.3, D1): oro bancado, depósito del gremio, armas y desbloqueos.
 ## Sobrevive a la muerte y entre sesiones (JSON en user://). No conoce el piso ni la mochila.
+## La tienda del gremio cobra y paga en oro bancado (D2).
 ## Persistent profile (§6.3, D1): banked gold, guild storage, weapons and unlocks.
 ## Survives death and sessions (JSON in user://). Knows nothing about the floor or the backpack.
+## The guild shop charges and pays in banked gold (D2).
 
 signal profile_changed
 
@@ -118,6 +120,25 @@ func deposit(backpack: Inventory, gold: int) -> void:
 	banked_gold += maxi(gold, 0)
 	backpack.move_all_to(storage)
 	profile_changed.emit()
+
+
+## Vende una unidad de la mochila por su ItemData.value y banca el oro / Sells one backpack unit for its ItemData.value and banks the gold
+func sell(backpack: Inventory, item: ItemData) -> bool:
+	if not backpack.remove(item, 1):
+		return false
+	banked_gold += maxi(item.value, 0)
+	profile_changed.emit()
+	return true
+
+
+## Compra una unidad con oro bancado; sin oro o con la mochila llena no cobra nada.
+## Buys one unit with banked gold; when broke or with a full backpack nothing is charged.
+func buy(backpack: Inventory, item: ItemData, price: int) -> bool:
+	if banked_gold < price or backpack.add(item, 1) > 0:
+		return false
+	banked_gold -= price
+	profile_changed.emit()
+	return true
 
 
 func _as_int(value: Variant) -> int:
