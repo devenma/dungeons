@@ -186,7 +186,8 @@ res://
 │   │   └── player.tscn
 │   │
 │   ├── guild/
-│   │   └── guild.tscn               # Hub: almacén y puerta de expedición
+│   │   ├── guild.tscn               # Hub: sala, NPCs, almacén, tienda y portón de expedición
+│   │   └── guild_npc.tscn           # NPC quieto con idle y saludo
 │   │
 │   ├── dungeon/                     # chest.tscn, exit.tscn, wall_torch.tscn
 │   │
@@ -226,7 +227,9 @@ res://
 │   │   └── inventory.gd            # Slots con apilado (mochila y almacén)
 │   │
 │   ├── guild/
-│   │   ├── guild.gd                # Hub: depósito y pedido de expedición
+│   │   ├── guild.gd                # Hub: depósito, tienda, saludos y pedido de expedición
+│   │   ├── guild_room.gd           # Arte de la sala: tiles, pasadas, calcos y objetos
+│   │   ├── guild_npc.gd
 │   │   └── guild_interactable.gd
 │   │
 │   ├── world/
@@ -236,11 +239,15 @@ res://
 │   │   ├── dungeon_generator.gd     # Grid-merging + TileMap renderer
 │   │   ├── dungeon_manager.gd       # Orquestación del piso
 │   │   ├── door_controller.gd       # Puertas y transiciones entre zonas
-│   │   ├── camera_limit_manager.gd  # Límites de cámara por zona
+│   │   ├── camera_limit_manager.gd  # Cámara por zona y deslizamiento entre zonas
 │   │   ├── spawner.gd               # Spawn de contenido por tipo de zona
 │   │   ├── floor_dressing.gd        # Ambiente sembrado: antorchas, objetos colgados, calcos
 │   │   ├── dungeon_geometry.gd      # Constantes de geometría y roles de tiles
 │   │   └── zone.gd                  # Data structures: Zone, Door, ZoneType
+│   │
+│   ├── audio/
+│   │   ├── sfx.gd                   # Sonido suelto que sobrevive al dueño
+│   │   └── health_sounds.gd         # Sonidos de golpe y muerte de una entidad
 │   │
 │   ├── combat/
 │   │   ├── health_component.gd
@@ -255,7 +262,7 @@ res://
 │   ├── preview/                     # Scripts y shader de la vista previa de arte
 │   │
 │   ├── tools/
-│   │   ├── build_art_preview_tileset.gd
+│   │   ├── build_art_preview_tileset.gd  # Tilesets de la vista previa y del guild (tilesets/guild.tres)
 │   │   └── build_crypt_tileset.gd   # Genera tilesets/crypt_dark.tres
 │   │
 │   └── resources/
@@ -276,9 +283,9 @@ res://
 │   ├── environment/
 │   └── effects/
 │
-├── audio/
-│   ├── music/
-│   └── sfx/
+├── assets/
+│   └── audio/
+│       └── sfx/                     # SFX (.wav) y sus AudioStreamRandomizer (.tres)
 │
 ├── tools/
 │   └── art/                         # Pipeline de arte fuera del motor (export_room.py, build_crypt_atlas.py)
@@ -310,12 +317,8 @@ Main
 │   └── CameraLimitManager
 │
 └── UI
-    ├── HealthBar
-    ├── StaminaBar
-    ├── WeaponLabel
-    ├── GoldLabel
-    ├── BackpackPanel
-    ├── PickupToast
+    ├── HUD              (scenes/ui/hud.tscn: barras, arma, oro, piedra azul, toast)
+    ├── BackpackPanel    (scenes/ui/backpack_panel.tscn: mochila y almacén)
     └── PauseMenu
 ```
 
@@ -458,16 +461,21 @@ move_down
 move_left
 move_right
 
-attack
-swap_weapon        # Tab: cambia el arma equipada
+attack             # Space / clic izquierdo / X (oeste)
+swap_weapon        # Tab / Y (norte): cambia el arma equipada
+roll               # Shift / B (este): voltereta de esquive (reemplaza al dash previsto)
 
-interact           # F
-inventory          # I: muestra la mochila y el almacén
-dash               # prevista
+aim_up / aim_down / aim_left / aim_right   # stick derecho: apuntado con gamepad
 
-pause
+interact           # F / A (sur)
+inventory          # I / Back: muestra la mochila y el almacén
+transfer_one       # Shift sostenido / X: en el almacén del gremio mueve una unidad en vez de la pila
+
+pause              # Esc / Start
 debug_next_floor   # solo builds de debug
 ```
+
+El gamepad es el control principal (D8): el movimiento también va en el stick izquierdo y la cruceta.
 
 Las acciones podrán ampliarse conforme aparezcan nuevas mecánicas. Los slots de habilidad del arma equipada (activas 1-4, buffs/debuff Q/E/R) están previstos en D12 y todavía no existen.
 
@@ -585,6 +593,8 @@ Una entidad con vida debería poder recibir información de daño de forma gené
 
 Estado actual: el knockback (`KnockbackComponent`, decae en 0.2 s), los i-frames del jugador (`HealthComponent.invulnerability_seconds`, 0.5 s), el hit flash (`HitFlash`), el hit-stop (`HitStop`, congela `Engine.time_scale` 60-110 ms por golpe aceptado, sin acumularse) y el combo de 3 de la espada (`WeaponData.combo` con un `SwingData` por golpe) ya existen. Cada golpe emite `swing_phase_changed`: `PlayerAnimator` reparte los frames de la animación de ataque en las fases del `SwingData` (preparación, golpe, recuperación) y la espada lanza el smear al activar la hitbox. `HitVfx` saca chispa, sangre y manchas de piso en cada golpe aceptado.
 
+Peso del combate (D4): durante un golpe de espada el jugador queda plantado (solo avanza `SwingData.step_distance` en el golpe activo) y la orientación se fija al empezar. La voltereta (`RollComponent`) cuesta stamina, recorre una distancia fija, da invulnerabilidad con `HealthComponent.grant_invulnerability` y no se cancela; el ataque pedido durante ella sale al terminar. Un golpe aceptado aturde al enemigo (`EnemyData.stagger_seconds`) y corta su ataque, salvo que tenga `poise_while_attacking` y ya esté comprometido; empujado o aturdido no actúa. `CameraShake` (hijo de la `Camera2D`) solo mueve el `offset` en px enteros. Muerto, el jugador no se mueve, no rueda, no ataca y la salida no cambia de piso.
+
 El sistema podrá crecer posteriormente para soportar:
 
 - daño físico;
@@ -632,7 +642,8 @@ swap_weapon  → Tab: cambia el arma equipada
 ```
 
 Todas las armas comparten el mismo slot de arma equipada. Atacar siempre cuesta
-stamina; no hay cooldowns de arma.
+stamina; no hay cooldowns de arma. Con arco o bastón moverse no impide disparar,
+pero abre un desvío de puntería (`WeaponData.aim_spread_*`) que se cierra quieto.
 
 El arma debe definir principalmente cómo produce su ataque.
 
@@ -653,7 +664,8 @@ WeaponData
 ├── damage
 ├── knockback
 ├── stamina_cost
-└── projectile_data
+├── projectile_data
+└── aim_spread_*       # desvío al moverse (arco y bastón)
 ```
 
 `attack_speed` y `cooldown` están deprecados: el gating es la stamina, no un
@@ -871,7 +883,7 @@ El piso completo se renderiza en un **TileMap único** que consume el recurso pr
 
 Dirección (D3): **mundo exterior fijo + dungeons procedurales armadas con salas diseñadas a mano.** El grid-merging sigue definiendo la topología y los tipos de zona; el interior de cada zona sale de un pool de plantillas (`scenes/rooms/`) por tipo y tamaño, elegidas con la seed. El gating es por **llaves y puertas cerradas**, más un objeto que abre un atajo.
 
-Eso impone dos requisitos al generador, ya cumplidos: `zone.tile_rect` es el rectángulo **exacto** de las celdas de la zona (cortes guillotina sin solapes) y cada zona tiene un **tamaño mínimo** (`FloorData.min_zone_cells`, 2×2 celdas = 512×512 px, más que el viewport de 480×270 px). `validate_layout()` los verifica en cada piso.
+Eso impone dos requisitos al generador, ya cumplidos: `zone.tile_rect` es el rectángulo **exacto** de las celdas de la zona (cortes guillotina sin solapes) y cada zona tiene un **tamaño mínimo** (`FloorData.min_zone_cells`, 1×1 celda = una pantalla de sala: `DungeonGeometry.CELL_TILES` = 15×9 tiles = 480×288 px, que cubre el viewport de 480×270 px). `validate_layout()` los verifica en cada piso.
 
 Algunas zonas pueden incluir **obstáculos movibles** (bloques, pilares caídos, escombros) que el jugador desplaza gastando **stamina**. No son habilidades: usan el mismo protocolo de gasto que los ataques. Su colocación viene de las plantillas de sala y no pueden romper la solvabilidad (D20).
 
@@ -897,7 +909,7 @@ Reglas del render (BIBLIA_ARTE §1-3), todas en `DungeonGeometry`:
 - Piso y topes son periódicos de 96 px: la variante sale de `(tx % 3, ty % 3)`.
 - Las losas junto a una pared usan su variante con oclusión (AO) al pie de la pared.
 - Puerta lateral = hueco en las dos paredes (`door_e` / `door_w`); puerta norte = pasillo entre los topes y arco en la cara de la zona de abajo. Cerrada: vuelve la pared (con colisión) y el arco muestra la puerta trabada.
-- La salida es una escalera de bajada de 2×3 tiles en el centro de la zona EXIT.
+- La salida es una escalera de bajada de 2×2 tiles que se entra **solo desde el sur**: su marco norte y los laterales tienen colisión (`DungeonGeometry.stairs_frame_rects`) y el `ExitArea` cubre la mitad sur (`stairs_exit_rect`). El generador la ubica con la seed (`FloorLayout.exit_stairs`) bajo la cara norte, con 1 tile libre a cada lado, 2 filas libres hasta la pared sur, fuera de las columnas de un arco norte (±1) y sin tocar la boca de ninguna puerta; si no entra, `validate_layout` rechaza el intento. Calcos y spawns no van sobre la escalera ni su entrada (`stairs_keep_clear`).
 - Las paredes bloquean su tile completo: la cara norte frena los pies en el borde del piso.
 - `floor_dressing.gd` agrega, sembrado por la seed, una antorcha encendida por zona en la cara norte (con `PointLight2D` que solo toca personajes; tiles y calcos tienen `light_mask = 0`), soportes apagados, objetos colgados y calcos de piso.
 
@@ -1029,8 +1041,8 @@ max_doors_per_edge               # Máximo de puertas por arista compartida
 max_generation_retries           # Intentos (seed derivada) antes de fallar con push_error, sin fallback
 reward_ratio                     # Probabilidad de que una zona no-START/EXIT sea REWARD
 zone_count_by_floor_depth        # Mapa piso → [min, max] de zonas
-start_zone_max_cells             # Tamaño de la zona START en celdas (2×2 por defecto; gana min_zone_cells si es mayor)
-min_zone_cells                   # Tamaño mínimo de zona en celdas (2×2 = 512×512 px, cubre el viewport)
+start_zone_max_cells             # Tamaño de la zona START en celdas (1×1 por defecto; gana min_zone_cells si es mayor)
+min_zone_cells                   # Tamaño mínimo de zona en celdas (1×1 = una pantalla de 480×288 px, cubre el viewport)
 enemy_health_multiplier
 enemy_damage_multiplier
 ```
@@ -1295,7 +1307,7 @@ TileMap único (consume res://tilesets/crypt_dark.tres)
 
 La generación produce un piso contiguo sin espacios muertos. Las zonas se asignan a tipos funcionales. Las puertas se colocan en posiciones irregulares — si la arista compartida es suficientemente larga pueden haber múltiples puertas.
 
-Cada celda del grid es de `CELL_TILES × CELL_TILES` tiles (configurable). El TileMap consume el `TileSet` pre-construido `res://tilesets/crypt_dark.tres` (cripta oscura, 32×32 px) — el código solo coloca tiles; `DungeonGeometry` es la fuente única de las constantes de geometría y roles de tiles.
+Cada celda del grid mide `DungeonGeometry.CELL_TILES` = 15×9 tiles: una pantalla de sala con su anillo de pared, estilo Zelda. Al cruzar una puerta la cámara se desliza a la zona nueva (`CameraLimitManager.slide_seconds`, 0.4 s) con el juego en pausa y el jugador entra caminando solo hasta el piso, frente a la puerta; las puertas de combate se traban recién ahí. Dentro de una zona de varias pantallas sigue al jugador, limitada a la zona y en píxeles enteros. El TileMap consume el `TileSet` pre-construido `res://tilesets/crypt_dark.tres` (cripta oscura, 32×32 px) — el código solo coloca tiles; `DungeonGeometry` es la fuente única de las constantes de geometría y roles de tiles.
 
 **Advertencia:** `tilesets/crypt_dark.tres` se genera con `scripts/tools/build_crypt_tileset.gd` (colisiones desde `DungeonGeometry.is_solid_atlas`): no editarlo a mano, se pisa al regenerar.
 
@@ -1398,8 +1410,8 @@ Staff
 Magic Projectile
 ```
 
-Estado actual: el bastón (tercera familia, ranged mágico) está implementado
-como clon del patrón del arco, dispara el proyectil mágico reutilizando
+Estado actual: el bastón (tercera familia, ranged mágico) reutiliza el script
+del arco (`staff.gd` hereda de `bow.gd`), dispara el proyectil mágico reutilizando
 `arrow.gd` (`magic_bolt.tscn`) y se ataca con `attack` (misma acción que el resto
 de las armas). Sin cooldowns: el gating es de stamina únicamente.
 
@@ -1452,13 +1464,13 @@ Sin XP ni niveles: el poder viene del equipo del pueblo y de las mejoras de expe
 
 ## Fase 10 — Pueblo y economía
 
-**Estado:** perfil, oro, inventario y guild ✅ hechos; tienda, NPCs y `WorldClock` ⏳ pendientes.
+**Estado:** perfil, oro, inventario, guild, tienda y NPCs ✅ hechos; `WorldClock` ⏳ pendiente.
 
 - ✅ `ProfileState` persistente en `user://profile.json` (oro bancado, almacén, armas aseguradas, desbloqueos).
 - ✅ Oro, loot e inventario (mochila y almacén), con panel `inventory` (I).
 - ✅ Guild mínimo en `scenes/guild/`: se arranca ahí y se vuelve ahí al morir (`_return_to_guild()`).
-- Tienda en el guild.
-- NPCs con diálogo fijo.
+- ✅ Tienda de la reducidora en el guild (`scripts/ui/shop_panel.gd`): compra lo de la mochila a su `ItemData.value` y vende piedras azules (`resources/shop/fence_shop.tres`, `ShopData`), todo en oro bancado.
+- ✅ 7 NPCs quietos con idle del kit y un saludo fijo (`npc.<id>.greet.N` con `tr()`); diálogo provisorio.
 - `WorldClock` con fases día/noche.
 
 ---
@@ -1491,7 +1503,7 @@ Sin XP ni niveles: el poder viene del equipo del pueblo y de las mejoras de expe
 
 - Sistema de diálogo data-driven (`DialogueData`).
 - Escena de cierre al terminar cada dungeon.
-- Localización ES/EN con `tr()`.
+- Localización ES/EN con `tr()`: la base ya existe (`locale/strings.csv`, textos de UI e ítems); faltan los de historia y diálogo.
 
 ---
 
@@ -1503,7 +1515,7 @@ Cuando haya dudas sobre qué desarrollar a continuación, priorizar:
 1. ✅ Arreglar `_merge_cells` (rectángulos exactos + tamaño mínimo de zona)
 2. ✅ Hit-stop + combo de 3 (falta el arte del swing)
 3. ✅ `ProfileState` + oro + inventario + piedra azul + `_return_to_guild()`
-4. Guild con tienda (scenes/guild/)
+4. ✅ Guild con tienda (scenes/guild/)
 5. Pool de plantillas de sala
 6. `WorldClock` día/noche + techo de pisos por dungeon + zona BOSS
 ```
@@ -1797,7 +1809,7 @@ Cada animación se dibuja en **4 direcciones** (abajo, arriba, izquierda y derec
 - Cada criatura es una escena que hereda de `enemy_base.tscn` (los jefes van como escenas aparte, §26) con su propio `EnemyData` y su propio arte.
 - **Las colisiones no siguen al dibujo**: `Hurtbox` y `Hitbox` se dimensionan aparte. Un dragón puede tener la zona vulnerable en el cuerpo y cajas de ataque en la cabeza o la cola.
 - **Las puertas miden 1 tile (32 px)**: un enemigo de 64 px no pasa entre zonas. Los enemigos grandes aparecen y pelean en su propia zona.
-- Una celda mide 8×8 tiles (256 px): un jefe de 128 px entra justo; los jefes necesitan una zona BOSS más grande.
+- Una celda mide 15×9 tiles (480×288 px, una pantalla): un jefe de 128 px entra, pero los jefes necesitan una zona BOSS de varias celdas.
 
 ### Pantalla
 
@@ -1966,7 +1978,8 @@ Pendiente para el vertical slice v2:
 ```text
 [x] ProfileState + oro + retorno al guild + piedra azul
 [x] Hit-stop + combo de 3
-[ ] Tienda en el guild + WorldClock
+[x] Tienda en el guild
+[ ] WorldClock
 [ ] DungeonData + techo de pisos + zona BOSS
 [ ] Plantillas de sala + llaves + solvabilidad
 [ ] Maná (recurso + barra HUD)

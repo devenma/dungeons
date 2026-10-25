@@ -29,18 +29,24 @@ El juego arranca en un guild. Morir no borra el progreso: perdés todo lo de la 
 | Fase 7 — Ranged (arco + bastón) | ✅ | Una sola arma equipada a la vez; `attack` ataca y Tab (`swap_weapon`) cambia el arma; arco y bastón salen de cofres en zonas REWARD |
 | P0 — Combate y estabilidad | ✅ | Knockback (decae en 0.2 s), i-frames del jugador (0.5 s), hit flash y menú de pausa con Esc (PR #6) |
 | Combate v2 | ✅ | Hit-stop y combo de 3 de la espada (`SwingData`), con animación de ataque, smear, chispa y sangre |
+| Combate con peso | ✅ | Jugador plantado durante el golpe, voltereta con i-frames (`roll`), desvío del arco y el bastón al moverse, aturdimiento de enemigos (con aguante en el errante), temblor de cámara, gamepad en todas las acciones y SFX placeholder con buses (Master, SFX, Ambience, UI) |
 | Fase 8 — Habilidades | ⏳ | Parte A (`weapon-equip`) archivada; parte B (`abilities`, kits por arma) pendiente |
-| Fase 10 — Guild y economía | ⏳ | Hecho: perfil persistente (`user://profile.json`), oro, loot, mochila y almacén (I), piedra azul, guild como hub. Falta: tienda, NPCs, día/noche |
+| Fase 10 — Guild y economía | ⏳ | Hecho: perfil persistente (`user://profile.json`), oro, loot, mochila y almacén (I), piedra azul, guild como hub con su arte, 7 NPCs y la tienda de la reducidora (vender loot, comprar piedras azules). Falta: equipo en la tienda, día/noche |
 | Fase 9, 11+ — Progresión y jefes | ⏳ | Pendiente: mejoras, `DungeonData`, zona BOSS y bosses |
 
-Los tests headless pasan: **35 tests verdes** (`scripts/test/`).
+Los tests headless pasan: **50 tests verdes** (`scripts/test/`).
 
 ## Cómo ejecutar
 
 ```bash
-# Abrir en Godot 4.7+
-godot --path .
+./run.sh              # juego
+./run.sh preview      # escena de prueba de arte
+./run.sh test         # todos los tests headless
+./run.sh test camera  # solo los tests cuyo nombre contiene "camera"
+./run.sh import       # reimportar recursos
 ```
+
+En PowerShell: `bash run.sh test`. Si Godot no está en `~/tools/godot/`, definí `GODOT=/ruta/al/binario`.
 
 ## Stack
 
@@ -92,7 +98,7 @@ Orden técnico sugerido (detalle y justificación en [`DECISIONES.md`](DECISIONE
 1. ✅ Arreglar `_merge_cells`: rectángulos exactos y tamaño mínimo de zona.
 2. ✅ Hit-stop + combo de 3, con el arte del swing.
 3. ✅ `ProfileState` + oro + inventario + piedra azul + vuelta al guild (`_return_to_guild()`).
-4. Guild con tienda, en `scenes/guild/`.
+4. ✅ Guild con tienda, en `scenes/guild/`.
 5. Pool de plantillas de sala, ya con el generador confiable.
 6. `WorldClock` día/noche + techo de pisos por dungeon + zona BOSS.
 

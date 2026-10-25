@@ -17,7 +17,9 @@ confiable y feel · **P1** vertical slice v2 · **P2** profundidad · **P3** con
 
 | Feature | Detalle | Dónde |
 |---|---|---|
-| Arranque | El juego arranca en el guild; la puerta de expedición (F) arma el piso 1. | `guild.gd`, `DungeonManager.start_expedition()` |
+| Arranque | El juego arranca en el guild; el portón del dungeon (F) arma el piso 1. | `guild.gd`, `DungeonManager.start_expedition()` |
+| Guild | Sala de una pantalla (480×270) con tablones, chimenea (la única luz cálida, solo toca personajes), almacén en los cofres, tablón de encargos y 7 NPCs quietos con idle; hablarles (F) muestra uno de sus saludos. | `guild.tscn`, `guild_room.gd`, `guild_npc.gd` |
+| Tienda | La reducidora compra lo de la mochila a su `ItemData.value` y vende piedras azules a 150 de oro (`fence_shop.tres`); todo en oro bancado. Pausa el juego mientras está abierta y guarda el perfil tras cada trato. | `shop_panel.gd`, `ProfileState.sell()` / `buy()` |
 | Inicio de expedición | Seed aleatoria (`randi()`), piso 1, armas = las aseguradas en el perfil. La mochila no se toca. | `RunManager.start_new_run()` |
 | Transición de piso | Interactuar (F) en la salida de la zona EXIT genera el piso siguiente con la misma `run_seed`. | `exit_area.gd`, `DungeonManager._start_floor()` |
 | Muerte | Al llegar a 0 HP: espera 0.5 s, restaura vida y stamina y vuelve al guild con seed nueva. Sin piedra azul se pierden mochila, oro encima y armas recogidas; con piedra azul se gasta una y se conserva todo (las armas quedan aseguradas en el perfil). | `DungeonManager._return_to_guild()` |
@@ -28,25 +30,27 @@ confiable y feel · **P1** vertical slice v2 · **P2** profundidad · **P3** con
 
 | Feature | Detalle |
 |---|---|
-| Grid-merging | Grilla de 3–6 × 3–5 celdas (8×8 tiles de 32 px cada una), que crece si hace falta para que entren las zonas. Cortes guillotina: zonas rectangulares exactas, sin solapes ni espacios muertos, de al menos `min_zone_cells` (2×2 celdas = 512×512 px, más que el viewport). |
-| Cantidad de zonas por profundidad | `zone_count_by_floor_depth`: piso 1 → 3–5 zonas, piso 10 → 6–12. |
+| Grid-merging | Grilla de 2–4 × 2–3 celdas; cada celda es una pantalla de sala (15×9 tiles de 32 px = 480×288 px, `DungeonGeometry.CELL_TILES`). La grilla crece si hace falta para que entren las zonas. Cortes guillotina: zonas rectangulares exactas, sin solapes ni espacios muertos, de al menos `min_zone_cells` (1×1 celda). Sobre 500 seeds del piso 1: 71% de zonas de 1×1, 16% de 1×2 o 2×1, el resto más grandes. |
+| Cantidad de zonas por profundidad | `zone_count_by_floor_depth`: piso 1 → 4–6 zonas, piso 10 → 7–12. |
 | Tipos de zona | 1 START, 1 EXIT y el resto COMBAT o REWARD (`reward_ratio` 0.3). |
 | Validación | `validate_layout()`: rectángulos exactos, cobertura completa, tamaño mínimo, tope de START, puertas en aristas compartidas y todas las zonas alcanzables desde START. Si falla, reintenta con otra seed derivada hasta 5 veces y después falla con `push_error` (sin fallback). Cubierto por `assert_zone_partition` (500 seeds × 3 profundidades). |
-| Tope de START | La zona START se recorta primero en el origen a `FloorData.start_zone_max_cells` (2×2 celdas = 16×16 tiles por defecto); si es menor que `min_zone_cells`, gana el mínimo. |
+| Tope de START | La zona START se recorta primero en el origen a `FloorData.start_zone_max_cells` (1×1 celda = una pantalla por defecto); si es menor que `min_zone_cells`, gana el mínimo. |
 | Determinismo | La misma `(run_seed, floor_number)` produce el mismo piso; cubierto por un test. |
 | Puertas | Posición irregular en las aristas compartidas; varias por arista si es larga (`multi_door_threshold`). |
-| Render | Un TileMap único con el tileset de la cripta oscura (`crypt_dark.tres`): tope + cara de 2 filas en la pared norte, topes en las laterales y la sur, piso periódico por `(tx % 3, ty % 3)` con AO al pie de las paredes, puertas en hueco o en arco y escalera de bajada en la salida. Las paredes bloquean su tile completo. |
+| Render | Un TileMap único con el tileset de la cripta oscura (`crypt_dark.tres`): tope + cara de 2 filas en la pared norte, topes en las laterales y la sur, piso periódico por `(tx % 3, ty % 3)` con AO al pie de las paredes, puertas en hueco o en arco y escalera de bajada de 2×2 en la salida, que se entra solo desde el sur (nunca bajo un arco norte ni pegada a una puerta). Las paredes bloquean su tile completo. |
 | Ambiente | `floor_dressing.gd`, sembrado por la seed: una antorcha encendida por zona en la cara norte (dos si es ancha) con luz que solo toca personajes, soportes apagados, objetos colgados, telarañas y calcos de piso. |
 
 ### 1.3. Exploración
 
 | Feature | Detalle |
 |---|---|
-| Movimiento | 8 direcciones, `speed` 60, Input Map (WASD/flechas). |
-| Cámara por zona | `Camera2D` limitada al rectángulo de la zona actual (cámara fija por sala); cambia al cruzar una puerta. |
+| Movimiento | 8 direcciones, `speed` 60, Input Map (WASD/flechas, stick izquierdo o cruceta). |
+| Voltereta | `roll` (Shift / B): 64 px en 0,4 s hacia donde se mueve (o hacia donde mira), cuesta 25 de stamina, 0,3 s de invulnerabilidad desde el inicio. No se cancela; el ataque pedido durante la voltereta sale al terminar. |
+| Gamepad (D8) | Stick izquierdo mueve, stick derecho apunta, X ataca, B rueda, A interactúa, Y cambia de arma, Back abre la mochila, Start pausa. |
+| Cámara por zona | `Camera2D` limitada al rectángulo de la zona actual y en píxeles enteros. Al cruzar una puerta se desliza a la zona nueva en 0.4 s (`slide_seconds`) con el juego en pausa, estilo Zelda; mientras tanto el jugador entra caminando solo hasta el piso de la zona, frente a la puerta (un tile más adentro si entra por un arco norte, `north_landing_tiles`). Dentro de una zona de varias pantallas sigue al jugador. |
 | Cruce de puertas | Detección en dos fases (entrar/salir del área): volver atrás no cuenta como cruce. |
-| Bloqueo de combate | Entrar a una zona COMBAT sin limpiar cierra sus puertas hasta matar a todos los enemigos. |
-| Interacción | Acción `interact` (F) para cofres y salida. |
+| Bloqueo de combate | Entrar a una zona COMBAT sin limpiar cierra sus puertas hasta matar a todos los enemigos; se cierran recién cuando los pies del jugador pisan el piso interior (nunca sobre el hueco, el arco ni la cara), así la puerta no queda encima del cuerpo. |
+| Interacción | Acción `interact` (F / A) para cofres y salida. Muerto no se usa la salida. |
 
 ### 1.4. Combate
 
@@ -55,12 +59,14 @@ confiable y feel · **P1** vertical slice v2 · **P2** profundidad · **P3** con
 | Protocolo de daño único | Hitbox/proyectil → Hurtbox → HealthComponent → `died`. Funciona en las dos direcciones (jugador ↔ enemigo). |
 | Capas de colisión | 5 capas centralizadas en `CollisionLayers`. |
 | Recursos | Stamina 100 (regen 20/s), se rellena al cambiar de piso o al morir. Cada ataque cuesta stamina; no hay cooldowns. Todavía no hay maná (D19). |
-| Apuntado | Mouse/Space apuntan al cursor; el gamepad apunta hacia donde mira el jugador. |
-| Espada | Melee, combo de 3 golpes (`WeaponData.combo`, un `SwingData` por golpe): preparación → hitbox activa → recuperación. Atacar durante el golpe activo o la recuperación encadena el siguiente; también hay 0.25 s de margen al terminar. Perder el margen o no tener stamina vuelve al golpe 1. Daño 10 / 12 / 22, coste 20 / 20 / 30, knockback 220 / 260 / 420; el 3.º es más lento. Cada golpe juega la animación de ataque del jugador sincronizada con sus fases y un smear por dirección (corte, revés y golpe de arriba). |
-| Arco | Flecha de 400 px/s, daño 8, coste 12, knockback 120. |
-| Bastón | Proyectil mágico de 280 px/s, daño 14, coste 18, knockback 140 (reutiliza `arrow.gd`). |
+| Apuntado | Mouse/Space apuntan al cursor; el gamepad apunta con el stick derecho o, si está suelto, hacia donde mira el jugador. |
+| Espada | Melee, combo de 3 golpes (`WeaponData.combo`, un `SwingData` por golpe): preparación → hitbox activa → recuperación. Atacar durante el golpe activo o la recuperación encadena el siguiente; también hay 0.25 s de margen al terminar. Perder el margen o no tener stamina vuelve al golpe 1. Daño 10 / 12 / 22, coste 20 / 20 / 30, knockback 220 / 260 / 420; el 3.º es más lento. Cada golpe juega la animación de ataque del jugador sincronizada con sus fases, un smear por dirección (corte, revés y golpe de arriba) y su sonido. El jugador queda plantado desde la preparación hasta el fin de la recuperación, salvo un paso hacia adelante en el golpe activo (`SwingData.step_distance`: 4 / 4 / 8 px); la orientación se fija al empezar el golpe. El 3.º golpe hace temblar la cámara 3 px al impactar. |
+| Arco | Flecha de 400 px/s, daño 8, coste 12, knockback 120. Moverse no impide disparar, pero abre un desvío de hasta 12° por lado (`WeaponData.aim_spread_*`: llega al máximo en 0,25 s caminando y se cierra en 0,5 s quieto). Dos marcas tenues junto al jugador muestran el desvío. |
+| Bastón | Proyectil mágico de 280 px/s, daño 14, coste 18, knockback 140 (reutiliza `arrow.gd` y el script del arco). Desvío de hasta 16° por lado al moverse. |
 | Proyectiles | Mueren al impactar al primer enemigo, al chocar con una pared o a los 2 s. Vuelan con la hoja de su dirección (flecha o bolo de bilis) y dejan un efecto de impacto. |
-| Knockback | `KnockbackComponent`: el golpe empuja al objetivo con velocidad inicial = `knockback` (px/s), que decae a 0 en 0.2 s. Mientras dura, el empuje reemplaza el movimiento propio (stagger). |
+| Knockback | `KnockbackComponent`: el golpe empuja al objetivo con velocidad inicial = `knockback` (px/s), que decae a 0 en 0.2 s. Mientras dura, el empuje reemplaza el movimiento propio y el enemigo no actúa. |
+| Aturdimiento | Un golpe aceptado corta el ataque del enemigo y lo deja sin actuar `EnemyData.stagger_seconds` (slime 0,35 s, errante 0,3 s). Con `poise_while_attacking` (errante) el golpe no corta la telegrafía ni el ataque ya comprometido. El errante juega su animación de golpe; el slime, un aplaste. |
+| Temblor de cámara | `CameraShake` mueve el `offset` de la cámara en px enteros: 2 px al recibir un golpe, 3 px en el impacto del 3.º golpe del combo, 0,14 s. No toca los límites ni la transición de zona. |
 | I-frames | `HealthComponent.invulnerability_seconds`: el jugador ignora golpes durante 0.5 s después de recibir uno; los enemigos no tienen. |
 | Hit flash | `HitFlash`: destello brillante al recibir daño y parpadeo del sprite mientras duran los i-frames. |
 | Sangre | `HitVfx`: cada golpe aceptado a un enemigo saca una chispa, un chorro de sangre hacia el empuje y una mancha en el piso que dura todo el piso. |
@@ -75,7 +81,7 @@ confiable y feel · **P1** vertical slice v2 · **P2** profundidad · **P3** con
 | Datos por recurso | `WeaponData` (.tres): tipo, escena, daño, knockback, coste de stamina, datos del proyectil y, en melee, el combo (`SwingData`). |
 | Cofres | En las zonas REWARD: un cofre que da un arma del pool (arco/bastón), elegida con la seed, más una tirada de botín (`chest_drops.tres`). El arma se equipa automáticamente. |
 | Loot | `ItemData` (.tres) y `DropTable` (probabilidad por objeto + rango de oro). El slime suelta gel, hueso, piedra azul y 1–3 de oro. |
-| Mochila y almacén | `Inventory`: slots con apilado. Mochila de 20 slots (`RunManager`), almacén de 60 (`ProfileState`). El cofre del guild pasa la mochila al almacén y banca el oro. |
+| Mochila y almacén | `Inventory`: slots con apilado. Mochila de 20 slots (`RunManager`), almacén de 60 (`ProfileState`). En el guild, el cofre del almacén (o `inventory`) abre el panel y pausa el juego: activar un slot (clic, Enter o A) pasa la pila al otro lado, con Shift sostenido o X pasa una unidad, y "Guardar todo" deposita la mochila y banca el oro. Lo que no entra queda donde estaba y el perfil se guarda tras cada cambio. En la mazmorra el almacén se ve pero no se toca. |
 
 ### 1.6. Enemigos
 
@@ -88,21 +94,30 @@ confiable y feel · **P1** vertical slice v2 · **P2** profundidad · **P3** con
 | Muerte | Corta la IA y las colisiones, juega la muerte (animación o aplaste + estallido de sangre) y recién después libera al enemigo. |
 | Datos | `EnemyData` (.tres). |
 
-### 1.7. UI
+### 1.7. Audio
 
 | Feature | Detalle |
 |---|---|
-| Barra de vida | `ProgressBar` ligada a `health_changed`. |
-| Barra de stamina | `ProgressBar` ligada a `stamina_changed`. |
-| Nombre del arma | Label con el arma equipada. |
-| Toast de recogida | "Picked up: X" durante 1.5 s con fade; el botín del mismo frame se suma al toast. |
-| Oro | Label con oro bancado y oro encima. |
-| Mochila | `inventory` (I) muestra la mochila y el almacén. |
-| Pausa | Esc (`pause`) pausa el juego y muestra un menú (Resume / Quit); otro Esc o Resume lo cierra. |
+| Buses | `default_bus_layout.tres`: Master, SFX, Ambience y UI. |
+| SFX | Placeholders procedurales en `assets/audio/sfx/` con `AudioStreamRandomizer` (variaciones, tono ±8 %). Suenan: 3 tajos de espada (uno por golpe del combo), golpe en carne (slime) y hueso (errante), muerte de enemigo, golpe y muerte del jugador, pasos en los frames de apoyo, voltereta, disparo e impacto de flecha y de proyectil mágico, cofre, recogida de objeto, oro, piedra azul al morir, puertas que se traban y se abren. |
+| Ambiente | Loop de mazmorra en los pisos, crepitar en cada antorcha encendida (se oye de cerca) y loop del guild. |
 
-### 1.8. Herramientas de desarrollo
+### 1.8. UI
 
-- 37 tests headless (`scripts/test/`), todos verdes.
+| Feature | Detalle |
+|---|---|
+| Kit de UI | Texturas, 9-slice y fuentes pixel del kit de la cripta (`assets/ui/`, `assets/fonts/`); tema por defecto del proyecto en `resources/ui/ui_theme.tres`. |
+| Barras de vida y stamina | Marco del kit con relleno, rastro de daño (alcanza al relleno a los 0.3 s) y parpadeo del marco al bajar (`resource_bar.gd`). |
+| Arma equipada | Ícono del arma en un slot (`weapon_icon.gd`). |
+| Toast de recogida | "Recogido: X" con los íconos de lo recogido, 1.5 s con fade y sonido; el botín del mismo frame se suma al toast y los repetidos se agrupan (x3). |
+| Oro y piedra azul | Placas con oro bancado + oro encima y cantidad de piedras azules en la mochila. |
+| Mochila y almacén | `inventory` (I) abre las dos grillas de slots de 20×20 con ícono, cantidad, borde de rareza y tooltip (nombre + descripción); mouse, teclado o cruceta. |
+| Pausa | Esc (`pause`) pausa el juego y muestra un menú (Continuar / Salir); otro Esc o Continuar lo cierra. |
+| Idiomas | ES/EN con `tr()` desde `locale/strings.csv`; español por defecto. Para cambiar: `internationalization/locale/test` en `project.godot` (`"en"`). |
+
+### 1.9. Herramientas de desarrollo
+
+- 50 tests headless (`scripts/test/`), todos verdes.
 - Vista previa del estilo de arte: `scenes/preview/art_preview.tscn` (no está en `main.tscn`); su tileset sale de `scripts/tools/build_art_preview_tileset.gd`.
 - Tileset del juego: `tools/art/build_crypt_atlas.py` arma el atlas y `scripts/tools/build_crypt_tileset.gd` genera `tilesets/crypt_dark.tres`.
 - **Advertencia:** `tilesets/crypt_dark.tres` se genera con `scripts/tools/build_crypt_tileset.gd` (colisiones desde `DungeonGeometry.is_solid_atlas`): no editarlo a mano, se pisa al regenerar.
@@ -115,9 +130,11 @@ confiable y feel · **P1** vertical slice v2 · **P2** profundidad · **P3** con
 | Problema | Impacto |
 |---|---|
 | `enemy_health/damage_multiplier` no se leen | La dificultad no sube con el piso. |
-| Sin números de daño ni sonido al golpear | El combate se lee solo por el destello y el empuje. |
+| Sin números de daño | El combate se lee por el destello, el empuje y el sonido. |
 | El cofre es un `ColorRect` | Placeholder visual. |
-| Sin audio | No hay música ni SFX. |
+| SFX placeholder y sin música | Los sonidos son sintéticos (sirven para timing, no para el juego final) y no hay música. |
+| La mochila no se guarda entre sesiones | Una piedra azul comprada (va a la mochila) se pierde si se cierra el juego sin depositarla; el oro ya se cobró. |
+| Diálogo y tienda provisorios | Caja de texto sin nombre ni retrato, fuente por defecto y textos de respaldo en inglés hasta que entren las traducciones. |
 | La muerte vuelve al guild al instante | No hay pantalla de muerte ni resumen de la run. |
 | No existe `DungeonData` | No hay techo de pisos: la muerte es la única forma de volver al guild. |
 | No existe maná ni coste dual | Todas las habilidades gastan solo stamina; el maná llega con la Fase 8 parte B (D19). |
@@ -133,7 +150,8 @@ Ya está en `main` y documentado en §1: knockback, i-frames, hit flash, pausa y
 
 **Generador y cámara**
 - [x] Arreglar el solape de `_merge_cells` (rectángulos exactos) y agregar un tamaño mínimo de zona.
-- [x] Cámara en zonas más chicas que el viewport: ya no hay zonas más chicas que el viewport (`min_zone_cells` 2×2).
+- [x] Cámara en zonas más chicas que el viewport: ya no hay zonas más chicas que el viewport (cada celda es una pantalla).
+- [x] Salas del tamaño de la pantalla y cámara que se desliza entre zonas (feedback del equipo: menos caminata, sin parpadeo).
 
 **Feel de combate**
 - [x] Hit-stop al impactar.
@@ -151,10 +169,11 @@ Ya está en `main` y documentado en §1: knockback, i-frames, hit flash, pausa y
 **Perfil, economía y pueblo**
 - [x] `ProfileState` persistente en `user://` (oro bancado, almacén del guild, armas aseguradas, desbloqueos).
 - [x] Oro e ítems: drops de enemigos y cofres (tablas de botín) y contador de oro en el HUD. Falta la curación.
-- [x] Inventario de mochila (slots con apilado) y almacén del guild; panel con `inventory` (I).
+- [x] Inventario de mochila (slots con apilado) y almacén del guild; panel con `inventory` (I) y pase de objetos entre los dos en el guild.
 - [x] Vuelta al guild en vez de wipe (`_return_to_guild()`), perdiendo lo de la expedición.
 - [x] Piedra azul: consumible que, al morir, te lleva al guild conservando el loot (D1).
-- [ ] Guild con tienda (vender loot, comprar equipo y piedras azules) en `scenes/guild/`. Hoy es un guild provisorio con almacén y puerta.
+- [x] Guild con tienda en `scenes/guild/`: vender loot y comprar piedras azules.
+- [ ] Comprar equipo en la tienda.
 - [ ] `WorldClock` con fases día/noche.
 - [ ] Guardado del perfil y de los ajustes (`user://`).
 
@@ -170,14 +189,15 @@ Ya está en `main` y documentado en §1: knockback, i-frames, hit flash, pausa y
 - [ ] Pantalla de muerte: piso alcanzado, enemigos derrotados y botón de reintentar.
 - [ ] Menú principal (Jugar / Salir) como escena de entrada.
 - [ ] Prompt "F" visible al estar cerca de un cofre o de la salida.
-- [ ] Indicador de "puertas cerradas" y feedback al limpiar la zona (sonido o efecto).
+- [ ] Indicador visual de "puertas cerradas" y efecto al limpiar la zona (el sonido ya existe).
 - [ ] Sprite real para el cofre, con animación de abrir.
 - [ ] Transición (fade) entre pisos.
-- [ ] Base de localización ES/EN (`tr()` + CSV) de los textos de UI.
+- [x] Base de localización ES/EN (`tr()` + CSV) de los textos de UI.
 
 **Audio (último del slice)**
 - [ ] Música de pueblo y de dungeon.
-- [ ] SFX de golpe, muerte, ataque, recogida y puerta.
+- [x] SFX placeholder de golpe, muerte, ataque, recogida y puerta.
+- [ ] SFX definitivos (grabados o de packs libres).
 
 ### P2 — profundidad
 
@@ -230,12 +250,13 @@ Ya está en `main` y documentado en §1: knockback, i-frames, hit flash, pausa y
 - [ ] Granja y crafting (solo si se aprueba; hoy fuera del alcance).
 - [ ] Relaciones con NPCs.
 - [ ] HD-2D (luces y normal maps) si se decide.
-- [ ] Screen shake.
+- [x] Screen shake.
 - [ ] Números de daño flotantes.
 - [ ] Partículas de muerte de enemigos.
-- [ ] Dash (acción `dash`) con coste de stamina e i-frames cortos.
+- [x] Voltereta (acción `roll`, reemplaza al dash) con coste de stamina e i-frames.
 - [ ] Opciones: volumen, remapeo de controles y pantalla completa.
-- [ ] Soporte completo de gamepad (apuntado con el stick derecho).
+- [x] Gamepad en todas las acciones (apuntado con el stick derecho).
+- [ ] Prompts de UI para gamepad.
 - [ ] Efectos de estado adicionales y pulido de combate.
 
 ### Descartado explícitamente
