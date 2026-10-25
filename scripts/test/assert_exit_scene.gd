@@ -75,8 +75,8 @@ func _run() -> void:
 		_check(rect.size == Vector2(64, 64), "EX-2: RectangleShape2D is 64x64")
 	else:
 		_check(false, "EX-2: shape is a RectangleShape2D")
-	_check(instance.get_node_or_null("VisualColorRect") != null,
-			"EX-3: placeholder visual node present")
+	_check(instance.get_node_or_null("VisualColorRect") == null,
+			"EX-3: no placeholder visual (the floor's stairs-down tiles show the exit)")
 	var source_text: String = FileAccess.get_file_as_string("res://scripts/dungeon/exit_area.gd")
 	var source_body: String = source_text.substr(0, source_text.find("func "))
 	source_body = source_body.trim_suffix("\n")
@@ -149,6 +149,11 @@ func _run() -> void:
 					"XC-2: positioned at EXIT tile_rect center * TILE_SIZE")
 			_check(mounted.get("zone_id") == expected_zone.id,
 					"XC-2: zone_id injected pre-add_child (survives ready)")
+			var tilemap: TileMap = dm.get_node("Dungeon/FloorTileMap")
+			var under: Vector2i = Vector2i((mounted.position / DungeonGeometry.TILE_SIZE).floor())
+			var stairs: Rect2i = Rect2i(DungeonGeometry.STAIRS_DOWN, DungeonGeometry.STAIRS_DOWN_SIZE)
+			_check(stairs.has_point(tilemap.get_cell_atlas_coords(DungeonGeometry.LAYER_FLOOR, under)),
+					"XC-2: the exit stands on the stairs-down tiles")
 
 		# --- XT-1: player-in tracking via real physics overlap ---
 		fake_player.position = mounted.position

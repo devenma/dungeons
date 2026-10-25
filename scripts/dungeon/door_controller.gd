@@ -218,34 +218,19 @@ func _lock_zone_doors(zone_id: int) -> void:
 
 
 func _place_door_tiles(door: Zone.Door) -> void:
-	# Place door tiles across the whole punched corridor — the full depth of
-	# BOTH zone wall rings (mirrors the generator's punch and on_zone_cleared's
-	# erase). Closed door = dark fill alternative, blocking via tile collision.
-	for cell in _corridor_cells(door):
-		_tilemap.set_cell(2, cell, DungeonGeometry.DUNGEON_SOURCE_ID,
-				DungeonGeometry.DOOR_FILL_ATLAS, DungeonGeometry.DOOR_CLOSED_ALT)
+	# Closed door: the corridor's wall-ring cells get their wall back (blocking via tile
+	# collision) and a north arch shows the locked door; on_zone_cleared erases the same cells.
+	var closed: Dictionary = DungeonGeometry.closed_door_tiles(door)
+	for cell: Vector2i in closed:
+		_tilemap.set_cell(DungeonGeometry.LAYER_DOOR, cell, DungeonGeometry.DUNGEON_SOURCE_ID,
+				closed[cell])
 
 
 func _corridor_cells(door: Zone.Door) -> Array[Vector2i]:
-	# The punched corridor: offsets -R..R-1 cross-axis from the edge line
-	# (R = WALL_RING_TILES; total depth 2R = DOOR_CORRIDOR_DEPTH_TILES) across
-	# the DOOR_GAP_TILES row centered on pos_along. Must match the wall-band
-	# part of the generator's _punch_doors (R-door-gap-normalize).
-	var tile_pos: Vector2i
-	if door.edge_axis == "v":
-		tile_pos = Vector2i(door.edge_line, door.pos_along)
-	else:
-		tile_pos = Vector2i(door.pos_along, door.edge_line)
-	var ring: int = DungeonGeometry.WALL_RING_TILES
-	var gap: int = DungeonGeometry.DOOR_GAP_TILES
-	var half_gap: float = gap / 2.0
+	# Door-layer cells of a closed door (DungeonGeometry.closed_door_tiles): the wall ring of
+	# both zones, plus the arch rows of a north door.
 	var cells: Array[Vector2i] = []
-	for dz in range(-ring, ring):
-		for g in range(-half_gap, half_gap + 1):
-			if door.edge_axis == "v":
-				cells.append(Vector2i(tile_pos.x + dz, tile_pos.y + g))
-			else:
-				cells.append(Vector2i(tile_pos.x + g, tile_pos.y + dz))
+	cells.assign(DungeonGeometry.closed_door_tiles(door).keys())
 	return cells
 
 
@@ -264,4 +249,4 @@ func on_zone_cleared(zone_id: int) -> void:
 		# Remove door tiles from layer 2 — the whole punched corridor,
 		# matching the tiles placed when the door was closed.
 		for cell in _corridor_cells(d):
-			_tilemap.erase_cell(2, cell)
+			_tilemap.erase_cell(DungeonGeometry.LAYER_DOOR, cell)

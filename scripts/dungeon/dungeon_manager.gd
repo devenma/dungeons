@@ -8,6 +8,7 @@ extends Node
 # registered in headless runs without an editor scan.
 const ExitScene: PackedScene = preload("res://scenes/dungeon/exit.tscn")
 const ExitScript: GDScript = preload("res://scripts/dungeon/exit_area.gd")
+const FloorDressingScript: GDScript = preload("res://scripts/dungeon/floor_dressing.gd")
 # Espera entre la muerte y la vuelta al gremio (s) / Delay between death and the return to the guild (s)
 const DEATH_RETURN_SECONDS: float = 0.5
 
@@ -165,6 +166,12 @@ func _start_floor() -> void:
 	dungeon.add_child(_tilemap)
 	generator._render_layout(layout, _tilemap)
 	generator.queue_free()
+
+	# Right after the TileMap: decals and torches draw above the floor, below everything spawned.
+	var dressing: Node2D = FloorDressingScript.new()
+	dressing.name = "FloorDressing"
+	dungeon.add_child(dressing)
+	dressing.dress(layout)
 
 	_door_controller = Node.new()
 	_door_controller.name = "DoorController"

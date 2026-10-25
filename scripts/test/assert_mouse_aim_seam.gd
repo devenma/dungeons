@@ -81,7 +81,7 @@ func _run() -> void:
 			"MA: unknown event type returns ZERO sentinel")
 
 	# --- Weapon wiring (MA-weapon-seam-transparency): real player.tscn,
-	# injected events. Headless get_global_mouse_position() == Vector2.ZERO.
+	# injected events.
 	var container: Node2D = Node2D.new()
 	root.add_child(container)
 	current_scene = container
@@ -97,7 +97,10 @@ func _run() -> void:
 	for i in range(3):
 		await physics_frame
 
-	var headless_mouse: Vector2 = Vector2.ZERO
+	# Con escala entera el viewport queda centrado en la ventana: el mouse headless (0, 0) de
+	# la ventana no cae en (0, 0) del mundo / With integer scaling the viewport is centred in the
+	# window, so the headless mouse at window (0, 0) is not world (0, 0)
+	var headless_mouse: Vector2 = player.get_global_mouse_position()
 	var wire_aim: Vector2 = (headless_mouse - player.global_position).normalized()
 	run_manager.start_new_run()
 	var container_weapons_node: Node2D = player.get_node("Weapons") as Node2D

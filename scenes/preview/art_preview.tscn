@@ -4,10 +4,11 @@
 [ext_resource type="Script" path="res://scripts/preview/art_preview_room.gd" id="2_room"]
 [ext_resource type="TileSet" path="res://tilesets/art_preview_crypt.tres" id="3_tiles"]
 [ext_resource type="Script" path="res://scripts/preview/preview_player.gd" id="4_player"]
-[ext_resource type="Script" path="res://scripts/preview/torch_flicker.gd" id="5_flicker"]
+[ext_resource type="Script" path="res://scripts/dungeon/torch_flicker.gd" id="5_flicker"]
+[ext_resource type="Script" path="res://scripts/visual/kit_sprite.gd" id="6_kit"]
 [ext_resource type="Texture2D" path="res://assets/art/preview/chars/skeleton_south.png" id="9_skel_s"]
 [ext_resource type="Texture2D" path="res://assets/art/preview/chars/skeleton_east.png" id="10_skel_e"]
-[ext_resource type="Texture2D" path="res://assets/art/preview/chars/slime_south.png" id="11_slime"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/slime_south.png" id="11_slime"]
 [ext_resource type="Texture2D" path="res://assets/art/preview/chars/villager_south.png" id="12_villager"]
 
 [sub_resource type="Gradient" id="Gradient_rings"]
@@ -60,8 +61,8 @@ shape = SubResource("RectangleShape2D_feet")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Room/Things/Player"]
 light_mask = 2
-centered = false
-offset = Vector2(-24, -45)
+script = ExtResource("6_kit")
+sheet_prefix = "res://assets/art/characters/adventurer_"
 
 [node name="Skeleton" type="Sprite2D" parent="Room/Things" groups=["preview_characters"]]
 light_mask = 2

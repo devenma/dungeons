@@ -4,7 +4,7 @@ extends Node
 ## Floor structure (§21): seeded guillotine partition of the cell grid into
 ## exact zone rects, neighbors, zone types, doors and validation, then the
 ## TileMap render. Geometry and tile roles come from DungeonGeometry; the
-## render only places tiles from the editor-authored TileSet.
+## render only places tiles from the prebuilt crypt TileSet.
 
 class Cell:
 	var gx: int
@@ -532,97 +532,80 @@ func _render_layout(layout: FloorLayout, tilemap: TileMap) -> void:
 	# Layers: 0=floor, 1=walls, 2=doors
 	while tilemap.get_layers_count() < 3:
 		tilemap.add_layer(-1)
+	# La luz de antorcha solo toca personajes, no los tiles; TileMap no pasa light_mask a sus capas
+	# internas, así que va en cada una
+	# Torch light only touches characters, not tiles; TileMap does not forward light_mask to its
+	# internal layers, so it goes on each one
+	for layer_node: Node in tilemap.get_children(true):
+		(layer_node as CanvasItem).light_mask = 0
 
+	var grid_bottom: int = layout.grid_h * DungeonGeometry.CELL_TILES
 	for z: Zone in layout.zones:
-		_paint_zone_floor(tilemap, z)
-	for z: Zone in layout.zones:
-		_paint_zone_walls(tilemap, z)
+		_paint_zone(tilemap, z, z.tile_rect.end.y < grid_bottom)
 	_punch_doors(tilemap, layout)
+	for z: Zone in layout.zones:
+		if z.type == Zone.ZoneType.EXIT:
+			_paint_exit_stairs(tilemap, z)
+	_shade_wall_feet(tilemap)
 
 
-func _zone_fill_alt(type: int) -> int:
-	# Zone-type tint via the .tres alternative tiles; COMBAT keeps the base tile.
-	match type:
-		Zone.ZoneType.START:
-			return DungeonGeometry.FLOOR_ALT_START
-		Zone.ZoneType.REWARD:
-			return DungeonGeometry.FLOOR_ALT_REWARD
-		Zone.ZoneType.EXIT:
-			return DungeonGeometry.FLOOR_ALT_EXIT
-		_:
-			return 0
-
-
-func _paint_zone_floor(tilemap: TileMap, z: Zone) -> void:
-	# Layer 0: floor checkerboard across the WHOLE rect — including the wall
-	# band — so the punched door corridors reveal plain floor, not empty
-	# background. The v2 sheet bakes the baseboard INTO the wall ring tiles
-	# (layer 1 covers the outer band), so there is no separate trim ring.
-	# COMBAT zones keep the untinted base, START/REWARD/EXIT carry their
-	# alternative tint on the interior (depth >= 1).
-	var origin: Vector2i = z.tile_rect.position
-	var size: Vector2i = z.tile_rect.size
-	var fill_alt: int = _zone_fill_alt(z.type)
-	for ty in size.y:
-		for tx in size.x:
-			var pos: Vector2i = origin + Vector2i(tx, ty)
-			var atlas: Vector2i = DungeonGeometry.floor_atlas_for(tx, ty)
-			if DungeonGeometry.tile_edge_depth(tx, ty, size.x, size.y) == 0:
-				# Wall band: plain untinted floor beneath the wall ring.
-				tilemap.set_cell(0, pos, DungeonGeometry.DUNGEON_SOURCE_ID,
-						atlas, DungeonGeometry.DOOR_OPEN_ALT)
-				continue
-			tilemap.set_cell(0, pos, DungeonGeometry.DUNGEON_SOURCE_ID,
-					atlas, fill_alt)
-
-
-func _paint_zone_walls(tilemap: TileMap, z: Zone) -> void:
-	# Layer 1: 1-tile wall ring INSIDE the zone's tile_rect, per-side wall
-	# tiles chosen by which sides meet at each corner.
-	# Adjacent zones' rings touch back-to-back at shared edges.
+func _paint_zone(tilemap: TileMap, z: Zone, inner_south: bool) -> void:
+	# Each zone paints its own ring inside its tile_rect (north top + face, sides and south as
+	# tops); adjacent zones' rings meet back to back at shared edges.
 	var origin: Vector2i = z.tile_rect.position
 	var size: Vector2i = z.tile_rect.size
 	for ty in size.y:
 		for tx in size.x:
-			if DungeonGeometry.tile_edge_depth(tx, ty, size.x, size.y) != 0:
-				continue  # interior, floor only
 			var pos: Vector2i = origin + Vector2i(tx, ty)
-			tilemap.set_cell(1, pos, DungeonGeometry.DUNGEON_SOURCE_ID,
-					DungeonGeometry.wall_atlas_for(tx, ty, size.x, size.y))
+			var atlas: Vector2i = DungeonGeometry.zone_tile_for(tx, ty, size.x, size.y, pos, inner_south)
+			var layer: int = DungeonGeometry.LAYER_WALL if DungeonGeometry.is_solid_atlas(atlas) \
+					else DungeonGeometry.LAYER_FLOOR
+			tilemap.set_cell(layer, pos, DungeonGeometry.DUNGEON_SOURCE_ID, atlas)
 
 
 func _punch_doors(tilemap: TileMap, layout: FloorLayout) -> void:
-	# Punch each door's corridor: the full depth of BOTH zones' wall rings
-	# (2 * WALL_RING_TILES tiles cross-axis — no shared row: each zone paints
-	# its band inside its own tile_rect) across DOOR_GAP_TILES tiles.
-	# Layer-0 floor is already plain underneath (painted under the whole
-	# rect), so doorways read as an open floor path.
-	# Closed doors (state 1) fill only the wall-band corridor on layer 2
-	# with the dark door alternative so they block via tile collision.
-	var ring: int = DungeonGeometry.WALL_RING_TILES
-	var edge: int = DungeonGeometry.FLOOR_EDGE_TILES
-	var gap: int = DungeonGeometry.DOOR_GAP_TILES
-	var half_gap: float = gap / 2.0
+	# Open the corridor of each door through BOTH zones' rings (and the lower zone's face for a
+	# north door); closed doors (state 1) also get their door-layer tiles, which block.
 	for d in layout.doors:
 		var door: Zone.Door = d
-		var door_tile_pos: Vector2i
-		if door.edge_axis == "v":
-			door_tile_pos = Vector2i(door.edge_line, door.pos_along)
-		else:
-			door_tile_pos = Vector2i(door.pos_along, door.edge_line)
-		for dz in range(-ring - edge, ring + edge):
-			for g in range(-half_gap, half_gap + 1):
-				var cell: Vector2i
-				if door.edge_axis == "v":
-					cell = Vector2i(door_tile_pos.x + dz, door_tile_pos.y + g)
-				else:
-					cell = Vector2i(door_tile_pos.x + g, door_tile_pos.y + dz)
-				tilemap.erase_cell(1, cell)
-				# Corridor floor: overwrite with plain untinted base tile.
-				var floor_atlas: Vector2i = DungeonGeometry.floor_atlas_for(cell.x, cell.y)
-				tilemap.set_cell(0, cell, DungeonGeometry.DUNGEON_SOURCE_ID,
-						floor_atlas, DungeonGeometry.DOOR_OPEN_ALT)
-				if door.state == 1 and dz >= -ring and dz < ring:
-					tilemap.set_cell(2, cell, DungeonGeometry.DUNGEON_SOURCE_ID,
-							DungeonGeometry.DOOR_FILL_ATLAS,
-							DungeonGeometry.DOOR_CLOSED_ALT)
+		var open_tiles: Dictionary = DungeonGeometry.open_door_tiles(door)
+		for cell: Vector2i in open_tiles:
+			tilemap.erase_cell(DungeonGeometry.LAYER_WALL, cell)
+			tilemap.set_cell(DungeonGeometry.LAYER_FLOOR, cell, DungeonGeometry.DUNGEON_SOURCE_ID,
+					open_tiles[cell])
+		var jambs: Dictionary = DungeonGeometry.door_jamb_tiles(door)
+		for cell: Vector2i in jambs:
+			tilemap.set_cell(DungeonGeometry.LAYER_WALL, cell, DungeonGeometry.DUNGEON_SOURCE_ID,
+					jambs[cell])
+		if door.state == 1:
+			var closed: Dictionary = DungeonGeometry.closed_door_tiles(door)
+			for cell: Vector2i in closed:
+				tilemap.set_cell(DungeonGeometry.LAYER_DOOR, cell, DungeonGeometry.DUNGEON_SOURCE_ID,
+						closed[cell])
+
+
+func _paint_exit_stairs(tilemap: TileMap, z: Zone) -> void:
+	var origin: Vector2i = DungeonGeometry.exit_stairs_origin(z)
+	for j in DungeonGeometry.STAIRS_DOWN_SIZE.y:
+		for i in DungeonGeometry.STAIRS_DOWN_SIZE.x:
+			tilemap.set_cell(DungeonGeometry.LAYER_FLOOR, origin + Vector2i(i, j),
+					DungeonGeometry.DUNGEON_SOURCE_ID, DungeonGeometry.STAIRS_DOWN + Vector2i(i, j))
+
+
+## Oclusión al pie de las paredes: cada losa junto a una pared toma su variante oscurecida.
+## Ambient occlusion at the wall feet: every slab next to a wall takes its darkened variant.
+func _shade_wall_feet(tilemap: TileMap) -> void:
+	var sides: Dictionary = {
+		Vector2i.UP: DungeonGeometry.AO_N, Vector2i.RIGHT: DungeonGeometry.AO_E,
+		Vector2i.DOWN: DungeonGeometry.AO_S, Vector2i.LEFT: DungeonGeometry.AO_W,
+	}
+	for cell: Vector2i in tilemap.get_used_cells(DungeonGeometry.LAYER_FLOOR):
+		if not DungeonGeometry.is_floor_atlas(tilemap.get_cell_atlas_coords(DungeonGeometry.LAYER_FLOOR, cell)):
+			continue
+		var mask: int = 0
+		for side: Vector2i in sides:
+			if tilemap.get_cell_source_id(DungeonGeometry.LAYER_WALL, cell + side) != -1:
+				mask |= sides[side]
+		if mask != 0:
+			tilemap.set_cell(DungeonGeometry.LAYER_FLOOR, cell, DungeonGeometry.DUNGEON_SOURCE_ID,
+					DungeonGeometry.floor_atlas_for(cell.x, cell.y, mask))

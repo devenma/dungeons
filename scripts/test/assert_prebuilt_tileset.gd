@@ -1,15 +1,14 @@
 extends SceneTree
 
-## Runtime assertions for the prebuilt dungeon TileSet resource:
-##   1. dungeons_v2.tres loads, is a TileSet, tile_size 32x32, exactly 1
-##      atlas source (Background_min_all_v2_FIXED.png).
-##   2. All 8 wall-ring role tiles exist at the DungeonGeometry frozen
-##      coords and carry one full-tile collision polygon on physics layer 0.
-##   3. Floor strip variants (4,4)/(4,5) — no collision — with tint
-##      alternatives START green / REWARD gold / EXIT red / DOOR_CLOSED dark;
-##      base (alt 0 = DOOR_OPEN) stays white.
+## Runtime assertions for the prebuilt dungeon TileSet resource (tilesets/crypt_dark.tres):
+##   1. Loads, is a TileSet, tile_size 32x32, exactly 1 atlas source (crypt_tiles.png, 12x18 tiles).
+##   2. Every tile role DungeonGeometry names exists in the atlas (each periodic slot too).
+##   3. Collision follows DungeonGeometry.is_solid_atlas: walls carry one full-tile polygon on the
+##      WORLD physics layer; floor, door gaps, passages, stairs and the locked-arch overlay carry none.
 ## Run: godot --headless -s scripts/test/assert_prebuilt_tileset.gd
 ## Exit 0 on pass; nonzero + push_error on failure.
+
+const FULL_TILE: PackedVector2Array = [Vector2(-16, -16), Vector2(16, -16), Vector2(16, 16), Vector2(-16, 16)]
 
 var _fails: int = 0
 
@@ -32,8 +31,33 @@ func _init() -> void:
 		quit(1)
 
 
+## Every atlas coordinate a role constant can produce, slots included.
+func _role_tiles() -> Array[Vector2i]:
+	var tiles: Array[Vector2i] = []
+	for mask in 16:
+		for j in 3:
+			for i in 3:
+				tiles.append(DungeonGeometry.floor_atlas_for(i, j, mask))
+	for slot in 3:
+		for family: Vector2i in [DungeonGeometry.WALL_TOP, DungeonGeometry.FACE_HI, DungeonGeometry.FACE_LO,
+				DungeonGeometry.WALL_LEFT, DungeonGeometry.WALL_RIGHT, DungeonGeometry.WALL_BOTTOM,
+				DungeonGeometry.WALL_BOTTOM_INNER, DungeonGeometry.WALL_LEFT_BELOW_DOOR,
+				DungeonGeometry.WALL_RIGHT_BELOW_DOOR]:
+			tiles.append(family + Vector2i(slot, 0))
+		for j in 3:
+			tiles.append(DungeonGeometry.PASSAGE_N + Vector2i(slot, j))
+	for j in DungeonGeometry.STAIRS_DOWN_SIZE.y:
+		for i in DungeonGeometry.STAIRS_DOWN_SIZE.x:
+			tiles.append(DungeonGeometry.STAIRS_DOWN + Vector2i(i, j))
+	tiles.append_array([DungeonGeometry.WALL_CORNER_TL, DungeonGeometry.WALL_CORNER_TR,
+			DungeonGeometry.WALL_CORNER_BL, DungeonGeometry.WALL_CORNER_BR,
+			DungeonGeometry.WALL_CORNER_BL_INNER, DungeonGeometry.WALL_CORNER_BR_INNER,
+			DungeonGeometry.DOOR_N_HI, DungeonGeometry.DOOR_N_LO, DungeonGeometry.DOOR_E,
+			DungeonGeometry.DOOR_W, DungeonGeometry.DOOR_N_HI_LOCKED, DungeonGeometry.DOOR_N_LO_LOCKED])
+	return tiles
+
+
 func _run_checks() -> void:
-	# ── Check 1: resource loads with the expected shape ──
 	var ts: TileSet = load(DungeonGeometry.DUNGEON_TILESET_PATH)
 	if ts == null:
 		push_error("FATAL: cannot load " + DungeonGeometry.DUNGEON_TILESET_PATH)
@@ -42,94 +66,34 @@ func _run_checks() -> void:
 	_check(ts.tile_size == Vector2i(DungeonGeometry.TILE_SIZE, DungeonGeometry.TILE_SIZE),
 			"tile_size is 32x32")
 	_check(ts.get_source_count() == 1, "tileset has exactly 1 source")
-
-	var src_any: TileSetSource = ts.get_source(DungeonGeometry.DUNGEON_SOURCE_ID)
-	var atlas_src := src_any as TileSetAtlasSource
-	_check(src_any != null, "source 0 exists")
+	_check(ts.get_physics_layers_count() == 1
+			and ts.get_physics_layer_collision_layer(0) == CollisionLayers.WORLD,
+			"one physics layer, on the WORLD collision bit")
+	var atlas_src: TileSetAtlasSource = ts.get_source(DungeonGeometry.DUNGEON_SOURCE_ID) as TileSetAtlasSource
 	if atlas_src == null:
-		push_error("FATAL: source 0 is not an atlas source")
+		push_error("FATAL: source %d is not an atlas source" % DungeonGeometry.DUNGEON_SOURCE_ID)
 		_fails += 1
 		return
+	_check(atlas_src.texture != null and atlas_src.texture.get_size() == Vector2(384, 576),
+			"source uses the 384x576 crypt atlas (12x18 tiles)")
 
-	# ── Check 2: unified sheet (walls + floor) ──
-	var texture: Texture2D = atlas_src.texture
-	_check(texture != null and texture.get_width() == 320
-			and texture.get_height() == 320,
-			"source uses the 320x320 v2 dungeon sheet")
+	var missing: Array[Vector2i] = []
+	for coords in _role_tiles():
+		if not atlas_src.has_tile(coords):
+			missing.append(coords)
+	_check(missing.is_empty(), "every DungeonGeometry role tile exists (missing: %s)" % [missing])
 
-	var wall_roles: Array[Vector2i] = [
-		DungeonGeometry.WALL_CORNER_TL, DungeonGeometry.WALL_TOP,
-		DungeonGeometry.WALL_CORNER_TR, DungeonGeometry.WALL_LEFT,
-		DungeonGeometry.WALL_RIGHT, DungeonGeometry.WALL_CORNER_BL,
-		DungeonGeometry.WALL_BOTTOM, DungeonGeometry.WALL_CORNER_BR,
-	]
-	_check(_all_tiles_present(atlas_src, wall_roles),
-			"all 8 frozen wall-role tiles exist at their coords")
-	var wall_coll_ok := true
-	for coords in wall_roles:
+	var wrong: Array[Vector2i] = []
+	var solid: int = 0
+	for i in atlas_src.get_tiles_count():
+		var coords: Vector2i = atlas_src.get_tile_id(i)
 		var td: TileData = atlas_src.get_tile_data(coords, 0)
-		if td == null or td.get_collision_polygons_count(0) != 1 \
-				or td.get_collision_polygon_points(0, 0).size() != 4:
-			wall_coll_ok = false
-	_check(wall_coll_ok, "all 8 wall tiles have one full-tile collision polygon")
-
-	# ── Check 3: floor strip variants + alternatives ──
-	var floor_roles: Array[Vector2i] = [
-		DungeonGeometry.FLOOR_VARIANT_A, DungeonGeometry.FLOOR_VARIANT_B,
-	]
-	_check(_all_tiles_present(atlas_src, floor_roles),
-			"both floor strip variants exist")
-	var floor_coll_ok := true
-	for coords in floor_roles:
-		var td2: TileData = atlas_src.get_tile_data(coords, 0)
-		if td2 == null or td2.get_collision_polygons_count(0) != 0:
-			floor_coll_ok = false
-	_check(floor_coll_ok, "floor variants have no collision")
-
-	var alts_ok := true
-	var mods_ok := true
-	for coords in floor_roles:
-		if not atlas_src.has_alternative_tile(coords, DungeonGeometry.FLOOR_ALT_START) \
-				or not atlas_src.has_alternative_tile(coords, DungeonGeometry.FLOOR_ALT_REWARD) \
-				or not atlas_src.has_alternative_tile(coords, DungeonGeometry.FLOOR_ALT_EXIT) \
-				or not atlas_src.has_alternative_tile(coords, DungeonGeometry.DOOR_CLOSED_ALT):
-			alts_ok = false
-		else:
-			if atlas_src.get_tile_data(coords, DungeonGeometry.FLOOR_ALT_START).modulate \
-					!= DungeonGeometry.FLOOR_TINT_START:
-				mods_ok = false
-			if atlas_src.get_tile_data(coords, DungeonGeometry.FLOOR_ALT_REWARD).modulate \
-					!= DungeonGeometry.FLOOR_TINT_REWARD:
-				mods_ok = false
-			if atlas_src.get_tile_data(coords, DungeonGeometry.FLOOR_ALT_EXIT).modulate \
-					!= DungeonGeometry.FLOOR_TINT_EXIT:
-				mods_ok = false
-			if atlas_src.get_tile_data(coords, DungeonGeometry.DOOR_CLOSED_ALT).modulate \
-					!= DungeonGeometry.DOOR_TINT_CLOSED:
-				mods_ok = false
-	_check(alts_ok, "alt 1/2/3/4 (START/REWARD/EXIT/DOOR_CLOSED) exist on every floor tile")
-	_check(mods_ok, "alternative tints round-trip and match DungeonGeometry constants")
-
-	# ── Check 4: closed-door alternative carries its own blocking collision ──
-	# Alternative tiles do not inherit the base tile's physics; the lock-on-
-	# entry door model relies on the dark alternative blocking the player.
-	var door_coll_ok := true
-	for coords in floor_roles:
-		var td3: TileData = atlas_src.get_tile_data(coords, DungeonGeometry.DOOR_CLOSED_ALT)
-		if td3 == null or td3.get_collision_polygons_count(0) != 1 \
-				or td3.get_collision_polygon_points(0, 0).size() != 4:
-			door_coll_ok = false
-	_check(door_coll_ok, "DOOR_CLOSED alternative has one full-tile collision polygon")
-
-	var open_td: TileData = atlas_src.get_tile_data(DungeonGeometry.DOOR_FILL_ATLAS,
-			DungeonGeometry.DOOR_OPEN_ALT)
-	_check(open_td != null and open_td.modulate == Color(1, 1, 1),
-			"door-open variant is the plain (white) floor tile")
-
-
-func _all_tiles_present(src: TileSetAtlasSource, coords_list: Array[Vector2i]) -> bool:
-	var present := true
-	for coords in coords_list:
-		if not src.has_tile(coords):
-			present = false
-	return present
+		if DungeonGeometry.is_solid_atlas(coords):
+			solid += 1
+			if td.get_collision_polygons_count(0) != 1 \
+					or td.get_collision_polygon_points(0, 0) != FULL_TILE:
+				wrong.append(coords)
+		elif td.get_collision_polygons_count(0) != 0:
+			wrong.append(coords)
+	_check(wrong.is_empty(), "walls block their full tile, everything else is walkable (wrong: %s)" % [wrong])
+	_check(solid == 33, "33 wall tiles carry collision (got %d)" % solid)

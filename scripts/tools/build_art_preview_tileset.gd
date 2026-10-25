@@ -2,7 +2,7 @@ extends SceneTree
 
 ## Genera tilesets/art_preview_crypt.tres con los PNG de assets/art/preview/crypt/ (un atlas por tile).
 ## Builds tilesets/art_preview_crypt.tres from the PNGs in assets/art/preview/crypt/ (one atlas per tile).
-## Solo escribe su propio .tres; NO toca dungeons_v2.tres. / Writes only its own .tres; does NOT touch dungeons_v2.tres.
+## Solo escribe su propio .tres; no toca el tileset del juego. / Writes only its own .tres; does not touch the game tileset.
 ## Reemplazar PNG con los mismos nombres no requiere re-ejecutarlo; sí agregar o renombrar tiles.
 ## Replacing PNGs with the same names needs no rerun; adding or renaming tiles does.
 ##   "$GODOT" --headless --path . -s scripts/tools/build_art_preview_tileset.gd
