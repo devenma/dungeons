@@ -11,13 +11,13 @@ La fuente de verdad de diseño es [`DECISIONES.md`](DECISIONES.md). Si este docu
 El juego es un **dungeon crawler con historia** 2D centrado en:
 
 - **explorar el dungeon**, que es el núcleo de la experiencia;
-- combatir con un esquema hack n' slash con sensación *beat 'em up* (peso, knockback, hit-stop y combos);
+- combatir en **tiempo real, estilo ARPG**: hack n' slash oscuro, duro y pesado, con sensación *beat 'em up* (peso, knockback, hit-stop y combos);
 - avanzar a través de dungeons procedurales armados con salas diseñadas a mano;
 - volver a un **pueblo persistente** con NPCs, tienda y economía;
 - construir el poder del personaje mediante equipo y mejoras, no mediante XP;
 - superar jefes al final de cada dungeon.
 
-Referencias: *Moonlighter* + *Stardew Valley*, con exploración de cámara cenital tipo *Minish Cap* / *A Link to the Past* y paleta de tonos apagados.
+Referencias de juego: *Moonlighter* + *Stardew Valley*, con exploración de cámara cenital tipo *Minish Cap* / *A Link to the Past*. Referencia de atmósfera y ambiente: *Fear & Hunger* (D15), con paleta de tonos apagados (dirección visual en §38.1 y [`BIBLIA_ARTE.md`](BIBLIA_ARTE.md)).
 
 La muerte **no borra el progreso**: se pierde la expedición y el loot de la mochila, no el perfil (oro bancado, equipo, desbloqueos y pueblo). Ver D1 en `DECISIONES.md`.
 
@@ -99,8 +99,8 @@ La arquitectura principal debe mantenerse aproximadamente así:
         │                 ├── TileMap único (3 capas: floor/wall/door)
         │                 └── ExitArea (transición de piso)
         │
-        └── Town (pueblo persistente)
-              └── WorldClock (día/noche)
+        └── Guild (hub: almacén y puerta de expedición)
+              └── WorldClock (día/noche, previsto)
 
 
                          Player
@@ -123,12 +123,12 @@ La arquitectura principal debe mantenerse aproximadamente así:
                    Enemy
 ```
 
-`ProfileState` es el perfil persistente (oro bancado, equipo, desbloqueos, progreso del pueblo). `RunManager` es **solo** el estado de la expedición (seed, piso actual, loot de la mochila) y muere con ella. `WorldClock` maneja las fases día/noche y `Town` (`scenes/town/`) es la escena del pueblo. No crear managers nuevos para estas responsabilidades: ya tienen dueño.
+`ProfileState` es el perfil persistente (oro bancado, almacén del guild, armas aseguradas, desbloqueos). `RunManager` es **solo** el estado de la expedición (seed, piso actual, loot de la mochila, oro encima y armas recogidas en esta expedición) y muere con ella. `Guild` (`scenes/guild/`) es el hub donde arranca el juego y se vuelve al morir; `WorldClock` (fases día/noche) todavía no existe. No crear managers nuevos para estas responsabilidades: ya tienen dueño.
 
 ## 3.1. Flujo de juego
 
 ```text
-Pueblo (día)
+Guild / pueblo (día)
   │
   ▼
 Entrar al dungeon (noche)
@@ -150,10 +150,10 @@ Combatir / conseguir loot
   └── Sí ───────────────► pelear con el jefe
                               │
                               ▼
-                    Volver al pueblo con loot
+                    Volver al guild con loot
                               │
                               ▼
-              Vender, comprar equipo, avanzar el día
+     Depositar, vender, comprar equipo, avanzar el día
                               │
                               ▼
                          nueva expedición
@@ -161,10 +161,11 @@ Combatir / conseguir loot
 Muerte durante la expedición
   │
   ▼
-Volver al pueblo
-  ├── se pierde el loot de la mochila
+Volver al guild
+  ├── sin piedra azul: se pierden la mochila, el oro encima y las armas recogidas
+  ├── con piedra azul: se gasta una y se conserva todo eso
   ├── se re-rollea la seed del dungeon
-  └── se conserva el perfil (oro, equipo, desbloqueos)
+  └── se conserva el perfil (oro bancado, almacén, armas aseguradas, desbloqueos)
 ```
 
 ---
@@ -184,8 +185,10 @@ res://
 │   ├── player/
 │   │   └── player.tscn
 │   │
-│   ├── town/
-│   │   └── town.tscn
+│   ├── guild/
+│   │   └── guild.tscn               # Hub: almacén y puerta de expedición
+│   │
+│   ├── dungeon/                     # chest.tscn, exit.tscn
 │   │
 │   ├── rooms/                       # Plantillas de sala hechas a mano
 │   │
@@ -201,6 +204,9 @@ res://
 │   │
 │   ├── bosses/
 │   │
+│   ├── preview/
+│   │   └── art_preview.tscn         # Vista previa del estilo de arte (no está en main)
+│   │
 │   └── ui/
 │
 ├── scripts/
@@ -212,6 +218,16 @@ res://
 │   │
 │   ├── profile/
 │   │   └── profile_state.gd        # Perfil persistente (user://)
+│   │
+│   ├── game/
+│   │   └── run_manager.gd          # Estado de la expedición
+│   │
+│   ├── inventory/
+│   │   └── inventory.gd            # Slots con apilado (mochila y almacén)
+│   │
+│   ├── guild/
+│   │   ├── guild.gd                # Hub: depósito y pedido de expedición
+│   │   └── guild_interactable.gd
 │   │
 │   ├── world/
 │   │   └── world_clock.gd          # Fases día/noche
@@ -228,16 +244,24 @@ res://
 │   │   ├── health_component.gd
 │   │   ├── hurtbox.gd
 │   │   ├── hitbox.gd
+│   │   ├── hit_stop.gd
 │   │   └── damage_info.gd
 │   │
 │   ├── enemies/
 │   │   └── enemy.gd
+│   │
+│   ├── preview/                     # Scripts y shader de la vista previa de arte
+│   │
+│   ├── tools/
+│   │   └── build_art_preview_tileset.gd
 │   │
 │   └── resources/
 │       ├── floor_data.gd
 │       └── dungeon_data.gd          # Dungeon: id, pisos, jefe
 │
 ├── resources/
+│   ├── items/                       # ItemData, DropTable y sus .tres
+│   ├── weapons/                     # WeaponData, SwingData y sus .tres
 │   └── dungeons/                    # DungeonData (.tres)
 │
 ├── tilesets/
@@ -252,6 +276,9 @@ res://
 ├── audio/
 │   ├── music/
 │   └── sfx/
+│
+├── tools/
+│   └── art/                         # Pipeline de arte fuera del motor (export_room.py)
 │
 └── ui/
 ```
@@ -269,14 +296,24 @@ Estructura aproximada:
 ```text
 Main
 │
+├── RunManager
+├── ProfileState
+│
 ├── World
-│   ├── Dungeon
-│   └── Player
+│   ├── Guild
+│   ├── Player
+│   ├── DungeonManager
+│   │   └── Dungeon          (se crea en cada piso)
+│   └── CameraLimitManager
 │
 └── UI
-    ├── HUD
     ├── HealthBar
-    └── FloorLabel
+    ├── StaminaBar
+    ├── WeaponLabel
+    ├── GoldLabel
+    ├── BackpackPanel
+    ├── PickupToast
+    └── PauseMenu
 ```
 
 Responsabilidades de `Main`:
@@ -324,10 +361,10 @@ Dos capas de estado, separadas a propósito (D1 en `DECISIONES.md`):
 
 | Capa | Vive en | Contenido | Persiste |
 |---|---|---|---|
-| Perfil | `ProfileState` (`user://`) | Oro bancado, equipo comprado, desbloqueos, progreso del pueblo | Sí, entre sesiones |
-| Expedición | `RunManager` | Seed del dungeon, piso actual, loot en la mochila | No, muere con la expedición |
+| Perfil | `ProfileState` (`user://profile.json`) | Oro bancado, almacén del guild, armas aseguradas, desbloqueos | Sí, entre sesiones |
+| Expedición | `RunManager` | Seed del dungeon, piso actual, loot de la mochila, oro encima y armas recogidas en esta expedición | No, muere con la expedición |
 
-Al morir: se vuelve al pueblo, se pierde el loot no asegurado y se re-rollea la seed del dungeon. El equipo equipado, el oro bancado y los desbloqueos quedan. El objeto de retorno usa el mismo camino, pero conserva el loot.
+Al morir sin piedra azul: se vuelve al guild, se pierde todo lo de la expedición (la mochila y lo que se agarró o equipó durante la expedición) y se re-rollea la seed del dungeon. Lo guardado en el guild (oro bancado, almacén, desbloqueos) queda. Si se muere con una piedra azul en la mochila, se gasta y se vuelve al guild conservando el loot (D1).
 
 Ninguna capa debe absorber a la otra: `ProfileState` no conoce el piso actual y `RunManager` no guarda oro ni desbloqueos.
 
@@ -421,7 +458,8 @@ move_right
 attack
 swap_weapon        # Tab: cambia el arma equipada
 
-interact
+interact           # F
+inventory          # I: muestra la mochila y el almacén
 dash               # prevista
 
 pause
@@ -542,7 +580,7 @@ Status Effects
 
 Una entidad con vida debería poder recibir información de daño de forma genérica.
 
-Estado actual: el knockback (`KnockbackComponent`, decae en 0.2 s), los i-frames del jugador (`HealthComponent.invulnerability_seconds`, 0.5 s) y el hit flash (`HitFlash`) ya existen; el hit-stop y el combo de 3 todavía no.
+Estado actual: el knockback (`KnockbackComponent`, decae en 0.2 s), los i-frames del jugador (`HealthComponent.invulnerability_seconds`, 0.5 s), el hit flash (`HitFlash`), el hit-stop (`HitStop`, congela `Engine.time_scale` 60-110 ms por golpe aceptado, sin acumularse) y el combo de 3 de la espada (`WeaponData.combo` con un `SwingData` por golpe) ya existen.
 
 El sistema podrá crecer posteriormente para soportar:
 
@@ -830,7 +868,7 @@ El piso completo se renderiza en un **TileMap único** que consume el recurso pr
 
 Dirección (D3): **mundo exterior fijo + dungeons procedurales armadas con salas diseñadas a mano.** El grid-merging sigue definiendo la topología y los tipos de zona; el interior de cada zona sale de un pool de plantillas (`scenes/rooms/`) por tipo y tamaño, elegidas con la seed. El gating es por **llaves y puertas cerradas**, más un objeto que abre un atajo.
 
-Eso impone dos requisitos al generador actual: `zone.tile_rect` debe ser un rectángulo **exacto** (hoy `_merge_cells` puede solapar bounding boxes en ~5% de los layouts) y cada zona debe tener un **tamaño mínimo** (hoy una zona de 1 celda, 256×256 px, es más chica que el viewport de 480×270 px). Ambos son deuda P0 y prerrequisito del pool de plantillas.
+Eso impone dos requisitos al generador, ya cumplidos: `zone.tile_rect` es el rectángulo **exacto** de las celdas de la zona (cortes guillotina sin solapes) y cada zona tiene un **tamaño mínimo** (`FloorData.min_zone_cells`, 2×2 celdas = 512×512 px, más que el viewport de 480×270 px). `validate_layout()` los verifica en cada piso.
 
 Algunas zonas pueden incluir **obstáculos movibles** (bloques, pilares caídos, escombros) que el jugador desplaza gastando **stamina**. No son habilidades: usan el mismo protocolo de gasto que los ataques. Su colocación viene de las plantillas de sala y no pueden romper la solvabilidad (D20).
 
@@ -862,7 +900,7 @@ crear seed
 dimensionar grilla
        │
        ▼
-mergear celdas en zonas (region growth)
+partir la grilla en zonas rectangulares (cortes guillotina, tamaño mínimo)
        │
        ▼
 detectar vecinos
@@ -917,7 +955,7 @@ Exit
 En el código actual existen START, COMBAT, REWARD y EXIT. **BOSS** entra con D10
 (piso de jefe al final de cada dungeon); EVENT y SHOP quedan para más adelante.
 
-Las zonas se generan mediante grid-merging: se divide el piso en una grilla de celdas, se mergean celdas contiguas en clusters rectangulares, y cada cluster recibe un tipo de zona. Todas las celdas deben pertenecer exactamente a una zona (sin espacios muertos); hoy `_merge_cells` puede solapar bounding boxes, deuda P0.
+Las zonas se generan mediante grid-merging: se divide el piso en una grilla de celdas, se mergean celdas contiguas en clusters rectangulares, y cada cluster recibe un tipo de zona. Todas las celdas pertenecen exactamente a una zona (sin espacios muertos ni solapes).
 
 ---
 
@@ -932,9 +970,9 @@ Las zonas son la unidad funcional del piso. Cada zona tiene:
 - una lista de puertas que la conectan con sus vecinas
 - un estado cleared (si el contenido fue resuelto)
 
-El `tile_rect` debe ser el rectángulo **exacto** de las celdas de la zona. Hoy `_merge_cells` puede solapar bounding boxes (~5% de los layouts), lo que impide colocar plantillas de sala; es deuda P0. Cada zona necesita además un **tamaño mínimo** para que la cámara y la plantilla funcionen. El gating entre zonas se hace con **llaves y puertas cerradas**.
+El `tile_rect` es el rectángulo **exacto** de las celdas de la zona y cada zona tiene un **tamaño mínimo** (`min_zone_cells`) para que la cámara y la plantilla funcionen. El gating entre zonas se hace con **llaves y puertas cerradas**.
 
-Las zonas se generan proceduralmente con region-growth a partir de semillas determinísticas. El tamaño de cada zona varía según cuántas celdas se mergearon.
+Las zonas se generan con cortes guillotina determinísticos por seed: START se recorta primero en el origen y el resto se corta sin perder capacidad hasta llegar a la cantidad de zonas. Si el mínimo no deja entrar esa cantidad, la grilla crece. El tamaño de cada zona varía según dónde caen los cortes.
 
 En el futuro, una zona COMBAT podría contener una sub-zona REWARD (reward pocket) asignando una celda interna con tipo diferente al de la zona padre.
 
@@ -953,7 +991,8 @@ Responsabilidades:
 - detectar finalización del piso;
 - iniciar transición al siguiente piso;
 - respetar el techo de pisos por dungeon (`DungeonData`) y disparar el piso de jefe;
-- al morir, volver al pueblo sin borrar el perfil (`_return_to_town()`); el objeto de retorno usa el mismo camino, pero conserva el loot.
+- arrancar en el guild y armar el piso 1 con `start_expedition()` (lo pide la puerta del guild);
+- al morir, `_return_to_guild()`: vuelve al guild sin borrar el perfil; con piedra azul conserva la mochila y asegura las armas recogidas.
 
 No debe almacenar permanentemente el estado completo de la partida.
 
@@ -974,15 +1013,16 @@ grid_min_h / grid_max_h          # Grilla: cantidad de celdas en Y
 zone_count_min / zone_count_max  # Rango de zonas del piso
 multi_door_threshold             # Tiles mínimos para múltiples puertas en una arista
 max_doors_per_edge               # Máximo de puertas por arista compartida
-max_generation_retries           # Intentos antes del fallback
+max_generation_retries           # Intentos (seed derivada) antes de fallar con push_error, sin fallback
 reward_ratio                     # Probabilidad de que una zona no-START/EXIT sea REWARD
 zone_count_by_floor_depth        # Mapa piso → [min, max] de zonas
-start_zone_max_cells             # Tope de celdas de la zona START (2×1 por defecto)
+start_zone_max_cells             # Tamaño de la zona START en celdas (2×2 por defecto; gana min_zone_cells si es mayor)
+min_zone_cells                   # Tamaño mínimo de zona en celdas (2×2 = 512×512 px, cubre el viewport)
 enemy_health_multiplier
 enemy_damage_multiplier
 ```
 
-Falta un **mínimo de celdas por zona** (prerrequisito de las plantillas de sala, D3). Los multiplicadores `enemy_health_multiplier` y `enemy_damage_multiplier` existen pero **hoy no se leen**: deben consumirse en `Spawner` al instanciar enemigos; hasta entonces la dificultad no escala con el piso.
+Los multiplicadores `enemy_health_multiplier` y `enemy_damage_multiplier` existen pero **hoy no se leen**: deben consumirse en `Spawner` al instanciar enemigos; hasta entonces la dificultad no escala con el piso.
 
 La dificultad no debe aumentar únicamente mediante multiplicadores de estadísticas.
 
@@ -1167,7 +1207,7 @@ Debe contener únicamente:
 No introducir inicialmente:
 
 - múltiples clases;
-- inventario complejo;
+- crafting ni inventario con peso, rarezas o equipo por slots del cuerpo (el inventario inicial es de slots con apilado);
 - árboles de habilidades;
 - muchos tipos de enemigos;
 - bosses complejos (el primero con 1-2 fases);
@@ -1231,7 +1271,7 @@ Seed
  ↓
 Grid cells
  ↓
-Region growth → Zonas rectangulares
+Cortes guillotina → Zonas rectangulares exactas (tamaño mínimo)
  ↓
 Tipo de zona (START/COMBAT/REWARD/EXIT)
  ↓
@@ -1244,7 +1284,7 @@ La generación produce un piso contiguo sin espacios muertos. Las zonas se asign
 
 Cada celda del grid es de `CELL_TILES × CELL_TILES` tiles (configurable). El TileMap consume el `TileSet` pre-construido `res://tilesets/dungeons_v2.tres` (32×32 px, hojas de assets reales, autorado en el editor) — el código solo coloca tiles; `DungeonGeometry` es la fuente única de las constantes de geometría.
 
-**Advertencia:** `scripts/tools/build_dungeon_tileset.gd` **no se debe re-ejecutar**. Sobrescribe las colisiones y los ajustes autorados a mano en `tilesets/dungeons_v2.tres`.
+**Advertencia:** `tilesets/dungeons_v2.tres` se edita solo en el editor: sus colisiones están ajustadas a mano.
 
 Objetivo:
 
@@ -1399,13 +1439,14 @@ Sin XP ni niveles: el poder viene del equipo del pueblo y de las mejoras de expe
 
 ## Fase 10 — Pueblo y economía
 
-**Estado: ⏳ pendiente.**
+**Estado:** perfil, oro, inventario y guild ✅ hechos; tienda, NPCs y `WorldClock` ⏳ pendientes.
 
-- `ProfileState` persistente en `user://` (oro, equipo, desbloqueos, pueblo).
-- Oro y tienda sobre `scenes/hub/guild_tavern.tscn` / `scenes/town/`.
+- ✅ `ProfileState` persistente en `user://profile.json` (oro bancado, almacén, armas aseguradas, desbloqueos).
+- ✅ Oro, loot e inventario (mochila y almacén), con panel `inventory` (I).
+- ✅ Guild mínimo en `scenes/guild/`: se arranca ahí y se vuelve ahí al morir (`_return_to_guild()`).
+- Tienda en el guild.
 - NPCs con diálogo fijo.
 - `WorldClock` con fases día/noche.
-- Retorno al pueblo en vez de wipe al morir.
 
 ---
 
@@ -1416,7 +1457,7 @@ Sin XP ni niveles: el poder viene del equipo del pueblo y de las mejoras de expe
 - `DungeonData` (id, cantidad de pisos, jefe) y techo de 3–4 pisos.
 - Tipo de zona BOSS.
 - Primer boss con 1–2 fases.
-- Objeto de retorno que conserva el loot.
+- ✅ Piedra azul (consumible) que conserva el loot al morir (D1).
 
 ---
 
@@ -1424,7 +1465,7 @@ Sin XP ni niveles: el poder viene del equipo del pueblo y de las mejoras de expe
 
 **Estado: ⏳ pendiente.**
 
-- Arreglar `_merge_cells` (rectángulos exactos) y tamaño mínimo de zona.
+- ✅ Arreglar `_merge_cells` (rectángulos exactos) y tamaño mínimo de zona.
 - Pool de plantillas de sala en `scenes/rooms/`.
 - Llaves y puertas cerradas.
 - Validación de solvabilidad en el generador.
@@ -1446,10 +1487,10 @@ Sin XP ni niveles: el poder viene del equipo del pueblo y de las mejoras de expe
 Cuando haya dudas sobre qué desarrollar a continuación, priorizar:
 
 ```text
-1. Arreglar `_merge_cells` (rectángulos exactos + tamaño mínimo de zona)
-2. Hit-stop + visual del swing + combo de 3
-3. `ProfileState` + oro + `_return_to_town()`
-4. Pueblo mínimo con tienda (scenes/hub/guild_tavern.tscn)
+1. ✅ Arreglar `_merge_cells` (rectángulos exactos + tamaño mínimo de zona)
+2. ✅ Hit-stop + combo de 3 (falta el arte del swing)
+3. ✅ `ProfileState` + oro + inventario + piedra azul + `_return_to_guild()`
+4. Guild con tienda (scenes/guild/)
 5. Pool de plantillas de sala
 6. `WorldClock` día/noche + techo de pisos por dungeon + zona BOSS
 ```
@@ -1694,6 +1735,61 @@ Una escena puede componerse de otras escenas cuando tenga sentido.
 
 No duplicar estructuras enteras si pueden reutilizarse como componentes.
 
+## 38.1. Dirección visual y estándar de pixel art
+
+Base de esta sección: D4, D5 y D7 en [`DECISIONES.md`](DECISIONES.md). Si algo de acá las contradice, gana `DECISIONES.md`.
+
+### Dirección visual
+
+- **Atmósfera *Fear & Hunger***: lo más oscuro posible, gore y horror corporal permitidos (D15).
+- **Cámara cenital con personajes de lado** (*Minish Cap*, *A Link to the Past*, *Moonlighter*): el suelo se ve desde arriba, las paredes muestran su cara frontal y los personajes se ven de frente, de espaldas o de perfil. No es una vista cenital pura ni un side-scroller.
+- **Paleta apagada (importante)**: colores desaturados y terrosos, sombras frías, pocos tonos por material. El saturado se reserva para lo que hay que leer de un vistazo: hit flash, VFX, telegrafía de ataque, peligros, botín e interactuables (D5). Todo asset nuevo se revisa contra esta paleta.
+- **Lectura de beat 'em up**: los ataques se leen de perfil, con anticipación e impacto claros. Las entidades deberían ordenarse por profundidad (Y) para que los grupos de enemigos se lean bien. Pendiente: hoy el orden es solo por `z_index`.
+- La paleta exacta, la perspectiva y las reglas de iluminación están en [`BIBLIA_ARTE.md`](BIBLIA_ARTE.md) (D7). El estilo elegido es la cripta oscura para el entorno y "esbelto" para los personajes. HD-2D se decide después (D5).
+
+### Tamaños
+
+Decisión (D5): **la grilla del mundo es de 32×32 píxeles**, el mismo tamaño que los tiles de piso y pared (`DungeonGeometry.TILE_SIZE`). Los personajes se dibujan en un lienzo de 48×48 para que entren cara, manos y equipo legibles.
+
+| Tipo | Tamaño del sprite | Ocupa |
+|---|---|---|
+| Tiles de piso y pared | 32×32 | 1 tile |
+| Jugador, NPCs, enemigos comunes (slime, goblin) | 48×48 (figura de ~44 px; pies en x 24, suelas en y 45) | ~1 tile de base |
+| Objetos (cofre, salida, items) | sobre la grilla de 32 | 1 tile |
+| Enemigos grandes (troll, gigante, ogro) | 96×96 | 2×2 tiles de base |
+| Jefes (dragón, etc.) | 128×128 o más | 3×3 a 4×4 tiles |
+
+Los tamaños grandes no tienen que ser cuadrados (un dragón puede ser 128×80).
+
+### Reglas
+
+- **Misma densidad de píxel en todo el juego.** Una criatura grande se dibuja directamente más grande; nunca se escala un sprite a ×2.
+- **Nunca escalar a factores no enteros** (×1.5, etc.): deforma los píxeles.
+- **Silueta primero.** A 48×48 entran cara (ojos de 1–2 px, expresión simple), manos, ropa y equipo; no entran texto, joyas chicas ni dedos individuales. Cada enemigo tiene que reconocerse por su forma y colores.
+- **Contorno de color, nunca negro**, en personajes y objetos, con 3–4 tonos por material más 1 de contorno (detalle en `BIBLIA_ARTE.md`).
+- **Formato:** PNG con transparencia, sin suavizado. Varias poses o frames del mismo personaje van juntos en una hoja (spritesheet) con celdas del mismo tamaño.
+
+### Animaciones (por personaje de 48×48)
+
+| Animación | Frames |
+|---|---|
+| Idle | 2–4 |
+| Caminar | 4–6 |
+| Ataque | 3–5 |
+
+Cada animación se dibuja en **4 direcciones** (abajo, arriba, izquierda y derecha), sin espejar con `flip_h`: los personajes de lado con cámara cenital lo exigen (D4). Las criaturas grandes pueden usar menos frames o armarse por partes (cabeza, cuerpo, alas) animadas en Godot, que es más barato que dibujar cada frame.
+
+### Criaturas grandes en el juego
+
+- Cada criatura es una escena que hereda de `enemy_base.tscn` (los jefes van como escenas aparte, §26) con su propio `EnemyData` y su propio arte.
+- **Las colisiones no siguen al dibujo**: `Hurtbox` y `Hitbox` se dimensionan aparte. Un dragón puede tener la zona vulnerable en el cuerpo y cajas de ataque en la cabeza o la cola.
+- **Las puertas miden 1 tile (32 px)**: un enemigo de 64 px no pasa entre zonas. Los enemigos grandes aparecen y pelean en su propia zona.
+- Una celda mide 8×8 tiles (256 px): un jefe de 128 px entra justo; los jefes necesitan una zona BOSS más grande.
+
+### Pantalla
+
+El juego dibuja a 480×270 (unos 15×8 tiles de 32) y se escala a la ventana. La ventana actual (1280×720) es ×2.67, un factor no entero que deforma píxeles; hay que pasar a escala entera (por ejemplo 1920×1080 = ×4) antes de integrar el arte final.
+
 ---
 
 # 39. Datos versus lógica
@@ -1845,7 +1941,7 @@ Después:
 [ ] Habilidades (kits por arma, Fase 8 parte B)
 [ ] Buffs
 [ ] Crowd Control
-[ ] Loot
+[x] Loot (mochila, almacén del guild, tablas de botín)
 [ ] Progresión (equipo + mejoras, sin XP)
 [ ] Enemigos adicionales
 [ ] Elites
@@ -1855,8 +1951,9 @@ Después:
 Pendiente para el vertical slice v2:
 
 ```text
-[ ] ProfileState + oro + retorno al pueblo
-[ ] Pueblo mínimo con tienda + WorldClock
+[x] ProfileState + oro + retorno al guild + piedra azul
+[x] Hit-stop + combo de 3
+[ ] Tienda en el guild + WorldClock
 [ ] DungeonData + techo de pisos + zona BOSS
 [ ] Plantillas de sala + llaves + solvabilidad
 [ ] Maná (recurso + barra HUD)

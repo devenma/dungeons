@@ -17,20 +17,22 @@ confiable y feel · **P1** vertical slice v2 · **P2** profundidad · **P3** con
 
 | Feature | Detalle | Dónde |
 |---|---|---|
-| Inicio de run | Seed aleatoria (`randi()`), piso 1, inventario reseteado a la espada. | `RunManager.start_new_run()` |
+| Arranque | El juego arranca en el guild; la puerta de expedición (F) arma el piso 1. | `guild.gd`, `DungeonManager.start_expedition()` |
+| Inicio de expedición | Seed aleatoria (`randi()`), piso 1, armas = las aseguradas en el perfil. La mochila no se toca. | `RunManager.start_new_run()` |
 | Transición de piso | Interactuar (F) en la salida de la zona EXIT genera el piso siguiente con la misma `run_seed`. | `exit_area.gd`, `DungeonManager._start_floor()` |
-| Muerte y reinicio | Al llegar a 0 HP: espera 0.5 s, restaura vida y stamina, **nueva run** (nueva seed, piso 1). | `DungeonManager._on_player_died()` |
-| Estado persistente entre pisos | Seed, piso actual, armas obtenidas y arma equipada. | `run_manager.gd` |
+| Muerte | Al llegar a 0 HP: espera 0.5 s, restaura vida y stamina y vuelve al guild con seed nueva. Sin piedra azul se pierden mochila, oro encima y armas recogidas; con piedra azul se gasta una y se conserva todo (las armas quedan aseguradas en el perfil). | `DungeonManager._return_to_guild()` |
+| Estado entre pisos | Seed, piso actual, armas, arma equipada, mochila y oro encima. | `run_manager.gd` |
+| Perfil persistente | Oro bancado, almacén del guild (60 slots), armas aseguradas y desbloqueos en `user://profile.json`. Guardado atómico (.tmp + rename); un archivo corrupto se aparta como `.corrupt`. | `profile_state.gd` |
 
 ### 1.2. Generación procedural
 
 | Feature | Detalle |
 |---|---|
-| Grid-merging | Grilla de 3–6 × 3–5 celdas (8×8 tiles de 32 px cada una). Las celdas se agrupan en zonas rectangulares, sin espacios muertos. |
+| Grid-merging | Grilla de 3–6 × 3–5 celdas (8×8 tiles de 32 px cada una), que crece si hace falta para que entren las zonas. Cortes guillotina: zonas rectangulares exactas, sin solapes ni espacios muertos, de al menos `min_zone_cells` (2×2 celdas = 512×512 px, más que el viewport). |
 | Cantidad de zonas por profundidad | `zone_count_by_floor_depth`: piso 1 → 3–5 zonas, piso 10 → 6–12. |
 | Tipos de zona | 1 START, 1 EXIT y el resto COMBAT o REWARD (`reward_ratio` 0.3). |
-| Validación | BFS START→EXIT. Si falla, reintenta hasta 5 veces y después usa un layout de fallback. |
-| Tope de START | La zona START se recorta a `FloorData.start_zone_max_cells` (2×1 celdas = 16×8 tiles por defecto); lo que sobra pasa a ser zonas nuevas. |
+| Validación | `validate_layout()`: rectángulos exactos, cobertura completa, tamaño mínimo, tope de START, puertas en aristas compartidas y todas las zonas alcanzables desde START. Si falla, reintenta con otra seed derivada hasta 5 veces y después falla con `push_error` (sin fallback). Cubierto por `assert_zone_partition` (500 seeds × 3 profundidades). |
+| Tope de START | La zona START se recorta primero en el origen a `FloorData.start_zone_max_cells` (2×2 celdas = 16×16 tiles por defecto); si es menor que `min_zone_cells`, gana el mínimo. |
 | Determinismo | La misma `(run_seed, floor_number)` produce el mismo piso; cubierto por un test. |
 | Puertas | Posición irregular en las aristas compartidas; varias por arista si es larga (`multi_door_threshold`). |
 | Render | Un TileMap único con un tileset pre-autorado (`dungeons_v2.tres`). Paredes con colisión y piso con tinte según el tipo de zona. |
@@ -53,13 +55,14 @@ confiable y feel · **P1** vertical slice v2 · **P2** profundidad · **P3** con
 | Capas de colisión | 5 capas centralizadas en `CollisionLayers`. |
 | Recursos | Stamina 100 (regen 20/s), se rellena al cambiar de piso o al morir. Cada ataque cuesta stamina; no hay cooldowns. Todavía no hay maná (D19). |
 | Apuntado | Mouse/Space apuntan al cursor; el gamepad apunta hacia donde mira el jugador. |
-| Espada | Melee: ventana de hitbox de 0.15 s, daño 10, coste 20, knockback 220. |
+| Espada | Melee, combo de 3 golpes (`WeaponData.combo`, un `SwingData` por golpe): preparación → hitbox activa → recuperación. Atacar durante el golpe activo o la recuperación encadena el siguiente; también hay 0.25 s de margen al terminar. Perder el margen o no tener stamina vuelve al golpe 1. Daño 10 / 12 / 22, coste 20 / 20 / 30, knockback 220 / 260 / 420; el 3.º es más lento. Visual provisorio: el rectángulo de la hitbox. |
 | Arco | Flecha de 400 px/s, daño 8, coste 12, knockback 120. |
 | Bastón | Proyectil mágico de 280 px/s, daño 14, coste 18, knockback 140 (reutiliza `arrow.gd`). |
 | Proyectiles | Mueren al impactar al primer enemigo, al chocar con una pared o a los 2 s. |
 | Knockback | `KnockbackComponent`: el golpe empuja al objetivo con velocidad inicial = `knockback` (px/s), que decae a 0 en 0.2 s. Mientras dura, el empuje reemplaza el movimiento propio (stagger). |
 | I-frames | `HealthComponent.invulnerability_seconds`: el jugador ignora golpes durante 0.5 s después de recibir uno; los enemigos no tienen. |
 | Hit flash | `HitFlash`: destello brillante al recibir daño y parpadeo del sprite mientras duran los i-frames. |
+| Hit-stop | `HitStop`: cada golpe aceptado de una `Hitbox` congela el juego (`Engine.time_scale` 0.05) durante `hit_stop_seconds`: espada 60 / 70 / 110 ms por golpe del combo, slime 60 ms (`EnemyData`). Varios golpes no se suman: gana el fin más tardío. Las flechas y proyectiles todavía no lo usan. |
 
 ### 1.5. Armas e inventario
 
@@ -67,8 +70,10 @@ confiable y feel · **P1** vertical slice v2 · **P2** profundidad · **P3** con
 |---|---|
 | Inventario de armas | Lista de armas obtenidas en `RunManager`; Tab rota entre ellas. |
 | Montaje | `EquipmentController` monta **una** arma a la vez bajo `Player/Weapons`. |
-| Datos por recurso | `WeaponData` (.tres): tipo, escena, daño, knockback, coste de stamina, datos del proyectil. |
-| Cofres | En las zonas REWARD: un cofre que da un arma del pool (arco/bastón), elegida con la seed. Se equipa automáticamente. |
+| Datos por recurso | `WeaponData` (.tres): tipo, escena, daño, knockback, coste de stamina, datos del proyectil y, en melee, el combo (`SwingData`). |
+| Cofres | En las zonas REWARD: un cofre que da un arma del pool (arco/bastón), elegida con la seed, más una tirada de botín (`chest_drops.tres`). El arma se equipa automáticamente. |
+| Loot | `ItemData` (.tres) y `DropTable` (probabilidad por objeto + rango de oro). El slime suelta gel, hueso, piedra azul y 1–3 de oro. |
+| Mochila y almacén | `Inventory`: slots con apilado. Mochila de 20 slots (`RunManager`), almacén de 60 (`ProfileState`). El cofre del guild pasa la mochila al almacén y banca el oro. |
 
 ### 1.6. Enemigos
 
@@ -86,13 +91,16 @@ confiable y feel · **P1** vertical slice v2 · **P2** profundidad · **P3** con
 | Barra de vida | `ProgressBar` ligada a `health_changed`. |
 | Barra de stamina | `ProgressBar` ligada a `stamina_changed`. |
 | Nombre del arma | Label con el arma equipada. |
-| Toast de recogida | "Picked up: X" durante 1.5 s con fade. |
+| Toast de recogida | "Picked up: X" durante 1.5 s con fade; el botín del mismo frame se suma al toast. |
+| Oro | Label con oro bancado y oro encima. |
+| Mochila | `inventory` (I) muestra la mochila y el almacén. |
 | Pausa | Esc (`pause`) pausa el juego y muestra un menú (Resume / Quit); otro Esc o Resume lo cierra. |
 
 ### 1.8. Herramientas de desarrollo
 
-- 27 tests headless (`scripts/test/`), todos verdes.
-- **Advertencia:** no re-ejecutar `scripts/tools/build_dungeon_tileset.gd`. Sobrescribe las colisiones y los ajustes autorados a mano en `tilesets/dungeons_v2.tres`.
+- 35 tests headless (`scripts/test/`), todos verdes.
+- Vista previa del estilo de arte: `scenes/preview/art_preview.tscn` (no está en `main.tscn`); su tileset sale de `scripts/tools/build_art_preview_tileset.gd`.
+- **Advertencia:** `tilesets/dungeons_v2.tres` se edita solo en el editor: sus colisiones están ajustadas a mano.
 - Atajo de debug **N** (acción `debug_next_floor`): salta al siguiente piso. Solo corre en builds de debug.
 
 ---
@@ -105,15 +113,11 @@ confiable y feel · **P1** vertical slice v2 · **P2** profundidad · **P3** con
 | Solo hay animaciones `Idle_Down` / `Walk_Down` | El sprite no mira arriba ni a los lados (solo usa `flip_h`). |
 | Sin números de daño ni sonido al golpear | El combate se lee solo por el destello y el empuje. |
 | El cofre es un `ColorRect` | Placeholder visual. |
-| `guild_tavern.tscn` no está conectada | Escena de hub sin flujo de entrada ni salida. |
 | Sin audio | No hay música ni SFX. |
-| La muerte reinicia al instante | No hay pantalla de muerte ni resumen de la run. |
-| Una zona más chica que la pantalla (480×270 px) deja ver a sus vecinas | La cámara no puede limitar por debajo del viewport; pasa con zonas de 1 celda, START incluida. |
-| No existen `ProfileState`, oro ni `DungeonData` | La muerte sigue siendo wipe total; no hay economía ni techo de pisos. |
+| La muerte vuelve al guild al instante | No hay pantalla de muerte ni resumen de la run. |
+| No existe `DungeonData` | No hay techo de pisos: la muerte es la única forma de volver al guild. |
 | No existe maná ni coste dual | Todas las habilidades gastan solo stamina; el maná llega con la Fase 8 parte B (D19). |
-| Doble `RunManager` (autoload + nodo en escena) | Riesgo de usar la instancia equivocada. |
 | Los `.uid` están en el gitignore | Los UIDs cambian entre máquinas. |
-| `_merge_cells` puede dar zonas cuyos rectángulos se solapan (~5% de los layouts) | Celdas que pertenecen a dos zonas: tiles pintados dos veces. Lo detectó `assert_start_zone_cap`. |
 
 ---
 
@@ -124,28 +128,29 @@ Ya está en `main` y documentado en §1: knockback, i-frames, hit flash, pausa y
 ### P0 — base confiable y feel
 
 **Generador y cámara**
-- [ ] Arreglar el solape de `_merge_cells` (rectángulos exactos) y agregar un tamaño mínimo de zona.
-- [ ] Cámara en zonas más chicas que el viewport: ocultar o atenuar las zonas vecinas (o zoom).
+- [x] Arreglar el solape de `_merge_cells` (rectángulos exactos) y agregar un tamaño mínimo de zona.
+- [x] Cámara en zonas más chicas que el viewport: ya no hay zonas más chicas que el viewport (`min_zone_cells` 2×2).
 
 **Feel de combate**
-- [ ] Hit-stop al impactar.
-- [ ] Visual del swing de la espada (hoy solo existe la hitbox).
-- [ ] Combo de 3 golpes en `sword.gd`.
+- [x] Hit-stop al impactar.
+- [ ] Visual del swing de la espada (hoy es un rectángulo provisorio sobre la hitbox).
+- [x] Combo de 3 golpes en `sword.gd`.
 - [ ] Animaciones de 4 direcciones (Idle/Walk Up, Side, Down).
 
 **Estabilidad y docs**
 - [x] Actualizar `README.md`, `AGENTS.md` y `FEATURES.md` a la dirección v2.
-- [ ] Dejar una sola instancia de `RunManager` (quitar el autoload o el nodo de escena).
+- [x] Dejar una sola instancia de `RunManager` (se quitó el autoload; queda el nodo de `main.tscn`).
 - [ ] Commitear los `.uid` (sacarlos de `.gitignore`).
 
 ### P1 — vertical slice v2
 
 **Perfil, economía y pueblo**
-- [ ] `ProfileState` persistente en `user://` (oro, equipo, desbloqueos, pueblo).
-- [ ] Oro: drops de enemigos (oro y curación) y contador en el HUD.
-- [ ] Retorno al pueblo en vez de wipe (`_return_to_town()`), perdiendo solo el loot de la mochila.
-- [ ] Objeto de retorno que conserva el loot.
-- [ ] Pueblo mínimo con tienda (vender loot, comprar equipo) sobre `scenes/hub/guild_tavern.tscn`.
+- [x] `ProfileState` persistente en `user://` (oro bancado, almacén del guild, armas aseguradas, desbloqueos).
+- [x] Oro e ítems: drops de enemigos y cofres (tablas de botín) y contador de oro en el HUD. Falta la curación.
+- [x] Inventario de mochila (slots con apilado) y almacén del guild; panel con `inventory` (I).
+- [x] Vuelta al guild en vez de wipe (`_return_to_guild()`), perdiendo lo de la expedición.
+- [x] Piedra azul: consumible que, al morir, te lleva al guild conservando el loot (D1).
+- [ ] Guild con tienda (vender loot, comprar equipo y piedras azules) en `scenes/guild/`. Hoy es un guild provisorio con almacén y puerta.
 - [ ] `WorldClock` con fases día/noche.
 - [ ] Guardado del perfil y de los ajustes (`user://`).
 

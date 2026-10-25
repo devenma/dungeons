@@ -1,12 +1,12 @@
 # Dungeons 🗡️
 
-Dungeon crawler con historia 2D desarrollado con **Godot 4.7.1**.
+Dungeon crawler con historia 2D desarrollado con **Godot 4.7.2**.
 
 > **Fuente de verdad de diseño:** [`DECISIONES.md`](DECISIONES.md). Si este documento contradice a `DECISIONES.md`, gana `DECISIONES.md` y hay que corregir este documento.
 
 ## Concepto
 
-Un dungeon crawler con historia donde **explorar el dungeon es el núcleo**. El combate es hack n' slash con sensación *beat 'em up* — golpes con peso, knockback y combos — y el pueblo es un espacio persistente que crece entre expediciones. Referencias: *Moonlighter* + *Stardew Valley*, con exploración de cámara cenital tipo *Minish Cap* / *A Link to the Past*. Paleta de tonos apagados, reservando la saturación para el feedback de combate. El combate maneja dos recursos: **stamina** para lo físico y **maná** para lo mágico, y algunas habilidades cuestan ambos (D19).
+Un dungeon crawler con historia donde **explorar el dungeon es el núcleo**. El combate es en tiempo real, estilo ARPG: hack n' slash oscuro, duro y pesado, con sensación *beat 'em up* — golpes con peso, knockback y combos — y el pueblo es un espacio persistente que crece entre expediciones. Referencias de juego: *Moonlighter* + *Stardew Valley*, con exploración de cámara cenital tipo *Minish Cap* / *A Link to the Past*. Referencia de atmósfera: *Fear & Hunger* (lo más oscuro posible; ver D15). Paleta de tonos apagados, reservando la saturación para el feedback de combate. El combate maneja dos recursos: **stamina** para lo físico y **maná** para lo mágico, y algunas habilidades cuestan ambos (D19).
 
 ## Loop
 
@@ -15,7 +15,7 @@ Un dungeon crawler con historia donde **explorar el dungeon es el núcleo**. El 
 3. **Dungeon** — explorás salas, combatís, juntás loot y avanzás hasta el jefe.
 4. **Retorno** — volvés al pueblo a vender el loot y comprar mejoras.
 
-Morir no borra el progreso: perdés el loot que llevabas en la mochila y la seed del dungeon se re-rollea, pero el equipo equipado, el oro bancado y los desbloqueos del pueblo quedan. Volver con el objeto de retorno conserva el loot.
+El juego arranca en un guild. Morir no borra el progreso: perdés todo lo de la expedición (la mochila, el oro que llevás encima y las armas que agarraste durante la expedición) y la seed del dungeon se re-rollea, pero lo guardado en el guild (oro bancado, almacén, armas aseguradas y desbloqueos) queda. Si morís con una **piedra azul** en la mochila, se gasta y volvés al guild con el loot.
 
 ## Estado actual
 
@@ -28,10 +28,12 @@ Morir no borra el progreso: perdés el loot que llevabas en la mochila y la seed
 | Fase 4/6 — Enemigos y combate | ✅ | Slime con EnemyData, Health/Hitbox/Hurtbox/DamageInfo, espada, muerte |
 | Fase 7 — Ranged (arco + bastón) | ✅ | Una sola arma equipada a la vez; `attack` ataca y Tab (`swap_weapon`) cambia el arma; arco y bastón salen de cofres en zonas REWARD |
 | P0 — Combate y estabilidad | ✅ | Knockback (decae en 0.2 s), i-frames del jugador (0.5 s), hit flash y menú de pausa con Esc (PR #6) |
+| Combate v2 | ✅ | Hit-stop y combo de 3 de la espada (`SwingData`) |
 | Fase 8 — Habilidades | ⏳ | Parte A (`weapon-equip`) archivada; parte B (`abilities`, kits por arma) pendiente |
-| Fase 9+ — Progresión, pueblo y jefes | ⏳ | Pendiente: perfil persistente, oro, pueblo, economía y bosses |
+| Fase 10 — Guild y economía | ⏳ | Hecho: perfil persistente (`user://profile.json`), oro, loot, mochila y almacén (I), piedra azul, guild como hub. Falta: tienda, NPCs, día/noche |
+| Fase 9, 11+ — Progresión y jefes | ⏳ | Pendiente: mejoras, `DungeonData`, zona BOSS y bosses |
 
-Los tests headless pasan: **27 tests verdes** (`scripts/test/`).
+Los tests headless pasan: **35 tests verdes** (`scripts/test/`).
 
 ## Cómo ejecutar
 
@@ -42,7 +44,7 @@ godot --path .
 
 ## Stack
 
-- **Engine**: Godot 4.7.1.stable
+- **Engine**: Godot 4.7.2.stable
 - **Lenguaje**: GDScript
 - **Persistencia SDD**: Engram (compartido via `.engram/`)
 
@@ -53,8 +55,7 @@ El proyecto sigue una arquitectura basada en componentes con responsabilidades b
 ```
 Main
 ├── World
-│   ├── Town (pueblo persistente)
-│   │   └── WorldClock (día/noche)
+│   ├── Guild (hub: almacén y puerta de expedición)
 │   ├── Player (CharacterBody2D)
 │   │   ├── Visuals / Collision / Camera2D
 │   ├── DungeonManager
@@ -66,14 +67,14 @@ Main
 │   └── CameraLimitManager (cámara por zona)
 ├── ProfileState (perfil persistente, user://)
 ├── RunManager (estado de la expedición)
-└── UI (CanvasLayer)
+└── UI (CanvasLayer: barras, arma, oro, mochila, toast, pausa)
 ```
 
-`ProfileState` guarda lo que sobrevive a la muerte: oro bancado, equipo comprado, desbloqueos y progreso del pueblo. `RunManager` es **solo** el estado de una expedición (seed del dungeon, piso actual, loot de la mochila) y muere con ella. `WorldClock` maneja las fases día/noche y `Town` (`scenes/town/`) es la escena del pueblo, todavía sin flujo completo; su base natural es `scenes/hub/guild_tavern.tscn`.
+`ProfileState` guarda lo que sobrevive a la muerte: oro bancado, almacén del guild, armas aseguradas y desbloqueos. `RunManager` es **solo** el estado de una expedición (seed del dungeon, piso actual, loot de la mochila, oro encima y armas recogidas) y muere con ella. `Guild` (`scenes/guild/`) es el hub donde arranca el juego; `WorldClock` (día/noche) todavía no existe.
 
 El piso se genera mediante **grid-merging**: se divide el área en una grilla, se mergean celdas contiguas en zonas, y cada zona recibe un tipo funcional (START, COMBAT, REWARD, EXIT). Todo el piso se renderiza en un TileMap único que consume el tileset pre-construido `res://tilesets/dungeons_v2.tres` (atlas `assets/Examples/Background_min_all_v2_FIXED.png`, 32px, físicas de pared autoradas en el editor). Las puertas se colocan en posiciones irregulares sobre aristas compartidas. La dirección es conservar esa topología y llenar el interior de cada zona con plantillas de sala hechas a mano (`scenes/rooms/`).
 
-**Advertencia:** no re-ejecutar `scripts/tools/build_dungeon_tileset.gd`. Sobrescribe las colisiones y los ajustes autorados a mano en `tilesets/dungeons_v2.tres`.
+**Advertencia:** `tilesets/dungeons_v2.tres` se edita solo en el editor: sus colisiones están ajustadas a mano.
 
 Ver [`AGENTS.md`](AGENTS.md) para la documentación completa de arquitectura y convenciones de código.
 
@@ -88,10 +89,10 @@ Ver [`AGENTS.md`](AGENTS.md) para la documentación completa de arquitectura y c
 
 Orden técnico sugerido (detalle y justificación en [`DECISIONES.md`](DECISIONES.md)):
 
-1. Arreglar `_merge_cells`: rectángulos exactos y tamaño mínimo de zona.
-2. Hit-stop + visual del swing + combo de 3.
-3. `ProfileState` + oro + `_return_to_town()`.
-4. Pueblo mínimo con tienda, sobre `scenes/hub/guild_tavern.tscn`.
+1. ✅ Arreglar `_merge_cells`: rectángulos exactos y tamaño mínimo de zona.
+2. ✅ Hit-stop + combo de 3 (falta el arte del swing).
+3. ✅ `ProfileState` + oro + inventario + piedra azul + vuelta al guild (`_return_to_guild()`).
+4. Guild con tienda, en `scenes/guild/`.
 5. Pool de plantillas de sala, ya con el generador confiable.
 6. `WorldClock` día/noche + techo de pisos por dungeon + zona BOSS.
 

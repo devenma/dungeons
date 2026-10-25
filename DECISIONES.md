@@ -1,10 +1,12 @@
 # DECISIONES — Dirección de diseño v2
 
-**Estado:** dirección aprobada el 2026-10-24. D1–D4 (bloqueantes), D12 y D19 están cerradas; el resto son
+**Estado:** dirección aprobada el 2026-10-24. D1–D4 (bloqueantes), D5, D12 y D19 están cerradas; el resto son
 propuestas vigentes hasta que el equipo las revise.
 **Fecha:** 2026-10-24.
 **Revisión 2:** 2026-10-24, tras el merge del PR #6 (`feat/p0-combate-y-start`). Ver *Estado del repo*.
 **Revisión 3:** 2026-10-24. Se suma el maná como segundo recurso (D19) y los obstáculos movibles (D20).
+**Revisión 4:** 2026-10-24. D5 pasa a decidida (32 px de tile, personajes de 48×48, entorno "cripta
+suave") y se crea la biblia de arte (D7).
 **Alcance:** define el juego que queremos hacer. Las decisiones cerradas acá mandan sobre `AGENTS.md`,
 `README.md` y `FEATURES.md` en todo lo que contradigan; esos documentos se actualizan **después** de la
 validación, no antes.
@@ -55,8 +57,8 @@ Tres documentos describen hoy un juego distinto del que queremos:
 - `AGENTS.md` — roguelite sin historia, sin pueblo, con meta-progresión especulativa.
 - `FEATURES.md` — backlog ordenado como roguelite (meta-progresión y hub en P3).
 
-La dirección nueva es **Moonlighter + Stardew Valley**, con exploración tipo Zelda, cámara cenital y paleta
-apagada. Eso empuja hacia un mundo persistente y salas hechas a mano, mientras el código actual es
+La dirección nueva es **Moonlighter + Stardew Valley** en lo jugable, con exploración tipo Zelda, cámara
+cenital y paleta apagada; la atmósfera es *Fear & Hunger* (D15). Eso empuja hacia un mundo persistente y salas hechas a mano, mientras el código actual es
 procedural y borra todo al morir. **D1 a D3 resuelven cuánto de cada lado tomamos.**
 
 Auditoría de Engram (68 sesiones): no hay ninguna traza de esta dirección creativa. Todo lo registrado
@@ -74,16 +76,25 @@ Dos capas de estado, explícitas y separadas:
 
 | Capa | Vive en | Contenido | Persiste |
 |---|---|---|---|
-| Perfil | `ProfileState` (`user://`) | Oro bancado, equipo comprado, desbloqueos, progreso del pueblo | Sí, entre sesiones |
-| Expedición | `RunManager` | Seed del dungeon, piso actual, loot en la mochila | No, muere con la expedición |
+| Perfil | `ProfileState` (`user://`) | Oro bancado, almacén del guild, armas aseguradas, desbloqueos | Sí, entre sesiones |
+| Expedición | `RunManager` | Seed del dungeon, piso actual, loot de la mochila, oro encima y armas recogidas en esta expedición | No, muere con la expedición |
 
-Al morir: volvés al pueblo, perdés el loot no asegurado, se re-rollea la seed del dungeon. El equipo
-equipado, el oro bancado y los desbloqueos quedan.
+Al morir: volvés al guild, perdés lo no asegurado, se re-rollea la seed del dungeon. El oro bancado, el
+almacén, las armas aseguradas y los desbloqueos quedan.
 
-**[IMPACTO]** Hoy `DungeonManager._on_player_died()` llama a `RunManager.start_new_run()`, que hace
-`randi()`, `current_floor = 0` y `reset_inventory()`. Es un wipe total. El cambio es quirúrgico: un
-`ProfileState` nuevo y reemplazar esa llamada por un `_return_to_town()`. No hay que reescribir el
-generador.
+**Regla del equipo (2026-10-24), manda sobre lo anterior:**
+- Hay **inventario y mucho loot**.
+- **Morir sin piedra azul:** se pierde todo lo de la expedición, es decir, el loot de la mochila y lo que
+  se agarró o equipó durante la expedición. Se conserva lo guardado en el guild: oro bancado, almacén y
+  desbloqueos.
+- **Piedra azul:** es un consumible. Si morís con una en la mochila, se gasta y te teletransporta al guild
+  **con** el loot. Sale como loot y más adelante se puede comprar. Es el "objeto de retorno" de D10.
+
+**[IMPACTO]** Hecho. `DungeonManager._on_player_died()` llama a `_return_to_guild()`: si hay piedra azul
+en la mochila la gasta, conserva mochila y oro encima y asegura en `ProfileState` las armas recogidas; si
+no, vacía la mochila. En los dos casos `RunManager.start_new_run()` re-rollea la seed y arranca con las
+armas del perfil, y el perfil se guarda en `user://profile.json`. En el guild, el cofre del almacén pasa
+la mochila al almacén y banca el oro. El generador no se tocó.
 
 **Alternativas descartadas:**
 - *Perder todo menos los desbloqueos* (roguelite clásico): pelea con el pueblo persistente y con Stardew.
@@ -105,9 +116,13 @@ Alcance mínimo del pueblo:
 - Un vendedor: vender loot, comprar equipo.
 - Ciclo día/noche como **fases discretas**, no iluminación dinámica.
 
-**[IMPACTO]** `scenes/hub/guild_tavern.tscn` ya existe, huérfana: no tiene flujo de entrada ni de salida.
-Es el punto de partida natural (pueblo, o la taberna dentro del pueblo). Falta un `WorldClock` con
-`DAY/NIGHT` que avance al volver del dungeon. Sin luces dinámicas ni ciclo continuo.
+**Regla del equipo (2026-10-24):** el juego **arranca en un guild**, que es el hub: de ahí salen las
+expediciones y ahí se vuelve. Tiene el almacén y la tienda.
+
+**[IMPACTO]** El guild mínimo existe: `scenes/guild/guild.tscn` (`World/Guild` en `main.tscn`), con el
+cofre del almacén y la puerta de expedición. El juego arranca ahí y se vuelve ahí al morir. La taberna
+huérfana (`scenes/hub/guild_tavern.tscn`) se eliminó el 2026-10-24. Faltan la tienda, los NPCs y un
+`WorldClock` con `DAY/NIGHT` que avance al volver del dungeon. Sin luces dinámicas ni ciclo continuo.
 
 **Costo que hay que asumir:** los NPCs son lo más caro por hora de gameplay que existe. Granja y crafting
 multiplican sistemas (inventario, recetas, cultivos, calendario) y no los necesitamos para validar el loop.
@@ -131,20 +146,18 @@ Eso da la sensación Zelda de "sala diseñada" sin perder el orden procedural.
 llaves, el problema pasa a ser de **solvabilidad**: la llave tiene que estar antes que su puerta en la
 ruta. Esa validación va en el generador, no en runtime. Es la parte no trivial de esta decisión.
 
-**[PRERREQUISITO]** Antes de meter plantillas de sala hay que arreglar dos cosas del generador, ya
-anotadas en `FEATURES.md` P0:
+**[PRERREQUISITO, resuelto]** Antes de meter plantillas de sala había que arreglar dos cosas del generador.
+Ya están arregladas: `_merge_cells` corta la grilla en rectángulos exactos (cortes guillotina) y
+`FloorData.min_zone_cells` (2×2 celdas = 512×512 px) fija el tamaño mínimo; `validate_layout()` lo verifica:
 
-1. **`_merge_cells` produce rectángulos que se solapan.** La zona es el *bounding box* de las celdas que
-   ganó, y el paso de asignación greedy (`dungeon_generator.gd`, ~líneas 222-247) expande ese bbox sin
-   verificar celdas ajenas. Resultado: ~5% de los layouts tienen celdas pintadas dos veces.
-   `assert_start_zone_cap` ya lo detecta (hoy solo comprueba que el tope de START no agregue solapes
-   nuevos). Con plantillas de sala esto deja de ser cosmético: una plantilla necesita un rectángulo
-   exacto.
-2. **Una zona de 1 celda (8×8 tiles = 256×256 px) es más chica que el viewport (480×270 px).** La cámara
-   no puede limitar por debajo del viewport y se ven las zonas vecinas. Una plantilla de sala impone un
-   tamaño mínimo y resuelve el problema de paso.
+1. **`_merge_cells` producía rectángulos que se solapaban.** La zona era el *bounding box* de las celdas que
+   ganó, y el paso de asignación greedy expandía ese bbox sin verificar celdas ajenas: ~5% de los
+   layouts tenían celdas pintadas dos veces. Con plantillas de sala esto deja de ser cosmético: una
+   plantilla necesita un rectángulo exacto. Lo cubre `assert_zone_partition`.
+2. **Una zona de 1 celda (8×8 tiles = 256×256 px) era más chica que el viewport (480×270 px).** La cámara
+   no puede limitar por debajo del viewport y se veían las zonas vecinas.
 
-Con esos dos arreglos la topología queda confiable y el pool de plantillas es una capa encima, no una
+Con esos dos arreglos la topología quedó confiable y el pool de plantillas es una capa encima, no una
 reescritura.
 
 **Alternativas descartadas:**
@@ -156,6 +169,9 @@ reescritura.
 ### D4 — ¿Cuánto beat 'em up? [DECIDIDO] [BLOQUEANTE]
 
 **Propuesta:** combos de 3 golpes, hit-stop y knockback fuerte. Sin agarres por ahora.
+
+**Dirección del equipo (2026-10-24):** el juego es un **mazmorreo en tiempo real, estilo ARPG**: oscuro,
+duro y pesado. "Pesado" se traduce en anticipaciones largas, impactos con hit-stop y poco perdón al errar.
 
 El punto clave: **la mayor parte de esto ya está hecho.** El PR #6 implementó el feel base:
 
@@ -187,11 +203,21 @@ no `flip_h`. Ese es el costo real de esta decisión y hay que resolverlo antes d
 
 ## PRONTO — combate, progresión y jefes
 
-### D5 — Arte: ¿16 o 32 px? ¿HD-2D? [PROPUESTA]
+### D5 — Arte: ¿16 o 32 px? ¿HD-2D? [DECIDIDO]
 
-32 px. Ya es lo que usa el proyecto (`tilesets/dungeons_v2.tres`, tiles de 32×32). HD-2D se decide
-después: en Godot implica sprites 2D con luces y normal maps, es una decisión de renderer y es barata de
-posponer.
+**Decidido el 2026-10-24:**
+- Tiles de 32×32, que ya es lo que usa el proyecto (`tilesets/dungeons_v2.tres`).
+- Personajes en un lienzo de **48×48**, con enemigos grandes de 96 y jefes de 128 o más.
+- El estilo del entorno es la **cripta oscura**: la cripta "suave" (rampas de 8 tonos, losas irregulares sin
+  grilla visible, luz de antorcha en anillos, sin dither) con una pasada *Fear & Hunger* más oscura y sucia.
+- El estilo de los personajes es **"esbelto"**: ~4,4 cabezas, harapos y capuchas, sombreado calculado y
+  contorno de color por material. Los objetos del entorno usan el mismo render.
+
+Todo el detalle está en [`BIBLIA_ARTE.md`](BIBLIA_ARTE.md). El estilo puede cambiar más adelante, pero
+mientras tanto todo asset nuevo sale con él.
+
+HD-2D se decide después: en Godot implica sprites 2D con luces y normal maps, es una decisión de renderer y
+es barata de posponer.
 
 Ojo con la paleta apagada: choca con la legibilidad del combate. Reservar saturación para el feedback
 (hit flash, VFX, telegrafía de ataque).
@@ -208,6 +234,9 @@ IA para borradores + una persona que retoque y apruebe.
 Antes de generar un solo asset: **biblia de arte** (paleta, escala, perspectiva, reglas de iluminación).
 Sin eso los assets no van a pegar entre sí. Lo primero que hay que resolver ahí es la mezcla
 "personajes de lado + cámara cenital" que pide D4.
+
+La biblia ya existe: [`BIBLIA_ARTE.md`](BIBLIA_ARTE.md) (2026-10-24). Cubre escala, cámara, luz, el
+entorno y su paleta; la sección de personajes sigue en prueba.
 
 ### D8 — ¿Plataformas y control? [PROPUESTA]
 
@@ -234,7 +263,8 @@ conservando el loot.
 Equipo del pueblo como progreso permanente + mejoras temporales en cada expedición. Sin XP ni niveles: el
 poder viene del equipo. Es la consecuencia directa de D1 (dos capas de estado) y D2 (tienda).
 
-**[IMPACTO]** No existe oro hoy. Está en `FEATURES.md` P2 y sube a P1 si se aprueba D1/D2.
+**[IMPACTO]** El oro ya existe: cae de enemigos y cofres, se lleva encima en la expedición y se banca en el
+guild (`ProfileState.banked_gold`). Todavía no hay en qué gastarlo: falta la tienda (D2).
 
 ### D12 — ¿Cómo funcionan las habilidades? [DECIDIDO]
 
@@ -267,6 +297,11 @@ Diálogos en el pueblo + una escena al cerrar cada dungeon. Requiere un sistema 
 
 "Superficie acogedora, profundidad opresiva": el pueblo es cálido y apagado; el dungeon es más oscuro y
 contrastado. Resuelve el tono y la legibilidad del combate al mismo tiempo.
+
+**Dirección del equipo (2026-10-24), reemplaza lo anterior:** *Moonlighter* y *Stardew* son referencias
+de juego; la atmósfera y el ambiente son *Fear & Hunger*: tono **lo más oscuro posible**. Se permiten gore y horror corporal. Trasfondo: el mundo se vino abajo por
+algo relacionado con las mazmorras y hay una crisis. El pueblo deja de ser acogedor: es un refugio frágil y
+desesperado. Falta confirmarlo formalmente para pasar a [DECIDIDO].
 
 ### D16 — ¿Idiomas? [PROPUESTA]
 
@@ -329,12 +364,12 @@ validación de solvabilidad necesitan conocerlos cuando existan las plantillas.
 
 ## Si se aprueban D1–D4: orden técnico sugerido
 
-1. **Arreglar `_merge_cells`** (rectángulos exactos y tamaño mínimo de zona). Desbloquea D3 y evita que
+1. ✅ **Arreglar `_merge_cells`** (rectángulos exactos y tamaño mínimo de zona). Desbloquea D3 y evita que
    cualquier capa nueva herede el bug de solape.
-2. **Hit-stop + visual del swing + combo de 3** (D4). Todo local a `sword.gd` y al combate, sin tocar
-   estado. El feel se cierra antes de meter contenido.
-3. **`ProfileState` + oro + `_return_to_town()`** (D1, D11). Es el cambio más chico de los grandes.
-4. **Pueblo mínimo con tienda** (D2), sobre `scenes/hub/guild_tavern.tscn`.
+2. ✅ **Hit-stop + visual del swing + combo de 3** (D4). Todo local a `sword.gd` y al combate, sin tocar
+   estado. El visual del swing es un placeholder dibujado hasta que haya arte.
+3. ✅ **`ProfileState` + oro + `_return_to_guild()`** (D1, D11), con almacén del guild y piedra azul.
+4. **Guild mínimo con tienda** (D2), en `scenes/guild/`. El guild ya existe; falta la tienda.
 5. **Pool de plantillas de sala** (D3), ya con el generador confiable.
 6. **`WorldClock` día/noche + techo de pisos por dungeon + zona BOSS** (D2, D10).
 
@@ -349,16 +384,16 @@ Fuera de este orden inmediato: **D19 (maná)** entra junto con los kits de habil
 
 | Sistema | Estado | Qué cambia si se aprueban D1–D4 |
 |---|---|---|
-| `RunManager` | Seed, piso, armas, arma equipada | Se parte en `ProfileState` (persistente) + `RunManager` (expedición) |
-| `DungeonManager._on_player_died()` | `start_new_run()`: wipe total | Pasa a `_return_to_town()`, conservando perfil |
-| Generador (grid-merging) | Topología + zonas + BFS START→EXIT; `_merge_cells` puede solapar bboxes | Primero rectángulos exactos y tamaño mínimo de sala; después pool de plantillas y solvabilidad con llaves |
+| `RunManager` / `ProfileState` | Separados: perfil persistente + expedición (mochila, oro encima, armas recogidas) | Hecho (D1) |
+| `DungeonManager._on_player_died()` | `_return_to_guild()` con regla de piedra azul | Hecho (D1) |
+| Generador (grid-merging) | Topología + zonas rectangulares exactas de tamaño mínimo + `validate_layout()` | Pool de plantillas y solvabilidad con llaves |
 | `Spawner` | 2 slimes fijos por zona COMBAT | Oleadas y cantidad por piso (D4, D10) |
 | Tipos de zona | START, COMBAT, REWARD, EXIT | Suma BOSS (D10) y, más adelante, EVENT/SHOP |
 | Pisos | Infinitos | Techo por dungeon (`DungeonData`) |
-| Oro / perfil | No existen | `ProfileState` + oro + tienda |
+| Oro / perfil | `ProfileState` + oro + almacén del guild | Falta la tienda (D2) |
 | Textos de UI | Hardcodeados | `tr()` + traducciones (D16) |
-| `scenes/hub/guild_tavern.tscn` | Huérfana, sin flujo | Base del pueblo (D2) |
-| Combate | Knockback, i-frames y hit flash hechos | Falta hit-stop, swing visual, combo y 4 direcciones (D4) |
+| `scenes/guild/` | Guild mínimo: almacén y puerta de expedición | Tienda, NPCs y `WorldClock` (D2) |
+| Combate | Knockback, i-frames, hit flash, hit-stop y combo de 3 hechos | Falta arte del swing y 4 direcciones (D4) |
 | `StaminaComponent` | Único recurso de combate | Se suma `ManaComponent`; habilidades con coste dual (D19) |
 | Obstáculos de zona | No existen | Obstáculos movibles con coste de stamina, colocados por plantilla (D20) |
 
@@ -370,10 +405,7 @@ Está en `FEATURES.md` P0 (no es un hallazgo oculto), pero impacta directo el di
 
 | Deuda | Condiciona |
 |---|---|
-| Solape de zonas en `_merge_cells` (~5% de los layouts) | **D3**: sin rectángulos exactos no se pueden colocar plantillas de sala |
-| Zonas más chicas que el viewport muestran a las vecinas | **D3**: una plantilla impone un tamaño mínimo de sala |
 | `enemy_health/damage_multiplier` de `FloorData` no se leen | **D10/D11**: la dificultad todavía no escala con el piso |
-| `_merge_cells` y `_cap_start_zone` reconstruyen la grilla por bbox | **D3**: cualquier cambio de topología tiene que mantener ese contrato o reemplazarlo |
 
 ---
 
@@ -386,9 +418,8 @@ fueron propagados; los de proceso siguen abiertos.
    propagado a `AGENTS.md` §18–§19 y `FEATURES.md` P2. Ver D12.
 2. **La Fase 8 tiene dos partes**: `weapon-equip` (parte A, cerrada y archivada) y `abilities`
    (parte B, próximo candidato técnico; suma el maná de D19).
-3. **No re-ejecutar `scripts/tools/build_dungeon_tileset.gd`**: sobrescribe los polígonos de colisión
-   autorados a mano en `tilesets/dungeons_v2.tres`. Ya advertido en `AGENTS.md` §30 y §44, y en
-   `FEATURES.md` §1.8.
+3. **`tilesets/dungeons_v2.tres` se edita solo en el editor**: sus polígonos de colisión están ajustados a
+   mano. El script que lo generaba se eliminó el 2026-10-24.
 4. **Split del TileMap en nodos `TileMapLayer`** (floor / walls / door): diferido dos veces. Hoy sigue el
    TileMap único de tres capas.
 5. **Escaleras sin autorar**: los planks `(6,4)` son escaleras incompletas, y `scenes/dungeon/exit.tscn`
