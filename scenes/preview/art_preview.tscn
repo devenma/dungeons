@@ -1,0 +1,110 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/preview/art_preview.gd" id="1_root"]
+[ext_resource type="Script" path="res://scripts/preview/art_preview_room.gd" id="2_room"]
+[ext_resource type="TileSet" path="res://tilesets/art_preview_crypt.tres" id="3_tiles"]
+[ext_resource type="Script" path="res://scripts/preview/preview_player.gd" id="4_player"]
+[ext_resource type="Script" path="res://scripts/preview/torch_flicker.gd" id="5_flicker"]
+[ext_resource type="Texture2D" path="res://assets/art/preview/chars/skeleton_south.png" id="9_skel_s"]
+[ext_resource type="Texture2D" path="res://assets/art/preview/chars/skeleton_east.png" id="10_skel_e"]
+[ext_resource type="Texture2D" path="res://assets/art/preview/chars/slime_south.png" id="11_slime"]
+[ext_resource type="Texture2D" path="res://assets/art/preview/chars/villager_south.png" id="12_villager"]
+
+[sub_resource type="Gradient" id="Gradient_rings"]
+interpolation_mode = 1
+offsets = PackedFloat32Array(0, 0.25, 0.5, 0.75, 0.97)
+colors = PackedColorArray(1, 1, 1, 1, 0.66, 0.66, 0.66, 1, 0.4, 0.4, 0.4, 1, 0.18, 0.18, 0.18, 1, 0, 0, 0, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_rings"]
+gradient = SubResource("Gradient_rings")
+width = 128
+height = 128
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_feet"]
+size = Vector2(12, 6)
+
+[node name="ArtPreview" type="Node2D"]
+script = ExtResource("1_root")
+
+[node name="Room" type="Node2D" parent="."]
+script = ExtResource("2_room")
+
+[node name="Tiles" type="TileMapLayer" parent="Room"]
+position = Vector2(32, -18)
+tile_set = ExtResource("3_tiles")
+
+[node name="Overlays" type="Node2D" parent="Room"]
+
+[node name="Decals" type="Node2D" parent="Room"]
+
+[node name="CharacterShadows" type="Node2D" parent="Room"]
+
+[node name="WallProps" type="Node2D" parent="Room"]
+
+[node name="Things" type="Node2D" parent="Room"]
+y_sort_enabled = true
+
+[node name="Player" type="CharacterBody2D" parent="Room/Things" groups=["preview_characters"]]
+position = Vector2(240, 200)
+collision_layer = 2
+collision_mask = 1
+motion_mode = 1
+script = ExtResource("4_player")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Room/Things/Player"]
+position = Vector2(0, -3)
+shape = SubResource("RectangleShape2D_feet")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Room/Things/Player"]
+light_mask = 2
+centered = false
+offset = Vector2(-24, -45)
+
+[node name="Skeleton" type="Sprite2D" parent="Room/Things" groups=["preview_characters"]]
+light_mask = 2
+position = Vector2(330, 150)
+texture = ExtResource("9_skel_s")
+centered = false
+offset = Vector2(-24, -45)
+
+[node name="SkeletonSide" type="Sprite2D" parent="Room/Things" groups=["preview_characters"]]
+light_mask = 2
+position = Vector2(372, 206)
+texture = ExtResource("10_skel_e")
+centered = false
+offset = Vector2(-24, -45)
+
+[node name="Slime" type="Sprite2D" parent="Room/Things" groups=["preview_characters"]]
+light_mask = 2
+position = Vector2(292, 222)
+texture = ExtResource("11_slime")
+centered = false
+offset = Vector2(-24, -45)
+
+[node name="Villager" type="Sprite2D" parent="Room/Things" groups=["preview_characters"]]
+light_mask = 2
+position = Vector2(170, 182)
+texture = ExtResource("12_villager")
+centered = false
+offset = Vector2(-24, -45)
+
+[node name="TorchLight" type="PointLight2D" parent="." groups=["preview_lights"]]
+position = Vector2(144, 40)
+scale = Vector2(1, 0.8)
+color = Color(1, 0.62, 0.32, 1)
+energy = 0.6
+range_item_cull_mask = 2
+texture = SubResource("GradientTexture2D_rings")
+texture_scale = 1.6
+script = ExtResource("5_flicker")
+
+[node name="DoorLight" type="PointLight2D" parent="." groups=["preview_lights"]]
+position = Vector2(240, 66)
+color = Color(0.45, 0.56, 0.8, 1)
+energy = 0.3
+range_item_cull_mask = 2
+texture = SubResource("GradientTexture2D_rings")
+texture_scale = 0.8

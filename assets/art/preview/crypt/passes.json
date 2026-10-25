@@ -1,0 +1,57 @@
+[
+ {
+  "name": "grime",
+  "x": 61,
+  "y": 90
+ },
+ {
+  "name": "cracks",
+  "x": 74,
+  "y": 41
+ },
+ {
+  "name": "ao",
+  "x": 64,
+  "y": 78
+ },
+ {
+  "name": "torch_rings",
+  "x": 103,
+  "y": 15
+ },
+ {
+  "name": "gloom",
+  "x": 278,
+  "y": 7
+ },
+ {
+  "name": "blood",
+  "x": 139,
+  "y": 52
+ },
+ {
+  "name": "sludge",
+  "x": 301,
+  "y": 115
+ },
+ {
+  "name": "vignette",
+  "x": 32,
+  "y": 0
+ },
+ {
+  "name": "wall_shadow",
+  "x": 142,
+  "y": 16
+ },
+ {
+  "name": "contact",
+  "x": 67,
+  "y": 84
+ },
+ {
+  "name": "pebble_shadow",
+  "x": 84,
+  "y": 123
+ }
+]

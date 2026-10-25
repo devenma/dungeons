@@ -1,0 +1,70 @@
+{
+ "banner_torn": [
+  11,
+  1
+ ],
+ "barrel": [
+  10,
+  26
+ ],
+ "barrel_broken": [
+  16,
+  22
+ ],
+ "blood_pool": [
+  9,
+  6
+ ],
+ "bone_s": [
+  5,
+  5
+ ],
+ "bones": [
+  12,
+  14
+ ],
+ "chains": [
+  13,
+  1
+ ],
+ "chest": [
+  14,
+  22
+ ],
+ "corpse": [
+  14,
+  28
+ ],
+ "grate": [
+  9,
+  6
+ ],
+ "meathook": [
+  11,
+  1
+ ],
+ "pillar": [
+  13,
+  52
+ ],
+ "planks": [
+  12,
+  10
+ ],
+ "ribs": [
+  9,
+  11
+ ],
+ "rubble": [
+  14,
+  14
+ ],
+ "shelf_broken": [
+  23,
+  44
+ ],
+ "torch_out": [
+  7,
+  26
+ ]
+}
