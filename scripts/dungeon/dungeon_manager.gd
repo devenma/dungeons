@@ -29,6 +29,11 @@ var _spawner: Node
 # without an editor scan (spawner.gd precedent).
 const ExitScene: PackedScene = preload("res://scenes/dungeon/exit.tscn")
 const ExitScript: GDScript = preload("res://scripts/dungeon/exit_area.gd")
+## Town scene used when the expedition ends (S4). The old hub scene
+## (`scenes/hub/guild_tavern.tscn`) is unloadable: it references missing PNGs.
+## Escena del pueblo al terminar la expedición (S4). La vieja escena del hub
+## (`scenes/hub/guild_tavern.tscn`) no carga: referencia PNGs inexistentes.
+const TOWN_SCENE_PATH: String = "res://scenes/town/town.tscn"
 
 
 func _ready() -> void:
@@ -49,15 +54,30 @@ func _on_player_died() -> void:
 		return
 	_dead_handling = true
 	await get_tree().create_timer(0.5).timeout
+	_return_to_town()
+
+
+## S4: death ends the expedition. The scene reload discards run loot; the
+## persistent profile (gold, permanent equipment) lives in the autoload.
+## S4: la muerte termina la expedición. La recarga de escena descarta el loot de
+## la run; el perfil persistente (oro, equipo permanente) vive en el autoload.
+func _return_to_town() -> void:
+	var error: Error = get_tree().change_scene_to_file(TOWN_SCENE_PATH)
+	if error == OK:
+		# The scene change is deferred: never touch this node after this point.
+		# El cambio de escena es diferido: no tocar este nodo después de esto.
+		return
+	push_error("DungeonManager: cannot load %s (error %d) — restarting the run instead" % [TOWN_SCENE_PATH, error])
+	# Loud fallback so a broken town scene cannot hard-lock the session.
+	# Fallback ruidoso para que un pueblo roto no bloquee la sesión.
+	_dead_handling = false
 	var health := player.get_node_or_null("Health") as HealthComponent
 	if health != null:
 		health.reset_health()
-	_refill_stamina()
-	var run_manager = _get_run_manager()
+	var run_manager: Node = _get_run_manager()
 	if run_manager != null:
 		run_manager.start_new_run()
 	_start_floor()
-	_dead_handling = false
 
 
 ## Refill stamina to full (ST-reset): called at the top of `_start_floor()`

@@ -1,0 +1,27 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1_player"]
+[ext_resource type="Script" path="res://scripts/town/town.gd" id="2_town"]
+
+[node name="Town" type="Node2D"]
+script = ExtResource("2_town")
+
+[node name="Floor" type="ColorRect" parent="."]
+offset_right = 480.0
+offset_bottom = 270.0
+color = Color(0.12, 0.13, 0.16, 1)
+
+[node name="Player" parent="." instance=ExtResource("1_player")]
+position = Vector2(240, 135)
+
+[node name="SpawnPoint" type="Marker2D" parent="."]
+position = Vector2(240, 135)
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="Hint" type="Label" parent="UI"]
+offset_left = 12.0
+offset_top = 248.0
+offset_right = 468.0
+offset_bottom = 266.0
+text = "Press E to enter the dungeon"
