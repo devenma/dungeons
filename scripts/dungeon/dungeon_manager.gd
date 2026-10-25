@@ -2,7 +2,11 @@ extends Node
 
 ## Floor orchestration (§24) plus the guild <-> expedition transition:
 ## boots in the guild, `start_expedition()` builds floor 1, and death
-## routes through `_return_to_guild()` (D1 + blue stone rule).
+## routes through `_return_to_guild()` (D1 + blue stone rule). While the
+## death is being handled no exit or floor change goes through.
+## Optional sound children (absent in test rigs): DungeonAmbience loops on
+## the floors, DoorLockSound / DoorOpenSound follow the combat locks and
+## TeleportSound plays when a blue stone saves the loot.
 
 # Referenced by preloaded script instead of a class_name, which is not
 # registered in headless runs without an editor scan.
@@ -82,8 +86,10 @@ func _return_to_guild() -> void:
 	if run_manager != null:
 		if not run_manager.consume_blue_stone():
 			run_manager.lose_backpack()
-		elif profile != null:
-			profile.owned_weapons = run_manager.owned_weapons.duplicate()
+		else:
+			_play_sound("TeleportSound")
+			if profile != null:
+				profile.owned_weapons = run_manager.owned_weapons.duplicate()
 		run_manager.start_new_run(_base_weapons())
 	if profile != null:
 		profile.save_profile()
@@ -94,8 +100,17 @@ func _return_to_guild() -> void:
 	_enter_guild()
 
 
+func _play_sound(sound_name: String) -> void:
+	var sound: AudioStreamPlayer = get_node_or_null(sound_name) as AudioStreamPlayer
+	if sound != null:
+		sound.play()
+
+
 func _enter_guild() -> void:
 	_in_guild = true
+	var ambience: AudioStreamPlayer = get_node_or_null("DungeonAmbience") as AudioStreamPlayer
+	if ambience != null:
+		ambience.stop()
 	_guild.set_active(true)
 	player.position = _guild.spawn_position()
 	var cam_manager: Node = _find_camera_limit_manager()
@@ -141,6 +156,9 @@ func _start_floor() -> void:
 	_refill_stamina()
 	_clear_floor()
 	run_manager.current_floor += 1
+	var ambience: AudioStreamPlayer = get_node_or_null("DungeonAmbience") as AudioStreamPlayer
+	if ambience != null and not ambience.playing:
+		ambience.play()
 
 	var generator: DungeonGenerator = DungeonGenerator.new()
 	var layout: DungeonGenerator.FloorLayout = generator.generate_floor(
@@ -187,6 +205,8 @@ func _start_floor() -> void:
 	# Wire signals BEFORE spawn_content: it emits zone_cleared synchronously
 	# and may place chests that grant immediately (§44.16).
 	_spawner.zone_cleared.connect(_door_controller.on_zone_cleared)
+	_door_controller.doors_locked.connect(func(_zone_id: int) -> void: _play_sound("DoorLockSound"))
+	_door_controller.doors_opened.connect(func(_zone_id: int) -> void: _play_sound("DoorOpenSound"))
 	# PF-1: chest grants flow Spawner -> RunManager (add + auto-equip).
 	_spawner.weapon_granted.connect(_on_weapon_granted)
 	_spawner.loot_found.connect(_on_loot_found)
@@ -252,7 +272,8 @@ func _spawn_exit(layout: DungeonGenerator.FloorLayout) -> void:
 	if exit_zone == null:
 		return
 	var exit := ExitScene.instantiate() as ExitScript
-	exit.position = _zone_center_px(exit_zone)
+	# El área de la escena mide stairs_exit_rect; se centra ahí / The scene's area is stairs_exit_rect in size; centred on it
+	exit.position = DungeonGeometry.stairs_exit_rect(layout.exit_stairs).get_center()
 	exit.zone_id = exit_zone.id
 	# Relay must be connected BEFORE add_child (§44.16): the scene may emit
 	# synchronously during ready-phase entry.
@@ -274,7 +295,10 @@ func _clear_floor() -> void:
 	_spawner = null
 
 
+# Muerto no se cambia de piso: la muerte ya vuelve al gremio / Dead there is no floor change: death already returns to the guild
 func _go_to_next_floor() -> void:
+	if _dead_handling:
+		return
 	_start_floor()
 
 
@@ -292,10 +316,8 @@ func _spawn_player(layout: DungeonGenerator.FloorLayout) -> void:
 	var start_zone: Zone = _first_zone_of_type(layout, Zone.ZoneType.START)
 	if start_zone == null:
 		return
+	# The camera snaps to START in _initialize_camera_limits, with this floor's layout.
 	player.position = _zone_center_px(start_zone)
-	var cam_manager: Node = _find_camera_limit_manager()
-	if cam_manager != null and cam_manager.has_method("_on_zone_entered"):
-		cam_manager._on_zone_entered(start_zone.id)
 
 
 func _first_zone_of_type(layout: DungeonGenerator.FloorLayout, type: Zone.ZoneType) -> Zone:

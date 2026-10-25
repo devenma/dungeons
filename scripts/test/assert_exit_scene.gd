@@ -4,7 +4,9 @@ extends SceneTree
 ## instantiable chest-pattern scene (`exit.tscn`) mounted by DungeonManager
 ## via config injection, owns its interact input with a one-shot guard,
 ## and relays `exit_requested` exactly once into the DungeonManager
-## floor transition. Exit 0 = pass, 1 = fail.
+## floor transition. The stairs only let a body onto the ExitArea from the
+## south: walking in from either side (or from the north) is stopped by the
+## frame and never sets `_player_inside`. Exit 0 = pass, 1 = fail.
 
 const ExitScene: PackedScene = preload("res://scenes/dungeon/exit.tscn")
 const ExitScript: GDScript = preload("res://scripts/dungeon/exit_area.gd")
@@ -48,8 +50,20 @@ func _on_exit_requested() -> void:
 	_relay_count += 1
 
 
+## Pone el cuerpo en from y lo empuja en direction con la física real / Puts the body at from and pushes it with real physics
+func _walk(body: CharacterBody2D, from: Vector2, direction: Vector2, steps: int = 40) -> void:
+	body.position = from
+	await _frames(2)
+	for i in steps:
+		body.velocity = direction * 120.0
+		body.move_and_slide()
+		await physics_frame
+	await _frames(2)
+
+
 func _make_fake_player() -> CharacterBody2D:
 	var player := CharacterBody2D.new()
+	player.motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
 	player.collision_layer = 2
 	var shape := CollisionShape2D.new()
 	var rect := RectangleShape2D.new()
@@ -72,7 +86,8 @@ func _run() -> void:
 	_check(shape_node != null, "EX-1: scene carries a CollisionShape2D")
 	if shape_node != null and shape_node.shape is RectangleShape2D:
 		var rect: RectangleShape2D = shape_node.shape
-		_check(rect.size == Vector2(64, 64), "EX-2: RectangleShape2D is 64x64")
+		_check(rect.size == DungeonGeometry.stairs_exit_rect(Vector2i.ZERO).size,
+				"EX-2: RectangleShape2D matches the stairs' south half (stairs_exit_rect)")
 	else:
 		_check(false, "EX-2: shape is a RectangleShape2D")
 	_check(instance.get_node_or_null("VisualColorRect") == null,
@@ -140,13 +155,10 @@ func _run() -> void:
 					expected_zone = zone
 					break
 		_check(expected_zone != null, "XC-2: EXIT zone present in the generated layout")
+		var stairs_origin: Vector2i = candidate_layout.exit_stairs if candidate_layout != null else Vector2i.ZERO
 		if expected_zone != null:
-			var expected := Vector2(
-				(expected_zone.tile_rect.position.x + expected_zone.tile_rect.size.x / 2.0) * DungeonGeometry.TILE_SIZE,
-				(expected_zone.tile_rect.position.y + expected_zone.tile_rect.size.y / 2.0) * DungeonGeometry.TILE_SIZE
-			)
-			_check(mounted.position == expected,
-					"XC-2: positioned at EXIT tile_rect center * TILE_SIZE")
+			_check(mounted.position == DungeonGeometry.stairs_exit_rect(stairs_origin).get_center(),
+					"XC-2: positioned on the south half of the stairs (stairs_exit_rect centre)")
 			_check(mounted.get("zone_id") == expected_zone.id,
 					"XC-2: zone_id injected pre-add_child (survives ready)")
 			var tilemap: TileMap = dm.get_node("Dungeon/FloorTileMap")
@@ -155,11 +167,32 @@ func _run() -> void:
 			_check(stairs.has_point(tilemap.get_cell_atlas_coords(DungeonGeometry.LAYER_FLOOR, under)),
 					"XC-2: the exit stands on the stairs-down tiles")
 
-		# --- XT-1: player-in tracking via real physics overlap ---
-		fake_player.position = mounted.position
-		await _frames(3)
+		# --- XT-1: the stairs are only entered from the south ---
+		var stairs_px: Rect2 = Rect2(Vector2(stairs_origin * DungeonGeometry.TILE_SIZE),
+				Vector2(DungeonGeometry.STAIRS_DOWN_SIZE * DungeonGeometry.TILE_SIZE))
+		var tile: float = DungeonGeometry.TILE_SIZE
+		var low_row_y: float = stairs_px.end.y - tile / 2.0
+		await _walk(fake_player, Vector2(stairs_px.position.x - tile / 2.0, low_row_y), Vector2.RIGHT)
+		_check(mounted.get("_player_inside") == false
+				and fake_player.position.x + 6.0 <= stairs_px.position.x + DungeonGeometry.STAIRS_FRAME_PX + 0.5,
+				"XT-1: walking in from the west side is stopped by the frame, no exit (x %.1f)" % fake_player.position.x)
+		await _walk(fake_player, Vector2(stairs_px.end.x + tile / 2.0, low_row_y), Vector2.LEFT)
+		_check(mounted.get("_player_inside") == false
+				and fake_player.position.x - 6.0 >= stairs_px.end.x - DungeonGeometry.STAIRS_FRAME_PX - 0.5,
+				"XT-1: walking in from the east side is stopped by the frame, no exit (x %.1f)" % fake_player.position.x)
+		var first_floor_row: int = expected_zone.tile_rect.position.y + DungeonGeometry.WALL_RING_TILES \
+				+ DungeonGeometry.NORTH_FACE_ROWS
+		if stairs_origin.y > first_floor_row:
+			await _walk(fake_player, Vector2(stairs_px.get_center().x, stairs_px.position.y - tile / 2.0), Vector2.DOWN)
+			_check(mounted.get("_player_inside") == false
+					and fake_player.position.y + 6.0 <= stairs_px.position.y + DungeonGeometry.STAIRS_FRAME_PX + 0.5,
+					"XT-1: walking in from the north is stopped by the frame, no exit")
+		else:
+			print("PASS: XT-1: the stairs abut the north face, nothing walks in from the north")
+		# 60 px hacia el norte: termina sobre la mitad sur de la escalera / 60 px north: ends on the stairs' south half
+		await _walk(fake_player, Vector2(stairs_px.get_center().x, stairs_px.end.y + tile), Vector2.UP, 30)
 		_check(mounted.get("_player_inside") == true,
-				"XT-1: body overlap sets _player_inside (independent rig player)")
+				"XT-1: walking in from the south steps onto the ExitArea (_player_inside)")
 
 		# --- XT-3: real relay advances the floor exactly once ---
 		var floor_before: int = run_manager_state.current_floor

@@ -1,7 +1,8 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/dungeon/chest.gd" id="1"]
 [ext_resource type="Resource" path="res://resources/items/chest_drops.tres" id="2"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/chest_open.tres" id="3"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_chest"]
 size = Vector2(24, 24)
@@ -21,3 +22,8 @@ color = Color(1, 0.78, 0.25, 1)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("RectangleShape2D_chest")
+
+[node name="OpenSound" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("3")
+volume_db = -6.0
+bus = &"SFX"

@@ -9,8 +9,11 @@ extends RefCounted
 
 # Lado de un tile en px / Tile side in px
 const TILE_SIZE := 32
-# Lado de una celda de la grilla en tiles (8 × 32 = 256 px) / Grid cell side in tiles (8 × 32 = 256 px)
-const CELL_TILES := 8
+# Celda de la grilla en tiles: una pantalla de sala con su anillo de pared (15 × 9 tiles = 480 × 288 px;
+# el viewport de 480 × 270 la cubre de ancho y la cámara recorre los 18 px de alto que sobran)
+# Grid cell in tiles: one screen of room with its wall ring (15 × 9 tiles = 480 × 288 px;
+# the 480 × 270 viewport covers its width and the camera scrolls the 18 px of extra height)
+const CELL_TILES := Vector2i(15, 9)
 # Ancho del anillo de pared de cada zona, en tiles / Width of each zone's wall ring, in tiles
 const WALL_RING_TILES := 1
 # Filas de la cara de la pared norte bajo su tope, en tiles (BIBLIA_ARTE §1)
@@ -76,9 +79,15 @@ const DOOR_W := Vector2i(5, 15)
 # Pasillo entre los topes sobre un arco norte, ranura (i, j) como el piso
 # Passage through the wall tops above a north arch, slot (i, j) like the floor
 const PASSAGE_N := Vector2i(0, 15)
-# Escalera de bajada de la salida: 2×3 tiles de piso / Exit stairs down: 2×3 floor tiles
+# Escalera de bajada de la salida: 2×2 tiles de piso, se entra solo desde el sur
+# Exit stairs down: 2×2 floor tiles, entered from the south only
 const STAIRS_DOWN := Vector2i(3, 15)
-const STAIRS_DOWN_SIZE := Vector2i(2, 3)
+const STAIRS_DOWN_SIZE := Vector2i(2, 2)
+# Ancho del marco de piedra de la escalera (norte y lados), con colisión, en px
+# Width of the stairs' stone frame (north and sides), with collision, in px
+const STAIRS_FRAME_PX := 6
+# Filas de piso libres bajo la escalera para entrar, en tiles / Free floor rows under the stairs to step in, in tiles
+const STAIRS_ENTRY_ROWS := 2
 # Arco norte con la puerta trabada, sin colisión (traba la fila de topes) / Locked north arch, no collision (the wall-top row blocks)
 const DOOR_N_HI_LOCKED := Vector2i(6, 15)
 const DOOR_N_LO_LOCKED := Vector2i(6, 16)
@@ -138,6 +147,16 @@ static func zone_tile_for(tx: int, ty: int, w: int, h: int, world: Vector2i,
 	return floor_atlas_for(world.x, world.y)
 
 
+## Rectángulo en px donde caben los pies sobre el piso interior de la zona (sin anillo, cara norte ni
+## huecos de puerta), a medio tile de sus bordes: los centros de sus tiles de piso, bordes incluidos.
+## Rect in px for the feet on the zone's interior floor (no ring, north face or door gaps), half a tile
+## in from its edges: the centres of its floor tiles, edges included.
+static func floor_interior_px(tile_rect: Rect2i) -> Rect2:
+	var interior: Rect2i = tile_rect.grow_individual(-WALL_RING_TILES,
+			-WALL_RING_TILES - NORTH_FACE_ROWS, -WALL_RING_TILES, -WALL_RING_TILES)
+	return Rect2(interior.position * TILE_SIZE, interior.size * TILE_SIZE).grow(-TILE_SIZE / 2.0)
+
+
 ## World cell of the door on its edge: axis "v" = first column of the right zone,
 ## axis "h" = first row of the lower zone.
 static func door_cell(door: Zone.Door) -> Vector2i:
@@ -186,8 +205,49 @@ static func closed_door_tiles(door: Zone.Door) -> Dictionary:
 	}
 
 
-## Top-left tile of the 2×3 stairs down of an EXIT zone, centred on the zone centre in x and
-## ending on its centre row, so the ExitArea at the zone centre sits on the steps.
-static func exit_stairs_origin(zone: Zone) -> Vector2i:
-	var centre: Vector2i = zone.tile_rect.position + zone.tile_rect.size / 2
-	return centre - Vector2i(1, 2)
+## Colisiones del marco de un tile de escalera, en px desde su esquina superior izquierda: el
+## marco norte en la fila de arriba y los laterales en las columnas de los bordes; el sur queda abierto.
+## Frame colliders of a stairs tile, in px from its top-left corner: the north frame on the top row
+## and the side frames on the outer columns; the south edge stays open.
+static func stairs_frame_rects(coords: Vector2i) -> Array[Rect2i]:
+	var rects: Array[Rect2i] = []
+	var local: Vector2i = coords - STAIRS_DOWN
+	if not Rect2i(Vector2i.ZERO, STAIRS_DOWN_SIZE).has_point(local):
+		return rects
+	if local.y == 0:
+		rects.append(Rect2i(0, 0, TILE_SIZE, STAIRS_FRAME_PX))
+	if local.x == 0:
+		rects.append(Rect2i(0, 0, STAIRS_FRAME_PX, TILE_SIZE))
+	if local.x == STAIRS_DOWN_SIZE.x - 1:
+		rects.append(Rect2i(TILE_SIZE - STAIRS_FRAME_PX, 0, STAIRS_FRAME_PX, TILE_SIZE))
+	return rects
+
+
+## Tiles que quedan libres alrededor de la escalera (props, calcos, spawns): la escalera, un tile a
+## cada lado y arriba, y las filas de entrada debajo.
+## Tiles kept clear around the stairs (props, decals, spawns): the stairs, one tile on each side
+## and above, and the entry rows below.
+static func stairs_keep_clear(origin: Vector2i) -> Rect2i:
+	return Rect2i(origin, STAIRS_DOWN_SIZE).grow_individual(1, 1, 1, STAIRS_ENTRY_ROWS)
+
+
+## Rectángulo en px del ExitArea: la mitad sur de la escalera, entre los marcos laterales y sin
+## tocar su borde sur, así solo se pisa entrando desde abajo.
+## ExitArea rect in px: the south half of the stairs, between the side frames and short of their
+## south edge, so it is only stepped on when coming from below.
+static func stairs_exit_rect(origin: Vector2i) -> Rect2:
+	var stairs: Rect2 = Rect2(Vector2(origin * TILE_SIZE), Vector2(STAIRS_DOWN_SIZE * TILE_SIZE))
+	var inset: float = STAIRS_FRAME_PX + 2.0
+	return Rect2(stairs.position.x + inset, stairs.get_center().y,
+			stairs.size.x - 2.0 * inset, stairs.size.y / 2.0 - inset)
+
+
+## Cierra o abre una puerta en la capa de puertas (las celdas de closed_door_tiles).
+## Closes or opens a door on the door layer (the closed_door_tiles cells).
+static func set_door_closed(tilemap: TileMap, door: Zone.Door, closed: bool) -> void:
+	var tiles: Dictionary = closed_door_tiles(door)
+	for cell: Vector2i in tiles:
+		if closed:
+			tilemap.set_cell(LAYER_DOOR, cell, DUNGEON_SOURCE_ID, tiles[cell])
+		else:
+			tilemap.erase_cell(LAYER_DOOR, cell)

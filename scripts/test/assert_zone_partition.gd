@@ -3,7 +3,8 @@ extends SceneTree
 ## Run: godot --headless -s scripts/test/assert_zone_partition.gd
 ## Zone partition invariants: across many seeds and floor depths every layout passes
 ## DungeonGenerator.validate_layout (exact rects, no overlap, full coverage, min size,
-## START cap, doors on shared edges, all zones reachable), with a zone count in range, and the same seed gives the same zones. The validator itself
+## START cap, exit stairs placed by stairs_fit, doors on shared edges, all zones reachable),
+## with a zone count in range, and the same seed gives the same zones. The validator itself
 ## must reject broken layouts.
 ## Exit 0 = pass, 1 = fail.
 
@@ -46,7 +47,8 @@ func _check_seed(gen: DungeonGenerator, seed_value: int, floor_number: int,
 
 
 func _check_validator_rejects(gen: DungeonGenerator, data: FloorData) -> void:
-	var broken: Array[String] = ["overlap", "gap", "small", "tile_rect", "door", "no_door"]
+	var broken: Array[String] = ["overlap", "gap", "small", "tile_rect", "door", "no_door",
+			"stairs_face", "stairs_entry", "stairs_side"]
 	for kind in broken:
 		var layout: DungeonGenerator.FloorLayout = gen.generate_floor(1, 4242, data)
 		var zone: Zone = layout.zones[layout.zones.size() - 1]
@@ -58,9 +60,8 @@ func _check_validator_rejects(gen: DungeonGenerator, data: FloorData) -> void:
 				zone.cell_max.x -= 1
 				zone.tile_rect = gen._tile_rect_for_cells(zone.cell_min, zone.cell_max)
 			"small":
-				layout.grid_w += 1
-				zone.cell_min = Vector2i(layout.grid_w - 1, 0)
-				zone.cell_max = Vector2i(layout.grid_w, 1)
+				# Una zona sin celdas queda bajo cualquier mínimo / A zone without cells is below any minimum
+				zone.cell_max.x = zone.cell_min.x
 				zone.tile_rect = gen._tile_rect_for_cells(zone.cell_min, zone.cell_max)
 			"tile_rect":
 				zone.tile_rect.size.x -= 1
@@ -69,6 +70,17 @@ func _check_validator_rejects(gen: DungeonGenerator, data: FloorData) -> void:
 				door.edge_line += 1
 			"no_door":
 				layout.doors.clear()
+			"stairs_face", "stairs_entry", "stairs_side":
+				var exit: Zone = gen._find_zone(layout, layout.exit_zone_id)
+				var r: Rect2i = exit.tile_rect
+				var x: int = r.position.x + 4
+				if kind == "stairs_face":
+					layout.exit_stairs = Vector2i(x, r.position.y + DungeonGeometry.NORTH_FACE_ROWS)
+				elif kind == "stairs_entry":
+					# Una sola fila libre hasta la pared sur / A single free row down to the south wall
+					layout.exit_stairs = Vector2i(x, r.end.y - 2 - DungeonGeometry.STAIRS_DOWN_SIZE.y)
+				else:
+					layout.exit_stairs = Vector2i(r.position.x + 1, r.position.y + 4)
 		_check(not gen.validate_layout(layout, data).is_empty(),
 				"validator rejects a layout with a broken %s" % kind)
 
@@ -78,7 +90,7 @@ func _zones_signature(layout: DungeonGenerator.FloorLayout) -> String:
 	for z in layout.zones:
 		var zone: Zone = z
 		parts.append("%d:%d:%s:%s" % [zone.id, zone.type, zone.cell_min, zone.cell_max])
-	parts.append("doors=%d" % layout.doors.size())
+	parts.append("doors=%d stairs=%s" % [layout.doors.size(), layout.exit_stairs])
 	return ",".join(parts)
 
 

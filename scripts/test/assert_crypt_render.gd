@@ -2,13 +2,17 @@ extends SceneTree
 
 ## Render contract of the dark-crypt floor on REAL generation runs (several seeds and depths):
 ##   1. Every zone cell holds exactly one tile: a wall on layer 1 or a walkable tile on layer 0.
-##   2. Layer 1 holds only solid tiles and each one has its collision polygon; layer 0 has none.
+##   2. Layer 1 holds only solid tiles and each one has its collision polygon; layer 0 has none,
+##      except the stairs, which carry exactly their frame colliders.
 ##   3. Floor tiles use slot (tx % 3, ty % 3) and their AO mask matches the walls around them.
 ##   4. North walls: every floor tile with a wall above it has face_lo, face_hi and a wall top
 ##      stacked over it; face tiles appear nowhere else (side and south walls are tops only).
 ##   5. Doors: open-door tiles on layer 0 with the wall erased, and every zone plus the EXIT
 ##      stairs reachable on foot from the START centre (no face or wall blocks a corridor).
-##   6. The EXIT zone shows the 2x3 stairs down; same seed = identical tiles.
+##   6. The EXIT zone shows the 2x2 stairs down once; same seed = identical tiles. Over many seeds
+##      and depths the stairs sit below the north face, off every north arch column (+-1), with a
+##      free tile on each side, STAIRS_ENTRY_ROWS free rows below and a path from every door mouth
+##      to their entry that does not cross them; floor decals and spawns stay off them.
 ##   7. Spawn interiors stay off the north face.
 ##   8. Physics: a feet-sized body stops at the floor edge under the north face and at the
 ##      inner edge of a side wall top.
@@ -17,8 +21,12 @@ extends SceneTree
 
 const GeneratorScript: GDScript = preload("res://scripts/dungeon/dungeon_generator.gd")
 const SpawnerScript: GDScript = preload("res://scripts/dungeon/spawner.gd")
-# [seed, piso]: pisos bajos (3-5 zonas) y profundos (6-12) / [seed, floor]: shallow (3-5 zones) and deep (6-12)
+# [seed, piso]: pisos bajos (4-6 zonas) y profundos (7-12) / [seed, floor]: shallow (4-6 zones) and deep (7-12)
 const RUNS: Array = [[987654, 1], [1, 1], [42, 2], [2024, 3], [77777, 10], [31337, 12]]
+# Barrido de la escalera: seeds por piso / Stairs sweep: seeds per floor
+const STAIRS_SEEDS: int = 80
+const STAIRS_FLOORS: Array[int] = [1, 3, 6, 10]
+const FloorDressingScript: GDScript = preload("res://scripts/dungeon/floor_dressing.gd")
 
 var _fails: int = 0
 
@@ -49,8 +57,21 @@ func _run() -> void:
 		_check(_same_tiles(map, again), "seed %d floor %d: same seed renders identical tiles" % [run[0], run[1]])
 		if run == RUNS[0]:
 			await _check_walls_stop_feet(layout, map)
+		_check_stairs_clear_of_content(layout)
 		map.free()
 		again.free()
+	var bad_stairs: Array[String] = []
+	for floor_number: int in STAIRS_FLOORS:
+		for seed_value in STAIRS_SEEDS:
+			var layout: DungeonGenerator.FloorLayout = gen.generate_floor(floor_number, seed_value, data)
+			var map: TileMap = TileMap.new()
+			gen._render_layout(layout, map)
+			var error: String = _stairs_error(layout, map)
+			if not error.is_empty():
+				bad_stairs.append("seed %d floor %d: %s" % [seed_value, floor_number, error])
+			map.free()
+	_check(bad_stairs.is_empty(), "stairs rules hold on %d seeds x %d floors (%s)"
+			% [STAIRS_SEEDS, STAIRS_FLOORS.size(), bad_stairs.slice(0, 5)])
 	gen.free()
 	_check_spawn_inset()
 	if _fails == 0:
@@ -94,9 +115,10 @@ func _check_floor(layout: DungeonGenerator.FloorLayout, map: TileMap, label: Str
 								and not _wall_family(map, cell + Vector2i.DOWN, DungeonGeometry.FACE_LO)):
 						faces = str(cell)
 					continue
-				if map.get_cell_tile_data(DungeonGeometry.LAYER_FLOOR, cell).get_collision_polygons_count(0) != 0:
-					solid = "ground " + str(cell)
 				var atlas: Vector2i = map.get_cell_atlas_coords(DungeonGeometry.LAYER_FLOOR, cell)
+				if map.get_cell_tile_data(DungeonGeometry.LAYER_FLOOR, cell).get_collision_polygons_count(0) \
+						!= DungeonGeometry.stairs_frame_rects(atlas).size():
+					solid = "ground " + str(cell)
 				if not DungeonGeometry.is_floor_atlas(atlas):
 					continue
 				var mask: int = 0
@@ -140,33 +162,108 @@ func _check_floor(layout: DungeonGenerator.FloorLayout, map: TileMap, label: Str
 			start = z
 		elif z.type == Zone.ZoneType.EXIT:
 			exit = z
-	var stairs_origin: Vector2i = DungeonGeometry.exit_stairs_origin(exit)
-	var stairs_ok: bool = true
-	for j in DungeonGeometry.STAIRS_DOWN_SIZE.y:
-		for i in DungeonGeometry.STAIRS_DOWN_SIZE.x:
-			if map.get_cell_atlas_coords(DungeonGeometry.LAYER_FLOOR, stairs_origin + Vector2i(i, j)) \
-					!= DungeonGeometry.STAIRS_DOWN + Vector2i(i, j):
-				stairs_ok = false
-	_check(stairs_ok, "%s: the EXIT zone shows the 2x3 stairs down" % label)
+	var stairs_error: String = _stairs_error(layout, map)
+	_check(stairs_error.is_empty(), "%s: the EXIT zone shows the 2x2 stairs down, placed by the rules (%s)"
+			% [label, stairs_error])
 
 	var reached: Dictionary = _walkable_from(map, start.tile_rect.get_center())
 	var unreached: Array[int] = []
 	for z: Zone in layout.zones:
 		if not reached.has(z.tile_rect.get_center()):
 			unreached.append(z.id)
-	_check(unreached.is_empty() and reached.has(stairs_origin),
-			"%s: every zone centre and the stairs are reachable on foot from START (unreached %s)" % [label, unreached])
+	var entry: Vector2i = layout.exit_stairs + Vector2i(0, DungeonGeometry.STAIRS_DOWN_SIZE.y)
+	_check(unreached.is_empty() and reached.has(entry),
+			"%s: every zone centre and the stairs entry are reachable on foot from START (unreached %s)" % [label, unreached])
 
 
-## Flood fill over ground tiles (layer 0 without a wall) / Flood fill over ground tiles.
-func _walkable_from(map: TileMap, from: Vector2i) -> Dictionary:
+## Reglas de la escalera leídas del TileMap, sin usar stairs_fit; "" = cumple.
+## Stairs rules read back from the TileMap, without stairs_fit; "" = they hold.
+func _stairs_error(layout: DungeonGenerator.FloorLayout, map: TileMap) -> String:
+	var exit: Zone = null
+	for z: Zone in layout.zones:
+		if z.type == Zone.ZoneType.EXIT:
+			exit = z
+	if DungeonGeometry.STAIRS_DOWN_SIZE != Vector2i(2, 2):
+		return "stairs are %s tiles, not 2x2" % DungeonGeometry.STAIRS_DOWN_SIZE
+	var stairs: Rect2i = Rect2i(layout.exit_stairs, DungeonGeometry.STAIRS_DOWN_SIZE)
+	var atlas_stairs: Rect2i = Rect2i(DungeonGeometry.STAIRS_DOWN, DungeonGeometry.STAIRS_DOWN_SIZE)
+	var stairs_tiles: int = 0
+	for cell: Vector2i in map.get_used_cells(DungeonGeometry.LAYER_FLOOR):
+		var atlas: Vector2i = map.get_cell_atlas_coords(DungeonGeometry.LAYER_FLOOR, cell)
+		if atlas_stairs.has_point(atlas):
+			stairs_tiles += 1
+			if atlas != DungeonGeometry.STAIRS_DOWN + cell - stairs.position:
+				return "stairs tile %s out of place" % cell
+	if stairs_tiles != 4:
+		return "%d stairs tiles on the map" % stairs_tiles
+	var r: Rect2i = exit.tile_rect
+	if not r.encloses(stairs):
+		return "stairs %s outside the EXIT zone %s" % [stairs, r]
+	if stairs.position.y < r.position.y + DungeonGeometry.WALL_RING_TILES + DungeonGeometry.NORTH_FACE_ROWS:
+		return "stairs %s overlap the north face" % stairs
+	# Lados y filas de entrada: piso sin pared / Sides and entry rows: floor without a wall
+	for ty in range(stairs.position.y, stairs.end.y + DungeonGeometry.STAIRS_ENTRY_ROWS):
+		for tx in range(stairs.position.x - 1, stairs.end.x + 1):
+			var cell: Vector2i = Vector2i(tx, ty)
+			if stairs.has_point(cell):
+				continue
+			if _is_wall(map, cell) or not DungeonGeometry.is_floor_atlas(
+					map.get_cell_atlas_coords(DungeonGeometry.LAYER_FLOOR, cell)):
+				return "cell %s beside or below the stairs is not free floor" % cell
+	var blocked: Dictionary = {}
+	for j in stairs.size.y:
+		for i in stairs.size.x:
+			blocked[stairs.position + Vector2i(i, j)] = true
+	var entry: Array[Vector2i] = [Vector2i(stairs.position.x, stairs.end.y), Vector2i(stairs.end.x - 1, stairs.end.y)]
+	for d in layout.doors:
+		var door: Zone.Door = d
+		if door.zone_a_id != exit.id and door.zone_b_id != exit.id:
+			continue
+		if door.edge_axis == "h" and door.edge_line == r.position.y \
+				and stairs.position.x <= door.pos_along + 1 and stairs.end.x >= door.pos_along:
+			return "stairs %s under or next to the north door at column %d" % [stairs, door.pos_along]
+		for cell: Vector2i in DungeonGeometry.open_door_tiles(door):
+			if not r.has_point(cell):
+				continue
+			var reached: Dictionary = _walkable_from(map, cell, blocked)
+			for tile: Vector2i in entry:
+				if not reached.has(tile):
+					return "no path from door %d (%s) to the stairs entry %s" % [door.id, cell, tile]
+	return ""
+
+
+## Calcos del ambiente y contenido del Spawner fuera de la escalera y su entrada.
+## Ambience decals and Spawner content off the stairs and their entry.
+func _check_stairs_clear_of_content(layout: DungeonGenerator.FloorLayout) -> void:
+	var clear: Rect2i = DungeonGeometry.stairs_keep_clear(layout.exit_stairs)
+	var clear_px: Rect2 = Rect2(Vector2(clear.position * DungeonGeometry.TILE_SIZE),
+			Vector2(clear.size * DungeonGeometry.TILE_SIZE))
+	var dressing: Node2D = FloorDressingScript.new()
+	dressing.dress(layout)
+	var spawned: Node2D = Node2D.new()
+	var spawner: Node = SpawnerScript.new()
+	spawner.spawn_content(layout, spawned)
+	var offenders: Array[String] = []
+	for parent: Node in [dressing, spawned]:
+		for child: Node in parent.get_children():
+			var item: Node2D = child as Node2D
+			if item != null and clear_px.has_point(item.position):
+				offenders.append("%s at %s" % [item.name, item.position])
+	_check(offenders.is_empty(), "decals, props and spawns stay off the stairs and their entry (%s)" % [offenders])
+	dressing.free()
+	spawned.free()
+	spawner.free()
+
+
+## Flood fill over ground tiles (layer 0 without a wall), skipping the blocked cells.
+func _walkable_from(map: TileMap, from: Vector2i, blocked: Dictionary = {}) -> Dictionary:
 	var seen: Dictionary = {from: true}
 	var queue: Array[Vector2i] = [from]
 	while not queue.is_empty():
 		var cell: Vector2i = queue.pop_back()
 		for side: Vector2i in [Vector2i.UP, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT]:
 			var next: Vector2i = cell + side
-			if seen.has(next) or _is_wall(map, next) \
+			if seen.has(next) or blocked.has(next) or _is_wall(map, next) \
 					or map.get_cell_source_id(DungeonGeometry.LAYER_FLOOR, next) == -1:
 				continue
 			seen[next] = true
@@ -225,7 +322,7 @@ func _check_walls_stop_feet(layout: DungeonGenerator.FloorLayout, map: TileMap) 
 func _check_spawn_inset() -> void:
 	var spawner: Node = SpawnerScript.new()
 	var zone: Zone = Zone.new()
-	zone.tile_rect = Rect2i(0, 0, 16, 16)
+	zone.tile_rect = Rect2i(Vector2i.ZERO, DungeonGeometry.CELL_TILES)
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 	var lowest: int = 99
 	for i in 200:

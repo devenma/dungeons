@@ -3,9 +3,11 @@ extends SceneTree
 ## Genera tilesets/crypt_dark.tres con el atlas de assets/art/environment/crypt/crypt_tiles.png.
 ## Builds tilesets/crypt_dark.tres from the atlas assets/art/environment/crypt/crypt_tiles.png.
 ## Las paredes (DungeonGeometry.is_solid_atlas) bloquean su tile completo: la cara norte frena los
-## pies en el borde del piso y los topes laterales y sur ocupan su tile.
+## pies en el borde del piso y los topes laterales y sur ocupan su tile. La escalera de salida solo
+## bloquea su marco norte y lateral (DungeonGeometry.stairs_frame_rects).
 ## Walls (DungeonGeometry.is_solid_atlas) block their full tile: the north face stops the feet at the
-## floor edge and the side and south tops fill their tile.
+## floor edge and the side and south tops fill their tile. The exit stairs only block their north and
+## side frame (DungeonGeometry.stairs_frame_rects).
 ## Re-ejecutar si cambia el layout del atlas; no editar el .tres a mano.
 ## Rerun when the atlas layout changes; do not hand-edit the .tres.
 ##   "$GODOT" --headless --path . -s scripts/tools/build_crypt_tileset.gd
@@ -38,10 +40,17 @@ func _initialize() -> void:
 				continue
 			source.create_tile(coords)
 			tiles += 1
+			var tile_data: TileData = source.get_tile_data(coords, 0)
 			if Geometry.is_solid_atlas(coords):
-				var tile_data: TileData = source.get_tile_data(coords, 0)
 				tile_data.add_collision_polygon(0)
 				tile_data.set_collision_polygon_points(0, 0, full_rect)
+			for rect: Rect2i in Geometry.stairs_frame_rects(coords):
+				var r: Rect2 = Rect2(rect)
+				r.position -= Vector2(half, half)
+				var polygon: int = tile_data.get_collision_polygons_count(0)
+				tile_data.add_collision_polygon(0)
+				tile_data.set_collision_polygon_points(0, polygon, PackedVector2Array([
+					r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y)]))
 	var err: Error = ResourceSaver.save(tile_set, Geometry.DUNGEON_TILESET_PATH)
 	print("saved %s (%d tiles): %s" % [Geometry.DUNGEON_TILESET_PATH, tiles, error_string(err)])
 	quit(0 if err == OK else 1)

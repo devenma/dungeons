@@ -3,8 +3,8 @@ Packs the crypt tile atlas for the procedural floor and copies the ambience deca
 
     python tools/art/build_crypt_atlas.py <sprites dir>... [--out assets/art/environment/crypt]
 
-Sprites dirs: pxl builds of 04_salas/cripta/juego.px.js (base tiles + extra tiles + props) and of
-04_salas/cripta/salas.px.js (stairs, door_locked); the first dir that has a sprite wins.
+Sprites dirs: pxl builds of 04_salas/cripta/juego.px.js (base tiles + extra tiles + exit stairs + props)
+and of 04_salas/cripta/salas.px.js (door_locked); the first dir that has a sprite wins.
 Also needs <repo>/assets/art/preview/vfx/ (torch flame loops) and the shade_lut.png of the preview.
 
 The layout of crypt_tiles.png must match scripts/dungeon/dungeon_geometry.gd. After changing the
@@ -45,9 +45,11 @@ NAMED += [
     ("wall_bl_inner", 9, 14), ("wall_br_inner", 10, 14), ("door_e", 11, 14),
     ("door_w", 5, 15),
 ]
+# Escalera de bajada de 2x2 (juego.px.js); (3, 17) y (4, 17) quedan vacíos
+# 2x2 stairs down (juego.px.js); (3, 17) and (4, 17) stay empty
 for i in range(2):
-    for j in range(3):
-        NAMED.append((f"stairs_down_{i}{j}", 3 + i, 15 + j))
+    for j in range(2):
+        NAMED.append((f"exit_stairs_{i}{j}", 3 + i, 15 + j))
 # Arco norte con la puerta trabada estampada (se estampa en x+5, y+14 del arco, LEEME de 04_salas)
 # North arch with the locked door stamped on it (stamped at x+5, y+14 of the arch, 04_salas LEEME)
 LOCKED_ARCH = (6, 15)

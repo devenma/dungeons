@@ -20,6 +20,8 @@ class FloorLayout:
 	var doors: Array  # of Zone.Door
 	var start_zone_id: int = -1
 	var exit_zone_id: int = -1
+	# Tile superior izquierdo de la escalera de la zona EXIT / Top-left tile of the EXIT zone's stairs
+	var exit_stairs: Vector2i = Vector2i(-1, -1)
 
 
 func _create_rng(base_seed: int, fn: int) -> RandomNumberGenerator:
@@ -210,10 +212,11 @@ func _detect_neighbors(layout: FloorLayout, cells: Array) -> void:
 					nz.neighbors.append(c.zone_id)
 
 
-## Rectángulos exactos que cubren la grilla sin solapes, tamaño mínimo, un START (con tope) y un EXIT,
-## puertas sobre aristas compartidas y todas las zonas alcanzables desde START. "" = válido.
-## Exact rects covering the grid without overlaps, min size, one START (capped) and one EXIT,
-## doors on shared edges and every zone reachable from START. "" = valid.
+## Rectángulos exactos que cubren la grilla sin solapes, tamaño mínimo, un START (con tope) y un EXIT
+## con su escalera bien puesta, puertas sobre aristas compartidas y todas las zonas alcanzables
+## desde START. "" = válido.
+## Exact rects covering the grid without overlaps, min size, one START (capped) and one EXIT with
+## well-placed stairs, doors on shared edges and every zone reachable from START. "" = valid.
 func validate_layout(layout: FloorLayout, data: FloorData) -> String:
 	var min_cells: Vector2i = _min_cells(data)
 	var start_size: Vector2i = _start_size(data)
@@ -255,6 +258,8 @@ func validate_layout(layout: FloorLayout, data: FloorData) -> String:
 	if start_zone == null or start_zone.type != Zone.ZoneType.START \
 			or exit_zone == null or exit_zone.type != Zone.ZoneType.EXIT:
 		return "start_zone_id/exit_zone_id do not point at START/EXIT"
+	if not stairs_fit(exit_zone, layout.doors, layout.exit_stairs):
+		return "exit stairs at %s do not fit EXIT zone %d" % [layout.exit_stairs, exit_zone.id]
 
 	var links: Dictionary = {}  # zone id -> Array[int] linked by doors
 	var door_pairs: Dictionary = {}  # "a,b" -> true
@@ -368,37 +373,23 @@ func _place_doors(layout: FloorLayout, rng: RandomNumberGenerator,
 			if other == null:
 				continue
 
-			# Determine shared edge
+			# Shared edge, in tiles: the line is the first column / row of the right / lower zone,
+			# the span runs over the cells both zones cover.
+			var cell: Vector2i = DungeonGeometry.CELL_TILES
 			var edge_axis: String
 			var edge_line: int
-			var edge_len: int   # in tiles
-
-			if z.cell_max.x <= other.cell_min.x:
-				# Z is left of Other → vertical edge
+			var start_along: int
+			var edge_len: int
+			if z.cell_max.x <= other.cell_min.x or other.cell_max.x <= z.cell_min.x:
 				edge_axis = "v"
-				edge_line = z.cell_max.x * DungeonGeometry.CELL_TILES  # tile-x of edge
-				var top_y: int = maxi(z.cell_min.y, other.cell_min.y)
-				var bot_y: int = mini(z.cell_max.y, other.cell_max.y)
-				edge_len = (bot_y - top_y) * DungeonGeometry.CELL_TILES
-			elif other.cell_max.x <= z.cell_min.x:
-				edge_axis = "v"
-				edge_line = other.cell_max.x * DungeonGeometry.CELL_TILES
-				var top_y: int = maxi(z.cell_min.y, other.cell_min.y)
-				var bot_y: int = mini(z.cell_max.y, other.cell_max.y)
-				edge_len = (bot_y - top_y) * DungeonGeometry.CELL_TILES
-			elif z.cell_max.y <= other.cell_min.y:
-				# Z is above Other → horizontal edge
-				edge_axis = "h"
-				edge_line = z.cell_max.y * DungeonGeometry.CELL_TILES  # tile-y of edge
-				var left_x: int = maxi(z.cell_min.x, other.cell_min.x)
-				var right_x: int = mini(z.cell_max.x, other.cell_max.x)
-				edge_len = (right_x - left_x) * DungeonGeometry.CELL_TILES
+				edge_line = maxi(z.cell_min.x, other.cell_min.x) * cell.x
+				start_along = maxi(z.cell_min.y, other.cell_min.y) * cell.y
+				edge_len = mini(z.cell_max.y, other.cell_max.y) * cell.y - start_along
 			else:
 				edge_axis = "h"
-				edge_line = other.cell_max.y * DungeonGeometry.CELL_TILES
-				var left_x: int = maxi(z.cell_min.x, other.cell_min.x)
-				var right_x: int = mini(z.cell_max.x, other.cell_max.x)
-				edge_len = (right_x - left_x) * DungeonGeometry.CELL_TILES
+				edge_line = maxi(z.cell_min.y, other.cell_min.y) * cell.y
+				start_along = maxi(z.cell_min.x, other.cell_min.x) * cell.x
+				edge_len = mini(z.cell_max.x, other.cell_max.x) * cell.x - start_along
 
 			var door_count: int = 1
 			if edge_len >= data.multi_door_threshold:
@@ -412,17 +403,7 @@ func _place_doors(layout: FloorLayout, rng: RandomNumberGenerator,
 				var jitter_max: int = maxi(1, edge_len / 16)
 				var jitter: int = rng.randi_range(-jitter_max, jitter_max)
 				var along: int = clampi(center + jitter, 0, edge_len - 1)
-
-				var pos_along: int
-				var start_along: int
-				if edge_axis == "v":
-					var top_y: int = maxi(z.cell_min.y, other.cell_min.y)
-					start_along = top_y * DungeonGeometry.CELL_TILES
-					pos_along = start_along + along
-				else:
-					var left_x: int = maxi(z.cell_min.x, other.cell_min.x)
-					start_along = left_x * DungeonGeometry.CELL_TILES
-					pos_along = start_along + along
+				var pos_along: int = start_along + along
 
 				var d: Zone.Door = Zone.Door.new()
 				d.id = did
@@ -442,6 +423,59 @@ func _place_doors(layout: FloorLayout, rng: RandomNumberGenerator,
 				z.doors.append(d)
 				other.doors.append(d)
 				did += 1
+
+
+## Reglas de la escalera de salida en su zona: bajo la cara norte, un tile libre a cada lado,
+## STAIRS_ENTRY_ROWS filas libres hasta la pared sur, fuera de las columnas de un arco norte (±1) y
+## sin tocar (ni en diagonal) la boca de ninguna puerta.
+## Exit stairs rules in their zone: below the north face, one free tile on each side,
+## STAIRS_ENTRY_ROWS free rows down to the south wall, off the columns of a north arch (±1) and not
+## touching (even diagonally) the mouth of any door.
+func stairs_fit(zone: Zone, doors: Array, origin: Vector2i) -> bool:
+	var r: Rect2i = zone.tile_rect
+	var stairs: Rect2i = Rect2i(origin, DungeonGeometry.STAIRS_DOWN_SIZE)
+	var first_floor_row: int = r.position.y + DungeonGeometry.WALL_RING_TILES + DungeonGeometry.NORTH_FACE_ROWS
+	var south_wall_row: int = r.end.y - DungeonGeometry.WALL_RING_TILES
+	var side_gap: int = DungeonGeometry.WALL_RING_TILES + 1
+	if stairs.position.y < first_floor_row 			or stairs.end.y + DungeonGeometry.STAIRS_ENTRY_ROWS > south_wall_row 			or stairs.position.x < r.position.x + side_gap or stairs.end.x > r.end.x - side_gap:
+		return false
+	var ring: Rect2i = stairs.grow(1)
+	for d in doors:
+		var door: Zone.Door = d
+		if door.zone_a_id != zone.id and door.zone_b_id != zone.id:
+			continue
+		var mouth: Vector2i
+		if door.edge_axis == "h" and door.edge_line == r.position.y:
+			if stairs.position.x <= door.pos_along + 1 and stairs.end.x > door.pos_along - 1:
+				return false
+			mouth = Vector2i(door.pos_along, first_floor_row)
+		elif door.edge_axis == "h":
+			mouth = Vector2i(door.pos_along, south_wall_row - 1)
+		elif door.edge_line == r.position.x:
+			mouth = Vector2i(r.position.x + DungeonGeometry.WALL_RING_TILES, door.pos_along)
+		else:
+			mouth = Vector2i(r.end.x - 1 - DungeonGeometry.WALL_RING_TILES, door.pos_along)
+		if ring.has_point(mouth):
+			return false
+	return true
+
+
+## Elige con la seed una posición válida de la escalera; sin ninguna queda en (-1, -1) y
+## validate_layout rechaza el intento.
+## Picks a valid stairs position with the seed; with none it stays at (-1, -1) and
+## validate_layout rejects the attempt.
+func _place_exit_stairs(layout: FloorLayout, rng: RandomNumberGenerator) -> void:
+	var zone: Zone = _find_zone(layout, layout.exit_zone_id)
+	layout.exit_stairs = Vector2i(-1, -1)
+	if zone == null:
+		return
+	var candidates: Array[Vector2i] = []
+	for ty in range(zone.tile_rect.position.y, zone.tile_rect.end.y):
+		for tx in range(zone.tile_rect.position.x, zone.tile_rect.end.x):
+			if stairs_fit(zone, layout.doors, Vector2i(tx, ty)):
+				candidates.append(Vector2i(tx, ty))
+	if not candidates.is_empty():
+		layout.exit_stairs = candidates[rng.randi_range(0, candidates.size() - 1)]
 
 
 func _find_zone(layout: FloorLayout, id: int) -> Zone:
@@ -506,6 +540,7 @@ func generate_floor(floor_number: int, base_seed: int,
 		_detect_neighbors(layout, cells)
 		_assign_types(layout, retry_rng, data)
 		_place_doors(layout, retry_rng, data)
+		_place_exit_stairs(layout, retry_rng)
 
 		if zones.size() < target_min or zones.size() > target_max:
 			last_error = "%d zones, expected %d-%d" % [zones.size(), target_min, target_max]
@@ -539,13 +574,11 @@ func _render_layout(layout: FloorLayout, tilemap: TileMap) -> void:
 	for layer_node: Node in tilemap.get_children(true):
 		(layer_node as CanvasItem).light_mask = 0
 
-	var grid_bottom: int = layout.grid_h * DungeonGeometry.CELL_TILES
+	var grid_bottom: int = layout.grid_h * DungeonGeometry.CELL_TILES.y
 	for z: Zone in layout.zones:
 		_paint_zone(tilemap, z, z.tile_rect.end.y < grid_bottom)
 	_punch_doors(tilemap, layout)
-	for z: Zone in layout.zones:
-		if z.type == Zone.ZoneType.EXIT:
-			_paint_exit_stairs(tilemap, z)
+	_paint_exit_stairs(tilemap, layout.exit_stairs)
 	_shade_wall_feet(tilemap)
 
 
@@ -578,14 +611,13 @@ func _punch_doors(tilemap: TileMap, layout: FloorLayout) -> void:
 			tilemap.set_cell(DungeonGeometry.LAYER_WALL, cell, DungeonGeometry.DUNGEON_SOURCE_ID,
 					jambs[cell])
 		if door.state == 1:
-			var closed: Dictionary = DungeonGeometry.closed_door_tiles(door)
-			for cell: Vector2i in closed:
-				tilemap.set_cell(DungeonGeometry.LAYER_DOOR, cell, DungeonGeometry.DUNGEON_SOURCE_ID,
-						closed[cell])
+			DungeonGeometry.set_door_closed(tilemap, door, true)
 
 
-func _paint_exit_stairs(tilemap: TileMap, z: Zone) -> void:
-	var origin: Vector2i = DungeonGeometry.exit_stairs_origin(z)
+## Sobre la capa de piso; los tiles traen las colisiones del marco / On the floor layer; the tiles carry the frame colliders
+func _paint_exit_stairs(tilemap: TileMap, origin: Vector2i) -> void:
+	if origin == Vector2i(-1, -1):
+		return
 	for j in DungeonGeometry.STAIRS_DOWN_SIZE.y:
 		for i in DungeonGeometry.STAIRS_DOWN_SIZE.x:
 			tilemap.set_cell(DungeonGeometry.LAYER_FLOOR, origin + Vector2i(i, j),

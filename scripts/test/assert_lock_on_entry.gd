@@ -2,7 +2,8 @@ extends SceneTree
 
 # Runtime assertions for combat-zone door locking:
 #   1. Doors start OPEN at floor start (no START-zone deadlock).
-#   2. Entering an uncleared COMBAT zone locks its doors.
+#   2. Entering an uncleared COMBAT zone locks its doors once the player's
+#      feet are on its interior floor, not while still in the door gap.
 #   3. Clearing the zone re-opens its doors (no leftover door tiles).
 #   4. Re-entering a cleared zone does NOT re-lock.
 #   5. Real render sanity (prebuilt tileset): generate_floor on a
@@ -39,13 +40,16 @@ func _init() -> void:
 	var gen: Node = load("res://scripts/dungeon/dungeon_generator.gd").new()
 
 	# ── Layout: START (left) ─ COMBAT (right), one door on the shared v-edge ──
-	var cell: int = DungeonGeometry.CELL_TILES
+	var cell_size: Vector2i = DungeonGeometry.CELL_TILES
+	# Columna del borde compartido y fila de la puerta / Shared edge column and door row
+	var cell: int = cell_size.x
+	var row: int = cell_size.y / 2
 	var z0: Zone = Zone.new()
 	z0.id = 0
 	z0.type = Zone.ZoneType.START
 	z0.cell_min = Vector2i(0, 0)
 	z0.cell_max = Vector2i(1, 1)
-	z0.tile_rect = Rect2i(0, 0, cell, cell)
+	z0.tile_rect = Rect2i(Vector2i.ZERO, cell_size)
 	z0.neighbors.append(1)
 
 	var z1: Zone = Zone.new()
@@ -53,7 +57,7 @@ func _init() -> void:
 	z1.type = Zone.ZoneType.COMBAT
 	z1.cell_min = Vector2i(1, 0)
 	z1.cell_max = Vector2i(2, 1)
-	z1.tile_rect = Rect2i(cell, 0, cell, cell)
+	z1.tile_rect = Rect2i(Vector2i(cell, 0), cell_size)
 	z1.neighbors.append(0)
 
 	var door: Zone.Door = Zone.Door.new()
@@ -62,7 +66,7 @@ func _init() -> void:
 	door.zone_b_id = 1
 	door.edge_axis = "v"
 	door.edge_line = cell      # first column of the right zone
-	door.pos_along = cell / 2  # middle of the shared span
+	door.pos_along = row      # middle of the shared span
 	door.state = 0             # doors start OPEN
 	door.combat_locked = true
 	z0.doors.append(door)
@@ -87,12 +91,12 @@ func _init() -> void:
 	var corridor_tiles: Array[Vector2i] = []
 	var ring: int = DungeonGeometry.WALL_RING_TILES
 	for i in DungeonGeometry.DOOR_CORRIDOR_DEPTH_TILES:
-		corridor_tiles.append(Vector2i(cell - ring + i, cell / 2))
+		corridor_tiles.append(Vector2i(cell - ring + i, row))
 	var closed_tiles: Dictionary = DungeonGeometry.closed_door_tiles(door)
 
 	# ── Check 1: floor starts with doors OPEN (START-zone deadlock fix) ──
 	_check(door.state == 0, "door state is OPEN at floor start")
-	_check(tilemap.get_cell_source_id(0, Vector2i(cell - 1, cell / 2))
+	_check(tilemap.get_cell_source_id(0, Vector2i(cell - 1, row))
 			== DungeonGeometry.DUNGEON_SOURCE_ID,
 			"corridor shows floor on layer 0 after being punched open")
 	for t in corridor_tiles:
@@ -106,17 +110,21 @@ func _init() -> void:
 	var player := CharacterBody2D.new()
 	# Entry: player approaching from the left side of the door line
 	player.position = Vector2(cell * DungeonGeometry.TILE_SIZE - 24,
-			(cell / 2) * DungeonGeometry.TILE_SIZE + 8)
+			row * DungeonGeometry.TILE_SIZE + 8)
 	player.velocity = Vector2(100, 0)
 	dc._on_door_body_entered(player, door, dc._zones)
-	# Exit: player fully past the line, moving right
-	player.position = Vector2(cell * DungeonGeometry.TILE_SIZE + 40,
-			(cell / 2) * DungeonGeometry.TILE_SIZE + 8)
+	# Exit: player past the line but still in the door gap of zone 1, moving right
+	player.position = Vector2(cell * DungeonGeometry.TILE_SIZE + 8,
+			row * DungeonGeometry.TILE_SIZE + 16)
 	dc._on_door_body_exited(player, door, dc._zones)
 
 	_check(entered.size() == 1 and entered[0] == 1,
 			"zone_entered emitted exactly once for combat zone 1")
-	_check(door.state == 1, "door CLOSED after entering combat zone")
+	_check(door.state == 0, "door still OPEN while the player stands in the gap")
+	# Landing: feet on the first floor tile of zone 1 (the camera slide walks it there)
+	player.position.x = cell * DungeonGeometry.TILE_SIZE + DungeonGeometry.TILE_SIZE * 1.5
+	dc._physics_process(0.0)
+	_check(door.state == 1, "door CLOSED once the feet are on the combat zone floor")
 	var door_closed_ok := true
 	for t in corridor_tiles:
 		if tilemap.get_cell_source_id(2, t) != DungeonGeometry.DUNGEON_SOURCE_ID \
@@ -143,10 +151,10 @@ func _init() -> void:
 	# ── Check 4: re-entering a cleared zone does NOT re-lock ──
 	z1.cleared = true
 	player.position = Vector2(cell * DungeonGeometry.TILE_SIZE - 24,
-			(cell / 2) * DungeonGeometry.TILE_SIZE + 8)
+			row * DungeonGeometry.TILE_SIZE + 8)
 	dc._on_door_body_entered(player, door, dc._zones)
-	player.position = Vector2(cell * DungeonGeometry.TILE_SIZE + 40,
-			(cell / 2) * DungeonGeometry.TILE_SIZE + 8)
+	player.position = Vector2(cell * DungeonGeometry.TILE_SIZE + DungeonGeometry.TILE_SIZE * 1.5,
+			row * DungeonGeometry.TILE_SIZE + 16)
 	dc._on_door_body_exited(player, door, dc._zones)
 	_check(door.state == 0, "cleared zone does not re-lock on re-entry")
 	_check(entered.size() == 2 and entered[1] == 1,
@@ -232,18 +240,18 @@ func gen_lock_combat_zone(gen: Node, real_layout: DungeonGenerator.FloorLayout,
 		# Approach sign: the player starts on the OPPOSITE side.
 		var sign_from: int = -side_target
 		# The body is teleported; the controller calls below are direct, so
-		# only the side math matters (entry left of the line, exit past it).
+		# only the side math matters (entry before the line, exit past it),
+		# then the feet land on the target's floor in front of the door.
 		var line: float = door.edge_line * DungeonGeometry.TILE_SIZE
 		var entry_offset: float = -24.0 if sign_from < 0 else 40.0
 		var exit_offset: float = 40.0 if sign_from < 0 else -24.0
+		var along: float = door.pos_along * DungeonGeometry.TILE_SIZE + DungeonGeometry.TILE_SIZE / 2.0
 		var player := CharacterBody2D.new()
 		if door.edge_axis == "v":
-			player.position = Vector2(line + entry_offset,
-					door.pos_along * DungeonGeometry.TILE_SIZE + 8.0)
+			player.position = Vector2(line + entry_offset, along)
 			player.velocity = Vector2(100.0 * side_target, 0.0)
 		else:
-			player.position = Vector2(door.pos_along * DungeonGeometry.TILE_SIZE + 8.0,
-					line + entry_offset)
+			player.position = Vector2(along, line + entry_offset)
 			player.velocity = Vector2(0.0, 100.0 * side_target)
 		dc._on_door_body_entered(player, door, dc._zones)
 		if door.edge_axis == "v":
@@ -251,26 +259,27 @@ func gen_lock_combat_zone(gen: Node, real_layout: DungeonGenerator.FloorLayout,
 		else:
 			player.position.y = line + exit_offset
 		dc._on_door_body_exited(player, door, dc._zones)
+		var floor_rect: Rect2 = DungeonGeometry.floor_interior_px(target.tile_rect)
+		player.position = player.position.clamp(floor_rect.position, floor_rect.end)
+		dc._physics_process(0.0)
 		player.free()
 
 		var proved: Zone.Door = door
 		if proved.state != 1:
-			dc.free()
 			continue
 		# Layer-2 closed tiles present on this corridor, and layer 2 holds
 		# EXACTLY the union of the corridors of every currently-locked door
 		# (_lock_zone_doors seals all open combat-locked doors of the zone)
 		# — no tiles over unpunched cells outside those corridors.
-		var cells: Array[Vector2i] = dc._corridor_cells(proved)
+		var closed: Dictionary = DungeonGeometry.closed_door_tiles(proved)
 		var expected: Array[Vector2i] = []
 		for d_locked in real_layout.doors:
 			var locked: Zone.Door = d_locked
 			if locked.state == 1:
-				for c_locked in dc._corridor_cells(locked):
+				for c_locked: Vector2i in DungeonGeometry.closed_door_tiles(locked):
 					expected.append(c_locked)
 		var tiles_ok: bool = _same_cell_set(real_map.get_used_cells(2), expected)
-		var closed: Dictionary = DungeonGeometry.closed_door_tiles(proved)
-		for cellv in cells:
+		for cellv: Vector2i in closed:
 			if real_map.get_cell_source_id(2, cellv) != DungeonGeometry.DUNGEON_SOURCE_ID \
 					or real_map.get_cell_atlas_coords(2, cellv) != closed[cellv]:
 				tiles_ok = false
@@ -282,8 +291,9 @@ func gen_lock_combat_zone(gen: Node, real_layout: DungeonGenerator.FloorLayout,
 			open_ok = false
 		if not real_map.get_used_cells(2).is_empty():
 			open_ok = false
-		dc.free()
 		if open_ok and tiles_ok:
+			dc.free()
 			return proved
+	dc.free()
 	return null
 

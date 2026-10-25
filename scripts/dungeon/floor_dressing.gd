@@ -43,7 +43,7 @@ func dress(layout: DungeonGenerator.FloorLayout) -> void:
 		var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 		rng.seed = layout.floor_seed ^ z.id ^ DRESSING_SALT
 		_dress_north_wall(z, layout.doors, rng)
-		_scatter_decals(z, rng)
+		_scatter_decals(z, layout, rng)
 
 
 ## Antorchas y objetos colgados en columnas libres de la cara norte (sin arcos de puerta ni esquinas).
@@ -103,15 +103,15 @@ func _take_column(free: Array[int], rng: RandomNumberGenerator) -> int:
 	return column
 
 
-## Calcos de piso sueltos sobre el piso interior (bajo la cara norte, fuera de la escalera).
-## Sparse floor decals on the interior floor (below the north face, off the stairs).
-func _scatter_decals(z: Zone, rng: RandomNumberGenerator) -> void:
+## Calcos de piso sueltos sobre el piso interior (bajo la cara norte, fuera de la escalera y su entrada).
+## Sparse floor decals on the interior floor (below the north face, off the stairs and their entry).
+func _scatter_decals(z: Zone, layout: DungeonGenerator.FloorLayout, rng: RandomNumberGenerator) -> void:
 	var first: Vector2i = z.tile_rect.position + Vector2i(1, 1 + DungeonGeometry.NORTH_FACE_ROWS)
 	var last: Vector2i = z.tile_rect.end - Vector2i(2, 2)
 	var area: Vector2i = last - first + Vector2i.ONE
 	var stairs: Rect2i = Rect2i()
-	if z.type == Zone.ZoneType.EXIT:
-		stairs = Rect2i(DungeonGeometry.exit_stairs_origin(z), DungeonGeometry.STAIRS_DOWN_SIZE).grow(1)
+	if z.id == layout.exit_zone_id:
+		stairs = DungeonGeometry.stairs_keep_clear(layout.exit_stairs)
 	for i in area.x * area.y / TILES_PER_DECAL:
 		var tile: Vector2i = Vector2i(rng.randi_range(first.x, last.x), rng.randi_range(first.y, last.y))
 		var decal: String = FLOOR_DECALS[rng.randi_range(0, FLOOR_DECALS.size() - 1)]

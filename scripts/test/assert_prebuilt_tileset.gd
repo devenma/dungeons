@@ -4,7 +4,8 @@ extends SceneTree
 ##   1. Loads, is a TileSet, tile_size 32x32, exactly 1 atlas source (crypt_tiles.png, 12x18 tiles).
 ##   2. Every tile role DungeonGeometry names exists in the atlas (each periodic slot too).
 ##   3. Collision follows DungeonGeometry.is_solid_atlas: walls carry one full-tile polygon on the
-##      WORLD physics layer; floor, door gaps, passages, stairs and the locked-arch overlay carry none.
+##      WORLD physics layer; the stairs carry only their frame (top and sides, south open); floor,
+##      door gaps, passages and the locked-arch overlay carry none.
 ## Run: godot --headless -s scripts/test/assert_prebuilt_tileset.gd
 ## Exit 0 on pass; nonzero + push_error on failure.
 
@@ -93,7 +94,34 @@ func _run_checks() -> void:
 			if td.get_collision_polygons_count(0) != 1 \
 					or td.get_collision_polygon_points(0, 0) != FULL_TILE:
 				wrong.append(coords)
-		elif td.get_collision_polygons_count(0) != 0:
+		elif td.get_collision_polygons_count(0) != DungeonGeometry.stairs_frame_rects(coords).size():
 			wrong.append(coords)
-	_check(wrong.is_empty(), "walls block their full tile, everything else is walkable (wrong: %s)" % [wrong])
+	_check(wrong.is_empty(),
+			"walls block their full tile, the stairs their frame, everything else is walkable (wrong: %s)" % [wrong])
+	# Marco de la escalera: arriba y lados bloqueados, sur abierto / Stairs frame: top and sides blocked, south open
+	var frame: Array[String] = []
+	var half: Vector2 = Vector2.ONE * DungeonGeometry.TILE_SIZE / 2.0
+	for j in DungeonGeometry.STAIRS_DOWN_SIZE.y:
+		for i in DungeonGeometry.STAIRS_DOWN_SIZE.x:
+			var coords: Vector2i = DungeonGeometry.STAIRS_DOWN + Vector2i(i, j)
+			if not atlas_src.has_tile(coords):
+				continue
+			var td: TileData = atlas_src.get_tile_data(coords, 0)
+			var covered: Rect2 = Rect2()
+			for polygon in td.get_collision_polygons_count(0):
+				var points: PackedVector2Array = td.get_collision_polygon_points(0, polygon)
+				var box: Rect2 = Rect2(points[0] + half, Vector2.ZERO)
+				for point: Vector2 in points:
+					box = box.expand(point + half)
+				covered = box if polygon == 0 else covered.merge(box)
+			var tile: float = DungeonGeometry.TILE_SIZE
+			if j == 0 and covered.position.y > 0.0:
+				frame.append("%s top open" % coords)
+			if i == 0 and covered.position.x > 0.0:
+				frame.append("%s west open" % coords)
+			if i == DungeonGeometry.STAIRS_DOWN_SIZE.x - 1 and covered.end.x < tile:
+				frame.append("%s east open" % coords)
+			if j == DungeonGeometry.STAIRS_DOWN_SIZE.y - 1 and covered.end.y >= tile 					and covered.size.x >= tile:
+				frame.append("%s south blocked" % coords)
+	_check(frame.is_empty(), "stairs block their top and sides and leave the south open (%s)" % [frame])
 	_check(solid == 33, "33 wall tiles carry collision (got %d)" % solid)

@@ -28,6 +28,7 @@ var _player_inside: bool = false
 var _used: bool = false
 
 @onready var _visual: ColorRect = $VisualColorRect
+@onready var _open_sound: AudioStreamPlayer2D = $OpenSound
 
 
 func _ready() -> void:
@@ -58,6 +59,7 @@ func _grant() -> void:
 		return
 	# Dim visuals to mark the chest as used/empty.
 	_visual.self_modulate = Color(0.4, 0.4, 0.4, 1.0)
+	_open_sound.play()
 	if data != null:
 		granted.emit(data)
 	if not loot_items.is_empty() or loot_gold > 0:

@@ -3,6 +3,7 @@
 [ext_resource type="Texture2D" path="res://assets/art/environment/crypt/torch_out.png" id="1_holder"]
 [ext_resource type="Texture2D" path="res://assets/art/environment/crypt/torch_flame.png" id="2_flame"]
 [ext_resource type="Script" path="res://scripts/dungeon/torch_flicker.gd" id="3_flicker"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/torch_crackle_loop_01.wav" id="4_crackle"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_f0"]
 atlas = ExtResource("2_flame")
@@ -94,3 +95,11 @@ range_item_cull_mask = 3
 texture = SubResource("GradientTexture2D_rings")
 texture_scale = 1.6
 script = ExtResource("3_flicker")
+
+[node name="Crackle" type="AudioStreamPlayer2D" parent="."]
+position = Vector2(0, 63)
+stream = ExtResource("4_crackle")
+volume_db = -18.0
+autoplay = true
+max_distance = 160.0
+bus = &"Ambience"

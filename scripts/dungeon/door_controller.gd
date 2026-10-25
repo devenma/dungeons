@@ -12,8 +12,15 @@ extends Node
 ## Sides are resolved against the door's geometric edge line:
 ##   axis "v": line at x = edge_line * TILE_SIZE (left zone ends, right zone starts)
 ##   axis "h": line at y = edge_line * TILE_SIZE (top zone ends, bottom zone starts)
+##
+## Entering an uncleared COMBAT zone locks its doors only once the player's feet stand on its
+## interior floor (DungeonGeometry.floor_interior_px), past the gap, arch and face rows; the camera
+## slide walks the player there while the tree is paused, so this node processes during the pause.
 
 signal zone_entered(zone_id: int)
+## Se trabaron o se abrieron puertas de combate de la zona (para el sonido) / Combat doors of the zone locked or opened (for the sound)
+signal doors_locked(zone_id: int)
+signal doors_opened(zone_id: int)
 
 const TILE_SIZE := DungeonGeometry.TILE_SIZE
 
@@ -22,6 +29,18 @@ var _tilemap: TileMap
 var _zone_doors: Dictionary = {}  # zone_id -> Array[Zone.Door]
 var _zones: Dictionary = {}   # zone_id -> Zone
 var _pending_crossings: Dictionary = {}  # door.id -> source_zone_id (single player)
+# Zona de combate que se traba cuando el jugador pise su piso, o -1 / Combat zone that locks once the player stands on its floor, or -1
+var _lock_zone_id: int = -1
+var _lock_body: Node2D
+
+
+func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
+
+
+func _physics_process(_delta: float) -> void:
+	if _lock_zone_id >= 0:
+		_lock_when_on_floor()
 
 
 func initialize(layout: DungeonGenerator.FloorLayout, tilemap: TileMap) -> void:
@@ -49,9 +68,7 @@ func _create_door_areas() -> void:
 		var area := Area2D.new()
 		var shape := CollisionShape2D.new()
 		var rect := RectangleShape2D.new()
-		# The door spans the punched corridor: the full depth of both wall
-		# rings plus one tile of margin past each end so a combat lock placed
-		# at exit time is never laid over the player body.
+		# The door spans the punched corridor: the full depth of both wall rings.
 		var depth_px: float = DungeonGeometry.DOOR_CORRIDOR_DEPTH_TILES * TILE_SIZE
 		if door.edge_axis == "v":
 			rect.size = Vector2(depth_px, DungeonGeometry.DOOR_GAP_TILES * TILE_SIZE)
@@ -60,11 +77,7 @@ func _create_door_areas() -> void:
 		shape.shape = rect
 		area.add_child(shape)
 
-		var tile_pos: Vector2i
-		if door.edge_axis == "v":
-			tile_pos = Vector2i(door.edge_line, door.pos_along)
-		else:
-			tile_pos = Vector2i(door.pos_along, door.edge_line)
+		var tile_pos: Vector2i = DungeonGeometry.door_cell(door)
 
 		# Centrada sobre la línea del borde y en el medio del tile de la puerta, en px
 		# Centred on the edge line and in the middle of the door tile, in px
@@ -136,14 +149,15 @@ func _on_door_body_exited(body: Node2D, door: Zone.Door,
 		# Walked in and backed out of the same side — not a crossing.
 		return
 
-	zone_entered.emit(target_zone.id)
-
-	# Combat lock: entering an uncleared COMBAT zone seals its doors until the
-	# zone is cleared. The lock is placed behind the player — the door areas
-	# cover the full corridor plus one tile of margin, so at exit time the
-	# body is past the whole wall ring and the placed tiles never overlap it.
+	# Combat lock: entering an uncleared COMBAT zone seals its doors until the zone is cleared,
+	# once the player is on its floor, so the closed tiles never land on the body. A crossing
+	# elsewhere drops a lock still waiting.
+	_lock_zone_id = -1
 	if target_zone.type == Zone.ZoneType.COMBAT and not target_zone.cleared:
-		_lock_zone_doors(target_zone.id)
+		_lock_zone_id = target_zone.id
+		_lock_body = player
+	zone_entered.emit(target_zone.id)
+	_lock_when_on_floor()
 
 
 func _side_of_line(door: Zone.Door, pos: Vector2) -> int:
@@ -205,48 +219,49 @@ func _zone_on_side(zone_by_id: Dictionary, door: Zone.Door, side: int) -> Zone:
 	return null
 
 
+func _lock_when_on_floor() -> void:
+	if _lock_zone_id < 0 or not is_instance_valid(_lock_body):
+		return
+	var zone: Zone = _zones[_lock_zone_id]
+	var floor_rect: Rect2 = DungeonGeometry.floor_interior_px(zone.tile_rect)
+	var feet: Vector2 = _lock_body.global_position
+	if zone.cleared or feet.clamp(floor_rect.position, floor_rect.end) != feet:
+		return
+	_lock_zone_id = -1
+	_lock_zone_doors(zone.id)
+
+
 func _lock_zone_doors(zone_id: int) -> void:
 	# Seal every open combat-locked door of the zone (player just entered it).
 	if not _zone_doors.has(zone_id):
 		return
+	var locked_any: bool = false
 	for door in _zone_doors[zone_id]:
 		var d: Zone.Door = door
 		if not d.combat_locked or d.state != 0:
 			continue
 		d.state = 1  # CLOSED
-		_place_door_tiles(d)
-
-
-func _place_door_tiles(door: Zone.Door) -> void:
-	# Closed door: the corridor's wall-ring cells get their wall back (blocking via tile
-	# collision) and a north arch shows the locked door; on_zone_cleared erases the same cells.
-	var closed: Dictionary = DungeonGeometry.closed_door_tiles(door)
-	for cell: Vector2i in closed:
-		_tilemap.set_cell(DungeonGeometry.LAYER_DOOR, cell, DungeonGeometry.DUNGEON_SOURCE_ID,
-				closed[cell])
-
-
-func _corridor_cells(door: Zone.Door) -> Array[Vector2i]:
-	# Door-layer cells of a closed door (DungeonGeometry.closed_door_tiles): the wall ring of
-	# both zones, plus the arch rows of a north door.
-	var cells: Array[Vector2i] = []
-	cells.assign(DungeonGeometry.closed_door_tiles(door).keys())
-	return cells
+		# The corridor's wall-ring cells get their wall back (blocking via tile collision) and a
+		# north arch shows the locked door; on_zone_cleared erases the same cells.
+		DungeonGeometry.set_door_closed(_tilemap, d, true)
+		locked_any = true
+	if locked_any:
+		doors_locked.emit(zone_id)
 
 
 func on_zone_cleared(zone_id: int) -> void:
 	if not _zone_doors.has(zone_id):
 		return
 
+	var opened_any: bool = false
 	for door in _zone_doors[zone_id]:
 		var d: Zone.Door = door
 		if not d.combat_locked:
 			continue
+		opened_any = opened_any or d.state != 0
 		# Se abren todas las puertas con traba de la zona, aunque la vecina sea COMBAT sin limpiar
 		# Every locked door of the zone opens, even if the neighbour is an uncleared COMBAT
 		d.state = 0  # OPEN
-
-		# Remove door tiles from layer 2 — the whole punched corridor,
-		# matching the tiles placed when the door was closed.
-		for cell in _corridor_cells(d):
-			_tilemap.erase_cell(DungeonGeometry.LAYER_DOOR, cell)
+		DungeonGeometry.set_door_closed(_tilemap, d, false)
+	if opened_any:
+		doors_opened.emit(zone_id)
