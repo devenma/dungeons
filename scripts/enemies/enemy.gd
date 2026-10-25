@@ -1,13 +1,17 @@
 extends CharacterBody2D
 
 ## Base enemy behavior (ES-1..ES-4): locate the player via group lookup,
-## chase in a straight line within detect_radius, attack with a short
+## chase within detect_radius or anywhere inside its territory (the zone it
+## spawned in), curving in at flank_angle so a group surrounds instead of
+## stacking, attack with a short
 ## EnemyHitbox window on cooldown (not contact damage). An attack first
 ## stands still for EnemyData.telegraph_seconds (the drawn wind-up), then
 ## opens the hitbox. An accepted hit staggers it for EnemyData.stagger_seconds:
 ## the attack in progress is cancelled and it neither chases nor attacks until
 ## the stagger and the knockback push are over. With poise_while_attacking a
 ## hit during the telegraph or the open hitbox does not cancel the attack.
+## With EnemyData.lunge_speed the open hitbox carries it toward where it
+## telegraphed.
 ## Death stops the AI and collisions, plays the Visuals death and then frees
 ## the enemy. Data-driven via EnemyData.
 
@@ -15,8 +19,16 @@ const EnemyVisualsScript: GDScript = preload("res://scripts/enemies/enemy_visual
 
 # Tiempo con la hitbox de ataque activa (s) / Time the attack hitbox stays on (s)
 const ATTACK_WINDOW_SECONDS: float = 0.2
+# Distancia al rango de ataque (px) desde la que se cierra el rodeo y va derecho / Distance past attack range (px) over which the flank closes into a straight line
+const FLANK_FADE_PX: float = 96.0
 
 @export var enemy_data: EnemyData
+## Zona (px) donde persigue al jugador sin importar detect_radius; vacía = solo detect_radius (la pone el Spawner)
+## Area (px) where it chases the player regardless of detect_radius; empty = detect_radius only (set by the Spawner)
+var territory: Rect2 = Rect2()
+## Desvío (rad) con que rodea al acercarse; 0 = en línea recta (lo pone el Spawner)
+## Angle (rad) it curves in at while approaching; 0 = straight line (set by the Spawner)
+var flank_angle: float = 0.0
 
 @onready var health: HealthComponent = $Health
 @onready var _enemy_hitbox: Hitbox = $EnemyHitbox
@@ -30,6 +42,8 @@ var _attack_cooldown_timer: Timer
 var _telegraph_left: float = 0.0
 # Segundos de aturdimiento que faltan / Stagger seconds left
 var _stagger_left: float = 0.0
+# Dirección de la embestida, fijada al telegrafiar / Lunge direction, locked when telegraphing
+var _attack_dir: Vector2 = Vector2.ZERO
 
 
 func _ready() -> void:
@@ -76,8 +90,11 @@ func _physics_process(delta: float) -> void:
 		_telegraph_left -= delta
 		if _telegraph_left <= 0.0:
 			_open_attack_window()
-	elif not reeling and distance <= enemy_data.detect_radius:
-		velocity = to_player.normalized() * enemy_data.speed
+	elif not reeling and _sees(player, distance):
+		var flank: float = flank_angle * clampf((distance - enemy_data.attack_range) / FLANK_FADE_PX, 0.0, 1.0)
+		velocity = to_player.normalized().rotated(flank) * enemy_data.speed
+	if not reeling and enemy_data.lunge_speed > 0.0 and not _attack_window_timer.is_stopped():
+		velocity = _attack_dir * enemy_data.lunge_speed
 	if push != Vector2.ZERO:
 		velocity = push
 	if velocity != Vector2.ZERO:
@@ -85,6 +102,12 @@ func _physics_process(delta: float) -> void:
 	_visuals.show_motion(velocity, to_player)
 	if not winding_up and not reeling and distance <= enemy_data.attack_range and _can_attack:
 		_attack(to_player)
+
+
+func _sees(player: CharacterBody2D, distance: float) -> bool:
+	if distance <= enemy_data.detect_radius:
+		return true
+	return player != null and territory.has_area() and territory.has_point(player.global_position)
 
 
 func _find_player() -> CharacterBody2D:
@@ -96,6 +119,7 @@ func _find_player() -> CharacterBody2D:
 
 func _attack(to_player: Vector2) -> void:
 	_can_attack = false
+	_attack_dir = to_player.normalized()
 	# Empuja al jugador en la dirección del ataque / Push the player along the attack direction
 	_enemy_hitbox.knockback = to_player.normalized() * enemy_data.knockback
 	_attack_cooldown_timer.start()
