@@ -11,6 +11,7 @@
 [ext_resource type="Script" uid="uid://ma2fid3t54s7" path="res://scripts/ui/weapon_label.gd" id="10"]
 [ext_resource type="Script" uid="uid://cxrcvh316ct8h" path="res://scripts/ui/pickup_toast.gd" id="11"]
 [ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="12"]
+[ext_resource type="Script" path="res://scripts/ui/gold_label.gd" id="13"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_b1x3f"]
 bg_color = Color(0, 0, 0, 0.49803922)
@@ -29,6 +30,7 @@ bg_color = Color(0.2, 0.75, 0.25, 1)
 [node name="RunManager" type="Node" parent="." unique_id=1494447952]
 script = ExtResource("5")
 default_weapon = ExtResource("9")
+profile_node_path = NodePath("/root/ProfileState")
 
 [node name="World" type="Node2D" parent="." unique_id=428461756]
 
@@ -77,6 +79,15 @@ offset_right = 248.0
 offset_bottom = 64.0
 text = "Basic Sword"
 script = ExtResource("10")
+
+[node name="GoldLabel" type="Label" parent="UI"]
+offset_left = 188.0
+offset_top = 40.0
+offset_right = 472.0
+offset_bottom = 64.0
+horizontal_alignment = 2
+text = "Gold: 0"
+script = ExtResource("13")
 
 [node name="PickupToast" type="Label" parent="UI" unique_id=297698828]
 offset_top = 80.0

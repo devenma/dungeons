@@ -329,7 +329,7 @@ Dos capas de estado, separadas a propósito (D1 en `DECISIONES.md`):
 
 Al morir: se vuelve al pueblo, se pierde el loot no asegurado y se re-rollea la seed del dungeon. El equipo equipado, el oro bancado y los desbloqueos quedan. El objeto de retorno usa el mismo camino, pero conserva el loot.
 
-Ninguna capa debe absorber a la otra: `ProfileState` no conoce el piso actual y `RunManager` no guarda oro ni desbloqueos.
+Ninguna capa debe absorber a la otra: `ProfileState` no conoce el piso actual y `RunManager` no guarda oro propio: lo delega al perfil por el seam `add_gold` (así la política de banca puede cambiar sin tocar el HUD).
 
 ---
 
@@ -1400,13 +1400,15 @@ Sin XP ni niveles: el poder viene del equipo del pueblo y de las mejoras de expe
 
 ## Fase 10 — Pueblo y economía
 
-**Estado: ⏳ pendiente.**
+**Estado: parcial.** El perfil persistente, el oro y el retorno al pueblo ya existen.
 
-- `ProfileState` persistente en `user://` (oro, equipo, desbloqueos, pueblo).
-- Oro y tienda sobre `scenes/hub/guild_tavern.tscn` / `scenes/town/`.
-- NPCs con diálogo fijo.
-- `WorldClock` con fases día/noche.
-- Retorno al pueblo en vez de wipe al morir.
+- [x] `ProfileState` persistente en `user://` (oro, equipo; desbloqueos y pueblo pendientes).
+- [x] Oro por muertes y contador en el HUD.
+- [x] Retorno al pueblo al morir (`_return_to_town()`) sin wipe de perfil.
+- [ ] Oro y tienda: hoy el pueblo es un placeholder en `scenes/town/town.tscn` (la vieja
+  `scenes/hub/guild_tavern.tscn` no carga: le faltan PNGs).
+- [ ] NPCs con diálogo fijo.
+- [ ] `WorldClock` con fases día/noche.
 
 ---
 
@@ -1449,13 +1451,13 @@ Cuando haya dudas sobre qué desarrollar a continuación, priorizar:
 ```text
 1. ~~Arreglar `_merge_cells` (rectángulos exactos + tamaño mínimo de zona)~~ ✅ hecho
 2. Hit-stop + visual del swing + combo de 3
-3. `ProfileState` + oro + `_return_to_town()`
+3. ~~`ProfileState` + oro + `_return_to_town()`~~ ✅ hecho
 4. Pueblo mínimo con tienda (scenes/hub/guild_tavern.tscn)
 5. Pool de plantillas de sala
 6. `WorldClock` día/noche + techo de pisos por dungeon + zona BOSS
 ```
 
-El paso 1 ya está hecho y era prerrequisito del 5. Los pasos 2 y 3 son independientes entre sí y pueden ir en paralelo.
+El paso 1 ya está hecho y era prerrequisito del 5. El paso 3 también está hecho; el paso 2 sigue pendiente y es independiente del 4.
 
 Fuera de este orden inmediato, el maná (D19) entra junto con los kits de habilidad (Fase 8 parte B) y los obstáculos movibles (D20) entran con el pool de plantillas de sala.
 
@@ -1856,7 +1858,7 @@ Después:
 Pendiente para el vertical slice v2:
 
 ```text
-[ ] ProfileState + oro + retorno al pueblo
+[x] ProfileState + oro + retorno al pueblo
 [ ] Pueblo mínimo con tienda + WorldClock
 [ ] DungeonData + techo de pisos + zona BOSS
 [ ] Plantillas de sala + llaves + solvabilidad
