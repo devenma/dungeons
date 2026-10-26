@@ -122,6 +122,21 @@ func _run() -> void:
 	_check(left == 2, "the inner pillars fall (%d left)" % left)
 
 	health.set("_granted_left", 0.0)
+	var nana: BossAttackData = load("res://resources/bosses/madre_nana.tres")
+	var stamina: StaminaComponent = player.get_node("Stamina") as StaminaComponent
+	player.position = boss.position + Vector2(0, 20)
+	boss.set("_attack", nana)
+	boss.set("_state", 4)  # ACTIVE
+	boss.call("_strike")
+	_check(float(stamina.get("_suppressed_left")) > 2.5, "the Lullaby stops stamina regeneration")
+	var before_hug: int = player_health.current_health
+	boss.call("_end_strike")
+	_check(player_health.current_health == before_hug - nana.damage, "close to her when it ends: the hug (%d)"
+			% (before_hug - player_health.current_health))
+	boss.set("_attack", nana)
+	boss.call("_enter", 4, 3.0)  # ACTIVE
+	health.take_damage(DamageInfo.new(60))
+	_check(int(boss.get("_state")) == 6 and float(boss.get("_left")) > 1.4, "60 damage cut the Lullaby: stunned 1.5 s")
 	health.take_damage(DamageInfo.new(health.current_health))
 	_check(is_instance_valid(boss) and _fallen.is_empty(), "still sinking right after the killing blow")
 	for i in range(300):
@@ -152,7 +167,11 @@ func _make_player() -> CharacterBody2D:
 	var knockback: KnockbackComponent = KnockbackComponent.new()
 	knockback.name = "Knockback"
 	player.add_child(knockback)
+	var stamina: StaminaComponent = StaminaComponent.new()
+	stamina.name = "Stamina"
+	player.add_child(stamina)
 	var hurtbox: Hurtbox = HurtboxScript.new() as Hurtbox
+	hurtbox.name = "Hurtbox"
 	hurtbox.layer_bit = CollisionLayers.PLAYER_HURTBOX
 	var shape: CollisionShape2D = CollisionShape2D.new()
 	var rect: RectangleShape2D = RectangleShape2D.new()

@@ -16,6 +16,8 @@ signal stamina_changed(current: int, maximum: int)
 
 var current_stamina: int = 100
 var _regen_accumulator: float = 0.0
+# Segundos que le quedan sin regenerar (la Nana de la Madre, D21) / Seconds left without regeneration (the Mother's Lullaby, D21)
+var _suppressed_left: float = 0.0
 
 
 func _ready() -> void:
@@ -52,7 +54,16 @@ func set_max_stamina(value: int) -> void:
 	stamina_changed.emit(current_stamina, max_stamina)
 
 
+## Corta la regeneración durante `seconds` (no acumula: gana la más larga) / Stops regeneration for `seconds` (does not stack: the longest wins)
+func suppress_regen(seconds: float) -> void:
+	_suppressed_left = maxf(_suppressed_left, seconds)
+
+
 func _process(delta: float) -> void:
+	if _suppressed_left > 0.0:
+		_suppressed_left = maxf(_suppressed_left - delta, 0.0)
+		_regen_accumulator = 0.0
+		return
 	_regen_accumulator += stamina_regen_per_second * delta
 	while _regen_accumulator >= 1.0 and current_stamina < max_stamina:
 		current_stamina += 1

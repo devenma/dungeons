@@ -136,7 +136,7 @@ confiable y feel · **P1** vertical slice v2 · **P2** profundidad · **P3** con
 | La mochila no se guarda entre sesiones | Una piedra azul comprada (va a la mochila) se pierde si se cierra el juego sin depositarla; el oro ya se cobró. |
 | Diálogo y tienda provisorios | Caja de texto sin nombre ni retrato, fuente por defecto y textos de respaldo en inglés hasta que entren las traducciones. |
 | Pantalla de muerte breve | Negro con lo que pasó con el botín (piedra azul gastada o expedición perdida) y fundido al guild. Todavía sin resumen de la run (piso, enemigos). |
-| La Madre está incompleta | Faltan la *Nana*, los charcos de bilis y una escena de cierre; la Escalera del Farol usa el arte de la escalera de bajada. |
+| Cierre de la Madre | Falta la escena de cierre (D14); la Escalera del Farol usa el arte de la escalera de bajada y la *Nana* no tiene sonido propio. |
 | Habilidades: solo el slot 1 | Una activa por arma; faltan los slots 2-4, Q/E/R, las opciones por slot y avisar en el HUD cuando no alcanza el coste. |
 | Los `.uid` están en el gitignore | Los UIDs cambian entre máquinas. |
 
@@ -181,7 +181,7 @@ Ya está en `main` y documentado en §1: knockback, i-frames, hit flash, pausa y
 - [x] `DungeonData` (id, cantidad de pisos, jefe) y techo de pisos: San Ulmo tiene 3.
 - [x] Zonas BOSS y EVENT (antesala del jefe).
 - [x] Primer boss con 2 fases: la Madre de la Fosa (D21), con barra de vida y Escalera del Farol.
-- [ ] La *Nana* y los charcos de bilis de la Madre.
+- [x] La *Nana* y los charcos de bilis de la Madre.
 - [x] Usar los multiplicadores de `FloorData` en `Spawner` al instanciar enemigos.
 - [x] Escalar la cantidad de enemigos según el piso y el tamaño de la zona (`Spawner.enemies_per_screen`).
 

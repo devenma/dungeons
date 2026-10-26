@@ -477,7 +477,7 @@ la fase 1 y de 0,3–0,6 s en la fase 2.
 - `Spawner` instancia el jefe en la zona BOSS. El cierre de puertas reutiliza el de COMBAT.
 - La cámara gana el sesgo hacia un objetivo (`CameraLimitManager`) solo en la zona BOSS.
 
-**Estado (2026-10-26, rama `feat/slice-v2`):** implementada salvo la *Nana* y los charcos de bilis. Desvíos para
+**Estado (2026-10-26, rama `feat/slice-v2`):** implementada entera (la *Nana* sin su cue de audio). Desvíos para
 revisar: la puerta de la arena está en la pared oeste (la antesala queda al oeste porque la arena va fija en la
 esquina sureste de la grilla); la huella sólida de la pila es de 128×112 px, la del dibujo, no de 6×4 tiles; los
 pilares están a 3 y 6 filas bajo la pila, porque a 7 y 10 caen sobre la pared sur del interior de 14 filas; el sesgo

@@ -1117,7 +1117,7 @@ El `DungeonGenerator` no debe implementar la lógica interna del boss.
 
 El piso de jefe lo decide `DungeonData` (cantidad de pisos y jefe) junto con el generador; las fases y los ataques viven en la escena del boss.
 
-Estado actual: la Madre de la Fosa (`scenes/bosses/madre_fosa.tscn`, D21) es el jefe de San Ulmo. Es fija y elige ataques por distancia; cada ataque es un `BossAttackData` (`resources/bosses/`) con tiempos por fase, y la forma vive en el script. La fase 2 entra con la mitad de la vida. `Hurtbox.damage_multiplier` arma los puntos débiles. La barra del jefe (`BossBar`) y el sesgo de cámara (`CameraLimitManager.set_focus`) se piden por grupos (`boss_bar`, `camera_focus`). Al caer, el `Spawner` tira su `drop_table` y `DungeonManager` pinta la Escalera del Farol, que vuelve al guild con todo y marca el dungeon como limpio (`ProfileState.has_cleared`). Falta la *Nana* y los charcos de bilis.
+Estado actual: la Madre de la Fosa (`scenes/bosses/madre_fosa.tscn`, D21) es el jefe de San Ulmo. Es fija y elige ataques por distancia; cada ataque es un `BossAttackData` (`resources/bosses/`) con tiempos por fase, y la forma vive en el script. La fase 2 entra con la mitad de la vida. `Hurtbox.damage_multiplier` arma los puntos débiles. La barra del jefe (`BossBar`) y el sesgo de cámara (`CameraLimitManager.set_focus`) se piden por grupos (`boss_bar`, `camera_focus`). Al caer, el `Spawner` tira su `drop_table` y `DungeonManager` pinta la Escalera del Farol, que vuelve al guild con todo y marca el dungeon como limpio (`ProfileState.has_cleared`). La fase 2 suma el vómito (deja charcos de bilis) y la *Nana* (atrae, corta la regeneración de stamina y abraza; 60 de daño la cortan).
 
 ---
 
@@ -1485,7 +1485,7 @@ Sin XP ni niveles: el poder viene del equipo del pueblo y de las mejoras de expe
 
 ## Fase 11 — Expedición con jefe
 
-**Estado:** ✅ hecha salvo la *Nana* y los charcos de bilis de la Madre.
+**Estado:** ✅ hecha.
 
 - ✅ `DungeonData` (id, cantidad de pisos, jefe) y techo de pisos: San Ulmo tiene 3 (`resources/dungeons/san_ulmo.tres`).
 - ✅ Zonas BOSS y EVENT (antesala).

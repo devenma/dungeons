@@ -49,6 +49,15 @@ const VOMIT_RANGE: float = 224.0
 const VOMIT_ARC: float = PI * 70.0 / 180.0
 # Charcos que deja el vómito, en px desde el torso a lo largo del cono / Puddles the vomit leaves, in px from the torso along the cone
 const BILE_PUDDLE_DISTANCES: Array[float] = [72.0, 128.0, 184.0]
+# Nana: atracción (px/s), radio del abrazo (px), daño que la corta y aturdimiento al cortarla (s)
+# Lullaby: pull (px/s), hug radius (px), damage that cuts it and stun when cut (s)
+const NANA_PULL: float = 25.0
+const HUG_RADIUS: float = 64.0
+const NANA_CUT_DAMAGE: int = 60
+const NANA_STUN_SECONDS: float = 1.5
+# Velas en blanco amarillento mientras canta / Yellowish white candles while she sings
+const NANA_GLOW: Color = Color(1.3, 1.25, 1.05)
+const HitStopScript: GDScript = preload("res://scripts/combat/hit_stop.gd")
 # Duraciones fijas, en s / Fixed durations, in s
 const INTRO_SECONDS: float = 1.5
 const TRANSITION_SECONDS: float = 2.5
@@ -95,6 +104,8 @@ var _add_left: float = ADD_EVERY_SECONDS
 var _adds: Array[Node] = []
 var _pillars: Array[Node2D] = []
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
+# Daño recibido durante la Nana en curso / Damage taken during the current Lullaby
+var _song_damage: int = 0
 
 var _slam_hitbox: Hitbox
 var _sweep_hitbox: Hitbox
@@ -113,6 +124,7 @@ func _ready() -> void:
 	if arena.has_area():
 		position = Vector2(arena.get_center().x, arena.position.y + PILE_DEPTH_PX).round()
 	health.health_changed.connect(_on_health_changed)
+	health.damage_received.connect(_on_damage_received)
 	health.died.connect(_on_died)
 	_slam_hitbox = _make_hitbox([_rect_shape(Vector2(-SLAM_CENTER.x, SLAM_CENTER.y), SLAM_SIZE),
 			_rect_shape(SLAM_CENTER, SLAM_SIZE)])
@@ -155,6 +167,10 @@ func _physics_process(delta: float) -> void:
 		if _add_left <= 0.0:
 			_add_left = ADD_EVERY_SECONDS
 			_spawn_adds()
+	if _state == State.ACTIVE and _attack.id == &"nana":
+		var singing_to: Node2D = _player()
+		if singing_to != null and singing_to.has_method("add_pull"):
+			singing_to.call("add_pull", (to_global(TORSO) - singing_to.global_position).normalized() * NANA_PULL)
 	if _state == State.ACTIVE and _attack.tick_seconds > 0.0:
 		_tick_left -= delta
 		if _tick_left <= 0.0:
@@ -226,10 +242,47 @@ func _begin_windup() -> void:
 			_vomit_hitbox.rotation = _aim.angle()
 	_sprite.texture = POSE_SLAM if _attack.id == &"slam" else (POSE_VOMIT if _attack.id == &"vomit" else POSE_REST)
 	_sprite.position.x = signf(_aim.x) * 4.0 if _attack.id == &"sweep" else 0.0
+	# Las velas pasan a blanco amarillento: canta / The candles turn yellowish white: she sings
+	if _attack.id == &"nana":
+		_sprite.self_modulate = NANA_GLOW
 	_enter(State.WINDUP, _attack.windup(_phase))
 
 
+## La Nana (D21): mientras canta el jugador no regenera stamina; 60 de daño la cortan.
+## The Lullaby (D21): while she sings the player does not regenerate stamina; 60 damage cuts it.
+func _start_song() -> void:
+	_song_damage = 0
+	var player: Node2D = _player()
+	var stamina: StaminaComponent = player.get_node_or_null("Stamina") as StaminaComponent if player != null else null
+	if stamina != null:
+		stamina.suppress_regen(_attack.active_seconds)
+
+
+func _on_damage_received(info: DamageInfo) -> void:
+	if _state != State.ACTIVE or _attack == null or _attack.id != &"nana":
+		return
+	_song_damage += info.amount
+	if _song_damage >= NANA_CUT_DAMAGE:
+		_end_recovery()
+		_enter(State.RECOVERY, NANA_STUN_SECONDS)
+
+
+## Al terminar la Nana, abraza a quien quedó a menos de HUG_RADIUS del torso / When the Lullaby ends, she hugs whoever is within HUG_RADIUS of the torso
+func _hug() -> void:
+	var player: Node2D = _player()
+	if player == null or player.global_position.distance_to(to_global(TORSO)) > HUG_RADIUS:
+		return
+	var hurtbox: Hurtbox = player.get_node_or_null("Hurtbox") as Hurtbox
+	var push: Vector2 = (player.global_position - to_global(TORSO)).normalized() * _attack.knockback
+	if hurtbox != null and hurtbox.take_hit(DamageInfo.new(_attack.damage, push)):
+		HitStopScript.apply(get_tree(), _attack.hit_stop_seconds)
+		get_tree().call_group("camera_shake", "shake", _attack.camera_shake_pixels)
+
+
 func _strike() -> void:
+	if _attack.id == &"nana":
+		_start_song()
+		return
 	var hitbox: Hitbox = _hitbox_for(_attack.id)
 	var player: Node2D = _player()
 	var from: Vector2 = _aim if _attack.id == &"hands" else to_global(TORSO)
@@ -246,7 +299,10 @@ func _strike() -> void:
 
 
 func _end_strike() -> void:
-	_hitbox_for(_attack.id).end_swing()
+	if _attack.id == &"nana":
+		_hug()
+	else:
+		_hitbox_for(_attack.id).end_swing()
 	_sprite.position.x = 0.0
 	if _repeats_left > 0:
 		_enter(State.GAP, _attack.repeat_gap_seconds)
@@ -273,6 +329,7 @@ func _end_recovery() -> void:
 	_set_weak_point(_hands_hurtbox, false)
 	_torso_hurtbox.damage_multiplier = 1.0
 	_sprite.texture = POSE_REST
+	_sprite.self_modulate = Color.WHITE
 
 
 func _cancel_attack() -> void:
@@ -457,3 +514,5 @@ func _draw_markers() -> void:
 			_markers.draw_colored_polygon(turned * points, color)
 		&"hands":
 			_markers.draw_circle(to_local(_aim), HAND_RADIUS, color)
+		&"nana":
+			_markers.draw_arc(TORSO, HUG_RADIUS, 0.0, TAU, 32, Color(NANA_GLOW.r / 1.3, NANA_GLOW.g / 1.3, 0.7, color.a), 2.0)
