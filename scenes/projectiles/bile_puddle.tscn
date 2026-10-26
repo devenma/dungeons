@@ -1,0 +1,19 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/combat/hazard_puddle.gd" id="1"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_puddle"]
+radius = 12.0
+
+[node name="BilePuddle" type="Area2D"]
+collision_layer = 0
+collision_mask = 8
+monitoring = false
+monitorable = false
+script = ExtResource("1")
+damage = 8
+target_mask = 8
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+scale = Vector2(1, 0.55)
+shape = SubResource("CircleShape2D_puddle")

@@ -19,6 +19,7 @@ signal defeated(at: Vector2)
 enum State { DORMANT, INTRO, IDLE, WINDUP, ACTIVE, GAP, RECOVERY, TRANSITION, DEAD }
 
 const AddScene: PackedScene = preload("res://scenes/enemies/errante.tscn")
+const PuddleScene: PackedScene = preload("res://scenes/projectiles/bile_puddle.tscn")
 const VfxScript: GDScript = preload("res://scripts/visual/vfx.gd")
 const POSE_REST: Texture2D = preload("res://assets/art/bosses/madre_rest.png")
 const POSE_SLAM: Texture2D = preload("res://assets/art/bosses/madre_slam.png")
@@ -46,6 +47,8 @@ const HAND_RADIUS: float = 24.0
 # Vómito: cono de 70° y 224 px / Vomit: 70° cone of 224 px
 const VOMIT_RANGE: float = 224.0
 const VOMIT_ARC: float = PI * 70.0 / 180.0
+# Charcos que deja el vómito, en px desde el torso a lo largo del cono / Puddles the vomit leaves, in px from the torso along the cone
+const BILE_PUDDLE_DISTANCES: Array[float] = [72.0, 128.0, 184.0]
 # Duraciones fijas, en s / Fixed durations, in s
 const INTRO_SECONDS: float = 1.5
 const TRANSITION_SECONDS: float = 2.5
@@ -254,7 +257,16 @@ func _end_strike() -> void:
 		_set_weak_point(_hands_hurtbox, true)
 	elif _attack.id == &"vomit":
 		_torso_hurtbox.damage_multiplier = 2.0
+		_spill_bile()
 	_enter(State.RECOVERY, _attack.recovery(_phase))
+
+
+## Charcos de bilis a lo largo del cono del vómito (D21) / Bile puddles along the vomit cone (D21)
+func _spill_bile() -> void:
+	for distance: float in BILE_PUDDLE_DISTANCES:
+		var puddle: Node2D = PuddleScene.instantiate() as Node2D
+		puddle.position = position + TORSO + _aim * distance
+		get_parent().add_child(puddle)
 
 
 func _end_recovery() -> void:

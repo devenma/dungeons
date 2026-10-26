@@ -100,6 +100,14 @@ func _run() -> void:
 	boss.call("_end_strike")
 	await physics_frame
 	_check(hands.monitorable, "the double slam recovery opens the hands")
+	boss.set("_attack", load("res://resources/bosses/madre_vomit.tres"))
+	boss.call("_end_strike")
+	var puddles: int = 0
+	for child: Node in container.get_children():
+		if child.get("tick_seconds") != null:
+			puddles += 1
+	_check(puddles == 3 and (boss.get_node("Hurtbox") as Hurtbox).damage_multiplier == 2.0,
+			"the vomit leaves 3 bile puddles and opens the ×2 core")
 
 	var health: HealthComponent = boss.get_node("Health") as HealthComponent
 	health.take_damage(DamageInfo.new(health.max_health / 2))

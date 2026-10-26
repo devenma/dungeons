@@ -55,6 +55,16 @@ func show_attack(_facing: Vector2, telegraph_seconds: float) -> void:
 	_tween.finished.connect(_loop_idle)
 
 
+## Empieza a invocar durante `telegraph_seconds` / Starts summoning for `telegraph_seconds`
+func show_summon(facing: Vector2, telegraph_seconds: float) -> void:
+	show_attack(facing, telegraph_seconds)
+
+
+## El escudo paró un golpe / The shield stopped a hit
+func show_block(facing: Vector2) -> void:
+	show_stagger(0.2)
+
+
 ## Un golpe lo aturdió `seconds`: corta el ataque visible / A hit staggered it for `seconds`: cuts the visible attack
 func show_stagger(seconds: float) -> void:
 	_restart_tween()
