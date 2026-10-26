@@ -242,9 +242,9 @@ Ya está en `main` y documentado en §1: knockback, i-frames, hit flash, pausa y
 - [ ] Balance: tabla de DPS por arma/coste y curvas de dificultad por piso.
 
 **Historia y pueblo**
-- [ ] Sistema de diálogo data-driven (`DialogueData`).
-- [ ] NPCs del pueblo con diálogo fijo.
-- [ ] Escena de cierre al terminar cada dungeon.
+- [x] Sistema de diálogo data-driven (`DialogueData` + `DialoguePanel`).
+- [~] NPCs del pueblo: saludo fijo y una línea según cómo volviste (muerte, piedra azul, victoria); faltan las conversaciones largas.
+- [x] Escena de cierre al limpiar San Ulmo por primera vez.
 
 ### P3 — contenido y pulido
 

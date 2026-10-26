@@ -310,6 +310,10 @@ Uno solo. Varios protagonistas implican ramas de historia y multiplican el arte.
 Diálogos en el pueblo + una escena al cerrar cada dungeon. Requiere un sistema de diálogo data-driven
 (Resource o JSON) y localización desde el principio.
 
+**Estado (2026-10-26, rama `feat/slice-v2`):** primer corte. `DialogueData` + `DialoguePanel`; la escena de cierre de
+San Ulmo son 3 líneas de narración (las velas se apagan, el cultista y "era una hija", la subida) más las de victoria de
+Odran y la Hermana Ancel que ya estaban en los textos. Los NPCs usan sus líneas de muerte, piedra y victoria al volver.
+
 ### D15 — ¿Qué mundo y qué tono? [PROPUESTA]
 
 "Superficie acogedora, profundidad opresiva": el pueblo es cálido y apagado; el dungeon es más oscuro y

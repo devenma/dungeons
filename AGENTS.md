@@ -1508,10 +1508,11 @@ Sin XP ni niveles: el poder viene del equipo del pueblo y de las mejoras de expe
 
 ## Fase 13 — Historia
 
-**Estado: ⏳ pendiente.**
+**Estado:** ✅ primer corte (diálogo, cierre de San Ulmo y comentarios de los NPCs).
 
-- Sistema de diálogo data-driven (`DialogueData`).
-- Escena de cierre al terminar cada dungeon.
+- ✅ Sistema de diálogo data-driven (`DialogueData` en `resources/dialogue/`: claves de líneas y de hablantes) con `DialoguePanel` (UI, pausa, máquina de escribir).
+- ✅ Escena de cierre la primera vez que se limpia un dungeon (`DungeonData.closing_dialogue`, señal `DungeonManager.dungeon_cleared`).
+- ✅ Los NPCs del gremio comentan cómo volviste (`npc.<id>.death|return_stone|victory.N`) la primera vez que les hablás.
 - Localización ES/EN con `tr()`: la base ya existe (`locale/strings.csv`, textos de UI e ítems); faltan los de historia y diálogo.
 
 ---
@@ -1857,7 +1858,7 @@ Sword.gd
 
 determina cómo ejecutar el ataque.
 
-Otros recursos: `DungeonData` (id, pisos, jefe, trofeo; ya existe) y, planificado, `DialogueData` (diálogo data-driven del pueblo y la historia).
+Otros recursos: `DungeonData` (id, pisos, jefe, trofeo, escena de cierre) y `DialogueData` (diálogo data-driven del pueblo y la historia).
 
 ---
 
