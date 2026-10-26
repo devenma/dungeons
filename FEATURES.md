@@ -90,7 +90,7 @@ confiable y feel · **P1** vertical slice v2 · **P2** profundidad · **P3** con
 | Slime | 30 HP, velocidad 60, daño 8, knockback 160. Detecta a 120 px, ataca a 20 px con una ventana de 0.2 s y cooldown de 1.2 s. Sprite fijo con aplaste/estiramiento por tween. |
 | Cadáver errante | 55 HP, velocidad 28, daño 14, knockback 260. Detecta a 140 px, ataca a 22 px: se queda quieto 0.6 s alzando el brazo (telegrafía) antes de abrir la hitbox; cooldown de 1.8 s. Animaciones del kit en 4 direcciones; al morir queda su cuerpo en el piso. |
 | IA | Persecución en línea recta dentro del radio de detección (sin pathfinding). |
-| Spawn | 2 enemigos por zona COMBAT, sorteados con la seed de la lista `Spawner.enemy_scenes` (slime y errante), en tiles interiores (lejos de las paredes). |
+| Spawn | 3 enemigos por pantalla de zona COMBAT, +1 por piso después del primero y tope de 8 (D24, dificultad v1). Persiguen en toda su zona y la rodean. Sorteados con la seed de la lista `Spawner.enemy_scenes` (slime y errante), en tiles interiores (lejos de las paredes). |
 | Muerte | Corta la IA y las colisiones, juega la muerte (animación o aplaste + estallido de sangre) y recién después libera al enemigo. |
 | Datos | `EnemyData` (.tres). |
 
@@ -182,7 +182,7 @@ Ya está en `main` y documentado en §1: knockback, i-frames, hit flash, pausa y
 - [ ] Tipo de zona BOSS.
 - [ ] Primer boss con 1–2 fases (`PhaseController`, ver `AGENTS.md` §26).
 - [ ] Usar los multiplicadores de `FloorData` en `Spawner` al instanciar enemigos.
-- [ ] Escalar `enemies_per_zone` según el piso o el tamaño de la zona.
+- [x] Escalar la cantidad de enemigos según el piso y el tamaño de la zona (`Spawner.enemies_per_screen`).
 
 **Flujo y presentación**
 - [ ] HUD: label de piso actual (`FloorLabel`, previsto en `AGENTS.md` §5).

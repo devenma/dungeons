@@ -21,6 +21,7 @@ var _last_relay_data: WeaponData = null
 class FakeLayout:
 	var zones: Array = []
 	var floor_seed: int = 0
+	var floor_number: int = 1
 
 
 func _initialize() -> void:
@@ -176,7 +177,7 @@ func _run() -> void:
 	var combat_run: Dictionary = _spawn_run(54321, [combat_zone], production_holder)
 	_check(_count_chests(combat_run["container"]) == 0,
 			"PF spawn: no chest in COMBAT zone")
-	_check(_count_enemies(combat_run["container"]) == 2,
+	_check(_count_enemies(combat_run["container"]) == 3,
 			"PF spawn: COMBAT spawns enemies unchanged (no regression)")
 	_cleanup_run(combat_run)
 

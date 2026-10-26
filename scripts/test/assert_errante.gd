@@ -19,6 +19,7 @@ var _cleared: Array[int] = []
 class FakeLayout:
 	var zones: Array = []
 	var floor_seed: int = 0
+	var floor_number: int = 1
 
 
 func _initialize() -> void:
@@ -144,11 +145,14 @@ func _check_telegraph() -> void:
 	var start_x: float = errante.position.x
 	var started_msec: int = Time.get_ticks_msec()
 	var opened_after: float = -1.0
+	# Posición del último frame de telegrafía: al abrir la hitbox ya embiste / Last telegraph frame position: once the hitbox opens it lunges
+	var telegraph_x: float = start_x
 	for i in range(90):
+		telegraph_x = errante.position.x
 		await physics_frame
 		if hitbox.monitoring:
 			opened_after = (Time.get_ticks_msec() - started_msec) / 1000.0
 			break
 	_check(opened_after >= 0.5 and opened_after <= 0.8, "hitbox opens after the ~0.6 s telegraph (%.2f s)" % opened_after)
-	_check(is_equal_approx(errante.position.x, start_x), "stands still while telegraphing")
+	_check(is_equal_approx(telegraph_x, start_x), "stands still while telegraphing")
 	container.queue_free()

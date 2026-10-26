@@ -22,6 +22,9 @@ extends Resource
 @export var hit_stop_seconds: float = 0.06
 ## Preparación quieto antes de abrir la hitbox (s); 0 = golpe inmediato / Standing wind-up before the hitbox opens (s); 0 = instant hit
 @export var telegraph_seconds: float = 0.0
+## Embestida al abrir la hitbox, hacia donde telegrafió (px/s); 0 = golpea en el lugar
+## Lunge when the hitbox opens, toward where it telegraphed (px/s); 0 = hits in place
+@export var lunge_speed: float = 0.0
 ## Aturdimiento al recibir un golpe: corta su ataque y no actúa (s); 0 = no se aturde
 ## Stagger on taking a hit: cancels its attack and it cannot act (s); 0 = never staggers
 @export var stagger_seconds: float = 0.35

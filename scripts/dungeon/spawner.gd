@@ -1,8 +1,10 @@
 extends Node
 
 ## Spawns floor content per zone type (CZ-1..CZ-4):
-##   COMBAT — enemies_per_zone enemies, each picked from enemy_scenes with
-##            the zone's seeded rng, at random interior tiles; tracks deaths; the zone clears and emits zone_cleared
+##   COMBAT — enemies_per_screen per room screen (plus extra_enemies_per_floor
+##            past floor 1, up to max_enemies_per_zone), each picked from enemy_scenes with
+##            the zone's seeded rng, at random interior tiles; every enemy chases the
+##            player anywhere in its zone and flanks at its own angle; tracks deaths; the zone clears and emits zone_cleared
 ##            exactly once when the count reaches 0. Each death rolls the
 ##            enemy's EnemyData.drop_table into `loot_found`.
 ##   REWARD — one seeded chest on an interior tile; the zone stays
@@ -28,6 +30,9 @@ const ChestScript: GDScript = preload("res://scripts/dungeon/chest.gd")
 # spawns inside, or collides against, wall or baseboard tiles.
 const INTERIOR_INSET_TILES: int = DungeonGeometry.WALL_RING_TILES \
 		+ DungeonGeometry.FLOOR_EDGE_TILES
+# Desvío (rad) con que se abren los enemigos de una zona para rodear, en orden de spawn
+# Spread (rad) the enemies of a zone open with to flank, in spawn order
+const FLANK_ANGLES: Array[float] = [-0.9, 0.0, 0.9]
 
 # RC-2 (headless fallback): REWARD chest pool when the scene graph does
 # not inject one. Grants avoid the sword (already owned by default).
@@ -41,8 +46,12 @@ const DEFAULT_REWARD_POOL_PATHS: Array[String] = [
 	preload("res://scenes/enemies/slime.tscn"),
 	preload("res://scenes/enemies/errante.tscn"),
 ]
-## Enemigos por zona COMBAT / Enemies per COMBAT zone
-@export var enemies_per_zone: int = 2
+## Enemigos por pantalla de sala COMBAT (una celda) / Enemies per COMBAT room screen (one cell)
+@export var enemies_per_screen: int = 3
+## Enemigos extra por zona en cada piso después del primero / Extra enemies per zone on each floor past the first
+@export var extra_enemies_per_floor: int = 1
+## Tope de enemigos por zona / Enemy cap per zone
+@export var max_enemies_per_zone: int = 8
 @export var chest_scene: PackedScene = preload("res://scenes/dungeon/chest.tscn")
 ## Armas que puede dar el cofre; vacío = DEFAULT_REWARD_POOL_PATHS / Weapons the chest can grant; empty = DEFAULT_REWARD_POOL_PATHS
 @export var chest_weapon_pool: Array[WeaponData] = []
@@ -72,8 +81,11 @@ func _spawn_combat(layout, zone: Zone, parent_node: Node) -> void:
 	var rng := RandomNumberGenerator.new()
 	var floor_seed: int = layout.floor_seed
 	rng.seed = floor_seed ^ zone.id
-	_remaining_by_zone[zone.id] = enemies_per_zone
-	for i in range(enemies_per_zone):
+	var floor_number: int = layout.floor_number
+	var count: int = _enemy_count(zone, floor_number)
+	var territory := Rect2(Vector2(zone.tile_rect.position * TILE_SIZE), Vector2(zone.tile_rect.size * TILE_SIZE))
+	_remaining_by_zone[zone.id] = count
+	for i in range(count):
 		var tile: Vector2i = _random_interior_tile(rng, zone)
 		var enemy_scene: PackedScene = enemy_scenes[rng.randi_range(0, enemy_scenes.size() - 1)]
 		var enemy: CharacterBody2D = enemy_scene.instantiate() as CharacterBody2D
@@ -84,11 +96,20 @@ func _spawn_combat(layout, zone: Zone, parent_node: Node) -> void:
 		var enemy_data: EnemyData = enemy.get("enemy_data") as EnemyData
 		if enemy_data != null and enemy_data.drop_table != null:
 			health.died.connect(_on_enemy_loot.bind(enemy_data.drop_table))
+		enemy.set("territory", territory)
+		enemy.set("flank_angle", FLANK_ANGLES[i % FLANK_ANGLES.size()])
 		enemy.position = Vector2(
 			tile.x * TILE_SIZE + TILE_SIZE / 2.0,
 			tile.y * TILE_SIZE + TILE_SIZE / 2.0
 		)
 		parent_node.add_child(enemy)
+
+
+func _enemy_count(zone: Zone, floor_number: int) -> int:
+	var cell: Vector2i = DungeonGeometry.CELL_TILES
+	var screens: int = maxi(zone.tile_rect.size.x / cell.x, 1) * maxi(zone.tile_rect.size.y / cell.y, 1)
+	var count: int = enemies_per_screen * screens + extra_enemies_per_floor * maxi(floor_number - 1, 0)
+	return mini(count, max_enemies_per_zone)
 
 
 func _random_interior_tile(rng: RandomNumberGenerator, zone: Zone) -> Vector2i:

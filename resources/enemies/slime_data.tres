@@ -7,8 +7,8 @@
 script = ExtResource("1")
 health = 30
 speed = 60.0
-damage = 8
+damage = 12
 detect_radius = 120.0
 attack_range = 20.0
-attack_cooldown = 1.2
+attack_cooldown = 1.0
 drop_table = ExtResource("2")
