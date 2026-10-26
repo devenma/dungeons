@@ -4,7 +4,8 @@ extends SceneTree
 ## Zone partition invariants: across many seeds and floor depths every layout passes
 ## DungeonGenerator.validate_layout (exact rects, no overlap, full coverage, min size,
 ## START cap, exit stairs placed by stairs_fit, doors on shared edges, all zones reachable),
-## with a zone count in range, and the same seed gives the same zones. The validator itself
+## with a zone count in range, every zone one screen (min_size_zones_only), and the same seed
+## gives the same zones. The validator itself
 ## must reject broken layouts.
 ## Exit 0 = pass, 1 = fail.
 
@@ -40,6 +41,10 @@ func _check_seed(gen: DungeonGenerator, seed_value: int, floor_number: int,
 	_check(error.is_empty(), "%s: %s" % [tag, error])
 	_check(layout.zones.size() >= zone_range.x and layout.zones.size() <= zone_range.y,
 			"%s: %d zones outside %s" % [tag, layout.zones.size(), zone_range])
+	if data.min_size_zones_only:
+		for zone: Zone in layout.zones:
+			_check(zone.cell_max - zone.cell_min == data.min_zone_cells,
+					"%s: zone %d is %s cells, expected one screen" % [tag, zone.id, zone.cell_max - zone.cell_min])
 	if seed_value % 50 == 0:
 		var again: DungeonGenerator.FloorLayout = gen.generate_floor(floor_number, seed_value, data)
 		_check(_zones_signature(layout) == _zones_signature(again),
