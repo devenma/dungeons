@@ -19,6 +19,9 @@ signal floor_started(floor_number: int, floor_count: int)
 const ExitScene: PackedScene = preload("res://scenes/dungeon/exit.tscn")
 const ExitScript: GDScript = preload("res://scripts/dungeon/exit_area.gd")
 const FloorDressingScript: GDScript = preload("res://scripts/dungeon/floor_dressing.gd")
+const KeyDoorScript: GDScript = preload("res://scripts/dungeon/key_door.gd")
+## Llave de la bóveda (D3) / Vault key (D3)
+const KEY_ITEM: ItemData = preload("res://resources/items/llave_osario.tres")
 # Espera entre la muerte y la vuelta al gremio (s) / Delay between death and the return to the guild (s)
 const DEATH_RETURN_SECONDS: float = 0.5
 # Parte de la vida máxima que se lleva cada ofrenda de carne (D23) / Share of max health each flesh offering takes (D23)
@@ -291,6 +294,7 @@ func _start_floor() -> void:
 
 	_spawner.spawn_content(layout, dungeon)
 	_spawn_exit(layout)
+	_spawn_key_doors(layout)
 	_spawn_player(layout)
 	_initialize_camera_limits(layout)
 	floor_started.emit(run_manager.current_floor, _floor_count())
@@ -371,6 +375,45 @@ func _initialize_camera_limits(layout: DungeonGenerator.FloorLayout) -> void:
 	var cam_manager: Node = _find_camera_limit_manager()
 	if cam_manager != null and cam_manager.has_method("initialize"):
 		cam_manager.initialize(layout, player)
+
+
+## Un área de `interact` sobre cada puerta trabada con llave (D3); una puerta norte se alcanza desde el
+## piso de la zona de abajo, pasando el arco.
+## An `interact` area over each key-locked door (D3); a north door is reached from the floor of the zone
+## below, past the arch.
+func _spawn_key_doors(layout: DungeonGenerator.FloorLayout) -> void:
+	var tile: float = DungeonGeometry.TILE_SIZE
+	for d in layout.doors:
+		var door: Zone.Door = d
+		if not door.key_locked:
+			continue
+		var area: Area2D = KeyDoorScript.new() as Area2D
+		area.set("door_id", door.id)
+		var shape: CollisionShape2D = CollisionShape2D.new()
+		var rect: RectangleShape2D = RectangleShape2D.new()
+		var cell: Vector2 = Vector2(DungeonGeometry.door_cell(door)) * tile
+		if door.edge_axis == "v":
+			rect.size = Vector2(4.0, 2.0) * tile
+			area.position = cell + Vector2(0.0, tile / 2.0)
+		else:
+			rect.size = Vector2(3.0, 5.0) * tile
+			area.position = cell + Vector2(tile / 2.0, tile * 1.5)
+		shape.shape = rect
+		area.add_child(shape)
+		area.connect("unlock_requested", _on_unlock_requested.bind(area))
+		_dungeon.add_child(area)
+
+
+func _on_unlock_requested(door_id: int, _area: Node) -> void:
+	var run_manager: RunManager = _get_run_manager()
+	if run_manager != null and run_manager.backpack.count_of(KEY_ITEM) > 0 and _door_controller.unlock(door_id):
+		run_manager.backpack.remove(KEY_ITEM, 1)
+		# Una llave abre todas las puertas de la bóveda / One key opens every vault door
+		for other: Node in _dungeon.get_children():
+			if other.has_signal("unlock_requested"):
+				other.queue_free()
+		return
+	_play_sound("DoorLockSound")
 
 
 func _spawn_exit(layout: DungeonGenerator.FloorLayout) -> void:

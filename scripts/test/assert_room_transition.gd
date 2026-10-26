@@ -120,13 +120,16 @@ func _walk_floor(layout: DungeonGenerator.FloorLayout, expedition: int) -> void:
 			start = z
 	var picks: Array[Zone.Door] = []
 	for door: Zone.Door in layout.doors:
+		# Las puertas de la bóveda quedan trabadas hasta usar la llave / Vault doors stay shut until the key is used
+		if door.key_locked:
+			continue
 		if door.zone_a_id == start.id or door.zone_b_id == start.id:
 			picks.append(door)
 	# One more door per axis, into an uncleared COMBAT zone when there is one, so locks get checked.
 	for axis: String in ["v", "h"]:
 		var pick: Zone.Door = null
 		for door: Zone.Door in layout.doors:
-			if door.edge_axis != axis or picks.has(door):
+			if door.edge_axis != axis or picks.has(door) or door.key_locked:
 				continue
 			if pick == null or _touches_combat(door):
 				pick = door

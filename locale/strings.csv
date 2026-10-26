@@ -463,3 +463,5 @@ ability.spin_slash.name,Tajo giratorio,Spinning slash
 ability.triple_shot.name,Disparo triple,Triple shot
 ability.fireball.name,Bola de fuego,Fireball
 ui.hud.day,Día %d,Day %d
+item.llave_osario.name,Llave del osario,Ossuary key
+item.llave_osario.desc,Hierro ennegrecido y frío. Abre la bóveda del piso.,Blackened, cold iron. Opens the floor's vault.
