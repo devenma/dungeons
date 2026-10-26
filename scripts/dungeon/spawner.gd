@@ -15,6 +15,8 @@ extends Node
 ##   BOSS   — boss_scene anchored in the arena; once it has sunk the zone clears, its
 ##            drop_table rolls into `loot_found` and `boss_defeated` relays where it fell.
 ##   EVENT  — the healing altar (D23) in the middle of the room; auto-clear.
+## Template pillars and movable blocks (D3, D20) are never spawn tiles; the template's blocks are
+## placed here. Clearing the floor's key zone drops the vault key into `loot_found`.
 ##   START / EXIT — no content.
 ## The zone_cleared signal must be connected by DungeonManager BEFORE
 ## spawn_content is called (§44.16).
@@ -34,6 +36,10 @@ const TILE_SIZE: int = DungeonGeometry.TILE_SIZE
 # `RewardChest` class name, which is not registered in headless runs
 # without an editor scan.
 const ChestScript: GDScript = preload("res://scripts/dungeon/chest.gd")
+## Llave de la bóveda del piso (D3) / Floor vault key (D3)
+const KEY_ITEM: ItemData = preload("res://resources/items/llave_osario.tres")
+# Intentos de sortear un tile libre antes de usar el centro / Tries at drawing a free tile before using the centre
+const FREE_TILE_TRIES: int = 12
 # Enemies spawn past the zone's wall ring AND floor-edge trim band so nothing
 # spawns inside, or collides against, wall or baseboard tiles.
 const INTERIOR_INSET_TILES: int = DungeonGeometry.WALL_RING_TILES \
@@ -69,6 +75,8 @@ const DEFAULT_REWARD_POOL_PATHS: Array[String] = [
 @export var chest_scene: PackedScene = preload("res://scenes/dungeon/chest.tscn")
 ## Altar de cura de las zonas EVENT (D23) / Healing altar of EVENT zones (D23)
 @export var altar_scene: PackedScene = preload("res://scenes/dungeon/altar.tscn")
+## Bloque movible de las plantillas (D20) / Template movable block (D20)
+@export var push_block_scene: PackedScene = preload("res://scenes/dungeon/push_block.tscn")
 ## Armas que puede dar el cofre; vacío = DEFAULT_REWARD_POOL_PATHS / Weapons the chest can grant; empty = DEFAULT_REWARD_POOL_PATHS
 @export var chest_weapon_pool: Array[WeaponData] = []
 ## Piso actual: pool, presupuesto, élite y multiplicadores; lo pone DungeonManager. null = lista fija sin multiplicar
@@ -84,12 +92,19 @@ var _remaining_by_zone: Dictionary = {}  # zone_id -> alive enemies
 var _loot_rng: RandomNumberGenerator = RandomNumberGenerator.new()
 # Zona COMBAT que ocupa el élite, o -1 / COMBAT zone the elite holds, or -1
 var _elite_zone_id: int = -1
+# Zona cuya limpieza da la llave, o -1, y tiles ocupados por las plantillas / Zone whose clearing gives the key, or -1, and template-taken tiles
+var _key_zone_id: int = -1
+var _blocked: Dictionary = {}
 
 
 func spawn_content(layout, parent_node: Node) -> void:
 	var floor_seed: int = layout.floor_seed
 	_loot_rng.seed = floor_seed ^ ChestScript.LOOT_SALT
 	_elite_zone_id = _pick_elite_zone(layout)
+	var key_zone: Variant = layout.get("key_zone_id")
+	_key_zone_id = int(key_zone) if key_zone != null else -1
+	var blocked: Variant = layout.get("blocked_tiles")
+	_blocked = blocked if blocked is Dictionary else {}
 	for zone in layout.zones:
 		var z := zone as Zone
 		_zone_by_id[z.id] = z
@@ -97,6 +112,7 @@ func spawn_content(layout, parent_node: Node) -> void:
 			Zone.ZoneType.START, Zone.ZoneType.EXIT:
 				pass  # no spawn
 			Zone.ZoneType.COMBAT:
+				_spawn_blocks(z, parent_node)
 				_spawn_combat(layout, z, parent_node)
 			Zone.ZoneType.REWARD:
 				_spawn_reward(layout, z, parent_node)
@@ -104,6 +120,17 @@ func spawn_content(layout, parent_node: Node) -> void:
 				_spawn_boss(z, parent_node)
 			Zone.ZoneType.EVENT:
 				_spawn_altar(z, parent_node)
+
+
+func _spawn_blocks(zone: Zone, parent_node: Node) -> void:
+	if zone.template == null or push_block_scene == null:
+		return
+	for tile: Vector2i in zone.template.tiles_of(RoomTemplate.BLOCK, zone.tile_rect.position):
+		var block: Node2D = push_block_scene.instantiate() as Node2D
+		block.set("bounds", RoomTemplate.block_rect(zone.tile_rect.position))
+		block.set("blocked_tiles", _blocked)
+		block.position = Vector2(tile * TILE_SIZE) + Vector2.ONE * TILE_SIZE / 2.0
+		parent_node.add_child(block)
 
 
 func _spawn_altar(zone: Zone, parent_node: Node) -> void:
@@ -161,6 +188,8 @@ func _spawn_combat(layout, zone: Zone, parent_node: Node) -> void:
 			if member > 0:
 				spot = (center + Vector2(rng.randf_range(-1.0, 1.0), rng.randf_range(-1.0, 1.0)) * GROUP_SPREAD_PX) \
 						.clamp(floor_rect.position, floor_rect.end)
+				if _blocked.has(Vector2i((spot / TILE_SIZE).floor())):
+					spot = center
 			_spawn_enemy(group[0], spot.round(), zone.id, territory, spawned, parent_node)
 			spawned += 1
 	_remaining_by_zone[zone.id] = spawned
@@ -259,10 +288,13 @@ func _random_interior_tile(rng: RandomNumberGenerator, zone: Zone) -> Vector2i:
 	if max_tile.x < min_tile.x or max_tile.y < min_tile.y:
 		# Zone too small for the inset — fall back to its center tile.
 		return zone.tile_rect.position + zone.tile_rect.size / 2
-	return Vector2i(
-		rng.randi_range(min_tile.x, max_tile.x),
-		rng.randi_range(min_tile.y, max_tile.y)
-	)
+	var tile: Vector2i = Vector2i.ZERO
+	for i in FREE_TILE_TRIES:
+		tile = Vector2i(rng.randi_range(min_tile.x, max_tile.x), rng.randi_range(min_tile.y, max_tile.y))
+		if not _blocked.has(tile):
+			return tile
+	# El anillo de piso de una plantilla siempre está libre / A template's floor ring is always free
+	return Vector2i(min_tile.x, min_tile.y)
 
 
 func _spawn_reward(layout, zone: Zone, parent_node: Node) -> void:
@@ -329,3 +361,6 @@ func _on_enemy_died(zone_id: int) -> void:
 		return
 	zone.cleared = true
 	zone_cleared.emit(zone_id)
+	if zone_id == _key_zone_id:
+		var key: Array[ItemData] = [KEY_ITEM]
+		loot_found.emit(key, 0)

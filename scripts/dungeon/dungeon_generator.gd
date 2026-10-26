@@ -9,6 +9,9 @@ extends Node
 # Columnas mínimas al oeste de la arena del jefe: START nunca queda pegada a BOSS
 # Minimum columns west of the boss arena: START never borders BOSS
 const BOSS_GAP_CELLS: int = 2
+# Filas que avanza el jugador al entrar por una puerta norte (CameraLimitManager.north_landing_tiles)
+# Rows the player walks in through a north door (CameraLimitManager.north_landing_tiles)
+const NORTH_LANDING_ROWS: int = 1
 
 class Cell:
 	var gx: int
@@ -27,6 +30,11 @@ class FloorLayout:
 	# Arena del jefe y su antesala (EVENT), o -1 en un piso sin jefe / Boss arena and its antechamber (EVENT), or -1 on a floor without a boss
 	var boss_zone_id: int = -1
 	var antechamber_zone_id: int = -1
+	# Puerta trabada de la bóveda y zona COMBAT cuya limpieza da la llave, o -1 / Vault locked door and COMBAT zone whose clearing gives the key, or -1
+	var locked_door_id: int = -1
+	var key_zone_id: int = -1
+	# Tiles ocupados por las plantillas (pilares y bloques) -> true; ahí no se spawnea / Tiles taken by templates (pillars and blocks) -> true; nothing spawns there
+	var blocked_tiles: Dictionary = {}
 	# Tile superior izquierdo de la escalera de la zona EXIT / Top-left tile of the EXIT zone's stairs
 	var exit_stairs: Vector2i = Vector2i(-1, -1)
 
@@ -360,6 +368,40 @@ func validate_layout(layout: FloorLayout, data: FloorData) -> String:
 				queue.append(nid)
 	if visited.size() != layout.zones.size():
 		return "%d of %d zones reachable from START" % [visited.size(), layout.zones.size()]
+	return _validate_vault(layout, by_id)
+
+
+## Solvabilidad de la bóveda (D3): sin cruzar la puerta trabada se llega a la zona de la llave y a la
+## salida (o al jefe), y no a la bóveda.
+## Vault solvability (D3): without crossing the locked door the key zone and the exit (or the boss) are
+## reachable, and the vault is not.
+func _validate_vault(layout: FloorLayout, by_id: Dictionary) -> String:
+	if layout.locked_door_id < 0:
+		return ""
+	var locked: Zone.Door = null
+	for d in layout.doors:
+		if (d as Zone.Door).id == layout.locked_door_id:
+			locked = d
+	if locked == null or not locked.key_locked:
+		return "locked_door_id does not point at a key-locked door"
+	var key_zone: Zone = by_id.get(layout.key_zone_id) as Zone
+	if key_zone == null or key_zone.type != Zone.ZoneType.COMBAT:
+		return "the key zone is not a COMBAT zone"
+	var reached: Dictionary = {layout.start_zone_id: true}
+	var queue: Array[int] = [layout.start_zone_id]
+	while not queue.is_empty():
+		var cur: int = queue.pop_front()
+		for d in layout.doors:
+			var door: Zone.Door = d
+			if door.key_locked:
+				continue
+			var other: int = door.zone_b_id if door.zone_a_id == cur else (door.zone_a_id if door.zone_b_id == cur else -1)
+			if other >= 0 and not reached.has(other):
+				reached[other] = true
+				queue.append(other)
+	var goal: int = layout.boss_zone_id if layout.boss_zone_id >= 0 else layout.exit_zone_id
+	if not reached.has(layout.key_zone_id) or not reached.has(goal):
+		return "the key zone or the goal is behind the locked door"
 	return ""
 
 
@@ -459,6 +501,85 @@ func _assign_types(layout: FloorLayout, rng: RandomNumberGenerator,
 				candidates.append(z)
 		if not candidates.is_empty():
 			candidates[rng.randi_range(0, candidates.size() - 1)].type = Zone.ZoneType.EVENT
+
+
+## Bóveda (D3): una zona de una pantalla cuya ausencia no desconecta el piso pasa a REWARD con todas sus
+## puertas trabadas; la llave (una sola, abre todas) cae al limpiar otra zona COMBAT.
+## Vault (D3): a one-screen zone whose absence does not disconnect the floor becomes a REWARD with all its
+## doors locked; the key (just one, it opens them all) drops when another COMBAT zone is cleared.
+func _place_vault(layout: FloorLayout, rng: RandomNumberGenerator, data: FloorData) -> void:
+	if data.vault_chance <= 0.0 or rng.randf() >= data.vault_chance:
+		return
+	var candidates: Array[Zone] = []
+	var combat: Array[Zone] = []
+	for z: Zone in layout.zones:
+		if z.type == Zone.ZoneType.COMBAT:
+			combat.append(z)
+		var plain: bool = z.type == Zone.ZoneType.COMBAT or z.type == Zone.ZoneType.REWARD
+		if plain and z.cell_max - z.cell_min == Vector2i.ONE and _reached_without(layout, z.id).size() == layout.zones.size() - 1:
+			candidates.append(z)
+	if candidates.is_empty():
+		return
+	var vault: Zone = candidates[rng.randi_range(0, candidates.size() - 1)]
+	combat.erase(vault)
+	if combat.is_empty():
+		return
+	vault.type = Zone.ZoneType.REWARD
+	for d in vault.doors:
+		var door: Zone.Door = d
+		door.key_locked = true
+		door.state = 1
+	layout.locked_door_id = (vault.doors[0] as Zone.Door).id
+	layout.key_zone_id = combat[rng.randi_range(0, combat.size() - 1)].id
+
+
+## Zonas alcanzables desde START por puertas sin pasar por `skipped` / Zones reachable from START through doors without passing `skipped`
+func _reached_without(layout: FloorLayout, skipped: int) -> Dictionary:
+	var reached: Dictionary = {layout.start_zone_id: true}
+	var queue: Array[int] = [layout.start_zone_id]
+	while not queue.is_empty():
+		var cur: int = queue.pop_front()
+		for d in layout.doors:
+			var door: Zone.Door = d
+			var other: int = door.zone_b_id if door.zone_a_id == cur else (door.zone_a_id if door.zone_b_id == cur else -1)
+			if other >= 0 and other != skipped and not reached.has(other):
+				reached[other] = true
+				queue.append(other)
+	return reached
+
+
+## Una plantilla sembrada por zona COMBAT de una pantalla; sus pilares y bloques quedan en blocked_tiles.
+## Entrando por una puerta norte el jugador cae una fila dentro del piso (CameraLimitManager.north_landing_tiles),
+## sobre la primera fila del bloque: las plantillas que ocupan ese tile no se usan ahí y el tile queda
+## reservado para que tampoco se empuje un bloque encima.
+## One seeded template per one-screen COMBAT zone; its pillars and blocks go into blocked_tiles. Entering
+## through a north door the player lands one row into the floor (CameraLimitManager.north_landing_tiles),
+## on the block's first row: templates taking that tile are not used there and the tile stays reserved so no
+## block is pushed onto it either.
+func _assign_templates(layout: FloorLayout, rng: RandomNumberGenerator, data: FloorData) -> void:
+	layout.blocked_tiles = {}
+	if data.room_templates.is_empty():
+		return
+	for z: Zone in layout.zones:
+		if z.type != Zone.ZoneType.COMBAT or z.cell_max - z.cell_min != Vector2i.ONE:
+			continue
+		var landings: Array[Vector2i] = []
+		for d in z.doors:
+			var door: Zone.Door = d
+			if door.edge_axis == "h" and door.edge_line == z.tile_rect.position.y:
+				landings.append(Vector2i(door.pos_along, z.tile_rect.position.y + DungeonGeometry.WALL_RING_TILES
+						+ DungeonGeometry.NORTH_FACE_ROWS + NORTH_LANDING_ROWS))
+		var fitting: Array[RoomTemplate] = data.room_templates.filter(func(t: RoomTemplate) -> bool:
+				return landings.all(func(tile: Vector2i) -> bool:
+						return not (t.tiles_of(RoomTemplate.PILLAR, z.tile_rect.position) 								+ t.tiles_of(RoomTemplate.BLOCK, z.tile_rect.position)).has(tile)))
+		if fitting.is_empty():
+			continue
+		z.template = fitting[rng.randi_range(0, fitting.size() - 1)]
+		for character: String in [RoomTemplate.PILLAR, RoomTemplate.BLOCK]:
+			for tile: Vector2i in z.template.tiles_of(character, z.tile_rect.position):
+				layout.blocked_tiles[tile] = true
+		for tile: Vector2i in landings:
+			layout.blocked_tiles[tile] = true
 
 
 ## BOSS = el rectángulo fijo de la esquina sureste; antesala = su vecina oeste más lejana de START
@@ -682,6 +803,8 @@ func generate_floor(floor_number: int, base_seed: int,
 		_assign_types(layout, retry_rng, data)
 		_place_doors(layout, retry_rng, data)
 		_place_exit_stairs(layout, retry_rng)
+		_place_vault(layout, retry_rng, data)
+		_assign_templates(layout, retry_rng, data)
 
 		if zones.size() < target_min or zones.size() > target_max:
 			last_error = "%d zones, expected %d-%d" % [zones.size(), target_min, target_max]
@@ -718,6 +841,7 @@ func _render_layout(layout: FloorLayout, tilemap: TileMap) -> void:
 	var grid_bottom: int = layout.grid_h * DungeonGeometry.CELL_TILES.y
 	for z: Zone in layout.zones:
 		_paint_zone(tilemap, z, z.tile_rect.end.y < grid_bottom)
+	_paint_pillars(tilemap, layout)
 	_punch_doors(tilemap, layout)
 	paint_stairs(tilemap, layout.exit_stairs)
 	_shade_wall_feet(tilemap)
@@ -753,6 +877,17 @@ func _punch_doors(tilemap: TileMap, layout: FloorLayout) -> void:
 					jambs[cell])
 		if door.state == 1:
 			DungeonGeometry.set_door_closed(tilemap, door, true)
+
+
+## Pilares de las plantillas: un bloque de sillares de la cara de pared, sólido, en la capa de paredes.
+## Template pillars: an ashlar block from the wall face, solid, on the wall layer.
+func _paint_pillars(tilemap: TileMap, layout: FloorLayout) -> void:
+	for z: Zone in layout.zones:
+		if z.template == null:
+			continue
+		for tile: Vector2i in z.template.tiles_of(RoomTemplate.PILLAR, z.tile_rect.position):
+			tilemap.set_cell(DungeonGeometry.LAYER_WALL, tile, DungeonGeometry.DUNGEON_SOURCE_ID,
+					DungeonGeometry.FACE_LO + Vector2i(posmod(tile.x, 3), 0))
 
 
 ## Sobre la capa de piso; los tiles traen las colisiones del marco / On the floor layer; the tiles carry the frame colliders

@@ -5,6 +5,12 @@
 [ext_resource type="PackedScene" path="res://scenes/enemies/errante.tscn" id="3"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/reptante.tscn" id="4"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/rata.tscn" id="5"]
+[ext_resource type="Resource" path="res://resources/rooms/pilares.tres" id="room_pilares"]
+[ext_resource type="Resource" path="res://resources/rooms/cruz.tres" id="room_cruz"]
+[ext_resource type="Resource" path="res://resources/rooms/esquinas.tres" id="room_esquinas"]
+[ext_resource type="Resource" path="res://resources/rooms/ataudes.tres" id="room_ataudes"]
+[ext_resource type="Resource" path="res://resources/rooms/nave.tres" id="room_nave"]
+[ext_resource type="Resource" path="res://resources/rooms/derrumbe.tres" id="room_derrumbe"]
 
 [sub_resource type="Resource" id="Spawn_errante"]
 script = ExtResource("2")
@@ -42,3 +48,5 @@ enemy_damage_multiplier = 1.0
 enemy_pool = Array[ExtResource("2")]([SubResource("Spawn_errante"), SubResource("Spawn_reptante"), SubResource("Spawn_rata")])
 threat_budget_per_cell = 4
 event_chance = 0.25
+room_templates = Array[Resource]([ExtResource("room_pilares"), ExtResource("room_cruz"), ExtResource("room_esquinas"), ExtResource("room_ataudes"), ExtResource("room_nave"), ExtResource("room_derrumbe")])
+vault_chance = 0.4

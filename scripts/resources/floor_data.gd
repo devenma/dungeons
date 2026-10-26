@@ -36,6 +36,14 @@ extends Resource
 ## Chance that one COMBAT or REWARD zone becomes an EVENT with the healing altar (D23); one at most
 @export var event_chance: float = 0.0
 
+@export_group("Rooms")
+## Plantillas para las zonas COMBAT de una pantalla, sorteadas con la seed; vacío = salas lisas (D3)
+## Templates for one-screen COMBAT zones, drawn with the seed; empty = plain rooms (D3)
+@export var room_templates: Array[RoomTemplate] = []
+## Probabilidad de una bóveda: una zona hoja tras una puerta trabada cuya llave cae al limpiar otra zona
+## Chance of a vault: a leaf zone behind a locked door whose key drops when another zone is cleared
+@export var vault_chance: float = 0.0
+
 @export_group("Enemies")
 ## Pool de enemigos del piso; vacío = la lista fija del Spawner (rigs de test) / Floor enemy pool; empty = the Spawner's fixed list (test rigs)
 @export var enemy_pool: Array[EnemySpawnData] = []

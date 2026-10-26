@@ -9,6 +9,12 @@
 [ext_resource type="PackedScene" path="res://scenes/enemies/guardia.tscn" id="7"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/cultista.tscn" id="8"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/cosido.tscn" id="9"]
+[ext_resource type="Resource" path="res://resources/rooms/pilares.tres" id="room_pilares"]
+[ext_resource type="Resource" path="res://resources/rooms/cruz.tres" id="room_cruz"]
+[ext_resource type="Resource" path="res://resources/rooms/esquinas.tres" id="room_esquinas"]
+[ext_resource type="Resource" path="res://resources/rooms/ataudes.tres" id="room_ataudes"]
+[ext_resource type="Resource" path="res://resources/rooms/nave.tres" id="room_nave"]
+[ext_resource type="Resource" path="res://resources/rooms/derrumbe.tres" id="room_derrumbe"]
 
 [sub_resource type="Resource" id="Spawn_errante"]
 script = ExtResource("2")
@@ -69,3 +75,5 @@ enemy_pool = Array[ExtResource("2")]([SubResource("Spawn_errante"), SubResource(
 threat_budget_per_cell = 6
 elite_scene = ExtResource("9")
 elite_chance = 0.25
+room_templates = Array[Resource]([ExtResource("room_pilares"), ExtResource("room_cruz"), ExtResource("room_esquinas"), ExtResource("room_ataudes"), ExtResource("room_nave"), ExtResource("room_derrumbe")])
+vault_chance = 0.5

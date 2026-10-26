@@ -8,6 +8,12 @@
 [ext_resource type="PackedScene" path="res://scenes/enemies/escupebilis.tscn" id="6"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/guardia.tscn" id="7"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/cosido.tscn" id="8"]
+[ext_resource type="Resource" path="res://resources/rooms/pilares.tres" id="room_pilares"]
+[ext_resource type="Resource" path="res://resources/rooms/cruz.tres" id="room_cruz"]
+[ext_resource type="Resource" path="res://resources/rooms/esquinas.tres" id="room_esquinas"]
+[ext_resource type="Resource" path="res://resources/rooms/ataudes.tres" id="room_ataudes"]
+[ext_resource type="Resource" path="res://resources/rooms/nave.tres" id="room_nave"]
+[ext_resource type="Resource" path="res://resources/rooms/derrumbe.tres" id="room_derrumbe"]
 
 [sub_resource type="Resource" id="Spawn_errante"]
 script = ExtResource("2")
@@ -60,3 +66,5 @@ threat_budget_per_cell = 5
 elite_scene = ExtResource("8")
 elite_chance = 1.0
 event_chance = 0.5
+room_templates = Array[Resource]([ExtResource("room_pilares"), ExtResource("room_cruz"), ExtResource("room_esquinas"), ExtResource("room_ataudes"), ExtResource("room_nave"), ExtResource("room_derrumbe")])
+vault_chance = 0.5

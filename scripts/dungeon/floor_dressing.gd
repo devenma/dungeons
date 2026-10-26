@@ -118,7 +118,7 @@ func _scatter_decals(z: Zone, layout: DungeonGenerator.FloorLayout, rng: RandomN
 		var inside: Vector2i = Vector2i(
 				rng.randi_range(DECAL_MARGIN, DungeonGeometry.TILE_SIZE - DECAL_MARGIN),
 				rng.randi_range(DECAL_MARGIN, DungeonGeometry.TILE_SIZE - DECAL_MARGIN))
-		if stairs.has_point(tile):
+		if stairs.has_point(tile) or layout.blocked_tiles.has(tile):
 			continue
 		add_child(_make_sprite(decal, Vector2(tile * DungeonGeometry.TILE_SIZE + inside)))
 
