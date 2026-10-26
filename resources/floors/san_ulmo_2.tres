@@ -59,3 +59,4 @@ enemy_pool = Array[ExtResource("2")]([SubResource("Spawn_errante"), SubResource(
 threat_budget_per_cell = 5
 elite_scene = ExtResource("8")
 elite_chance = 1.0
+event_chance = 0.5

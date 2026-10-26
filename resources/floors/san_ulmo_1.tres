@@ -41,3 +41,4 @@ enemy_health_multiplier = 1.0
 enemy_damage_multiplier = 1.0
 enemy_pool = Array[ExtResource("2")]([SubResource("Spawn_errante"), SubResource("Spawn_reptante"), SubResource("Spawn_rata")])
 threat_budget_per_cell = 4
+event_chance = 0.25

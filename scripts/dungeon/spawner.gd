@@ -14,7 +14,7 @@ extends Node
 ##            auto-clear (cleared=true, no door gating).
 ##   BOSS   — boss_scene anchored in the arena; once it has sunk the zone clears, its
 ##            drop_table rolls into `loot_found` and `boss_defeated` relays where it fell.
-##   EVENT  — the boss antechamber: no content, auto-clear.
+##   EVENT  — the healing altar (D23) in the middle of the room; auto-clear.
 ##   START / EXIT — no content.
 ## The zone_cleared signal must be connected by DungeonManager BEFORE
 ## spawn_content is called (§44.16).
@@ -67,6 +67,8 @@ const DEFAULT_REWARD_POOL_PATHS: Array[String] = [
 ## Tope de enemigos por zona / Enemy cap per zone
 @export var max_enemies_per_zone: int = 8
 @export var chest_scene: PackedScene = preload("res://scenes/dungeon/chest.tscn")
+## Altar de cura de las zonas EVENT (D23) / Healing altar of EVENT zones (D23)
+@export var altar_scene: PackedScene = preload("res://scenes/dungeon/altar.tscn")
 ## Armas que puede dar el cofre; vacío = DEFAULT_REWARD_POOL_PATHS / Weapons the chest can grant; empty = DEFAULT_REWARD_POOL_PATHS
 @export var chest_weapon_pool: Array[WeaponData] = []
 ## Piso actual: pool, presupuesto, élite y multiplicadores; lo pone DungeonManager. null = lista fija sin multiplicar
@@ -101,7 +103,16 @@ func spawn_content(layout, parent_node: Node) -> void:
 			Zone.ZoneType.BOSS:
 				_spawn_boss(z, parent_node)
 			Zone.ZoneType.EVENT:
-				z.cleared = true
+				_spawn_altar(z, parent_node)
+
+
+func _spawn_altar(zone: Zone, parent_node: Node) -> void:
+	zone.cleared = true
+	if altar_scene == null:
+		return
+	var altar: Node2D = altar_scene.instantiate() as Node2D
+	altar.position = DungeonGeometry.floor_interior_px(zone.tile_rect).get_center().round()
+	parent_node.add_child(altar)
 
 
 func _spawn_boss(zone: Zone, parent_node: Node) -> void:

@@ -438,3 +438,25 @@ boss.madre.name,La Madre de la Fosa,The Mother of the Pit
 item.corona_velas.name,Corona de velas,Candle crown
 item.corona_velas.desc,Sigue tibia. Las velas no se apagan del todo.,Still warm. The candles never quite go out.
 dungeon.san_ulmo.name,Cripta de San Ulmo,Crypt of San Ulmo
+ui.altar.title,Altar del Voto,Altar of the Vow
+ui.altar.line,Cura todo. Algo se lleva.,It heals everything. It takes something.
+ui.altar.not_hurt,No necesitas cura.,You need no healing.
+ui.altar.nothing,El altar no acepta nada más.,The altar accepts nothing more.
+ui.altar.flesh,Carne,Flesh
+ui.altar.flesh.cost,-20 % de vida máx. hasta el gremio,-20% max health until the guild
+ui.altar.flesh.none,No te queda nada que dar,Nothing left to give
+ui.altar.tithe,Diezmo,Tithe
+ui.altar.tithe.all,Se lleva toda la mochila,It takes the whole pack
+ui.altar.tithe.empty,La mochila está vacía,The pack is empty
+ui.altar.stone,Piedra azul,Blue stone
+ui.altar.stone.cost,Piedras: %d,Stones: %d
+ui.altar.stone.none,No tienes piedra azul,You have no blue stone
+ui.shop.stat.health,vida máx.,max health
+ui.shop.stat.stamina,aguante máx.,max stamina
+npc.merchant.shop.upgrade,"Aguanta. Más que tu piel, seguro.",It'll hold. Better than your skin does.
+upgrade.vendas.name,Vendas cosidas,Stitched bandages
+upgrade.vendas.desc,Lino hervido y cosido en capas. Huele a la Hermana.,Boiled linen stitched in layers. Smells of the Sister.
+upgrade.peto.name,Peto de cuero hervido,Boiled leather cuirass
+upgrade.peto.desc,"Duro como una suela, y casi igual de limpio.","Hard as a boot sole, and about as clean."
+upgrade.cinturon.name,Cinturón de aguante,Endurance belt
+upgrade.cinturon.desc,Te aprieta las tripas para que no se te salga el aire.,Cinches your guts so the air stays in.

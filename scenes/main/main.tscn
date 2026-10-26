@@ -6,6 +6,7 @@
 [ext_resource type="Script" uid="uid://cdm4p84h70p71" path="res://scripts/game/run_manager.gd" id="5"]
 [ext_resource type="Resource" path="res://resources/floors/floor_data.tres" id="6"]
 [ext_resource type="Resource" path="res://resources/dungeons/san_ulmo.tres" id="22"]
+[ext_resource type="PackedScene" path="res://scenes/ui/altar_panel.tscn" id="23"]
 [ext_resource type="Resource" path="res://resources/weapons/sword_basic.tres" id="9"]
 [ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="12"]
 [ext_resource type="Script" path="res://scripts/profile/profile_state.gd" id="13"]
@@ -75,5 +76,7 @@ script = ExtResource("2")
 [node name="BackpackPanel" parent="UI" instance=ExtResource("16")]
 
 [node name="DeathScreen" parent="UI" instance=ExtResource("21")]
+
+[node name="AltarPanel" parent="UI" instance=ExtResource("23")]
 
 [node name="PauseMenu" parent="UI" instance=ExtResource("12")]

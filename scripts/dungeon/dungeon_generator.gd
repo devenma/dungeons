@@ -450,6 +450,16 @@ func _assign_types(layout: FloorLayout, rng: RandomNumberGenerator,
 		if rng.randf() < data.reward_ratio:
 			z.type = Zone.ZoneType.REWARD
 
+	# Sala de cura (D23): a lo sumo una, en una zona de una celda / Healing room (D23): one at most, in a one-cell zone
+	if data.event_chance > 0.0 and rng.randf() < data.event_chance:
+		var candidates: Array[Zone] = []
+		for z: Zone in layout.zones:
+			if (z.type == Zone.ZoneType.COMBAT or z.type == Zone.ZoneType.REWARD) \
+					and z.cell_max - z.cell_min == Vector2i.ONE:
+				candidates.append(z)
+		if not candidates.is_empty():
+			candidates[rng.randi_range(0, candidates.size() - 1)].type = Zone.ZoneType.EVENT
+
 
 ## BOSS = el rectángulo fijo de la esquina sureste; antesala = su vecina oeste más lejana de START
 ## (la Madre mira al sur desde la pared norte, así que no se entra por el norte).

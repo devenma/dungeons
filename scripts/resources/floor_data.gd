@@ -32,6 +32,9 @@ extends Resource
 ## BOSS zone in cells, at the south-east corner, with an EVENT antechamber as its only way in; the
 ## floor has no EXIT. ZERO = floor without a boss (D22)
 @export var boss_zone_cells: Vector2i = Vector2i.ZERO
+## Probabilidad de que una zona COMBAT o REWARD pase a EVENT con el altar de cura (D23); como máximo una
+## Chance that one COMBAT or REWARD zone becomes an EVENT with the healing altar (D23); one at most
+@export var event_chance: float = 0.0
 
 @export_group("Enemies")
 ## Pool de enemigos del piso; vacío = la lista fija del Spawner (rigs de test) / Floor enemy pool; empty = the Spawner's fixed list (test rigs)
