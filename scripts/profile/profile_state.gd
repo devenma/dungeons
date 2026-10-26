@@ -131,6 +131,17 @@ func sell(backpack: Inventory, item: ItemData) -> bool:
 	return true
 
 
+## Un dungeon limpio queda como desbloqueo "cleared:<id>" (D22) / A cleared dungeon is stored as the unlock "cleared:<id>" (D22)
+func has_cleared(dungeon_id: StringName) -> bool:
+	return unlocks.has("cleared:%s" % dungeon_id)
+
+
+func mark_cleared(dungeon_id: StringName) -> void:
+	if not has_cleared(dungeon_id):
+		unlocks.append("cleared:%s" % dungeon_id)
+		profile_changed.emit()
+
+
 ## Compra una unidad con oro bancado; sin oro o con la mochila llena no cobra nada.
 ## Buys one unit with banked gold; when broke or with a full backpack nothing is charged.
 func buy(backpack: Inventory, item: ItemData, price: int) -> bool:

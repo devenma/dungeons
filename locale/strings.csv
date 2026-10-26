@@ -434,3 +434,7 @@ item.bone_shard.desc,Afilada por algo que mordía.,Sharpened by something that c
 item.silver_ring.name,Anillo de plata,Silver ring
 item.silver_ring.desc,El dedo que lo llevaba no vino con él.,The finger that wore it did not come along.
 ui.hud.gold_amount,%d oro,%d gold
+boss.madre.name,La Madre de la Fosa,The Mother of the Pit
+item.corona_velas.name,Corona de velas,Candle crown
+item.corona_velas.desc,Sigue tibia. Las velas no se apagan del todo.,Still warm. The candles never quite go out.
+dungeon.san_ulmo.name,Cripta de San Ulmo,Crypt of San Ulmo

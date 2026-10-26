@@ -11,6 +11,8 @@ extends Node
 ## Ya en el gremio tras morir; true = se gastó una piedra azul y se conservó el botín
 ## Back in the guild after dying; true = a blue stone was spent and the loot kept
 signal returned_from_death(blue_stone_used: bool)
+## Empezó un piso (0 = en el gremio) de floor_count / A floor started (0 = in the guild) out of floor_count
+signal floor_started(floor_number: int, floor_count: int)
 
 # Referenced by preloaded script instead of a class_name, which is not
 # registered in headless runs without an editor scan.
@@ -26,8 +28,11 @@ const DEATH_RETURN_SECONDS: float = 0.5
 @export var profile_state_node_path: NodePath
 ## Gremio de partida y de vuelta; vacío = arranca directo en un piso / Start and return guild; empty = boot straight into a floor
 @export var guild_node_path: NodePath
-## Parámetros de generación; null = valores por defecto / Generation parameters; null = defaults
+## Parámetros de generación sin dungeon_data; null = valores por defecto / Generation parameters without dungeon_data; null = defaults
 @export var floor_data: FloorData
+## Dungeon de la expedición: pisos, techo y jefe; null = pisos sin techo con floor_data (rigs de test)
+## Expedition dungeon: floors, ceiling and boss; null = ceiling-less floors with floor_data (test rigs)
+@export var dungeon_data: DungeonData
 
 @onready var player: Node2D = get_node(player_node_path)
 
@@ -86,25 +91,49 @@ func start_expedition() -> void:
 ## without one the whole expedition is lost. The seed is always re-rolled.
 func _return_to_guild() -> void:
 	var run_manager: RunManager = _get_run_manager()
+	var blue_stone_used: bool = run_manager != null and run_manager.consume_blue_stone()
+	if blue_stone_used:
+		_play_sound("TeleportSound")
+	_go_home(blue_stone_used)
+	returned_from_death.emit(blue_stone_used)
+
+
+## Escalera del Farol (D22): vuelve con todo, sin gastar piedra, y marca el dungeon como limpio.
+## Lantern Stair (D22): returns with everything, no stone spent, and marks the dungeon as cleared.
+func _return_victorious() -> void:
+	if _dead_handling:
+		return
 	var profile: ProfileState = _get_profile_state()
-	var blue_stone_used: bool = false
+	if profile != null and dungeon_data != null:
+		profile.mark_cleared(dungeon_data.id)
+	_play_sound("TeleportSound")
+	_go_home(true)
+
+
+## keep_loot conserva la mochila y asegura en el perfil las armas recogidas; si no, se pierde todo lo de
+## la expedición. La seed se re-rollea siempre y el jugador vuelve curado.
+## keep_loot keeps the backpack and secures the picked-up weapons in the profile; otherwise the whole
+## expedition is lost. The seed is always re-rolled and the player comes back healed.
+func _go_home(keep_loot: bool) -> void:
+	var run_manager: RunManager = _get_run_manager()
+	var profile: ProfileState = _get_profile_state()
 	if run_manager != null:
-		blue_stone_used = run_manager.consume_blue_stone()
-		if not blue_stone_used:
+		if not keep_loot:
 			run_manager.lose_backpack()
-		else:
-			_play_sound("TeleportSound")
-			if profile != null:
-				profile.owned_weapons = run_manager.owned_weapons.duplicate()
+		elif profile != null:
+			profile.owned_weapons = run_manager.owned_weapons.duplicate()
 		run_manager.start_new_run(_base_weapons())
 	if profile != null:
 		profile.save_profile()
+	var health := player.get_node_or_null("Health") as HealthComponent
+	if health != null:
+		health.reset_health()
+	_refill_stamina()
 	_clear_floor()
 	if _guild == null:
 		_start_floor()
 	else:
 		_enter_guild()
-	returned_from_death.emit(blue_stone_used)
 
 
 func _play_sound(sound_name: String) -> void:
@@ -119,6 +148,7 @@ func _enter_guild() -> void:
 	if ambience != null:
 		ambience.stop()
 	_guild.set_active(true)
+	floor_started.emit(0, _floor_count())
 	player.position = _guild.spawn_position()
 	var cam_manager: Node = _find_camera_limit_manager()
 	if cam_manager != null and cam_manager.has_method("frame_rect"):
@@ -138,10 +168,6 @@ func _on_player_died() -> void:
 		return
 	_dead_handling = true
 	await get_tree().create_timer(DEATH_RETURN_SECONDS).timeout
-	var health := player.get_node_or_null("Health") as HealthComponent
-	if health != null:
-		health.reset_health()
-	_refill_stamina()
 	_return_to_guild()
 	_dead_handling = false
 
@@ -167,11 +193,12 @@ func _start_floor() -> void:
 	if ambience != null and not ambience.playing:
 		ambience.play()
 
+	var data: FloorData = _current_floor_data()
 	var generator: DungeonGenerator = DungeonGenerator.new()
 	var layout: DungeonGenerator.FloorLayout = generator.generate_floor(
 		run_manager.current_floor,
 		run_manager.run_seed,
-		floor_data
+		data
 	)
 	if layout == null:
 		generator.queue_free()
@@ -208,6 +235,10 @@ func _start_floor() -> void:
 	_spawner.name = "Spawner"
 	_spawner.set_script(preload("res://scripts/dungeon/spawner.gd"))
 	dungeon.add_child(_spawner)
+	_spawner.health_multiplier = data.enemy_health_multiplier
+	_spawner.damage_multiplier = data.enemy_damage_multiplier
+	if dungeon_data != null:
+		_spawner.boss_scene = dungeon_data.boss_scene
 
 	# Wire signals BEFORE spawn_content: it emits zone_cleared synchronously
 	# and may place chests that grant immediately (§44.16).
@@ -217,6 +248,7 @@ func _start_floor() -> void:
 	# PF-1: chest grants flow Spawner -> RunManager (add + auto-equip).
 	_spawner.weapon_granted.connect(_on_weapon_granted)
 	_spawner.loot_found.connect(_on_loot_found)
+	_spawner.boss_defeated.connect(_on_boss_defeated)
 
 	var cam_manager: Node = _find_camera_limit_manager()
 	if cam_manager != null and cam_manager.has_method("_on_zone_entered"):
@@ -226,6 +258,38 @@ func _start_floor() -> void:
 	_spawn_exit(layout)
 	_spawn_player(layout)
 	_initialize_camera_limits(layout)
+	floor_started.emit(run_manager.current_floor, _floor_count())
+
+
+func _current_floor_data() -> FloorData:
+	var run_manager: RunManager = _get_run_manager()
+	if dungeon_data == null or dungeon_data.floors.is_empty() or run_manager == null:
+		return floor_data
+	return dungeon_data.floor_data(run_manager.current_floor)
+
+
+## Pisos del dungeon; 0 = sin techo / Dungeon floors; 0 = no ceiling
+func _floor_count() -> int:
+	return dungeon_data.floors.size() if dungeon_data != null else 0
+
+
+## La primera vez da el trofeo; después aparece la Escalera del Farol donde estaba la pila (D21-D22).
+## The first time grants the trophy; then the Lantern Stair appears where the pile was (D21-D22).
+func _on_boss_defeated(at: Vector2) -> void:
+	var profile: ProfileState = _get_profile_state()
+	var run_manager: RunManager = _get_run_manager()
+	if dungeon_data != null and dungeon_data.first_clear_trophy != null and run_manager != null \
+			and (profile == null or not profile.has_cleared(dungeon_data.id)):
+		var trophy: Array[ItemData] = [dungeon_data.first_clear_trophy]
+		run_manager.add_loot(trophy, 0)
+	var pile: Vector2i = Vector2i((at / DungeonGeometry.TILE_SIZE).floor())
+	var stairs: Vector2i = pile - Vector2i(1, DungeonGeometry.STAIRS_DOWN_SIZE.y)
+	DungeonGenerator.paint_stairs(_tilemap, stairs)
+	var exit := ExitScene.instantiate() as ExitScript
+	exit.position = DungeonGeometry.stairs_exit_rect(stairs).get_center()
+	# Connect BEFORE add_child (§44.16).
+	exit.exit_requested.connect(_return_victorious)
+	_dungeon.add_child(exit)
 
 
 func _on_weapon_granted(data: WeaponData) -> void:
@@ -309,14 +373,25 @@ func _go_to_next_floor() -> void:
 	_start_floor()
 
 
-# Atajo de debug (N): salta al siguiente piso; no corre en release.
-# Debug-only shortcut (N): skips to the next floor; inactive in release builds.
+# Atajo de debug (N): salta al siguiente piso; en el último lleva a la antesala del jefe. No corre en release.
+# Debug-only shortcut (N): skips to the next floor; on the last one it goes to the boss antechamber. Inactive in release builds.
 func _unhandled_input(event: InputEvent) -> void:
 	if OS.is_debug_build() and event.is_action_pressed("debug_next_floor"):
 		if _in_guild:
 			start_expedition()
+		elif _current_layout != null and _current_layout.antechamber_zone_id >= 0:
+			_go_to_antechamber()
 		else:
 			_go_to_next_floor()
+
+
+func _go_to_antechamber() -> void:
+	for zone: Zone in _current_layout.zones:
+		if zone.id == _current_layout.antechamber_zone_id:
+			player.position = _zone_center_px(zone)
+			var cam_manager: Node = _find_camera_limit_manager()
+			if cam_manager != null and cam_manager.has_method("_on_zone_entered"):
+				cam_manager._on_zone_entered(zone.id)
 
 
 func _spawn_player(layout: DungeonGenerator.FloorLayout) -> void:

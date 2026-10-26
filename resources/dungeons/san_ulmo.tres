@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="DungeonData" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/dungeon_data.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/floors/san_ulmo_1.tres" id="2"]
+[ext_resource type="Resource" path="res://resources/floors/san_ulmo_2.tres" id="3"]
+[ext_resource type="Resource" path="res://resources/floors/san_ulmo_3.tres" id="4"]
+[ext_resource type="PackedScene" path="res://scenes/bosses/madre_fosa.tscn" id="5"]
+[ext_resource type="Resource" path="res://resources/items/corona_velas.tres" id="6"]
+
+[resource]
+script = ExtResource("1")
+id = &"san_ulmo"
+name_key = "dungeon.san_ulmo.name"
+floors = Array[Resource]([ExtResource("2"), ExtResource("3"), ExtResource("4")])
+boss_scene = ExtResource("5")
+first_clear_trophy = ExtResource("6")
