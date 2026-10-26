@@ -135,7 +135,7 @@ confiable y feel · **P1** vertical slice v2 · **P2** profundidad · **P3** con
 | SFX placeholder y sin música | Los sonidos son sintéticos (sirven para timing, no para el juego final) y no hay música. |
 | La mochila no se guarda entre sesiones | Una piedra azul comprada (va a la mochila) se pierde si se cierra el juego sin depositarla; el oro ya se cobró. |
 | Diálogo y tienda provisorios | Caja de texto sin nombre ni retrato, fuente por defecto y textos de respaldo en inglés hasta que entren las traducciones. |
-| La muerte vuelve al guild al instante | No hay pantalla de muerte ni resumen de la run. |
+| Pantalla de muerte breve | Negro con lo que pasó con el botín (piedra azul gastada o expedición perdida) y fundido al guild. Todavía sin resumen de la run (piso, enemigos). |
 | No existe `DungeonData` | No hay techo de pisos: la muerte es la única forma de volver al guild. |
 | No existe maná ni coste dual | Todas las habilidades gastan solo stamina; el maná llega con la Fase 8 parte B (D19). |
 | Los `.uid` están en el gitignore | Los UIDs cambian entre máquinas. |
