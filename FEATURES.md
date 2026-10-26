@@ -137,7 +137,7 @@ confiable y feel · **P1** vertical slice v2 · **P2** profundidad · **P3** con
 | Diálogo y tienda provisorios | Caja de texto sin nombre ni retrato, fuente por defecto y textos de respaldo en inglés hasta que entren las traducciones. |
 | Pantalla de muerte breve | Negro con lo que pasó con el botín (piedra azul gastada o expedición perdida) y fundido al guild. Todavía sin resumen de la run (piso, enemigos). |
 | Cierre de la Madre | Falta la escena de cierre (D14); la Escalera del Farol usa el arte de la escalera de bajada y la *Nana* no tiene sonido propio. |
-| Habilidades: solo el slot 1 | Una activa por arma; faltan los slots 2-4, Q/E/R, las opciones por slot y avisar en el HUD cuando no alcanza el coste. |
+| Habilidades: solo el slot 1 | Una activa por arma; faltan los slots 2-4, Q/E/R y las opciones por slot. |
 | Los `.uid` están en el gitignore | Los UIDs cambian entre máquinas. |
 
 ---
@@ -174,7 +174,7 @@ Ya está en `main` y documentado en §1: knockback, i-frames, hit flash, pausa y
 - [x] Piedra azul: consumible que, al morir, te lleva al guild conservando el loot (D1).
 - [x] Guild con tienda en `scenes/guild/`: vender loot y comprar piedras azules.
 - [x] Comprar mejoras permanentes en la tienda: vendas, peto y cinturón (vida y aguante máximos, D11).
-- [ ] `WorldClock` con fases día/noche.
+- [~] Días: `ProfileState.day` avanza en cada vuelta al gremio y el HUD lo muestra ahí; faltan las fases día/noche con efecto (`WorldClock`).
 - [ ] Guardado del perfil y de los ajustes (`user://`).
 
 **Expedición y jefe**
@@ -219,7 +219,7 @@ Ya está en `main` y documentado en §1: knockback, i-frames, hit flash, pausa y
 - [ ] Ice Nova: AoE con ralentización (primer crowd control).
 - [x] Fireball: proyectil que reutiliza `arrow.gd` y explota en área al impactar.
 - [ ] Speed Buff: buff temporal de velocidad.
-- [~] `ability_1` en el Input Map (1 / RB); falta mostrarla en el HUD.
+- [x] `ability_1` en el Input Map (1 / RB) y en el HUD, junto al arma; parpadea en rojo si no alcanza el coste.
 
 **Estados y buffs**
 - [ ] Sistema mínimo de status effects (slow, burn, freeze) con duración, aplicado vía `DamageInfo`.
@@ -231,7 +231,7 @@ Ya está en `main` y documentado en §1: knockback, i-frames, hit flash, pausa y
 - [x] Enemigos con embestida o salto: reptante, rata y guardia osario (con escudo).
 - [ ] Pathfinding básico (NavigationRegion2D o A* sobre la grilla) para no quedarse trabado en paredes.
 - [x] Pool de spawn por piso en `FloorData` con presupuesto de amenaza (D22). Faltan las oleadas para zonas de varias pantallas.
-- [x] Élite: el Cosido, solo en su zona (falta el gancho que atrae al jugador).
+- [x] Élite: el Cosido, solo en su zona, con gancho que tira del jugador (la voltereta lo esquiva).
 
 **Loot y progresión**
 - [ ] `UpgradeData`: mejoras pasivas elegibles (elige 1 de 3) en las zonas REWARD.

@@ -544,7 +544,7 @@ cambiar el formato de guardado). Falta el pool por presupuesto, las oleadas, el 
 Cosido como élite. Desvíos: con salas de una pantalla el tope de un tercio para los enemigos a distancia no deja entrar
 ninguno (presupuesto 5 → tope 1), así que siempre cabe un grupo a distancia y el tercio rige desde el segundo; no hay
 oleadas (todas las zonas COMBAT son de una pantalla); el Cosido sale en una zona COMBAT normal, sin el 2×2 propio y
-todavía sin gancho.
+con un gancho que tira del jugador (64-160 px, cada 6 s).
 
 ### D23 — Sala de cura con precio (zona EVENT) [PROPUESTA]
 

@@ -123,7 +123,7 @@ La arquitectura principal debe mantenerse aproximadamente así:
                    Enemy
 ```
 
-`ProfileState` es el perfil persistente (oro bancado, almacén del guild, armas aseguradas, desbloqueos). `RunManager` es **solo** el estado de la expedición (seed, piso actual, loot de la mochila, oro encima y armas recogidas en esta expedición) y muere con ella. `Guild` (`scenes/guild/`) es el hub donde arranca el juego y se vuelve al morir; `WorldClock` (fases día/noche) todavía no existe. No crear managers nuevos para estas responsabilidades: ya tienen dueño.
+`ProfileState` es el perfil persistente (oro bancado, almacén del guild, armas aseguradas, desbloqueos). `RunManager` es **solo** el estado de la expedición (seed, piso actual, loot de la mochila, oro encima y armas recogidas en esta expedición) y muere con ella. `Guild` (`scenes/guild/`) es el hub donde arranca el juego y se vuelve al morir; El día del pueblo vive en `ProfileState.day` y avanza en cada vuelta al guild; `WorldClock` (fases día/noche con efecto en el juego) todavía no existe. No crear managers nuevos para estas responsabilidades: ya tienen dueño.
 
 ## 3.1. Flujo de juego
 
@@ -1472,7 +1472,7 @@ Sin XP ni niveles: el poder viene del equipo del pueblo y de las mejoras de expe
 
 ## Fase 10 — Pueblo y economía
 
-**Estado:** perfil, oro, inventario, guild, tienda y NPCs ✅ hechos; `WorldClock` ⏳ pendiente.
+**Estado:** perfil, oro, inventario, guild, tienda, mejoras y NPCs ✅ hechos; contador de días ✅; `WorldClock` con fases ⏳ pendiente.
 
 - ✅ `ProfileState` persistente en `user://profile.json` (oro bancado, almacén, armas aseguradas, desbloqueos).
 - ✅ Oro, loot e inventario (mochila y almacén), con panel `inventory` (I).
