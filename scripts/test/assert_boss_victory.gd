@@ -53,8 +53,9 @@ func _run() -> void:
 	dm.call("_go_to_next_floor")
 	await _frames(2)
 	_check(run_manager.current_floor == 2, "floor 2")
-	_check(is_equal_approx(float(dm.get("_spawner").get("health_multiplier")), 1.1),
-			"floor 2 multipliers reach the Spawner")
+	var floor_two: FloorData = dm.get("_spawner").get("floor_data") as FloorData
+	_check(floor_two != null and is_equal_approx(floor_two.enemy_health_multiplier, 1.1),
+			"floor 2 data (multipliers) reaches the Spawner")
 	dm.call("_go_to_next_floor")
 	await _frames(2)
 	var layout = dm.get("_current_layout")

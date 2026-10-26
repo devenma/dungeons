@@ -1,6 +1,46 @@
 [gd_resource type="Resource" script_class="FloorData" format=3]
 
 [ext_resource type="Script" path="res://scripts/resources/floor_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/resources/enemy_spawn_data.gd" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/errante.tscn" id="3"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/reptante.tscn" id="4"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/rata.tscn" id="5"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/escupebilis.tscn" id="6"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/guardia.tscn" id="7"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/cosido.tscn" id="8"]
+
+[sub_resource type="Resource" id="Spawn_errante"]
+script = ExtResource("2")
+scene = ExtResource("3")
+threat_cost = 2
+weight = 3.0
+
+[sub_resource type="Resource" id="Spawn_reptante"]
+script = ExtResource("2")
+scene = ExtResource("4")
+threat_cost = 2
+weight = 2.0
+
+[sub_resource type="Resource" id="Spawn_rata"]
+script = ExtResource("2")
+scene = ExtResource("5")
+threat_cost = 3
+weight = 1.0
+group_min = 5
+group_max = 8
+
+[sub_resource type="Resource" id="Spawn_escupebilis"]
+script = ExtResource("2")
+scene = ExtResource("6")
+threat_cost = 3
+weight = 1.5
+ranged = true
+
+[sub_resource type="Resource" id="Spawn_guardia"]
+script = ExtResource("2")
+scene = ExtResource("7")
+threat_cost = 3
+weight = 1.5
 
 [resource]
 script = ExtResource("1")
@@ -15,3 +55,7 @@ zone_count_by_floor_depth = {}
 reward_ratio = 0.3
 enemy_health_multiplier = 1.1
 enemy_damage_multiplier = 1.1
+enemy_pool = Array[ExtResource("2")]([SubResource("Spawn_errante"), SubResource("Spawn_reptante"), SubResource("Spawn_rata"), SubResource("Spawn_escupebilis"), SubResource("Spawn_guardia")])
+threat_budget_per_cell = 5
+elite_scene = ExtResource("8")
+elite_chance = 1.0

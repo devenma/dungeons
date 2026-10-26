@@ -235,8 +235,7 @@ func _start_floor() -> void:
 	_spawner.name = "Spawner"
 	_spawner.set_script(preload("res://scripts/dungeon/spawner.gd"))
 	dungeon.add_child(_spawner)
-	_spawner.health_multiplier = data.enemy_health_multiplier
-	_spawner.damage_multiplier = data.enemy_damage_multiplier
+	_spawner.floor_data = data
 	if dungeon_data != null:
 		_spawner.boss_scene = dungeon_data.boss_scene
 

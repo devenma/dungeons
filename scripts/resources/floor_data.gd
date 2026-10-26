@@ -32,6 +32,16 @@ extends Resource
 ## BOSS zone in cells, at the south-east corner, with an EVENT antechamber as its only way in; the
 ## floor has no EXIT. ZERO = floor without a boss (D22)
 @export var boss_zone_cells: Vector2i = Vector2i.ZERO
+
+@export_group("Enemies")
+## Pool de enemigos del piso; vacío = la lista fija del Spawner (rigs de test) / Floor enemy pool; empty = the Spawner's fixed list (test rigs)
+@export var enemy_pool: Array[EnemySpawnData] = []
+## Presupuesto de amenaza por pantalla de sala (D22) / Threat budget per room screen (D22)
+@export var threat_budget_per_cell: int = 4
+## Élite que ocupa sola una zona COMBAT; null = sin élite / Elite that takes a COMBAT zone alone; null = no elite
+@export var elite_scene: PackedScene
+## Probabilidad de que el piso tenga zona de élite (1 = garantizada) / Chance the floor has an elite zone (1 = guaranteed)
+@export var elite_chance: float = 0.0
 ## Tamaño de la zona START en celdas, recortado en el origen (0 = sin tope); si es menor que
 ## min_zone_cells gana el mínimo. 1×1 = una pantalla.
 ## START zone size in grid cells, carved at the origin (0 = no cap); min_zone_cells wins if larger.
