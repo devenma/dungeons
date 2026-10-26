@@ -23,11 +23,13 @@ const LOOT_SALT: int = 0x1007
 ## Seed del piso y zona del cofre: fijan la tirada (RC-3) / Floor seed and chest zone: they fix the roll (RC-3)
 @export var floor_seed: int = 0
 @export var zone_id: int = 0
+## Cofre abierto, ya vacío / Open chest, already empty
+@export var open_texture: Texture2D
 
 var _player_inside: bool = false
 var _used: bool = false
 
-@onready var _visual: ColorRect = $VisualColorRect
+@onready var _visual: Sprite2D = $Visual
 @onready var _open_sound: AudioStreamPlayer2D = $OpenSound
 
 
@@ -57,8 +59,8 @@ func _grant() -> void:
 		loot_gold = drop_table.roll_gold(rng)
 	if data == null and loot_items.is_empty() and loot_gold == 0:
 		return
-	# Dim visuals to mark the chest as used/empty.
-	_visual.self_modulate = Color(0.4, 0.4, 0.4, 1.0)
+	# Cofre abierto y vacío / Open, empty chest
+	_visual.texture = open_texture
 	_open_sound.play()
 	if data != null:
 		granted.emit(data)

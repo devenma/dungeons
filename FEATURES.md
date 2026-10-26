@@ -131,7 +131,6 @@ confiable y feel · **P1** vertical slice v2 · **P2** profundidad · **P3** con
 | Problema | Impacto |
 |---|---|
 | Sin números de daño | El combate se lee por el destello, el empuje y el sonido. |
-| El cofre es un `ColorRect` | Placeholder visual. |
 | SFX placeholder y sin música | Los sonidos son sintéticos (sirven para timing, no para el juego final) y no hay música. |
 | La mochila no se guarda entre sesiones | Una piedra azul comprada (va a la mochila) se pierde si se cierra el juego sin depositarla; el oro ya se cobró. |
 | Diálogo y tienda provisorios | Caja de texto sin nombre ni retrato, fuente por defecto y textos de respaldo en inglés hasta que entren las traducciones. |
@@ -191,7 +190,7 @@ Ya está en `main` y documentado en §1: knockback, i-frames, hit flash, pausa y
 - [ ] Menú principal (Jugar / Salir) como escena de entrada.
 - [ ] Prompt "F" visible al estar cerca de un cofre o de la salida.
 - [ ] Indicador visual de "puertas cerradas" y efecto al limpiar la zona (el sonido ya existe).
-- [ ] Sprite real para el cofre, con animación de abrir.
+- [~] Sprite del cofre cerrado y abierto (dibujado a mano, sin pasar por el kit ni el linter); falta la animación de abrir.
 - [ ] Transición (fade) entre pisos.
 - [x] Base de localización ES/EN (`tr()` + CSV) de los textos de UI.
 
