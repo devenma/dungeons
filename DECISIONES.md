@@ -175,6 +175,10 @@ reescritura.
 
 ---
 
+**Estado (2026-10-26, rama `feat/slice-v2`):** primer corte. Las plantillas son recursos (`RoomTemplate`, el bloque
+central de 9×3 de cada sala COMBAT) en vez de escenas, porque las salas son de una pantalla y el anillo de piso libre
+garantiza que nada tapa una puerta. Hay una llave por piso (40-50 %) para una bóveda; el atajo todavía no existe.
+
 ### D4 — ¿Cuánto beat 'em up? [DECIDIDO] [BLOQUEANTE]
 
 **Propuesta:** combos de 3 golpes, hit-stop y knockback fuerte. Sin agarres por ahora.

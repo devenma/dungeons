@@ -1496,12 +1496,13 @@ Sin XP ni niveles: el poder viene del equipo del pueblo y de las mejoras de expe
 
 ## Fase 12 — Plantillas, llaves y solvabilidad
 
-**Estado: ⏳ pendiente.**
+**Estado: ✅ primer corte** (falta el objeto que abre un atajo).
 
 - ✅ Arreglar `_merge_cells` (rectángulos exactos) y tamaño mínimo de zona.
-- Pool de plantillas de sala en `scenes/rooms/`.
-- Llaves y puertas cerradas.
-- Validación de solvabilidad en el generador.
+- ✅ Pool de plantillas de sala: `RoomTemplate` (`resources/rooms/`), el bloque central de 9×3 tiles en texto (`#` pilar, `M` bloque movible); el anillo de piso queda libre, así la solvabilidad sale por construcción.
+- ✅ Llave y bóveda: una zona cuya ausencia no desconecta el piso pasa a REWARD con todas sus puertas trabadas (`Door.key_locked`); la llave cae al limpiar otra zona COMBAT y abre todas (`DoorController.unlock`).
+- ✅ Obstáculos movibles (D20): `push_block.tscn`, `interact` y 20 de stamina, solo dentro del bloque de su plantilla.
+- ✅ Validación de solvabilidad en el generador (`_validate_vault`: sin cruzar la traba se llega a la llave y a la salida).
 
 ---
 
@@ -1524,7 +1525,7 @@ Cuando haya dudas sobre qué desarrollar a continuación, priorizar:
 2. ✅ Hit-stop + combo de 3 (falta el arte del swing)
 3. ✅ `ProfileState` + oro + inventario + piedra azul + `_return_to_guild()`
 4. ✅ Guild con tienda (scenes/guild/)
-5. Pool de plantillas de sala
+5. ✅ Pool de plantillas de sala
 6. `WorldClock` día/noche (✅ techo de pisos por dungeon + zona BOSS)
 ```
 
@@ -1989,9 +1990,9 @@ Pendiente para el vertical slice v2:
 [x] Tienda en el guild
 [ ] WorldClock
 [x] DungeonData + techo de pisos + zona BOSS
-[ ] Plantillas de sala + llaves + solvabilidad
+[x] Plantillas de sala + llaves + solvabilidad
 [x] Maná (recurso + barra HUD)
-[ ] Obstáculos movibles con coste de stamina
+[x] Obstáculos movibles con coste de stamina
 [ ] Historia + localización ES/EN
 ```
 

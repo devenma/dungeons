@@ -203,12 +203,12 @@ Ya está en `main` y documentado en §1: knockback, i-frames, hit flash, pausa y
 ### P2 — profundidad
 
 **Mazmorra**
-- [ ] Pool de plantillas de sala en `scenes/rooms/`.
-- [ ] Obstáculos movibles que consumen stamina (D20); su colocación viene de las plantillas de sala.
-- [ ] Llaves y puertas cerradas + validación de solvabilidad en el generador.
+- [x] Pool de plantillas de sala (`RoomTemplate` en `resources/rooms/`, 6 plantillas).
+- [x] Obstáculos movibles que consumen stamina (D20), puestos por las plantillas.
+- [x] Llave y bóveda tras puertas trabadas + validación de solvabilidad en el generador.
 - [x] Zona EVENT con el Altar del Voto: cura a cambio de carne, diezmo o piedra azul (D23). SHOP sigue pendiente.
 - [ ] Minimapa con las zonas visitadas.
-- [ ] Obstáculos y decoración estática dentro de las zonas (pilares, escombros) para variar el combate.
+- [x] Pilares dentro de las salas COMBAT (plantillas); faltan los escombros decorativos.
 - [ ] Trampas que usen el protocolo Hitbox (pinchos, explosiones).
 - [ ] Mostrar la seed en pausa o en la pantalla de muerte, y poder introducir una seed.
 
