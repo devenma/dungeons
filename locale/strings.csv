@@ -122,11 +122,11 @@ ui.tutorial.telegraph,"Cuando un enemigo se detiene y se prepara, apártate.","W
 ui.tutorial.doors,"Al entrar en una sala con enemigos, las puertas se cierran hasta que no quede nadie.",Enter a room with enemies and the doors seal until nothing is left standing.
 ui.tutorial.chest,"Los cofres de las salas tranquilas guardan armas. A veces, otra cosa.",Chests in the quiet rooms hold weapons. Sometimes something else.
 ui.tutorial.exit,Busca la escalera para bajar al siguiente piso.,Find the stairs to go down to the next floor.
-ui.tutorial.death_rule,"Si mueres sin piedra azul, pierdes lo que llevas. Lo que guardes en el almacén queda a salvo.",Die without a blue stone and you lose what you carry. What you store in the guild is safe.
+ui.tutorial.death_rule,"Si mueres sin piedra azul, pierdes lo que llevas. Lo que guardes en el almacén queda a salvo.",Die without a blue stone and you lose what you carry. What you keep in storage is safe.
 ui.tutorial.blue_stone,"Si mueres con una piedra azul en la mochila, vuelves al gremio con todo lo que llevas.",Die with a blue stone in your pack and you return to the guild with everything you carry.
 ui.tutorial.mana,"El maná alimenta lo mágico; el aguante, lo físico. Algunas habilidades piden los dos.","Mana fuels the magical; stamina, the physical. Some abilities need both."
 ui.tutorial.push,Algunos escombros se pueden empujar. Cuesta aguante.,Some rubble can be pushed. It costs stamina.
-ui.tutorial.storage,Guarda en el almacén lo que no quieras perder.,Store what you can't afford to lose.
+ui.tutorial.storage,Guarda en el almacén lo que no quieras perder.,Keep in storage what you can't afford to lose.
 ui.tutorial.shop,La Urraca compra cualquier cosa. La herrera y la Hermana venden lo que hace falta para volver.,The Magpie buys anything. The blacksmith and the Sister sell what you need to come back.
 ui.tutorial.dismiss,%s para cerrar,%s to close
 ui.common.yes,Sí,Yes
