@@ -162,7 +162,9 @@ Ya están arregladas: `_merge_cells` corta la grilla en rectángulos exactos (co
    no puede limitar por debajo del viewport y se veían las zonas vecinas. Primero se subió el mínimo a
    2×2 celdas; después, por feedback del equipo ("las salas son muy grandes, mucha caminata"), cada
    celda pasó a ser **una pantalla de sala** (15×9 tiles = 480×288 px) con mínimo 1×1, y la cámara se
-   desliza a la zona nueva al cruzar una puerta en vez de saltar.
+   desliza a la zona nueva al cruzar una puerta en vez de saltar. Con la segunda prueba de juego (las de
+   2×1 y más "se sienten muy grandes aún") todas las zonas quedan de una pantalla
+   (`FloorData.min_size_zones_only`): la grilla se elige con tantas celdas como zonas.
 
 Con esos dos arreglos la topología quedó confiable y el pool de plantillas es una capa encima, no una
 reescritura.
@@ -646,7 +648,7 @@ pegan". Es un paso previo al presupuesto + oleadas de D22, que lo reemplaza.
 | Parámetro | Antes | Ahora |
 |---|---|---|
 | Enemigos por zona COMBAT | 2 fijos | 3 por pantalla de sala, +1 por piso después del 1.º, tope 8 |
-| Persecución | dentro de `detect_radius` | en toda su zona (`territory`), además de `detect_radius` |
+| Persecución | dentro de `detect_radius` | solo en su zona (`territory`), en toda ella; no siguen al jugador a otra sala |
 | Acercamiento | en línea recta, se apilan | rodean: cada uno entra con su ángulo (−0,9 / 0 / 0,9 rad) y cierra derecho a 96 px |
 | Daño del slime / cadencia | 8 / 1,2 s | 12 / 1,0 s |
 | Daño del errante | 14 | 22, con embestida de 150 px/s durante el activo (~30 px) y rango 40 |

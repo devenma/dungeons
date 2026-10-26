@@ -4,7 +4,9 @@ extends SceneTree
 ## loses the backpack, its gold and the weapons picked up this expedition;
 ## dying WITH one consumes exactly one stone and keeps the rest of the
 ## backpack, its gold and the weapons (secured in the saved profile).
-## Banked gold and guild storage survive both. Exit 0 = pass, 1 = fail.
+## Banked gold and guild storage survive both. Each return shows the death
+## screen with the matching text, which fades out afterwards.
+## Exit 0 = pass, 1 = fail.
 
 const SAVE_PATH: String = "user://test_death_loot.json"
 
@@ -57,6 +59,8 @@ func _run() -> void:
 	var dm: Node = main.get_node("World/DungeonManager")
 	var guild: Node2D = main.get_node("World/Guild")
 	var player := main.get_node("World/Player") as Node2D
+	var death_screen: Control = main.get_node("UI/DeathScreen") as Control
+	var death_title: Label = death_screen.get_node("%Title") as Label
 	profile.banked_gold = 100
 	profile.storage.add(ring, 1)
 
@@ -69,6 +73,8 @@ func _run() -> void:
 	_check(run_manager.owned_weapons.size() == 2, "setup: bow picked up this expedition")
 	await _die(player)
 	_check(guild.visible, "no stone: back in the guild")
+	_check(death_screen.visible and death_title.text == "ui.death.title",
+			"no stone: death screen says the expedition was lost (got %s)" % death_title.text)
 	_check(run_manager.backpack.is_empty(), "no stone: backpack lost")
 	_check(run_manager.backpack_gold == 0, "no stone: carried gold lost")
 	_check(run_manager.owned_weapons.size() == 1, "no stone: expedition weapons revert to the profile's")
@@ -85,6 +91,11 @@ func _run() -> void:
 	var seed_before: int = run_manager.run_seed
 	await _die(player)
 	_check(guild.visible, "stone: back in the guild")
+	_check(death_screen.visible and death_title.text == "ui.death.with_stone.title",
+			"stone: death screen says the blue stone was spent (got %s)" % death_title.text)
+	var screen_seconds: float = float(death_screen.get("hold_seconds")) + float(death_screen.get("fade_seconds"))
+	await create_timer(screen_seconds).timeout
+	_check(not death_screen.visible, "death screen fades out into the guild")
 	_check(run_manager.backpack.count_of(stone) == 1, "stone: exactly one blue stone consumed")
 	_check(run_manager.backpack.count_of(gel) == 2, "stone: backpack loot kept")
 	_check(run_manager.backpack_gold == 5, "stone: carried gold kept")

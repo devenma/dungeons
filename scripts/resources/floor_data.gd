@@ -37,3 +37,8 @@ extends Resource
 ## Min size of every zone in grid cells: 1×1 = one room screen (DungeonGeometry.CELL_TILES).
 ## The grid grows past grid_max_* when needed to fit the zones.
 @export var min_zone_cells: Vector2i = Vector2i(1, 1)
+## Todas las zonas del tamaño mínimo (con 1×1, una pantalla cada una): la grilla se elige para que
+## tenga tantas celdas como zonas. false = los cortes pueden dejar zonas más grandes.
+## Every zone at the minimum size (one screen each with 1×1): the grid is picked so it holds exactly
+## as many cells as zones. false = cuts may leave bigger zones.
+@export var min_size_zones_only: bool = true

@@ -83,7 +83,8 @@ func _spawn_combat(layout, zone: Zone, parent_node: Node) -> void:
 	rng.seed = floor_seed ^ zone.id
 	var floor_number: int = layout.floor_number
 	var count: int = _enemy_count(zone, floor_number)
-	var territory := Rect2(Vector2(zone.tile_rect.position * TILE_SIZE), Vector2(zone.tile_rect.size * TILE_SIZE))
+	# Piso de la sala entero, sin paredes ni pasillos de puerta / The whole room floor, without walls or door corridors
+	var territory: Rect2 = DungeonGeometry.floor_interior_px(zone.tile_rect).grow(TILE_SIZE / 2.0)
 	_remaining_by_zone[zone.id] = count
 	for i in range(count):
 		var tile: Vector2i = _random_interior_tile(rng, zone)

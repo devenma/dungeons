@@ -142,6 +142,31 @@ func _fit_grid(grid: Vector2i, target_count: int, start_size: Vector2i,
 	return grid
 
 
+## Grilla cuya capacidad cae en el rango de zonas, así cortarla hasta la capacidad deja todas las
+## zonas del tamaño mínimo. Prefiere los rangos grid_*; si ninguna entra, busca hasta zone_range.y
+## celdas por lado; si tampoco, devuelve fallback.
+## Grid whose capacity falls in the zone range, so cutting it down to capacity leaves every zone at
+## the minimum size. Prefers the grid_* ranges; if none fits, searches up to zone_range.y cells per
+## side; failing that, returns fallback.
+func _exact_grid(rng: RandomNumberGenerator, zone_range: Vector2i, start_size: Vector2i,
+		min_cells: Vector2i, data: FloorData, fallback: Vector2i) -> Vector2i:
+	var limits: Array[Rect2i] = [
+		Rect2i(data.grid_min_w, data.grid_min_h,
+				data.grid_max_w - data.grid_min_w + 1, data.grid_max_h - data.grid_min_h + 1),
+		Rect2i(1, 1, zone_range.y * min_cells.x, zone_range.y * min_cells.y),
+	]
+	for limit in limits:
+		var fits: Array[Vector2i] = []
+		for w in range(limit.position.x, limit.end.x):
+			for h in range(limit.position.y, limit.end.y):
+				var capacity: int = _grid_capacity(Vector2i(w, h), start_size, min_cells)
+				if capacity >= zone_range.x and capacity <= zone_range.y:
+					fits.append(Vector2i(w, h))
+		if not fits.is_empty():
+			return fits[rng.randi_range(0, fits.size() - 1)]
+	return fallback
+
+
 ## Parte la grilla en target rectángulos exactos con cortes guillotina. Cada corte conserva la
 ## capacidad total, así que siempre se llega a target si _fit_grid lo admitió.
 ## Splits the grid into target exact rects with guillotine cuts. Every cut keeps the total
@@ -516,6 +541,9 @@ func generate_floor(floor_number: int, base_seed: int,
 	var min_cells: Vector2i = _min_cells(data)
 	var start_size: Vector2i = _start_size(data)
 	grid_size = _fit_grid(grid_size, target_count, start_size, min_cells)
+	if data.min_size_zones_only:
+		grid_size = _exact_grid(rng, zone_range, start_size, min_cells, data, grid_size)
+		target_count = _grid_capacity(grid_size, start_size, min_cells)
 
 	var last_error: String = "max_generation_retries is 0"
 	for retry in data.max_generation_retries:

@@ -1,8 +1,8 @@
 extends CharacterBody2D
 
 ## Base enemy behavior (ES-1..ES-4): locate the player via group lookup,
-## chase within detect_radius or anywhere inside its territory (the zone it
-## spawned in), curving in at flank_angle so a group surrounds instead of
+## chase while the player is inside its territory (the zone it spawned in;
+## detect_radius when it has none), curving in at flank_angle so a group surrounds instead of
 ## stacking, attack with a short
 ## EnemyHitbox window on cooldown (not contact damage). An attack first
 ## stands still for EnemyData.telegraph_seconds (the drawn wind-up), then
@@ -23,8 +23,10 @@ const ATTACK_WINDOW_SECONDS: float = 0.2
 const FLANK_FADE_PX: float = 96.0
 
 @export var enemy_data: EnemyData
-## Zona (px) donde persigue al jugador sin importar detect_radius; vacía = solo detect_radius (la pone el Spawner)
-## Area (px) where it chases the player regardless of detect_radius; empty = detect_radius only (set by the Spawner)
+## Zona (px) donde persigue al jugador; fuera de ella no lo sigue, ni a través de una puerta abierta.
+## Vacía = usa detect_radius (la pone el Spawner)
+## Area (px) where it chases the player; outside it never follows, not even through an open door.
+## Empty = uses detect_radius (set by the Spawner)
 var territory: Rect2 = Rect2()
 ## Desvío (rad) con que rodea al acercarse; 0 = en línea recta (lo pone el Spawner)
 ## Angle (rad) it curves in at while approaching; 0 = straight line (set by the Spawner)
@@ -105,9 +107,9 @@ func _physics_process(delta: float) -> void:
 
 
 func _sees(player: CharacterBody2D, distance: float) -> bool:
-	if distance <= enemy_data.detect_radius:
-		return true
-	return player != null and territory.has_area() and territory.has_point(player.global_position)
+	if territory.has_area():
+		return player != null and territory.has_point(player.global_position)
+	return distance <= enemy_data.detect_radius
 
 
 func _find_player() -> CharacterBody2D:

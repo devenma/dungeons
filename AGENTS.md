@@ -319,6 +319,7 @@ Main
 └── UI
     ├── HUD              (scenes/ui/hud.tscn: barras, arma, oro, piedra azul, toast)
     ├── BackpackPanel    (scenes/ui/backpack_panel.tscn: mochila y almacén)
+    ├── DeathScreen      (scenes/ui/death_screen.tscn: negro breve al volver al guild tras morir)
     └── PauseMenu
 ```
 
@@ -997,7 +998,7 @@ Las zonas son la unidad funcional del piso. Cada zona tiene:
 
 El `tile_rect` es el rectángulo **exacto** de las celdas de la zona y cada zona tiene un **tamaño mínimo** (`min_zone_cells`) para que la cámara y la plantilla funcionen. El gating entre zonas se hace con **llaves y puertas cerradas**.
 
-Las zonas se generan con cortes guillotina determinísticos por seed: START se recorta primero en el origen y el resto se corta sin perder capacidad hasta llegar a la cantidad de zonas. Si el mínimo no deja entrar esa cantidad, la grilla crece. El tamaño de cada zona varía según dónde caen los cortes.
+Las zonas se generan con cortes guillotina determinísticos por seed: START se recorta primero en el origen y el resto se corta sin perder capacidad hasta llegar a la cantidad de zonas. Si el mínimo no deja entrar esa cantidad, la grilla crece. Con `FloorData.min_size_zones_only` (por defecto) la grilla se elige con tantas celdas como zonas, así todas quedan de una pantalla; sin esa opción el tamaño de cada zona varía según dónde caen los cortes.
 
 En el futuro, una zona COMBAT podría contener una sub-zona REWARD (reward pocket) asignando una celda interna con tipo diferente al de la zona padre.
 
