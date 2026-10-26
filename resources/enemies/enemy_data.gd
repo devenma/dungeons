@@ -55,3 +55,15 @@ extends Resource
 @export var summon_max: int = 2
 ## Vida del invocado (puntos) / Summon health (points)
 @export var summon_health: int = 35
+
+@export_group("Hook")
+## Tirón del gancho hacia el enemigo, en px/s; 0 = sin gancho / Hook yank toward the enemy, in px/s; 0 = no hook
+@export var hook_speed: float = 0.0
+## Distancia del jugador en la que engancha, en px / Player distance it hooks at, in px
+@export var hook_min_distance: float = 64.0
+@export var hook_max_distance: float = 160.0
+## Cada cuánto engancha y su telegrafía, en s / How often it hooks and its telegraph, in s
+@export var hook_every_seconds: float = 6.0
+@export var hook_telegraph_seconds: float = 0.6
+## Daño del gancho (puntos) / Hook damage (points)
+@export var hook_damage: int = 6

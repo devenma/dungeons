@@ -19,3 +19,4 @@ stagger_seconds = 0.0
 poise_while_attacking = true
 drop_table = ExtResource("2")
 knockback_scale = 0.25
+hook_speed = 700.0

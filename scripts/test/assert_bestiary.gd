@@ -41,6 +41,7 @@ func _run() -> void:
 	await _check_cultist()
 	await _check_guard()
 	await _check_knockback_scale()
+	await _check_hook()
 	quit(0 if _failures == 0 else 1)
 
 
@@ -129,6 +130,7 @@ func _make_player(at: Vector2, parent: Node) -> CharacterBody2D:
 	knockback.name = "Knockback"
 	player.add_child(knockback)
 	var hurtbox: Hurtbox = HurtboxScript.new() as Hurtbox
+	hurtbox.name = "Hurtbox"
 	hurtbox.layer_bit = CollisionLayers.PLAYER_HURTBOX
 	var shape: CollisionShape2D = CollisionShape2D.new()
 	var rect: RectangleShape2D = RectangleShape2D.new()
@@ -188,15 +190,15 @@ func _check_cultist() -> void:
 		if health.current_health < health.max_health:
 			break
 	_check(health.current_health < health.max_health, "cultist: the blood bolt hits")
-	cultist.set("_summon_wait_left", 0.0)
+	cultist.set("_special_wait_left", 0.0)
 	cultist.set("_can_attack", false)
 	await physics_frame
 	await physics_frame
-	_check(float(cultist.get("_summon_telegraph_left")) > 0.0, "cultist: starts a summon")
+	_check(float(cultist.get("_special_telegraph_left")) > 0.0, "cultist: starts a summon")
 	(cultist.get_node("Hurtbox") as Hurtbox).take_hit(DamageInfo.new(1, Vector2.ZERO))
-	_check(float(cultist.get("_summon_telegraph_left")) == 0.0, "cultist: a hit cuts the summon")
+	_check(float(cultist.get("_special_telegraph_left")) == 0.0, "cultist: a hit cuts the summon")
 	cultist.set("_stagger_left", 0.0)
-	cultist.set("_summon_wait_left", 0.0)
+	cultist.set("_special_wait_left", 0.0)
 	for i in range(90):
 		await physics_frame
 	var raised: Array = (cultist.get("_summons") as Array).filter(func(n: Node) -> bool: return is_instance_valid(n))
@@ -243,5 +245,23 @@ func _check_knockback_scale() -> void:
 	var rat_push: float = (rata.get_node("Knockback") as KnockbackComponent).consume(0.0).length()
 	var errante_push: float = (errante.get_node("Knockback") as KnockbackComponent).consume(0.0).length()
 	_check(rat_push > errante_push, "rats fly farther than errantes (%.0f vs %.0f)" % [rat_push, errante_push])
+	container.queue_free()
+	await process_frame
+
+
+func _check_hook() -> void:
+	var container: Node2D = Node2D.new()
+	root.add_child(container)
+	var player: CharacterBody2D = _make_player(Vector2(220, 100), container)
+	var cosido: CharacterBody2D = _spawn("cosido", Vector2(100, 100), container)
+	await physics_frame
+	cosido.set("_special_wait_left", 0.0)
+	var hooked: Vector2 = Vector2.ZERO
+	for i in range(60):
+		await physics_frame
+		hooked = (player.get_node("Knockback") as KnockbackComponent).consume(0.0)
+		if hooked != Vector2.ZERO:
+			break
+	_check(hooked.x < -300.0, "cosido: the hook yanks the player toward it (%s)" % hooked)
 	container.queue_free()
 	await process_frame

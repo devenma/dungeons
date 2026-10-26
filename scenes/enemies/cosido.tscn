@@ -25,7 +25,7 @@ script = ExtResource("3")
 [node name="Sprite" type="AnimatedSprite2D" parent="Visuals"]
 script = ExtResource("4")
 sheet_prefix = "res://assets/art/enemies/cosido_"
-animations = PackedStringArray("idle", "walk", "attack", "hurt", "death")
+animations = PackedStringArray("idle", "walk", "attack", "hurt", "death", "hook")
 
 [node name="CollisionShape2D" parent="."]
 position = Vector2(0, -6)

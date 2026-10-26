@@ -55,8 +55,8 @@ func show_attack(_facing: Vector2, telegraph_seconds: float) -> void:
 	_tween.finished.connect(_loop_idle)
 
 
-## Empieza a invocar durante `telegraph_seconds` / Starts summoning for `telegraph_seconds`
-func show_summon(facing: Vector2, telegraph_seconds: float) -> void:
+## Empieza una acción especial (summon, hook) durante `telegraph_seconds` / Starts a special action (summon, hook) for `telegraph_seconds`
+func show_special(_animation_base: String, facing: Vector2, telegraph_seconds: float) -> void:
 	show_attack(facing, telegraph_seconds)
 
 

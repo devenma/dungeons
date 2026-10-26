@@ -52,9 +52,10 @@ var _telegraph_left: float = 0.0
 var _stagger_left: float = 0.0
 # Dirección de la embestida, fijada al telegrafiar / Lunge direction, locked when telegraphing
 var _attack_dir: Vector2 = Vector2.ZERO
-# Telegrafía de invocación que falta y espera hasta la próxima (s) / Summon telegraph left and wait until the next one (s)
-var _summon_telegraph_left: float = 0.0
-var _summon_wait_left: float = 0.0
+# Acción especial (invocar o enganchar): telegrafía que falta y espera hasta la próxima (s)
+# Special action (summon or hook): telegraph left and wait until the next one (s)
+var _special_telegraph_left: float = 0.0
+var _special_wait_left: float = 0.0
 var _summons: Array[Node] = []
 
 
@@ -67,7 +68,7 @@ func _ready() -> void:
 		health.reset_health()
 		_enemy_hitbox.damage = roundi(enemy_data.damage * damage_multiplier)
 		_enemy_hitbox.hit_stop_seconds = enemy_data.hit_stop_seconds
-		_summon_wait_left = enemy_data.summon_every_seconds
+		_special_wait_left = enemy_data.hook_every_seconds if enemy_data.summon_scene == null else enemy_data.summon_every_seconds
 		if _knockback != null:
 			_knockback.impulse_scale = enemy_data.knockback_scale
 
@@ -99,7 +100,7 @@ func _physics_process(delta: float) -> void:
 	_stagger_left = maxf(_stagger_left - delta, 0.0)
 	var push: Vector2 = _knockback.consume(delta) if _knockback != null else Vector2.ZERO
 	var winding_up: bool = _telegraph_left > 0.0
-	var summoning: bool = _summon_telegraph_left > 0.0
+	var summoning: bool = _special_telegraph_left > 0.0
 	# Aturdido o empujado no actúa; una telegrafía con aguante sigue / Staggered or pushed it does not act; a poised telegraph goes on
 	var reeling: bool = _stagger_left > 0.0 or (push != Vector2.ZERO and not winding_up)
 	var sees: bool = _sees(player, distance)
@@ -108,13 +109,15 @@ func _physics_process(delta: float) -> void:
 		if _telegraph_left <= 0.0:
 			_open_attack_window()
 	elif summoning:
-		_summon_telegraph_left -= delta
-		if _summon_telegraph_left <= 0.0:
-			_summon()
-	elif not reeling and sees and _ready_to_summon(delta):
-		_summon_telegraph_left = enemy_data.summon_telegraph_seconds
+		_special_telegraph_left -= delta
+		if _special_telegraph_left <= 0.0:
+			_do_special()
+	elif not reeling and sees and _ready_for_special(delta, distance):
+		var hooking: bool = enemy_data.summon_scene == null
+		_special_telegraph_left = enemy_data.hook_telegraph_seconds if hooking else enemy_data.summon_telegraph_seconds
 		summoning = true
-		_visuals.show_summon(to_player, enemy_data.summon_telegraph_seconds)
+		_attack_dir = to_player.normalized()
+		_visuals.show_special("hook" if hooking else "summon", to_player, _special_telegraph_left)
 	elif not reeling and sees:
 		velocity = _chase_velocity(to_player, distance)
 	if not reeling and enemy_data.lunge_speed > 0.0 and not _attack_window_timer.is_stopped():
@@ -140,18 +143,40 @@ func _chase_velocity(to_player: Vector2, distance: float) -> Vector2:
 	return to_player.normalized().rotated(flank) * enemy_data.speed
 
 
-func _ready_to_summon(delta: float) -> bool:
-	if enemy_data.summon_scene == null:
+## Invocar (cultista) o enganchar (Cosido) cuando pasó su espera / Summon (cultist) or hook (Cosido) once its wait is over
+func _ready_for_special(delta: float, distance: float) -> bool:
+	if enemy_data.summon_scene != null:
+		_summons = _summons.filter(func(summon: Node) -> bool: return is_instance_valid(summon))
+		_special_wait_left -= delta
+		return _special_wait_left <= 0.0 and _summons.size() < enemy_data.summon_max
+	if enemy_data.hook_speed <= 0.0:
 		return false
-	_summons = _summons.filter(func(summon: Node) -> bool: return is_instance_valid(summon))
-	_summon_wait_left -= delta
-	return _summon_wait_left <= 0.0 and _summons.size() < enemy_data.summon_max
+	_special_wait_left -= delta
+	return _special_wait_left <= 0.0 and distance >= enemy_data.hook_min_distance 			and distance <= enemy_data.hook_max_distance
+
+
+func _do_special() -> void:
+	if enemy_data.summon_scene != null:
+		_summon()
+	else:
+		_hook()
+
+
+## Tira del jugador hacia sí por su Hurtbox: la voltereta y los i-frames lo esquivan.
+## Yanks the player toward itself through its Hurtbox: the roll and i-frames dodge it.
+func _hook() -> void:
+	_special_wait_left = enemy_data.hook_every_seconds
+	var player: CharacterBody2D = _find_player()
+	var hurtbox: Hurtbox = player.get_node_or_null("Hurtbox") as Hurtbox if player != null else null
+	if hurtbox != null:
+		var pull: Vector2 = (global_position - player.global_position).normalized() * enemy_data.hook_speed
+		hurtbox.take_hit(DamageInfo.new(roundi(enemy_data.hook_damage * damage_multiplier), pull))
 
 
 ## Levanta un errante a medio formar al lado, sin botín, en su mismo territorio.
 ## Raises a half-formed errante next to it, without loot, in its own territory.
 func _summon() -> void:
-	_summon_wait_left = enemy_data.summon_every_seconds
+	_special_wait_left = enemy_data.summon_every_seconds
 	var summon: CharacterBody2D = enemy_data.summon_scene.instantiate() as CharacterBody2D
 	var data: EnemyData = summon.get("enemy_data") as EnemyData
 	summon.set("territory", territory)
@@ -223,7 +248,7 @@ func _on_damage_received(_info: DamageInfo) -> void:
 ## Corta el ataque o la invocación en curso y no actúa durante `seconds` / Cancels the attack or summon in progress and cannot act for `seconds`
 func stagger(seconds: float) -> void:
 	_telegraph_left = 0.0
-	_summon_telegraph_left = 0.0
+	_special_telegraph_left = 0.0
 	_attack_window_timer.stop()
 	_enemy_hitbox.end_swing()
 	_stagger_left = maxf(_stagger_left, seconds)
