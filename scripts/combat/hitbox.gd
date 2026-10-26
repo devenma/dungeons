@@ -21,6 +21,8 @@ const HitStopScript: GDScript = preload("res://scripts/combat/hit_stop.gd")
 @export var hit_stop_seconds: float = 0.0
 ## Temblor de cámara al impactar (px enteros); 0 = sin temblor / Camera shake on impact (whole px); 0 = no shake
 @export var camera_shake_pixels: int = 0
+## Rompe guardias de escudo / Breaks shield guards
+@export var guard_break: bool = false
 
 var _hit_targets: Array[Node] = []
 
@@ -47,7 +49,7 @@ func _on_area_entered(area: Area2D) -> void:
 	if hurtbox == null or _hit_targets.has(hurtbox.get_parent()):
 		return
 	_hit_targets.append(hurtbox.get_parent())
-	if hurtbox.take_hit(DamageInfo.new(damage, knockback)):
+	if hurtbox.take_hit(DamageInfo.new(damage, knockback, guard_break)):
 		HitStopScript.apply(get_tree(), hit_stop_seconds)
 		if camera_shake_pixels > 0:
 			get_tree().call_group("camera_shake", "shake", camera_shake_pixels)

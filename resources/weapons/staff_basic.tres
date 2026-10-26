@@ -6,6 +6,7 @@
 
 [resource]
 script = ExtResource("1")
+hit_stop_seconds = 0.05
 weapon_kind = 2
 weapon_scene = ExtResource("3")
 weapon_name = "Magic Staff"

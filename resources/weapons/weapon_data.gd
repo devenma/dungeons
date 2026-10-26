@@ -41,6 +41,8 @@ enum WeaponKind {
 @export var projectile_speed: float = 0.0
 ## Escena del proyectil (arrow.tscn, magic_bolt.tscn) / Projectile scene (arrow.tscn, magic_bolt.tscn)
 @export var projectile_scene: PackedScene = null
+## Congelación al impactar el proyectil (s); 0 = sin hit-stop (D24) / Freeze when the projectile hits (s); 0 = no hit-stop (D24)
+@export var hit_stop_seconds: float = 0.0
 ## Desvío máximo del disparo hacia cada lado al moverse (grados); 0 = siempre preciso
 ## Max shot deviation to each side while moving (degrees); 0 = always accurate
 @export var aim_spread_max_degrees: float = 0.0

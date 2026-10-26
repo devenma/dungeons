@@ -144,6 +144,7 @@ func _start_swing(step: int, aim: Vector2) -> bool:
 	hitbox.knockback = aim.normalized() * swing.knockback
 	hitbox.hit_stop_seconds = swing.hit_stop_seconds
 	hitbox.camera_shake_pixels = swing.camera_shake_pixels
+	hitbox.guard_break = swing.guard_break
 	_hitbox_shape.position = swing.hitbox_offset
 	(_hitbox_shape.shape as RectangleShape2D).size = swing.hitbox_size
 	_enter(SwingState.ANTICIPATION, swing.anticipation_seconds)

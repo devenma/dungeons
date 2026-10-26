@@ -6,6 +6,7 @@
 
 [resource]
 script = ExtResource("1")
+hit_stop_seconds = 0.04
 weapon_kind = 1
 weapon_scene = ExtResource("3")
 weapon_name = "Basic Bow"
