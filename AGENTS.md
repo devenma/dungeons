@@ -1076,6 +1076,8 @@ boss
 
 La progresión debe priorizar variedad y nuevas amenazas sobre inflar artificialmente la vida de los enemigos.
 
+Estado actual: cada `FloorData` trae su `enemy_pool` (`EnemySpawnData`) y `threat_budget_per_cell`; el `Spawner` sortea grupos con la seed hasta gastar el presupuesto y puede dejar una zona al élite (`elite_scene`, `elite_chance`). Los comportamientos nuevos son datos de `EnemyData` sobre el mismo `enemy.gd`: `projectile_scene` + `keep_distance` (a distancia), `summon_*` (invocar), `knockback_scale` (D24). El escudo frontal es un nodo `Guard` (`guard_component.gd`) que la `Hurtbox` consulta antes de la vida; `DamageInfo.guard_break` lo rompe.
+
 ---
 
 # 26. Bosses
@@ -1973,8 +1975,8 @@ Después:
 [ ] Crowd Control
 [x] Loot (mochila, almacén del guild, tablas de botín)
 [ ] Progresión (equipo + mejoras, sin XP)
-[x] Enemigos adicionales (cadáver errante)
-[ ] Elites
+[x] Enemigos adicionales (bestiario de la cripta: errante, rata, reptante, escupebilis, guardia, cultista)
+[x] Elites (el Cosido)
 [x] Bosses (la Madre de la Fosa, D21)
 ```
 

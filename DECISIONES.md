@@ -536,6 +536,12 @@ del pool. El slime sale del pool de la cripta y se queda solo para los tests.
 antesala EVENT, Escalera del Farol y `dungeons_cleared` (como desbloqueo `cleared:<id>` en `ProfileState.unlocks`, sin
 cambiar el formato de guardado). Falta el pool por presupuesto, las oleadas, el élite y `WorldClock`.
 
+**Bestiario y pool (2026-10-26, rama `feat/slice-v2`):** implementados el pool por presupuesto, los 5 comunes y el
+Cosido como élite. Desvíos: con salas de una pantalla el tope de un tercio para los enemigos a distancia no deja entrar
+ninguno (presupuesto 5 → tope 1), así que siempre cabe un grupo a distancia y el tercio rige desde el segundo; no hay
+oleadas (todas las zonas COMBAT son de una pantalla); el Cosido sale en una zona COMBAT normal, sin el 2×2 propio y
+todavía sin gancho.
+
 ### D23 — Sala de cura con precio (zona EVENT) [PROPUESTA]
 
 En la cripta no hay pociones gratis: curarse **cuesta algo de la expedición**. Es una zona EVENT de 1×1 celda
@@ -625,8 +631,8 @@ máximo en 0,25 s moviéndose y se cierra a 0 en 0,5 s quieto. Dos marcas en el 
 
 | Arma | Dispersión máx. (a cada lado) | Velocidad | Daño | Stamina | Hit-stop propuesto |
 |---|---|---|---|---|---|
-| Arco | 12° | 400 px/s | 8 | 12 | 40 ms (hoy sin hit-stop) |
-| Bastón | 16° | 280 px/s | 14 | 18 | 50 ms (hoy sin hit-stop) |
+| Arco | 12° | 400 px/s | 8 | 12 | 40 ms (en curso) |
+| Bastón | 16° | 280 px/s | 14 | 18 | 50 ms (en curso) |
 
 **Rodada (en curso, reemplaza al dash previsto)**
 
@@ -639,7 +645,7 @@ máximo en 0,25 s moviéndose y se cierra a 0 en 0,5 s quieto. Dos marcas en el 
 
 **Stagger y aguante por enemigo.** `stagger_seconds` (en curso) es el tiempo que el golpe corta la acción;
 `poise_while_attacking` (en curso) hace que los golpes no corten una telegrafía ya comprometida;
-`knockback_scale` es propuesta.
+`knockback_scale` (en curso) escala el empuje que recibe cada enemigo.
 
 | Enemigo | Telegrafía | `stagger_seconds` | Aguante al atacar | `knockback_scale` | Nota |
 |---|---|---|---|---|---|

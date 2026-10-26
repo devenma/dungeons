@@ -90,7 +90,8 @@ confiable y feel · **P1** vertical slice v2 · **P2** profundidad · **P3** con
 | Slime | 30 HP, velocidad 60, daño 8, knockback 160. Detecta a 120 px, ataca a 20 px con una ventana de 0.2 s y cooldown de 1.2 s. Sprite fijo con aplaste/estiramiento por tween. |
 | Cadáver errante | 55 HP, velocidad 28, daño 14, knockback 260. Detecta a 140 px, ataca a 22 px: se queda quieto 0.6 s alzando el brazo (telegrafía) antes de abrir la hitbox; cooldown de 1.8 s. Animaciones del kit en 4 direcciones; al morir queda su cuerpo en el piso. |
 | IA | Persecución en línea recta dentro del radio de detección (sin pathfinding). |
-| Spawn | 3 enemigos por pantalla de zona COMBAT, +1 por piso después del primero y tope de 8 (D24, dificultad v1). Persiguen en toda su zona y la rodean. Sorteados con la seed de la lista `Spawner.enemy_scenes` (slime y errante), en tiles interiores (lejos de las paredes). |
+| Spawn | Pool por piso en `FloorData.enemy_pool` (`EnemySpawnData`: escena, coste de amenaza, peso, tamaño de grupo, a distancia, tope por zona) sorteado con la seed hasta gastar `threat_budget_per_cell` (San Ulmo: 4/5/6, D22). Siempre cabe un grupo a distancia; los siguientes no pasan de un tercio del presupuesto. Una zona por piso puede quedar para el élite solo (`elite_chance`: 0 / 1 / 0,25). Sin pool (rigs de test) se usa la lista fija `Spawner.enemy_scenes`. Persiguen en toda su zona y la rodean. |
+| Bestiario de la cripta | Rata (8 HP, grupos de 5-8, sale volando), reptante (salta 60 px tras 0,35 s), escupebilis (bilis en arco que deja un charco que daña; retrocede si te acercás), guardia osario (escudo frontal de 120° que gira lento; el 3.er golpe del combo rompe la guardia 0,8 s), cultista (virote de sangre y levanta errantes de 35 HP; un golpe corta la invocación) y el Cosido (élite de 96 px, 220 HP, sin aturdimiento). Arte del kit V3 en 4 direcciones. |
 | Muerte | Corta la IA y las colisiones, juega la muerte (animación o aplaste + estallido de sangre) y recién después libera al enemigo. |
 | Datos | `EnemyData` (.tres). |
 
@@ -225,12 +226,12 @@ Ya está en `main` y documentado en §1: knockback, i-frames, hit flash, pausa y
 - [ ] Buffs de stats temporales y permanentes (daño, velocidad, regeneración de stamina/maná).
 
 **Enemigos**
-- [ ] Segundo enemigo a distancia (dispara proyectiles con el mismo protocolo).
+- [x] Enemigos a distancia: escupebilis (bilis en arco + charco) y cultista (virote de sangre + invocación).
 - [x] Enemigo que telegrafía su ataque (cadáver errante).
-- [ ] Tercer enemigo con carga o embestida.
+- [x] Enemigos con embestida o salto: reptante, rata y guardia osario (con escudo).
 - [ ] Pathfinding básico (NavigationRegion2D o A* sobre la grilla) para no quedarse trabado en paredes.
-- [ ] Tabla de spawn por piso en `FloorData` (qué enemigos aparecen y con qué peso).
-- [ ] Elites: variante con más HP, tinte distinto y un modificador.
+- [x] Pool de spawn por piso en `FloorData` con presupuesto de amenaza (D22). Faltan las oleadas para zonas de varias pantallas.
+- [x] Élite: el Cosido, solo en su zona (falta el gancho que atrae al jugador).
 
 **Loot y progresión**
 - [ ] `UpgradeData`: mejoras pasivas elegibles (elige 1 de 3) en las zonas REWARD.
