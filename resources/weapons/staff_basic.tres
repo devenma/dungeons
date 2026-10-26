@@ -4,6 +4,8 @@
 [ext_resource type="PackedScene" path="res://scenes/projectiles/magic_bolt.tscn" id="2"]
 [ext_resource type="PackedScene" path="res://scenes/weapons/staff.tscn" id="3"]
 
+[ext_resource type="Resource" path="res://resources/abilities/fireball.tres" id="ability_1"]
+
 [resource]
 script = ExtResource("1")
 hit_stop_seconds = 0.05
@@ -17,3 +19,4 @@ stamina_cost = 18
 projectile_speed = 280.0
 projectile_scene = ExtResource("2")
 aim_spread_max_degrees = 16.0
+abilities = Array[Resource]([ExtResource("ability_1")])

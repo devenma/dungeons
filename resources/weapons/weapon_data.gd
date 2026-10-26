@@ -50,3 +50,5 @@ enum WeaponKind {
 @export var aim_spread_grow_seconds: float = 0.25
 ## Tiempo quieto para cerrar el desvío del máximo a 0 (s) / Time standing still to close the spread from max to 0 (s)
 @export var aim_spread_settle_seconds: float = 0.5
+## Kit de habilidades del arma (D12): el índice es el slot (0 = slot 1) / Weapon ability kit (D12): the index is the slot (0 = slot 1)
+@export var abilities: Array[AbilityData] = []

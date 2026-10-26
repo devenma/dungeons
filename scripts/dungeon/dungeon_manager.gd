@@ -206,13 +206,14 @@ func _on_player_died() -> void:
 	_dead_handling = false
 
 
-## Refill stamina to full (ST-reset): called at the top of `_start_floor()`
+## Refill stamina and mana to full (ST-reset, D19): called at the top of `_start_floor()`
 ## for every floor transition; death routing also refills here, so no
 ## second hook exists and a double call is idempotent.
 func _refill_stamina() -> void:
-	var stamina := player.get_node_or_null("Stamina") as StaminaComponent
-	if stamina != null:
-		stamina.reset_full()
+	for pool_name: String in ["Stamina", "Mana"]:
+		var pool := player.get_node_or_null(pool_name) as StaminaComponent
+		if pool != null:
+			pool.reset_full()
 
 
 func _start_floor() -> void:

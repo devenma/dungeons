@@ -6,6 +6,7 @@
 [ext_resource type="AudioStream" path="res://assets/audio/sfx/sword_swing_combo1.tres" id="4"]
 [ext_resource type="AudioStream" path="res://assets/audio/sfx/sword_swing_combo2.tres" id="5"]
 [ext_resource type="AudioStream" path="res://assets/audio/sfx/sword_swing_combo3.tres" id="6"]
+[ext_resource type="Resource" path="res://resources/abilities/spin_slash.tres" id="ability_1"]
 
 [sub_resource type="Resource" id="Swing_1"]
 script = ExtResource("3")
@@ -62,3 +63,4 @@ weapon_name = "Basic Sword"
 attack_speed = 1.5
 attack_range = 120.0
 combo = Array[ExtResource("3")]([SubResource("Swing_1"), SubResource("Swing_2"), SubResource("Swing_3")])
+abilities = Array[Resource]([ExtResource("ability_1")])

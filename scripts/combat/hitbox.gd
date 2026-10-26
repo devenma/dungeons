@@ -23,6 +23,9 @@ const HitStopScript: GDScript = preload("res://scripts/combat/hit_stop.gd")
 @export var camera_shake_pixels: int = 0
 ## Rompe guardias de escudo / Breaks shield guards
 @export var guard_break: bool = false
+## Empuja a cada objetivo desde el centro de la caja con la fuerza de `knockback` (golpes de área)
+## Pushes each target away from the box centre with `knockback`'s strength (area hits)
+@export var radial_knockback: bool = false
 
 var _hit_targets: Array[Node] = []
 
@@ -49,7 +52,10 @@ func _on_area_entered(area: Area2D) -> void:
 	if hurtbox == null or _hit_targets.has(hurtbox.get_parent()):
 		return
 	_hit_targets.append(hurtbox.get_parent())
-	if hurtbox.take_hit(DamageInfo.new(damage, knockback, guard_break)):
+	var push: Vector2 = knockback
+	if radial_knockback:
+		push = (hurtbox.global_position - global_position).normalized() * knockback.length()
+	if hurtbox.take_hit(DamageInfo.new(damage, push, guard_break)):
 		HitStopScript.apply(get_tree(), hit_stop_seconds)
 		if camera_shake_pixels > 0:
 			get_tree().call_group("camera_shake", "shake", camera_shake_pixels)

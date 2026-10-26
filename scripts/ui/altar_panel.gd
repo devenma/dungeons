@@ -2,7 +2,7 @@ extends Control
 
 ## Panel del Altar del Voto (D23): tres ofrendas en tarjetas (carne, diezmo, piedra azul), cada una con su
 ## coste concreto y la vista previa de la vida; las que no se pueden usar quedan grises con el motivo. Una
-## ofrenda cura toda la vida y la stamina y apaga el altar. Pausa el juego mientras está abierto.
+## ofrenda cura toda la vida, la stamina y el maná y apaga el altar. Pausa el juego mientras está abierto.
 ## `move_left` / `move_right` eligen, `attack` o `interact` confirman y `pause` cancela.
 ## Altar of the Vow panel (D23): three offering cards (flesh, tithe, blue stone), each with its concrete
 ## cost and a health preview; unusable ones are greyed out with the reason. An offering restores all health
@@ -22,6 +22,7 @@ var _altar: Node
 var _run_manager: RunManager
 var _health: HealthComponent
 var _stamina: StaminaComponent
+var _mana: StaminaComponent
 # Lo que se llevaría el diezmo ahora / What the tithe would take right now
 var _tithe_items: Array[ItemData] = []
 
@@ -58,6 +59,7 @@ func open(altar: Node) -> void:
 	var player: Node = get_node_or_null(player_node_path)
 	_health = player.get_node_or_null("Health") as HealthComponent
 	_stamina = player.get_node_or_null("Stamina") as StaminaComponent
+	_mana = player.get_node_or_null("Mana") as StaminaComponent
 	%Title.text = UiText.tr_or("ui.altar.title", "Altar of the Vow")
 	_refresh()
 	get_tree().paused = true
@@ -86,8 +88,9 @@ func offer(index: int) -> bool:
 		Offering.STONE:
 			_run_manager.consume_blue_stone()
 	_health.heal_full()
-	if _stamina != null:
-		_stamina.reset_full()
+	for pool: StaminaComponent in [_stamina, _mana]:
+		if pool != null:
+			pool.reset_full()
 	_altar.call("consume")
 	close()
 	return true

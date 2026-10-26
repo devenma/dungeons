@@ -7,6 +7,7 @@
 [ext_resource type="Script" uid="uid://cwbxq6ncoqixu" path="res://scripts/combat/health_component.gd" id="4"]
 [ext_resource type="Script" uid="uid://bddhxc25eexs6" path="res://scripts/combat/stamina_component.gd" id="7"]
 [ext_resource type="Script" path="res://scripts/player/equipment_controller.gd" id="9"]
+[ext_resource type="Script" path="res://scripts/player/ability_caster.gd" id="21"]
 [ext_resource type="Resource" path="res://resources/weapons/sword_basic.tres" id="10"]
 [ext_resource type="Script" path="res://scripts/combat/knockback_component.gd" id="11"]
 [ext_resource type="Script" path="res://scripts/combat/hit_flash.gd" id="12"]
@@ -70,6 +71,13 @@ visual_path = NodePath("../AnimatedSprite2D")
 
 [node name="Stamina" type="Node" parent="." unique_id=973793217]
 script = ExtResource("7")
+
+[node name="Mana" type="Node" parent="."]
+script = ExtResource("7")
+stamina_regen_per_second = 4.0
+
+[node name="Abilities" type="Node" parent="."]
+script = ExtResource("21")
 
 [node name="Weapons" type="Node2D" parent="." unique_id=657842418]
 

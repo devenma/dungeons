@@ -41,6 +41,10 @@ const HitStopScript: GDScript = preload("res://scripts/combat/hit_stop.gd")
 @export var impact_sheet: Texture2D
 ## Velocidad del impacto (frames/s) / Impact speed (frames/s)
 @export var impact_fps: float = 15.0
+## Golpe de área que suelta al impactar (bola de fuego); null = ninguno / Area hit it releases on impact (fireball); null = none
+@export var explosion_scene: PackedScene
+## Radio de esa explosión, en px; lo pisa la habilidad / That explosion's radius, in px; the ability overrides it
+@export var explosion_radius: float = 36.0
 
 @onready var _visual: AnimatedSprite2D = $Visual
 @onready var _impact_sound: AudioStreamPlayer2D = $ImpactSound
@@ -106,6 +110,14 @@ func _on_body_entered(_body: Node2D) -> void:
 
 
 func _spawn_impact() -> void:
+	if explosion_scene != null:
+		var explosion: Node2D = explosion_scene.instantiate() as Node2D
+		explosion.set("damage", damage)
+		explosion.set("knockback", Vector2(knockback.length(), 0.0))
+		explosion.set("radius", explosion_radius)
+		explosion.set("target_mask", target_mask & ~CollisionLayers.WORLD)
+		explosion.position = position
+		get_parent().add_child.call_deferred(explosion)
 	var cell: float = impact_sheet.get_height()
 	VfxScript.play_once(get_parent(), impact_sheet, int(impact_sheet.get_width() / cell), impact_fps,
 			Vector2(cell, cell) / 2.0, global_position, IMPACT_Z)

@@ -9,7 +9,6 @@ ui.hud.weapon,Arma: %s,Weapon: %s
 ui.hud.blue_stones,Piedras azules: %d,Blue stones: %d
 ui.hud.picked_up,Recogido: %s,Picked up: %s
 ui.hud.no_stamina,Sin aliento,Out of breath
-ui.hud.no_mana,Sin maná,Out of mana
 ui.hud.pack_full,La mochila no da para más.,Your pack can't take any more.
 ui.hud.zone_locked,Las puertas se cierran.,The doors seal shut.
 ui.hud.zone_cleared,Silencio. Por ahora.,Silence. For now.
@@ -460,3 +459,6 @@ upgrade.peto.name,Peto de cuero hervido,Boiled leather cuirass
 upgrade.peto.desc,"Duro como una suela, y casi igual de limpio.","Hard as a boot sole, and about as clean."
 upgrade.cinturon.name,Cinturón de aguante,Endurance belt
 upgrade.cinturon.desc,Te aprieta las tripas para que no se te salga el aire.,Cinches your guts so the air stays in.
+ability.spin_slash.name,Tajo giratorio,Spinning slash
+ability.triple_shot.name,Disparo triple,Triple shot
+ability.fireball.name,Bola de fuego,Fireball
