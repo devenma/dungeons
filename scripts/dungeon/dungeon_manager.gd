@@ -21,6 +21,8 @@ const ExitScript: GDScript = preload("res://scripts/dungeon/exit_area.gd")
 const FloorDressingScript: GDScript = preload("res://scripts/dungeon/floor_dressing.gd")
 # Espera entre la muerte y la vuelta al gremio (s) / Delay between death and the return to the guild (s)
 const DEATH_RETURN_SECONDS: float = 0.5
+# Parte de la vida máxima que se lleva cada ofrenda de carne (D23) / Share of max health each flesh offering takes (D23)
+const FLESH_FRACTION: float = 0.2
 
 @export var player_node_path: NodePath
 @export var run_manager_node_path: NodePath
@@ -41,6 +43,10 @@ var _dead_handling: bool = false
 var _guild: Node2D
 var _in_guild: bool = false
 
+# Máximos del jugador sin mejoras ni ofrendas (los de player.tscn) / Player maxima without upgrades or offerings (player.tscn's)
+var _base_max_health: int = 100
+var _base_max_stamina: int = 100
+
 # Nodos del piso actual / Current floor nodes
 var _dungeon: Node2D
 var _tilemap: TileMap
@@ -55,8 +61,16 @@ func _ready() -> void:
 	var health := player.get_node_or_null("Health") as HealthComponent
 	if health != null:
 		health.died.connect(_on_player_died)
+		_base_max_health = health.max_health
+	var stamina := player.get_node_or_null("Stamina") as StaminaComponent
+	if stamina != null:
+		_base_max_stamina = stamina.max_stamina
+	var profile: ProfileState = _get_profile_state()
+	if profile != null:
+		profile.profile_changed.connect(_apply_player_stats)
 	var run_manager: RunManager = _get_run_manager()
 	if run_manager != null:
+		run_manager.stats_changed.connect(_apply_player_stats)
 		run_manager.start_new_run(_base_weapons())
 	_guild = get_node_or_null(guild_node_path) as Node2D if guild_node_path else null
 	if _guild == null:
@@ -79,6 +93,10 @@ func start_expedition() -> void:
 	if run_manager == null:
 		return
 	run_manager.start_new_run(_base_weapons())
+	# Del gremio se sale curado, también lo que sumó una mejora recién comprada / You leave the guild healed, including what a freshly bought upgrade added
+	var health := player.get_node_or_null("Health") as HealthComponent
+	if health != null:
+		health.heal_full()
 	_in_guild = false
 	if _guild != null:
 		_guild.set_active(false)
@@ -134,6 +152,22 @@ func _go_home(keep_loot: bool) -> void:
 		_start_floor()
 	else:
 		_enter_guild()
+
+
+## Máximos del jugador: base + mejoras del perfil (D11), menos un 20 % de vida por ofrenda de carne (D23).
+## Player maxima: base + profile upgrades (D11), minus 20% health per flesh offering (D23).
+func _apply_player_stats() -> void:
+	var profile: ProfileState = _get_profile_state()
+	var run_manager: RunManager = _get_run_manager()
+	var health_bonus: int = profile.stat_bonus(UpgradeData.Stat.MAX_HEALTH) if profile != null else 0
+	var stamina_bonus: int = profile.stat_bonus(UpgradeData.Stat.MAX_STAMINA) if profile != null else 0
+	var offerings: int = run_manager.flesh_offerings if run_manager != null else 0
+	var health := player.get_node_or_null("Health") as HealthComponent
+	if health != null:
+		health.set_max_health(roundi((_base_max_health + health_bonus) * (1.0 - FLESH_FRACTION * offerings)))
+	var stamina := player.get_node_or_null("Stamina") as StaminaComponent
+	if stamina != null:
+		stamina.set_max_stamina(_base_max_stamina + stamina_bonus)
 
 
 func _play_sound(sound_name: String) -> void:

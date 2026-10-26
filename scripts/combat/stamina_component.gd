@@ -45,6 +45,13 @@ func reset_full() -> void:
 	stamina_changed.emit(current_stamina, max_stamina)
 
 
+## Cambia el máximo en runtime (mejoras); la stamina actual nunca lo pasa / Changes the max at runtime (upgrades); current stamina never exceeds it
+func set_max_stamina(value: int) -> void:
+	max_stamina = maxi(value, 1)
+	current_stamina = mini(current_stamina, max_stamina)
+	stamina_changed.emit(current_stamina, max_stamina)
+
+
 func _process(delta: float) -> void:
 	_regen_accumulator += stamina_regen_per_second * delta
 	while _regen_accumulator >= 1.0 and current_stamina < max_stamina:
