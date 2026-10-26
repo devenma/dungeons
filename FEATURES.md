@@ -113,11 +113,11 @@ confiable y feel · **P1** vertical slice v2 · **P2** profundidad · **P3** con
 | Oro y piedra azul | Placas con oro bancado + oro encima y cantidad de piedras azules en la mochila. |
 | Mochila y almacén | `inventory` (I) abre las dos grillas de slots de 20×20 con ícono, cantidad, borde de rareza y tooltip (nombre + descripción); mouse, teclado o cruceta. |
 | Pausa | Esc (`pause`) pausa el juego y muestra un menú (Continuar / Salir); otro Esc o Continuar lo cierra. |
-| Idiomas | ES/EN con `tr()` desde `locale/strings.csv`; español por defecto. Para cambiar: `internationalization/locale/test` en `project.godot` (`"en"`). |
+| Idiomas | ES/EN con `tr()` desde `locale/strings.csv`; español por defecto. Para cambiar: `internationalization/locale/test` en `project.godot` (`"en"`). Los términos fijos de la traducción están en `locale/GLOSARIO.md` y `assert_text_consistency` los revisa, junto con los marcadores y que la UI entre en pantalla. |
 
 ### 1.9. Herramientas de desarrollo
 
-- 50 tests headless (`scripts/test/`), todos verdes.
+- 52 tests headless (`scripts/test/`), todos verdes.
 - Vista previa del estilo de arte: `scenes/preview/art_preview.tscn` (no está en `main.tscn`); su tileset sale de `scripts/tools/build_art_preview_tileset.gd`.
 - Tileset del juego: `tools/art/build_crypt_atlas.py` arma el atlas y `scripts/tools/build_crypt_tileset.gd` genera `tilesets/crypt_dark.tres`.
 - **Advertencia:** `tilesets/crypt_dark.tres` se genera con `scripts/tools/build_crypt_tileset.gd` (colisiones desde `DungeonGeometry.is_solid_atlas`): no editarlo a mano, se pisa al regenerar.

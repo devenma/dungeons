@@ -321,7 +321,8 @@ desesperado. Falta confirmarlo formalmente para pasar a [DECIDIDO].
 Español e inglés, preparados desde ahora.
 
 **[IMPACTO]** Hecho el 2026-10-25: HUD, mochila, pausa, guild y tienda usan `tr()` con `locale/strings.csv`
-(español por defecto). Pendiente decidir "tú" o "vos": los textos usan "tú" neutro y los documentos "vos".
+(español por defecto). Desde el 2026-10-26 los términos fijos de la traducción viven en
+`locale/GLOSARIO.md` y un test revisa que se respeten. Pendiente decidir "tú" o "vos": los textos usan "tú" neutro y los documentos "vos".
 
 ### D17 — ¿Próximo hito y para cuándo? [PROPUESTA]
 

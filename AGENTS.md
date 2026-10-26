@@ -2043,6 +2043,7 @@ Copiar el estilo del archivo que se toca: nombres, densidad de comentarios y for
 
 - **No commitear, pushear, abrir PRs ni comentar en GitHub sin el visto bueno explícito** de una persona del equipo para ese cambio puntual.
 - Commits y PRs en español, uno por punto lógico, con el mismo estilo que el historial.
+- Al escribir o traducir textos de `locale/strings.csv`: usar los términos de `locale/GLOSARIO.md` y agregar ahí todo nombre propio o mecánica nueva.
 - Antes de dar algo por terminado: correr todos los tests headless (`scripts/test/`) y reportar el resultado real, con la salida de los que fallen.
 - Las capturas de prueba no se commitean: van en los comentarios del PR.
 - El arte nuevo sale con las herramientas de arte (kit de personajes y linter de pixel art, puntaje ≥ 90) y sigue `BIBLIA_ARTE.md`. Ningún archivo del repo apunta a rutas fuera del repo.
