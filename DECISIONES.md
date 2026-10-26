@@ -473,6 +473,12 @@ la fase 1 y de 0,3–0,6 s en la fase 2.
 - `Spawner` instancia el jefe en la zona BOSS. El cierre de puertas reutiliza el de COMBAT.
 - La cámara gana el sesgo hacia un objetivo (`CameraLimitManager`) solo en la zona BOSS.
 
+**Estado (2026-10-26, rama `feat/slice-v2`):** implementada salvo la *Nana* y los charcos de bilis. Desvíos para
+revisar: la puerta de la arena está en la pared oeste (la antesala queda al oeste porque la arena va fija en la
+esquina sureste de la grilla); la huella sólida de la pila es de 128×112 px, la del dibujo, no de 6×4 tiles; los
+pilares están a 3 y 6 filas bajo la pila, porque a 7 y 10 caen sobre la pared sur del interior de 14 filas; el sesgo
+de cámara es del 40 % hacia el torso, porque con el 25 % la Madre queda cortada.
+
 ### D22 — Techo de pisos y DungeonData [PROPUESTA]
 
 Concreta D10 para el primer dungeon. **San Ulmo tiene 3 pisos**, y el jefe está al final del 3.º. El techo
@@ -525,6 +531,10 @@ del pool. El slime sale del pool de la cripta y se queda solo para los tests.
   deja de incrementar pisos sin techo.
 - `debug_next_floor` en el último piso salta a la antesala.
 - Tests: techo de pisos, BOSS válido en N seeds y vuelta al guild con loot.
+
+**Estado (2026-10-26, rama `feat/slice-v2`):** implementados `DungeonData`, techo de 3 pisos, multiplicadores, BOSS +
+antesala EVENT, Escalera del Farol y `dungeons_cleared` (como desbloqueo `cleared:<id>` en `ProfileState.unlocks`, sin
+cambiar el formato de guardado). Falta el pool por presupuesto, las oleadas, el élite y `WorldClock`.
 
 ### D23 — Sala de cura con precio (zona EVENT) [PROPUESTA]
 

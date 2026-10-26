@@ -129,14 +129,13 @@ confiable y feel · **P1** vertical slice v2 · **P2** profundidad · **P3** con
 
 | Problema | Impacto |
 |---|---|
-| `enemy_health/damage_multiplier` no se leen | La dificultad no sube con el piso. |
 | Sin números de daño | El combate se lee por el destello, el empuje y el sonido. |
 | El cofre es un `ColorRect` | Placeholder visual. |
 | SFX placeholder y sin música | Los sonidos son sintéticos (sirven para timing, no para el juego final) y no hay música. |
 | La mochila no se guarda entre sesiones | Una piedra azul comprada (va a la mochila) se pierde si se cierra el juego sin depositarla; el oro ya se cobró. |
 | Diálogo y tienda provisorios | Caja de texto sin nombre ni retrato, fuente por defecto y textos de respaldo en inglés hasta que entren las traducciones. |
 | Pantalla de muerte breve | Negro con lo que pasó con el botín (piedra azul gastada o expedición perdida) y fundido al guild. Todavía sin resumen de la run (piso, enemigos). |
-| No existe `DungeonData` | No hay techo de pisos: la muerte es la única forma de volver al guild. |
+| La Madre está incompleta | Faltan la *Nana*, los charcos de bilis y una escena de cierre; la Escalera del Farol usa el arte de la escalera de bajada. |
 | No existe maná ni coste dual | Todas las habilidades gastan solo stamina; el maná llega con la Fase 8 parte B (D19). |
 | Los `.uid` están en el gitignore | Los UIDs cambian entre máquinas. |
 
@@ -178,14 +177,15 @@ Ya está en `main` y documentado en §1: knockback, i-frames, hit flash, pausa y
 - [ ] Guardado del perfil y de los ajustes (`user://`).
 
 **Expedición y jefe**
-- [ ] `DungeonData` (id, cantidad de pisos, jefe) y techo de 3–4 pisos.
-- [ ] Tipo de zona BOSS.
-- [ ] Primer boss con 1–2 fases (`PhaseController`, ver `AGENTS.md` §26).
-- [ ] Usar los multiplicadores de `FloorData` en `Spawner` al instanciar enemigos.
+- [x] `DungeonData` (id, cantidad de pisos, jefe) y techo de pisos: San Ulmo tiene 3.
+- [x] Zonas BOSS y EVENT (antesala del jefe).
+- [x] Primer boss con 2 fases: la Madre de la Fosa (D21), con barra de vida y Escalera del Farol.
+- [ ] La *Nana* y los charcos de bilis de la Madre.
+- [x] Usar los multiplicadores de `FloorData` en `Spawner` al instanciar enemigos.
 - [x] Escalar la cantidad de enemigos según el piso y el tamaño de la zona (`Spawner.enemies_per_screen`).
 
 **Flujo y presentación**
-- [ ] HUD: label de piso actual (`FloorLabel`, previsto en `AGENTS.md` §5).
+- [x] HUD: label de piso actual (`FloorLabel`, "Piso 2 de 3").
 - [ ] Pantalla de muerte: piso alcanzado, enemigos derrotados y botón de reintentar.
 - [ ] Menú principal (Jugar / Salir) como escena de entrada.
 - [ ] Prompt "F" visible al estar cerca de un cofre o de la salida.

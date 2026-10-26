@@ -897,7 +897,7 @@ Responsabilidad:
 - generar la estructura lógica de un piso;
 - crear la grilla de celdas y mergearlas en zonas rectangulares;
 - detectar adyacencia entre zonas;
-- asignar tipos de zona (START, COMBAT, REWARD, EXIT y, más adelante, BOSS);
+- asignar tipos de zona (START, COMBAT, REWARD, EXIT; en el último piso BOSS y su antesala EVENT en lugar de EXIT);
 - colocar puertas en posiciones irregulares sobre aristas compartidas;
 - elegir la plantilla de sala de cada zona con la seed (`scenes/rooms/`);
 - colocar llaves y puertas cerradas;
@@ -978,8 +978,9 @@ Boss
 Exit
 ```
 
-En el código actual existen START, COMBAT, REWARD y EXIT. **BOSS** entra con D10
-(piso de jefe al final de cada dungeon); EVENT y SHOP quedan para más adelante.
+En el código existen START, COMBAT, REWARD, EXIT, **BOSS** y **EVENT**. En el último piso de un `DungeonData`
+(`FloorData.boss_zone_cells`) el generador fija una arena BOSS de 2×2 celdas en la esquina sureste, sin EXIT,
+con una sola puerta desde una antesala EVENT al oeste (D22). SHOP queda para más adelante.
 
 Las zonas se generan mediante grid-merging: se divide el piso en una grilla de celdas, se mergean celdas contiguas en clusters rectangulares, y cada cluster recibe un tipo de zona. Todas las celdas pertenecen exactamente a una zona (sin espacios muertos ni solapes).
 
@@ -989,7 +990,7 @@ Las zonas se generan mediante grid-merging: se divide el piso en una grilla de c
 
 Las zonas son la unidad funcional del piso. Cada zona tiene:
 
-- un tipo (START, COMBAT, REWARD, EXIT; BOSS llega con D10)
+- un tipo (START, COMBAT, REWARD, EXIT, BOSS o EVENT)
 - un rectángulo en la grilla (cell_min/cell_max)
 - un rectángulo en tiles (tile_rect, para renderizado y cámara)
 - una lista de zonas vecinas (por adyacencia de celdas)
@@ -1046,9 +1047,10 @@ start_zone_max_cells             # Tamaño de la zona START en celdas (1×1 por 
 min_zone_cells                   # Tamaño mínimo de zona en celdas (1×1 = una pantalla de 480×288 px, cubre el viewport)
 enemy_health_multiplier
 enemy_damage_multiplier
+boss_zone_cells                  # Arena BOSS en celdas en el último piso; ZERO = piso sin jefe
 ```
 
-Los multiplicadores `enemy_health_multiplier` y `enemy_damage_multiplier` existen pero **hoy no se leen**: deben consumirse en `Spawner` al instanciar enemigos; hasta entonces la dificultad no escala con el piso.
+`DungeonManager` pasa `enemy_health_multiplier` y `enemy_damage_multiplier` al `Spawner`, que se los da a cada enemigo antes de `add_child` (San Ulmo: 1,0/1,0, 1,1/1,1 y 1,2/1,15). `boss_zone_cells` (≠ 0) marca el piso de jefe.
 
 La dificultad no debe aumentar únicamente mediante multiplicadores de estadísticas.
 
@@ -1111,6 +1113,8 @@ Phase 3
 El `DungeonGenerator` no debe implementar la lógica interna del boss.
 
 El piso de jefe lo decide `DungeonData` (cantidad de pisos y jefe) junto con el generador; las fases y los ataques viven en la escena del boss.
+
+Estado actual: la Madre de la Fosa (`scenes/bosses/madre_fosa.tscn`, D21) es el jefe de San Ulmo. Es fija y elige ataques por distancia; cada ataque es un `BossAttackData` (`resources/bosses/`) con tiempos por fase, y la forma vive en el script. La fase 2 entra con la mitad de la vida. `Hurtbox.damage_multiplier` arma los puntos débiles. La barra del jefe (`BossBar`) y el sesgo de cámara (`CameraLimitManager.set_focus`) se piden por grupos (`boss_bar`, `camera_focus`). Al caer, el `Spawner` tira su `drop_table` y `DungeonManager` pinta la Escalera del Farol, que vuelve al guild con todo y marca el dungeon como limpio (`ProfileState.has_cleared`). Falta la *Nana* y los charcos de bilis.
 
 ---
 
@@ -1299,7 +1303,7 @@ Grid cells
  ↓
 Cortes guillotina → Zonas rectangulares exactas (tamaño mínimo)
  ↓
-Tipo de zona (START/COMBAT/REWARD/EXIT)
+Tipo de zona (START/COMBAT/REWARD/EXIT; BOSS/EVENT en el último piso)
  ↓
 Puertas en aristas compartidas (posición irregular)
  ↓
@@ -1478,11 +1482,11 @@ Sin XP ni niveles: el poder viene del equipo del pueblo y de las mejoras de expe
 
 ## Fase 11 — Expedición con jefe
 
-**Estado: ⏳ pendiente.**
+**Estado:** ✅ hecha salvo la *Nana* y los charcos de bilis de la Madre.
 
-- `DungeonData` (id, cantidad de pisos, jefe) y techo de 3–4 pisos.
-- Tipo de zona BOSS.
-- Primer boss con 1–2 fases.
+- ✅ `DungeonData` (id, cantidad de pisos, jefe) y techo de pisos: San Ulmo tiene 3 (`resources/dungeons/san_ulmo.tres`).
+- ✅ Zonas BOSS y EVENT (antesala).
+- ✅ Primer boss con 2 fases: la Madre de la Fosa (D21).
 - ✅ Piedra azul (consumible) que conserva el loot al morir (D1).
 
 ---
@@ -1518,7 +1522,7 @@ Cuando haya dudas sobre qué desarrollar a continuación, priorizar:
 3. ✅ `ProfileState` + oro + inventario + piedra azul + `_return_to_guild()`
 4. ✅ Guild con tienda (scenes/guild/)
 5. Pool de plantillas de sala
-6. `WorldClock` día/noche + techo de pisos por dungeon + zona BOSS
+6. `WorldClock` día/noche (✅ techo de pisos por dungeon + zona BOSS)
 ```
 
 El paso 1 es prerrequisito del 5. Los pasos 2 y 3 son independientes entre sí y pueden ir en paralelo.
@@ -1849,7 +1853,7 @@ Sword.gd
 
 determina cómo ejecutar el ataque.
 
-Otros recursos planificados: `DungeonData` (id, cantidad de pisos, jefe) y `DialogueData` (diálogo data-driven del pueblo y la historia).
+Otros recursos: `DungeonData` (id, pisos, jefe, trofeo; ya existe) y, planificado, `DialogueData` (diálogo data-driven del pueblo y la historia).
 
 ---
 
@@ -1971,7 +1975,7 @@ Después:
 [ ] Progresión (equipo + mejoras, sin XP)
 [x] Enemigos adicionales (cadáver errante)
 [ ] Elites
-[ ] Bosses
+[x] Bosses (la Madre de la Fosa, D21)
 ```
 
 Pendiente para el vertical slice v2:
@@ -1981,7 +1985,7 @@ Pendiente para el vertical slice v2:
 [x] Hit-stop + combo de 3
 [x] Tienda en el guild
 [ ] WorldClock
-[ ] DungeonData + techo de pisos + zona BOSS
+[x] DungeonData + techo de pisos + zona BOSS
 [ ] Plantillas de sala + llaves + solvabilidad
 [ ] Maná (recurso + barra HUD)
 [ ] Obstáculos movibles con coste de stamina
