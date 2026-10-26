@@ -8,6 +8,10 @@ extends Node
 ## the floors, DoorLockSound / DoorOpenSound follow the combat locks and
 ## TeleportSound plays when a blue stone saves the loot.
 
+## Ya en el gremio tras morir; true = se gastó una piedra azul y se conservó el botín
+## Back in the guild after dying; true = a blue stone was spent and the loot kept
+signal returned_from_death(blue_stone_used: bool)
+
 # Referenced by preloaded script instead of a class_name, which is not
 # registered in headless runs without an editor scan.
 const ExitScene: PackedScene = preload("res://scenes/dungeon/exit.tscn")
@@ -83,8 +87,10 @@ func start_expedition() -> void:
 func _return_to_guild() -> void:
 	var run_manager: RunManager = _get_run_manager()
 	var profile: ProfileState = _get_profile_state()
+	var blue_stone_used: bool = false
 	if run_manager != null:
-		if not run_manager.consume_blue_stone():
+		blue_stone_used = run_manager.consume_blue_stone()
+		if not blue_stone_used:
 			run_manager.lose_backpack()
 		else:
 			_play_sound("TeleportSound")
@@ -96,8 +102,9 @@ func _return_to_guild() -> void:
 	_clear_floor()
 	if _guild == null:
 		_start_floor()
-		return
-	_enter_guild()
+	else:
+		_enter_guild()
+	returned_from_death.emit(blue_stone_used)
 
 
 func _play_sound(sound_name: String) -> void:

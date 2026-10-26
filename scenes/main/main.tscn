@@ -15,6 +15,7 @@
 [ext_resource type="AudioStream" path="res://assets/audio/sfx/locked_door_rattle.tres" id="18"]
 [ext_resource type="AudioStream" path="res://assets/audio/sfx/door_creak.tres" id="19"]
 [ext_resource type="AudioStream" path="res://assets/audio/sfx/blue_stone_teleport.tres" id="20"]
+[ext_resource type="PackedScene" path="res://scenes/ui/death_screen.tscn" id="21"]
 
 [node name="Main" type="Node" unique_id=1710014798]
 
@@ -70,5 +71,7 @@ script = ExtResource("2")
 [node name="HUD" parent="UI" instance=ExtResource("15")]
 
 [node name="BackpackPanel" parent="UI" instance=ExtResource("16")]
+
+[node name="DeathScreen" parent="UI" instance=ExtResource("21")]
 
 [node name="PauseMenu" parent="UI" instance=ExtResource("12")]
