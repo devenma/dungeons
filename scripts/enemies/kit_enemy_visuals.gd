@@ -6,6 +6,10 @@ extends "res://scripts/enemies/enemy_visuals.gd"
 ## death. Whatever lies on the floor at the end of the death stays as a floor decal.
 
 const KitSpriteScript: GDScript = preload("res://scripts/visual/kit_sprite.gd")
+# Velocidad de la caminata (veces la hoja): el paso dibujado barre ~17 px/s y el errante va a 28 px/s, así que
+# acelerarla evita que los pies patinen / Walk speed (times the sheet): the drawn stride sweeps ~17 px/s and the
+# errante moves at 28 px/s, so speeding it up keeps the feet from sliding
+const WALK_ANIMATION_SPEED: float = 1.5
 
 # Fila (S, E, N o W) hacia la que mira / Row (S, E, N or W) it faces
 var _facing: String = "S"
@@ -25,7 +29,10 @@ func show_motion(velocity: Vector2, facing: Vector2) -> void:
 		return
 	if facing != Vector2.ZERO:
 		_facing = KitSpriteScript.row_for(facing)
-	_sprite.play(("walk_" if velocity != Vector2.ZERO else "idle_") + _facing)
+	if velocity != Vector2.ZERO:
+		_sprite.play("walk_" + _facing, WALK_ANIMATION_SPEED)
+	else:
+		_sprite.play("idle_" + _facing)
 
 
 # La hoja de ataque ya trae la telegrafía (0,6 s) que EnemyData.telegraph_seconds repite
