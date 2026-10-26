@@ -465,3 +465,6 @@ ability.fireball.name,Bola de fuego,Fireball
 ui.hud.day,Día %d,Day %d
 item.llave_osario.name,Llave del osario,Ossuary key
 item.llave_osario.desc,Hierro ennegrecido y frío. Abre la bóveda del piso.,Blackened, cold iron. Opens the floor's vault.
+dialogue.san_ulmo.closing.1,"Las velas de la fosa se apagan una por una. La canción sigue un momento más, sin nadie que la cante.","The candles of the pit go out one by one. The song goes on a moment longer, with no one left to sing it."
+dialogue.san_ulmo.closing.2,"Un cultista se ríe con la boca llena de tierra: «No era la Madre. Era una hija que aprendió la canción.»","A cultist laughs with a mouthful of dirt: 'She was not the Mother. She was a daughter who learned the song.'"
+dialogue.san_ulmo.closing.3,"Subes por la Escalera del Farol con la corona tibia entre las manos. Arriba, Hondoval duerme sin soñar.","You climb the Lantern Stair with the warm crown in your hands. Above, Hondoval sleeps without dreaming."

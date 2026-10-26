@@ -13,6 +13,9 @@ extends Node
 signal returned_from_death(blue_stone_used: bool)
 ## Empezó un piso (0 = en el gremio) de floor_count / A floor started (0 = in the guild) out of floor_count
 signal floor_started(floor_number: int, floor_count: int)
+## Ya en el gremio tras la Escalera del Farol; first_time = era la primera vez (escena de cierre, D14)
+## Back in the guild after the Lantern Stair; first_time = it was the first time (closing scene, D14)
+signal dungeon_cleared(dungeon: DungeonData, first_time: bool)
 
 # Referenced by preloaded script instead of a class_name, which is not
 # registered in headless runs without an editor scan.
@@ -116,6 +119,7 @@ func _return_to_guild() -> void:
 	if blue_stone_used:
 		_play_sound("TeleportSound")
 	_go_home(blue_stone_used)
+	_set_guild_mood("return_stone" if blue_stone_used else "death")
 	returned_from_death.emit(blue_stone_used)
 
 
@@ -125,10 +129,19 @@ func _return_victorious() -> void:
 	if _dead_handling:
 		return
 	var profile: ProfileState = _get_profile_state()
+	var first_time: bool = dungeon_data != null and (profile == null or not profile.has_cleared(dungeon_data.id))
 	if profile != null and dungeon_data != null:
 		profile.mark_cleared(dungeon_data.id)
 	_play_sound("TeleportSound")
 	_go_home(true)
+	_set_guild_mood("victory")
+	dungeon_cleared.emit(dungeon_data, first_time)
+
+
+# Los NPCs del gremio comentan cómo volviste la primera vez que les hablás / Guild NPCs remark on how you came back the first time you talk to them
+func _set_guild_mood(mood: String) -> void:
+	if _guild != null and _guild.has_method("set_mood"):
+		_guild.call("set_mood", mood)
 
 
 ## keep_loot conserva la mochila y asegura en el perfil las armas recogidas; si no, se pierde todo lo de

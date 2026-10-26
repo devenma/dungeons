@@ -23,6 +23,11 @@ const UiText: GDScript = preload("res://scripts/ui/ui_text.gd")
 @onready var _shop: Node = $GuildUI/ShopPanel
 @onready var _fence: Area2D = $Things/Fence
 
+# Cómo volvió el jugador (death, return_stone, victory) y a quién ya se lo comentaron; vacío = nada que comentar
+# How the player came back (death, return_stone, victory) and who already remarked on it; empty = nothing to say
+var _mood: String = ""
+var _told: Array[Node] = []
+
 
 func _ready() -> void:
 	$StorageChest.interacted.connect(open_storage)
@@ -36,7 +41,17 @@ func _ready() -> void:
 	_set_hint($NoticeBoard, "ui.prompt.interact", "Board")
 	for npc: Node in $Things.get_children():
 		if npc != _fence and npc.has_method("greeting"):
-			npc.interacted.connect(func() -> void: _dialogue.say(npc.greeting()))
+			npc.interacted.connect(_greet.bind(npc))
+
+
+func set_mood(mood: String) -> void:
+	_mood = mood
+	_told.clear()
+
+
+func _greet(npc: Node) -> void:
+	_dialogue.say(npc.call("greeting", "" if _told.has(npc) else _mood))
+	_told.append(npc)
 
 
 # Texto del cartel de un punto de interacción, traducido / Translated hint text of an interact spot

@@ -14,6 +14,8 @@ extends Resource
 @export var boss_scene: PackedScene
 ## Trofeo que da el jefe solo la primera vez; null = ninguno / Trophy the boss gives only the first time; null = none
 @export var first_clear_trophy: ItemData
+## Escena de cierre la primera vez que se limpia (D14); null = ninguna / Closing scene the first time it is cleared (D14); null = none
+@export var closing_dialogue: DialogueData
 
 
 ## FloorData del piso (1 = primero); pasado el techo devuelve el último / FloorData for the floor (1 = first); past the ceiling returns the last
