@@ -173,7 +173,7 @@ Ya está en `main` y documentado en §1: knockback, i-frames, hit flash, pausa y
 - [x] Vuelta al guild en vez de wipe (`_return_to_guild()`), perdiendo lo de la expedición.
 - [x] Piedra azul: consumible que, al morir, te lleva al guild conservando el loot (D1).
 - [x] Guild con tienda en `scenes/guild/`: vender loot y comprar piedras azules.
-- [ ] Comprar equipo en la tienda.
+- [x] Comprar mejoras permanentes en la tienda: vendas, peto y cinturón (vida y aguante máximos, D11).
 - [ ] `WorldClock` con fases día/noche.
 - [ ] Guardado del perfil y de los ajustes (`user://`).
 
@@ -206,7 +206,7 @@ Ya está en `main` y documentado en §1: knockback, i-frames, hit flash, pausa y
 - [ ] Pool de plantillas de sala en `scenes/rooms/`.
 - [ ] Obstáculos movibles que consumen stamina (D20); su colocación viene de las plantillas de sala.
 - [ ] Llaves y puertas cerradas + validación de solvabilidad en el generador.
-- [ ] Nuevos tipos de zona: EVENT y SHOP.
+- [x] Zona EVENT con el Altar del Voto: cura a cambio de carne, diezmo o piedra azul (D23). SHOP sigue pendiente.
 - [ ] Minimapa con las zonas visitadas.
 - [ ] Obstáculos y decoración estática dentro de las zonas (pilares, escombros) para variar el combate.
 - [ ] Trampas que usen el protocolo Hitbox (pinchos, explosiones).

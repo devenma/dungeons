@@ -1476,7 +1476,7 @@ Sin XP ni niveles: el poder viene del equipo del pueblo y de las mejoras de expe
 - ✅ `ProfileState` persistente en `user://profile.json` (oro bancado, almacén, armas aseguradas, desbloqueos).
 - ✅ Oro, loot e inventario (mochila y almacén), con panel `inventory` (I).
 - ✅ Guild mínimo en `scenes/guild/`: se arranca ahí y se vuelve ahí al morir (`_return_to_guild()`).
-- ✅ Tienda de la reducidora en el guild (`scripts/ui/shop_panel.gd`): compra lo de la mochila a su `ItemData.value` y vende piedras azules (`resources/shop/fence_shop.tres`, `ShopData`), todo en oro bancado.
+- ✅ Tienda de la reducidora en el guild (`scripts/ui/shop_panel.gd`): compra lo de la mochila a su `ItemData.value` y vende piedras azules y las mejoras permanentes (`ShopData.upgrades`, `UpgradeData` en `resources/upgrades/`: vida y aguante máximos, D11), todo en oro bancado. Las mejoras viven en `ProfileState.owned_upgrades` y `DungeonManager._apply_player_stats` las suma a los máximos del jugador.
 - ✅ 7 NPCs quietos con idle del kit y un saludo fijo (`npc.<id>.greet.N` con `tr()`); diálogo provisorio.
 - `WorldClock` con fases día/noche.
 

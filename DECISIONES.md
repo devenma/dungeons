@@ -607,6 +607,10 @@ cambio de 1 de 3 ofrendas.
   ya existe para la muerte (D1).
 - Test `assert_altar_offerings`: las 3 ofrendas y los casos borde de la tabla.
 
+**Estado (2026-10-26, rama `feat/slice-v2`):** implementado tal cual: `RunManager.flesh_offerings`,
+`Inventory.units_by_value`, `altar.tscn` y `altar_panel.tscn`. Los trofeos y la piedra azul quedan fuera del diezmo
+porque son legendarios. Salir del gremio también cura, para que se note una mejora recién comprada.
+
 ### D24 — Sensación de combate: números objetivo [PROPUESTA]
 
 Concreta D4 ("pesado = comprometerse") en números. Son **valores de tuning**: los de "en curso" son los que se
@@ -670,7 +674,7 @@ pegan". Es un paso previo al presupuesto + oleadas de D22, que lo reemplaza.
 | Daño del errante | 14 | 22, con embestida de 150 px/s durante el activo (~30 px) y rango 40 |
 | I-frames del jugador tras un golpe | 0,5 s | 0,35 s |
 
-Sigue sin haber regeneración de vida: la vida solo vuelve al volver al guild.
+Sigue sin haber regeneración de vida: la vida solo vuelve al volver al guild o en el Altar del Voto (D23).
 
 **Reglas de diseño para todo enemigo nuevo**
 1. Todo golpe que daña tiene ≥0,35 s de anticipación con telegrafía visible en el saturado reservado (D5).
