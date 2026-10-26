@@ -32,6 +32,9 @@ var owned_weapons: Array[WeaponData] = []
 var unlocks: Array[String] = []
 ## Mejoras compradas (D11), guardadas por ruta como las armas / Bought upgrades (D11), saved by path like weapons
 var owned_upgrades: Array[UpgradeData] = []
+## Día del pueblo: cada expedición es una noche y la vuelta abre el día siguiente (D2)
+## Town day: every expedition is a night and coming back opens the next day (D2)
+var day: int = 1
 
 
 func _ready() -> void:
@@ -48,6 +51,7 @@ func reset_profile() -> void:
 		owned_weapons.append(weapon_data)
 	unlocks.clear()
 	owned_upgrades.clear()
+	day = 1
 	profile_changed.emit()
 
 
@@ -70,6 +74,7 @@ func load_profile() -> bool:
 		DirAccess.rename_absolute(save_path, save_path + ".unsupported")
 		return false
 	banked_gold = maxi(_as_int(data.get("banked_gold")), 0)
+	day = maxi(_as_int(data.get("day", 1)), 1)
 	var storage_data: Variant = data.get("storage", {})
 	if storage_data is Dictionary:
 		storage.load_dict(storage_data)
@@ -80,7 +85,8 @@ func load_profile() -> bool:
 			var weapon_path: String = str(path)
 			if weapon_path.begins_with("res://") and ResourceLoader.exists(weapon_path):
 				var weapon_data: WeaponData = load(weapon_path) as WeaponData
-				if weapon_data != null:
+				# Guardados viejos podían repetir armas / Old saves could repeat weapons
+				if weapon_data != null and not loaded.has(weapon_data):
 					loaded.append(weapon_data)
 		if not loaded.is_empty():
 			owned_weapons = loaded
@@ -115,6 +121,7 @@ func save_profile() -> bool:
 		"owned_weapons": weapon_paths,
 		"unlocks": unlocks,
 		"upgrades": upgrade_paths,
+		"day": day,
 	}
 	var tmp_path: String = save_path + ".tmp"
 	var file: FileAccess = FileAccess.open(tmp_path, FileAccess.WRITE)
@@ -144,6 +151,11 @@ func sell(backpack: Inventory, item: ItemData) -> bool:
 	banked_gold += maxi(item.value, 0)
 	profile_changed.emit()
 	return true
+
+
+func advance_day() -> void:
+	day += 1
+	profile_changed.emit()
 
 
 ## A la venta: no comprada y con su requisito ya comprado / For sale: not bought and with its requirement bought

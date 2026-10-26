@@ -89,9 +89,12 @@ func take_backpack_gold() -> int:
 	return gold
 
 
+## Un arma que ya está no se duplica: devuelve su índice / A weapon already owned is not duplicated: returns its index
 func add_weapon(data: WeaponData) -> int:
 	if data == null:
 		return -1
+	if owned_weapons.has(data):
+		return owned_weapons.find(data)
 	owned_weapons.append(data)
 	inventory_changed.emit(owned_weapons)
 	weapon_granted.emit(data)
