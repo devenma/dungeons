@@ -142,6 +142,7 @@ func _go_home(keep_loot: bool) -> void:
 			profile.owned_weapons = run_manager.owned_weapons.duplicate()
 		run_manager.start_new_run(_base_weapons())
 	if profile != null:
+		profile.advance_day()
 		profile.save_profile()
 	var health := player.get_node_or_null("Health") as HealthComponent
 	if health != null:

@@ -462,3 +462,4 @@ upgrade.cinturon.desc,Te aprieta las tripas para que no se te salga el aire.,Cin
 ability.spin_slash.name,Tajo giratorio,Spinning slash
 ability.triple_shot.name,Disparo triple,Triple shot
 ability.fireball.name,Bola de fuego,Fireball
+ui.hud.day,Día %d,Day %d

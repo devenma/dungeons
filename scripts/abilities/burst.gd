@@ -17,6 +17,10 @@ extends "res://scripts/combat/hitbox.gd"
 @export var color: Color = Color(1.0, 0.95, 0.85)
 
 var _ring: float = 0.0
+# Tiempo de física que le queda pegando y pasos ya dados: con al menos 2 pasos el solape siempre se detecta
+# Physics time left hitting and steps taken: with at least 2 steps the overlap is always detected
+var _active_left: float = 0.0
+var _steps: int = 0
 
 
 func _ready() -> void:
@@ -32,8 +36,23 @@ func _ready() -> void:
 	var tween: Tween = create_tween()
 	tween.tween_method(_set_ring, 0.3, 1.0, ring_seconds)
 	tween.parallel().tween_property(self, "modulate:a", 0.0, ring_seconds)
-	get_tree().create_timer(active_seconds, false).timeout.connect(end_swing)
-	tween.finished.connect(queue_free)
+	_active_left = active_seconds
+	tween.finished.connect(_free_when_done)
+
+
+func _physics_process(delta: float) -> void:
+	_active_left -= delta
+	_steps += 1
+	if _active_left <= 0.0 and _steps >= 2:
+		end_swing()
+		set_physics_process(false)
+		_free_when_done()
+
+
+# Se va cuando terminaron el anillo y el golpe / Leaves once both the ring and the hit are over
+func _free_when_done() -> void:
+	if not is_physics_processing() and modulate.a <= 0.0:
+		queue_free()
 
 
 func _set_ring(progress: float) -> void:

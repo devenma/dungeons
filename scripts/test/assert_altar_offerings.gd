@@ -100,6 +100,7 @@ func _run() -> void:
 	dm.call("_go_home", true)
 	await _frames(2)
 	_check(health.max_health == 100 and health.current_health == 100, "back in the guild: max health restored")
+	_check(profile.day == 2, "coming back opens the next day (%d)" % profile.day)
 
 	var vendas: UpgradeData = load("res://resources/upgrades/vendas.tres")
 	var peto: UpgradeData = load("res://resources/upgrades/peto.tres")

@@ -27,6 +27,7 @@
 [ext_resource type="Texture2D" path="res://assets/ui/hud/hud_mana.png" id="25"]
 [ext_resource type="Texture2D" path="res://assets/ui/hud/barra_mana_relleno.png" id="26"]
 [ext_resource type="Texture2D" path="res://assets/ui/hud/barra_mana_dano.png" id="27"]
+[ext_resource type="Script" path="res://scripts/ui/ability_label.gd" id="28"]
 
 [node name="HUD" type="Control"]
 layout_mode = 3
@@ -175,6 +176,15 @@ offset_right = 18.0
 offset_bottom = 18.0
 mouse_filter = 2
 script = ExtResource("3")
+
+[node name="AbilityLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 27.0
+offset_top = 44.0
+offset_right = 167.0
+offset_bottom = 56.0
+mouse_filter = 2
+script = ExtResource("28")
 
 [node name="Counters" type="HBoxContainer" parent="."]
 layout_mode = 1
