@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="BossAttackData" format=3]
+
+[ext_resource type="Script" path="res://scripts/bosses/boss_attack_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"vomit"
+min_phase = 2
+windup_seconds = Vector2(1.5, 1.5)
+active_seconds = 1.2
+recovery_seconds = Vector2(1.6, 1.6)
+damage = 10
+knockback = 80.0
+tick_seconds = 0.5
+min_distance = 128.0
+max_distance = 200.0
+hit_stop_seconds = 0.06

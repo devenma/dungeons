@@ -31,6 +31,10 @@ var territory: Rect2 = Rect2()
 ## Desvío (rad) con que rodea al acercarse; 0 = en línea recta (lo pone el Spawner)
 ## Angle (rad) it curves in at while approaching; 0 = straight line (set by the Spawner)
 var flank_angle: float = 0.0
+## Multiplicadores del piso sobre la vida y el daño de EnemyData (los pone el Spawner)
+## Floor multipliers on EnemyData health and damage (set by the Spawner)
+var health_multiplier: float = 1.0
+var damage_multiplier: float = 1.0
 
 @onready var health: HealthComponent = $Health
 @onready var _enemy_hitbox: Hitbox = $EnemyHitbox
@@ -53,9 +57,9 @@ func _ready() -> void:
 	health.damage_received.connect(_on_damage_received)
 
 	if enemy_data != null:
-		health.max_health = enemy_data.health
+		health.max_health = roundi(enemy_data.health * health_multiplier)
 		health.reset_health()
-		_enemy_hitbox.damage = enemy_data.damage
+		_enemy_hitbox.damage = roundi(enemy_data.damage * damage_multiplier)
 		_enemy_hitbox.hit_stop_seconds = enemy_data.hit_stop_seconds
 
 	_attack_window_timer = Timer.new()

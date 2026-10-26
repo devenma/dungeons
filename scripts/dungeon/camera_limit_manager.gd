@@ -16,9 +16,14 @@ const FALLBACK_LIMITS: Rect2i = Rect2i(0, 0, 1600, 1200)
 ## Tiles extra que avanza al entrar por una puerta norte, para que el sprite no tape el arco que se traba
 ## Extra tiles it walks in through a north door, so the sprite does not cover the arch that locks
 @export var north_landing_tiles: int = 1
+## Cuánto se corre la cámara del jugador hacia el foco (el jefe), 0-1 / How far the camera leans from the player toward the focus (the boss), 0-1
+@export var focus_bias: float = 0.4
 
 var _layout_ref: DungeonGenerator.FloorLayout
 var _player_ref: Node2D
+# Punto al que se inclina la cámara (lo pide el jefe por el grupo "camera_focus"); null = ninguno
+# Point the camera leans toward (the boss asks through the "camera_focus" group); null = none
+var _focus: Node2D
 var _cam: Camera2D
 # Rectángulo en px al que se ciñe la cámara / Rect in px the camera is clamped to
 var _limits: Rect2i
@@ -32,11 +37,19 @@ var _paused_by_slide: bool = false
 func _ready() -> void:
 	# Keeps following and sliding while the tree is paused by the slide itself.
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	add_to_group("camera_focus")
+
+
+## El jefe la llama al despertar; se suelta sola cuando el foco deja el árbol.
+## The boss calls it when waking; it lets go on its own once the focus leaves the tree.
+func set_focus(focus: Node2D) -> void:
+	_focus = focus
 
 
 func initialize(layout: DungeonGenerator.FloorLayout, player: Node2D) -> void:
 	_attach(player)
 	_layout_ref = layout
+	_focus = null
 	_zone_id = -1
 	var rect: Rect2i = FALLBACK_LIMITS
 	for z: Zone in layout.zones:
@@ -53,6 +66,7 @@ func initialize(layout: DungeonGenerator.FloorLayout, player: Node2D) -> void:
 func frame_rect(player: Node2D, rect: Rect2i) -> void:
 	_attach(player)
 	_layout_ref = null
+	_focus = null
 	_zone_id = -1
 	_apply_limits(rect)
 	_follow()
@@ -160,7 +174,10 @@ func _attach(player: Node2D) -> void:
 func _follow() -> void:
 	if _cam == null or not is_instance_valid(_player_ref):
 		return
-	_cam.global_position = _clamped_centre(_player_ref.global_position, _limits)
+	var point: Vector2 = _player_ref.global_position
+	if is_instance_valid(_focus):
+		point = point.lerp(_focus.global_position, focus_bias)
+	_cam.global_position = _clamped_centre(point, _limits)
 
 
 func _apply_limits(rect: Rect2i) -> void:

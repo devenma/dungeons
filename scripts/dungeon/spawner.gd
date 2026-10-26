@@ -9,6 +9,9 @@ extends Node
 ##            enemy's EnemyData.drop_table into `loot_found`.
 ##   REWARD — one seeded chest on an interior tile; the zone stays
 ##            auto-clear (cleared=true, no door gating).
+##   BOSS   — boss_scene anchored in the arena; once it has sunk the zone clears, its
+##            drop_table rolls into `loot_found` and `boss_defeated` relays where it fell.
+##   EVENT  — the boss antechamber: no content, auto-clear.
 ##   START / EXIT — no content.
 ## The zone_cleared signal must be connected by DungeonManager BEFORE
 ## spawn_content is called (§44.16).
@@ -20,6 +23,8 @@ signal weapon_granted(weapon_data: WeaponData)
 ## Relay-only loot event (chests and enemy drops); DungeonManager binds
 ## RunManager.add_loot to it.
 signal loot_found(items: Array[ItemData], gold: int)
+## El jefe terminó de caer; `at` es el centro de su pila / The boss has fallen; `at` is the centre of its pile
+signal boss_defeated(at: Vector2)
 
 const TILE_SIZE: int = DungeonGeometry.TILE_SIZE
 # Local alias: referenced by preloaded script instead of the global
@@ -55,6 +60,12 @@ const DEFAULT_REWARD_POOL_PATHS: Array[String] = [
 @export var chest_scene: PackedScene = preload("res://scenes/dungeon/chest.tscn")
 ## Armas que puede dar el cofre; vacío = DEFAULT_REWARD_POOL_PATHS / Weapons the chest can grant; empty = DEFAULT_REWARD_POOL_PATHS
 @export var chest_weapon_pool: Array[WeaponData] = []
+## Multiplicadores del piso (FloorData), los pone DungeonManager / Floor multipliers (FloorData), set by DungeonManager
+var health_multiplier: float = 1.0
+var damage_multiplier: float = 1.0
+## Jefe de la zona BOSS (DungeonData), lo pone DungeonManager; null = la zona queda vacía
+## Boss of the BOSS zone (DungeonData), set by DungeonManager; null = the zone stays empty
+var boss_scene: PackedScene
 
 var _zone_by_id: Dictionary = {}         # zone_id -> Zone
 var _remaining_by_zone: Dictionary = {}  # zone_id -> alive enemies
@@ -75,6 +86,31 @@ func spawn_content(layout, parent_node: Node) -> void:
 				_spawn_combat(layout, z, parent_node)
 			Zone.ZoneType.REWARD:
 				_spawn_reward(layout, z, parent_node)
+			Zone.ZoneType.BOSS:
+				_spawn_boss(z, parent_node)
+			Zone.ZoneType.EVENT:
+				z.cleared = true
+
+
+func _spawn_boss(zone: Zone, parent_node: Node) -> void:
+	if boss_scene == null:
+		zone.cleared = true
+		return
+	var boss: Node2D = boss_scene.instantiate() as Node2D
+	boss.set("arena", DungeonGeometry.floor_interior_px(zone.tile_rect))
+	# Connect BEFORE add_child (§44.16).
+	boss.connect("defeated", _on_boss_defeated.bind(zone.id, boss.get("drop_table") as DropTable))
+	parent_node.add_child(boss)
+
+
+func _on_boss_defeated(at: Vector2, zone_id: int, table: DropTable) -> void:
+	if table != null:
+		_on_enemy_loot(table)
+	var zone := _zone_by_id.get(zone_id) as Zone
+	if zone != null and not zone.cleared:
+		zone.cleared = true
+		zone_cleared.emit(zone_id)
+	boss_defeated.emit(at)
 
 
 func _spawn_combat(layout, zone: Zone, parent_node: Node) -> void:
@@ -99,6 +135,8 @@ func _spawn_combat(layout, zone: Zone, parent_node: Node) -> void:
 			health.died.connect(_on_enemy_loot.bind(enemy_data.drop_table))
 		enemy.set("territory", territory)
 		enemy.set("flank_angle", FLANK_ANGLES[i % FLANK_ANGLES.size()])
+		enemy.set("health_multiplier", health_multiplier)
+		enemy.set("damage_multiplier", damage_multiplier)
 		enemy.position = Vector2(
 			tile.x * TILE_SIZE + TILE_SIZE / 2.0,
 			tile.y * TILE_SIZE + TILE_SIZE / 2.0
