@@ -137,7 +137,7 @@ confiable y feel · **P1** vertical slice v2 · **P2** profundidad · **P3** con
 | Diálogo y tienda provisorios | Caja de texto sin nombre ni retrato, fuente por defecto y textos de respaldo en inglés hasta que entren las traducciones. |
 | Pantalla de muerte breve | Negro con lo que pasó con el botín (piedra azul gastada o expedición perdida) y fundido al guild. Todavía sin resumen de la run (piso, enemigos). |
 | La Madre está incompleta | Faltan la *Nana*, los charcos de bilis y una escena de cierre; la Escalera del Farol usa el arte de la escalera de bajada. |
-| No existe maná ni coste dual | Todas las habilidades gastan solo stamina; el maná llega con la Fase 8 parte B (D19). |
+| Habilidades: solo el slot 1 | Una activa por arma; faltan los slots 2-4, Q/E/R, las opciones por slot y avisar en el HUD cuando no alcanza el coste. |
 | Los `.uid` están en el gitignore | Los UIDs cambian entre máquinas. |
 
 ---
@@ -213,13 +213,13 @@ Ya está en `main` y documentado en §1: knockback, i-frames, hit flash, pausa y
 - [ ] Mostrar la seed en pausa o en la pantalla de muerte, y poder introducir una seed.
 
 **Habilidades (Fase 8 parte B, D12)**
-- [ ] `AbilityData` por kit de arma + abstracción de slot (activas 1-4, buffs/debuff Q/E/R).
-- [ ] `ManaComponent` + barra de maná + coste dual (`stamina_cost` / `mana_cost`) en `AbilityData` (D19).
-- [ ] Primer corte: 1-2 activas + 1 pasiva por arma.
+- [~] `AbilityData` por kit de arma (`WeaponData.abilities`, índice = slot); hoy solo el slot 1.
+- [x] Maná (segundo `StaminaComponent`) + barra en el HUD + coste dual atómico en `AbilityData` (D19).
+- [~] Primer corte: 1 activa por arma (tajo giratorio, disparo triple, bola de fuego); faltan las pasivas.
 - [ ] Ice Nova: AoE con ralentización (primer crowd control).
-- [ ] Fireball: proyectil que reutiliza `arrow.gd` y aplica daño en área al impactar.
+- [x] Fireball: proyectil que reutiliza `arrow.gd` y explota en área al impactar.
 - [ ] Speed Buff: buff temporal de velocidad.
-- [ ] Acciones de habilidad en el Input Map y en el HUD.
+- [~] `ability_1` en el Input Map (1 / RB); falta mostrarla en el HUD.
 
 **Estados y buffs**
 - [ ] Sistema mínimo de status effects (slow, burn, freeze) con duración, aplicado vía `DamageInfo`.

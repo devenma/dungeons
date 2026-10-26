@@ -465,6 +465,7 @@ move_right
 attack             # Space / clic izquierdo / X (oeste)
 swap_weapon        # Tab / Y (norte): cambia el arma equipada
 roll               # Shift / B (este): voltereta de esquive (reemplaza al dash previsto)
+ability_1          # 1 / RB: habilidad del slot 1 del arma equipada (D12)
 
 aim_up / aim_down / aim_left / aim_right   # stick derecho: apuntado con gamepad
 
@@ -783,7 +784,7 @@ Buffs/debuff   → slots Q/E/R
 - Los ataques físicos de arma siguen costando solo stamina.
 - Sin cooldown, salvo para el slot "ultimate".
 
-El maná todavía no existe en el código: entra con la Fase 8 parte B (`ManaComponent`).
+Estado actual: cada `WeaponData.abilities` trae su slot 1 (`AbilityData` en `resources/abilities/`): tajo giratorio (espada, stamina), disparo triple (arco, stamina) y bola de fuego (bastón, maná). `AbilityCaster` (nodo `Abilities` del jugador) cobra el coste de forma atómica y crea el efecto: `burst` (golpe de área con empuje radial) o `volley` (proyectiles en abanico; `arrow.gd` puede explotar con `explosion_scene`). El maná es un segundo `StaminaComponent` (nodo `Mana`, 100 de pozo, 4/s) con su barra en el HUD. Faltan los slots 2-4 y Q/E/R, las opciones por slot y la maestría.
 
 Para el vertical slice alcanza con 1-2 activas + 1 pasiva por arma, pero la
 abstracción de slot se conserva para no reescribir después.
@@ -1426,7 +1427,7 @@ de las armas). Sin cooldowns: el gating es de stamina únicamente.
 
 ## Fase 8 — Habilidades
 
-**Estado:** parte A ✅ hecha y archivada; parte B ⏳ pendiente.
+**Estado:** parte A ✅ hecha y archivada; parte B ✅ primer corte (maná + slot 1 por arma).
 
 - **Parte A — `weapon-equip`:** una sola arma equipada a la vez (`EquipmentController`), cambio con Tab.
 - **Parte B — `abilities`:** kits de habilidad por arma (D12).
@@ -1970,7 +1971,7 @@ Después:
 [x] Una sola arma equipada + cambio con Tab (weapon-equip, Fase 8 parte A)
 [x] P0 de combate: knockback, i-frames, hit flash y pausa
 [x] Tope de la zona START
-[ ] Habilidades (kits por arma, Fase 8 parte B)
+[x] Habilidades (kits por arma, Fase 8 parte B: slot 1)
 [ ] Buffs
 [ ] Crowd Control
 [x] Loot (mochila, almacén del guild, tablas de botín)
@@ -1989,7 +1990,7 @@ Pendiente para el vertical slice v2:
 [ ] WorldClock
 [x] DungeonData + techo de pisos + zona BOSS
 [ ] Plantillas de sala + llaves + solvabilidad
-[ ] Maná (recurso + barra HUD)
+[x] Maná (recurso + barra HUD)
 [ ] Obstáculos movibles con coste de stamina
 [ ] Historia + localización ES/EN
 ```

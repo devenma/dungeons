@@ -353,6 +353,10 @@ stamina: convive con ella.
 `AbilityData` suma `mana_cost`; barra de maná en el HUD junto a la de stamina; `WeaponData` puede necesitar
 un coste de maná para el ataque básico del bastón.
 
+**Estado (2026-10-26, rama `feat/slice-v2`):** implementado con valores provisorios: pozo de 100, 4/s de regeneración,
+se rellena al cambiar de piso, al volver al gremio y en el altar (D23); el ataque básico del bastón sigue costando
+solo stamina. La bola de fuego (35 de maná) es la primera habilidad mágica.
+
 **Pendiente de definir (no bloquea el diseño):**
 - Pool máximo, velocidad de regeneración y comportamiento al cambiar de piso (¿se rellena como la stamina?).
 - Si el ataque básico del bastón consume maná o solo stamina.
