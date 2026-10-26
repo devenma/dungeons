@@ -1,7 +1,9 @@
 class_name Zone
 extends Resource
 
-enum ZoneType { START, COMBAT, REWARD, EXIT }
+# BOSS: arena del jefe del último piso; EVENT: zona sin enemigos (la antesala del jefe)
+# BOSS: the last floor's boss arena; EVENT: enemy-free zone (the boss antechamber)
+enum ZoneType { START, COMBAT, REWARD, EXIT, BOSS, EVENT }
 
 class Door:
 	var id: int

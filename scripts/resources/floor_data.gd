@@ -24,9 +24,14 @@ extends Resource
 @export var reward_ratio: float = 0.3
 ## Piso desde el que aplica → [mín., máx.] de zonas / Floor it applies from → [min, max] zones
 @export var zone_count_by_floor_depth: Dictionary = {1: [4, 6], 10: [7, 12]}
-## Multiplicadores de vida y daño enemigo; todavía no se leen (§25) / Enemy health and damage multipliers; not read yet (§25)
+## Multiplicadores de vida y daño enemigo; los aplica el Spawner (§25) / Enemy health and damage multipliers; the Spawner applies them (§25)
 @export var enemy_health_multiplier: float = 1.0
 @export var enemy_damage_multiplier: float = 1.0
+## Zona BOSS en celdas, en la esquina sureste, con una antesala EVENT como única entrada; el piso no
+## tiene EXIT. ZERO = piso sin jefe (D22)
+## BOSS zone in cells, at the south-east corner, with an EVENT antechamber as its only way in; the
+## floor has no EXIT. ZERO = floor without a boss (D22)
+@export var boss_zone_cells: Vector2i = Vector2i.ZERO
 ## Tamaño de la zona START en celdas, recortado en el origen (0 = sin tope); si es menor que
 ## min_zone_cells gana el mínimo. 1×1 = una pantalla.
 ## START zone size in grid cells, carved at the origin (0 = no cap); min_zone_cells wins if larger.

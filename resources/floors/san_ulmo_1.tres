@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="FloorData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/floor_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+floor_number = 1
+grid_min_w = 2
+grid_max_w = 4
+grid_min_h = 2
+grid_max_h = 3
+zone_count_min = 5
+zone_count_max = 7
+zone_count_by_floor_depth = {}
+reward_ratio = 0.3
+enemy_health_multiplier = 1.0
+enemy_damage_multiplier = 1.0

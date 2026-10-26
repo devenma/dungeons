@@ -153,7 +153,7 @@ func _on_door_body_exited(body: Node2D, door: Zone.Door,
 	# once the player is on its floor, so the closed tiles never land on the body. A crossing
 	# elsewhere drops a lock still waiting.
 	_lock_zone_id = -1
-	if target_zone.type == Zone.ZoneType.COMBAT and not target_zone.cleared:
+	if DungeonGenerator.locks_on_entry(target_zone) and not target_zone.cleared:
 		_lock_zone_id = target_zone.id
 		_lock_body = player
 	zone_entered.emit(target_zone.id)
