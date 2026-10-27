@@ -457,7 +457,7 @@ upgrade.vendas.name,Vendas cosidas,Stitched bandages
 upgrade.vendas.desc,Lino hervido y cosido en capas. Huele a la Hermana.,Boiled linen stitched in layers. Smells of the Sister.
 upgrade.peto.name,Peto de cuero hervido,Boiled leather cuirass
 upgrade.peto.desc,"Duro como una suela, y casi igual de limpio.","Hard as a boot sole, and about as clean."
-upgrade.cinturon.name,Cinturón de aguante,Endurance belt
+upgrade.cinturon.name,Cinturón de aguante,Stamina belt
 upgrade.cinturon.desc,Te aprieta las tripas para que no se te salga el aire.,Cinches your guts so the air stays in.
 ability.spin_slash.name,Tajo giratorio,Spinning slash
 ability.triple_shot.name,Disparo triple,Triple shot
