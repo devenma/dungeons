@@ -12,7 +12,7 @@ ui.hud.no_stamina,Sin aliento,Out of breath
 ui.hud.no_mana,Sin maná,Out of mana
 ui.hud.pack_full,La mochila no da para más.,Your pack can't take any more.
 ui.hud.zone_locked,Las puertas se cierran.,The doors seal shut.
-ui.hud.zone_cleared,Silencio. Por ahora.,Silence. For now.
+ui.hud.zone_cleared,Silencio.,Silence.
 ui.hud.door_locked,Cerrada. Hace falta una llave.,Locked. You need a key.
 ui.hud.key_obtained,"Tienes una llave. Algo, en este piso, está cerrado para ti.",You have a key. Something on this floor is locked against you.
 ui.hud.shortcut_opened,Se abre un atajo hacia arriba.,A shortcut opens upwards.
@@ -25,7 +25,7 @@ ui.prompt.push,%s Empujar (gasta aguante),%s Push (costs stamina)
 ui.prompt.unlock,%s Abrir con llave,%s Unlock
 ui.inventory.title,Mochila,Pack
 ui.inventory.equipped,Equipado,Equipped
-ui.inventory.empty,Nada. Todavía.,Nothing. Yet.
+ui.inventory.empty,Vacía.,Empty.
 ui.inventory.use,Usar,Use
 ui.inventory.equip,Equipar,Equip
 ui.inventory.unequip,Quitar,Unequip
@@ -157,7 +157,7 @@ npc.merchant.name,"Ilse, la Urraca",Ilse the Magpie
 npc.merchant.role,Prestamista y reducidora,Fence and moneylender
 npc.merchant.greet.1,"¿Qué me traes hoy? Si todavía tiene dueño, no quiero saberlo.","What have you brought me? If it still has an owner, I don't want to know."
 npc.merchant.greet.2,"Pasa, pasa. Los muertos no regatean; tú sí. Por eso me caes bien.","Come in, come in. The dead don't haggle; you do. That's why I like you."
-npc.merchant.greet.3,Huele a cripta. Huele a negocio.,Smells like crypt. Smells like business.
+npc.merchant.greet.3,Hueles a cripta. Eso es que traes algo.,You smell of crypt. That means you've brought something.
 npc.merchant.death.1,"Volviste sin nada. Qué lástima. Para mí, digo.","Back with nothing. What a shame. For me, I mean."
 npc.merchant.death.2,"Lo que perdiste ahí abajo lo vas a volver a ver, colgado de otro cadáver. Cómpralo barato.","What you lost down there you'll see again, hanging off another corpse. Buy it back cheap."
 npc.merchant.death.3,"La próxima, lleva una piedra azul. Te hago precio. No te hago fiado.","Next time, take a blue stone. I'll give you a price. I won't give you credit."
@@ -168,7 +168,7 @@ npc.merchant.idle.2,Ese anillo lo vendí tres veces. Siempre vuelve. Igual que s
 npc.merchant.idle.3,No me fío de nadie que no tenga deudas. Tú me caes muy bien.,I don't trust anyone without debts. I like you very much.
 npc.merchant.shop.open,"Mira sin tocar. Si tocas, pagas.","Look, don't touch. Touch it and you pay."
 npc.merchant.shop.buy,Hecho. No hay devoluciones; ni de cosas ni de gente.,"Done. No returns; not of things, not of people."
-npc.merchant.shop.sell,"Te doy esto. No es justo, pero el mundo tampoco.","Here's what I'll give. It isn't fair, but neither is the world."
+npc.merchant.shop.sell,Te doy esto. Ni una moneda más.,Here's what I'll give. Not a coin more.
 npc.merchant.shop.no_money,Sin oro no hay trato. Vuelve a bajar.,"No gold, no deal. Go back down."
 npc.merchant.shop.full,"Llevas la mochila llena. Vende antes de comprar, que no soy tu mula.",Your pack is full. Sell before you buy; I'm not your mule.
 npc.merchant.shop.leave,"Vuelve con los bolsillos llenos. O no vuelvas, y le vendo a otro lo que dejes.","Come back with full pockets. Or don't, and I'll sell what you leave to someone else."
@@ -224,7 +224,7 @@ npc.questgiver.idle.3,"Pagan poco. Pagan en comida. Pagan, que ya es raro.","The
 npc.questgiver.quest.board,"Encargos del gremio. Elige uno que puedas cumplir, o uno que valga la pena no cumplir.","Guild bounties. Pick one you can finish, or one worth failing."
 npc.questgiver.quest.accept,"Tuyo. Si no vuelves, se lo doy a otro. Es lo mismo, con otro nombre.","Yours. If you don't come back, I'll give it to someone else. Same thing, different name."
 npc.questgiver.quest.complete,Pagado. Tachado. Siguiente.,Paid. Crossed out. Next.
-npc.questgiver.quest.none,No hay encargos hoy. Es muy buena o muy mala noticia.,No bounties today. That's either very good or very bad news.
+npc.questgiver.quest.none,No hay encargos hoy. Vuelve mañana.,No bounties today. Come back tomorrow.
 npc.refugee_nela.name,Nela,Nela
 npc.refugee_nela.role,Refugiada,Refugee
 npc.refugee_nela.greet.1,¿Viste a mi papá? Lleva un pañuelo rojo. Se llama Bastián.,Have you seen my dad? He wears a red scarf. His name is Bastián.
@@ -241,8 +241,8 @@ npc.refugee_nela.idle.3,El pan ya está duro. Se lo voy a remojar.,The bread's g
 npc.refugee_tome.name,Tomé,Tomé
 npc.refugee_tome.role,"Refugiado, sepulturero","Refugee, gravedigger"
 npc.refugee_tome.greet.1,Buenas. ¿Ya enterraste a alguien hoy? Yo sí. A la de siempre.,Morning. Buried anyone today? I have. The usual one.
-npc.refugee_tome.greet.2,"La pala no descansa, y yo tampoco.","The shovel doesn't rest, and neither do I."
-npc.refugee_tome.greet.3,No pises ahí. Ahí está ella. Por ahora.,Don't step there. She's there. For now.
+npc.refugee_tome.greet.2,Tengo la pala gastada de tanto cavar.,My shovel's worn down from all the digging.
+npc.refugee_tome.greet.3,No pises ahí. Ahí está ella.,Don't step there. She's there.
 npc.refugee_tome.death.1,Volviste de abajo. Ella también vuelve. Pero tú golpeas la puerta más bonito.,"You came back from below. So does she. You knock nicer, though."
 npc.refugee_tome.death.2,"Si un día no te levantas, te entierro yo. Hondo. Bien hondo, que te cueste.","If one day you don't get up, I'll bury you myself. Deep. Deep enough to make it hard."
 npc.refugee_tome.death.3,Tienes la misma cara que ella la segunda semana.,You've got the same face she had the second week.

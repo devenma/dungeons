@@ -32,6 +32,10 @@ const FOOTSTEP_PIVOT: Vector2 = Vector2(8, 11)
 const FOOTSTEP_Z: int = 1
 # Velocidad de la caminata durante la voltereta (veces la normal) / Walk sheet speed during the roll (times normal)
 const ROLL_ANIMATION_SPEED: float = 2.5
+# Velocidad de la caminata (veces la hoja): el paso dibujado barre ~17 px/s y el cuerpo va a 60 px/s, así que
+# acelerarla achica el patinado de los pies sin piernas frenéticas / Walk speed (times the sheet): the drawn
+# stride sweeps ~17 px/s while the body moves at 60 px/s, so speeding it up shrinks foot sliding without frantic legs
+const WALK_ANIMATION_SPEED: float = 1.5
 
 @export var sprite_path: NodePath = NodePath("../AnimatedSprite2D")
 @export var weapons_path: NodePath = NodePath("../Weapons")
@@ -72,8 +76,10 @@ func _process(delta: float) -> void:
 		_sprite.play("walk_" + _facing, ROLL_ANIMATION_SPEED)
 		return
 	_facing = KitSpriteScript.row_for(_body.call("aim_direction") as Vector2)
-	var state: String = "walk_" if _body.velocity != Vector2.ZERO else "idle_"
-	_sprite.play(state + _facing)
+	if _body.velocity != Vector2.ZERO:
+		_sprite.play("walk_" + _facing, WALK_ANIMATION_SPEED)
+	else:
+		_sprite.play("idle_" + _facing)
 
 
 func _on_weapon_mounted(weapon: Node) -> void:
