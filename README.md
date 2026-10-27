@@ -34,7 +34,7 @@ El juego arranca en un guild. Morir no borra el progreso: perdés todo lo de la 
 | Fase 10 — Guild y economía | ⏳ | Hecho: perfil persistente (`user://profile.json`), oro, loot, mochila y almacén (I), piedra azul, guild como hub con su arte, 7 NPCs y la tienda de la reducidora (vender loot, comprar piedras azules). Falta: equipo en la tienda, día/noche |
 | Fase 9, 11+ — Progresión y jefes | ⏳ | Pendiente: mejoras, `DungeonData`, zona BOSS y bosses |
 
-Los tests headless pasan: **50 tests verdes** (`scripts/test/`).
+Los tests headless pasan: **52 tests verdes** (`scripts/test/`).
 
 ## Cómo ejecutar
 
