@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="AbilityData" format=3]
+
+[ext_resource type="Script" path="res://resources/abilities/ability_data.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/abilities/burst.tscn" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"spin_slash"
+name_key = "ability.spin_slash.name"
+effect_scene = ExtResource("2")
+stamina_cost = 35
+damage = 16
+knockback = 320.0
+radius = 44.0

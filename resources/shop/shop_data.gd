@@ -9,3 +9,5 @@ extends Resource
 ## Precio en oro bancado; mayor que el valor de venta para que no se pueda revender con ganancia
 ## Price in banked gold; above the sell value so it cannot be resold at a profit
 @export var price: int = 0
+## Mejoras permanentes a la venta (D11), se compran una vez / Permanent upgrades for sale (D11), bought once
+@export var upgrades: Array[UpgradeData] = []

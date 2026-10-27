@@ -72,3 +72,17 @@ func reset_health() -> void:
 	_granted_left = 0.0
 	current_health = max_health
 	health_changed.emit(current_health, max_health)
+
+
+## Cambia el máximo en runtime (mejoras, ofrenda de carne); la vida actual nunca lo pasa
+## Changes the max at runtime (upgrades, flesh offering); current health never exceeds it
+func set_max_health(value: int) -> void:
+	max_health = maxi(value, 1)
+	current_health = mini(current_health, max_health)
+	health_changed.emit(current_health, max_health)
+
+
+## Llena la vida sin tocar la muerte ni los i-frames (altar) / Fills health without touching death or i-frames (altar)
+func heal_full() -> void:
+	current_health = max_health
+	health_changed.emit(current_health, max_health)

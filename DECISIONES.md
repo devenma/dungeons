@@ -175,6 +175,10 @@ reescritura.
 
 ---
 
+**Estado (2026-10-26, rama `feat/slice-v2`):** primer corte. Las plantillas son recursos (`RoomTemplate`, el bloque
+central de 9×3 de cada sala COMBAT) en vez de escenas, porque las salas son de una pantalla y el anillo de piso libre
+garantiza que nada tapa una puerta. Hay una llave por piso (40-50 %) para una bóveda; el atajo todavía no existe.
+
 ### D4 — ¿Cuánto beat 'em up? [DECIDIDO] [BLOQUEANTE]
 
 **Propuesta:** combos de 3 golpes, hit-stop y knockback fuerte. Sin agarres por ahora.
@@ -306,6 +310,10 @@ Uno solo. Varios protagonistas implican ramas de historia y multiplican el arte.
 Diálogos en el pueblo + una escena al cerrar cada dungeon. Requiere un sistema de diálogo data-driven
 (Resource o JSON) y localización desde el principio.
 
+**Estado (2026-10-26, rama `feat/slice-v2`):** primer corte. `DialogueData` + `DialoguePanel`; la escena de cierre de
+San Ulmo son 3 líneas de narración (las velas se apagan, el cultista y "era una hija", la subida) más las de victoria de
+Odran y la Hermana Ancel que ya estaban en los textos. Los NPCs usan sus líneas de muerte, piedra y victoria al volver.
+
 ### D15 — ¿Qué mundo y qué tono? [PROPUESTA]
 
 "Superficie acogedora, profundidad opresiva": el pueblo es cálido y apagado; el dungeon es más oscuro y
@@ -353,6 +361,10 @@ stamina: convive con ella.
 **[IMPACTO]** `ManaComponent` espejo de `StaminaComponent` (pool, regeneración, señales, relleno);
 `AbilityData` suma `mana_cost`; barra de maná en el HUD junto a la de stamina; `WeaponData` puede necesitar
 un coste de maná para el ataque básico del bastón.
+
+**Estado (2026-10-26, rama `feat/slice-v2`):** implementado con valores provisorios: pozo de 100, 4/s de regeneración,
+se rellena al cambiar de piso, al volver al gremio y en el altar (D23); el ataque básico del bastón sigue costando
+solo stamina. La bola de fuego (35 de maná) es la primera habilidad mágica.
 
 **Pendiente de definir (no bloquea el diseño):**
 - Pool máximo, velocidad de regeneración y comportamiento al cambiar de piso (¿se rellena como la stamina?).
@@ -474,6 +486,12 @@ la fase 1 y de 0,3–0,6 s en la fase 2.
 - `Spawner` instancia el jefe en la zona BOSS. El cierre de puertas reutiliza el de COMBAT.
 - La cámara gana el sesgo hacia un objetivo (`CameraLimitManager`) solo en la zona BOSS.
 
+**Estado (2026-10-26, rama `feat/slice-v2`):** implementada entera (la *Nana* sin su cue de audio). Desvíos para
+revisar: la puerta de la arena está en la pared oeste (la antesala queda al oeste porque la arena va fija en la
+esquina sureste de la grilla); la huella sólida de la pila es de 128×112 px, la del dibujo, no de 6×4 tiles; los
+pilares están a 3 y 6 filas bajo la pila, porque a 7 y 10 caen sobre la pared sur del interior de 14 filas; el sesgo
+de cámara es del 40 % hacia el torso, porque con el 25 % la Madre queda cortada.
+
 ### D22 — Techo de pisos y DungeonData [PROPUESTA]
 
 Concreta D10 para el primer dungeon. **San Ulmo tiene 3 pisos**, y el jefe está al final del 3.º. El techo
@@ -526,6 +544,16 @@ del pool. El slime sale del pool de la cripta y se queda solo para los tests.
   deja de incrementar pisos sin techo.
 - `debug_next_floor` en el último piso salta a la antesala.
 - Tests: techo de pisos, BOSS válido en N seeds y vuelta al guild con loot.
+
+**Estado (2026-10-26, rama `feat/slice-v2`):** implementados `DungeonData`, techo de 3 pisos, multiplicadores, BOSS +
+antesala EVENT, Escalera del Farol y `dungeons_cleared` (como desbloqueo `cleared:<id>` en `ProfileState.unlocks`, sin
+cambiar el formato de guardado). Falta el pool por presupuesto, las oleadas, el élite y `WorldClock`.
+
+**Bestiario y pool (2026-10-26, rama `feat/slice-v2`):** implementados el pool por presupuesto, los 5 comunes y el
+Cosido como élite. Desvíos: con salas de una pantalla el tope de un tercio para los enemigos a distancia no deja entrar
+ninguno (presupuesto 5 → tope 1), así que siempre cabe un grupo a distancia y el tercio rige desde el segundo; no hay
+oleadas (todas las zonas COMBAT son de una pantalla); el Cosido sale en una zona COMBAT normal, sin el 2×2 propio y
+con un gancho que tira del jugador (64-160 px, cada 6 s).
 
 ### D23 — Sala de cura con precio (zona EVENT) [PROPUESTA]
 
@@ -592,6 +620,10 @@ cambio de 1 de 3 ofrendas.
   ya existe para la muerte (D1).
 - Test `assert_altar_offerings`: las 3 ofrendas y los casos borde de la tabla.
 
+**Estado (2026-10-26, rama `feat/slice-v2`):** implementado tal cual: `RunManager.flesh_offerings`,
+`Inventory.units_by_value`, `altar.tscn` y `altar_panel.tscn`. Los trofeos y la piedra azul quedan fuera del diezmo
+porque son legendarios. Salir del gremio también cura, para que se note una mejora recién comprada.
+
 ### D24 — Sensación de combate: números objetivo [PROPUESTA]
 
 Concreta D4 ("pesado = comprometerse") en números. Son **valores de tuning**: los de "en curso" son los que se
@@ -616,8 +648,8 @@ máximo en 0,25 s moviéndose y se cierra a 0 en 0,5 s quieto. Dos marcas en el 
 
 | Arma | Dispersión máx. (a cada lado) | Velocidad | Daño | Stamina | Hit-stop propuesto |
 |---|---|---|---|---|---|
-| Arco | 12° | 400 px/s | 8 | 12 | 40 ms (hoy sin hit-stop) |
-| Bastón | 16° | 280 px/s | 14 | 18 | 50 ms (hoy sin hit-stop) |
+| Arco | 12° | 400 px/s | 8 | 12 | 40 ms (en curso) |
+| Bastón | 16° | 280 px/s | 14 | 18 | 50 ms (en curso) |
 
 **Rodada (en curso, reemplaza al dash previsto)**
 
@@ -630,7 +662,7 @@ máximo en 0,25 s moviéndose y se cierra a 0 en 0,5 s quieto. Dos marcas en el 
 
 **Stagger y aguante por enemigo.** `stagger_seconds` (en curso) es el tiempo que el golpe corta la acción;
 `poise_while_attacking` (en curso) hace que los golpes no corten una telegrafía ya comprometida;
-`knockback_scale` es propuesta.
+`knockback_scale` (en curso) escala el empuje que recibe cada enemigo.
 
 | Enemigo | Telegrafía | `stagger_seconds` | Aguante al atacar | `knockback_scale` | Nota |
 |---|---|---|---|---|---|
@@ -655,7 +687,7 @@ pegan". Es un paso previo al presupuesto + oleadas de D22, que lo reemplaza.
 | Daño del errante | 14 | 22, con embestida de 150 px/s durante el activo (~30 px) y rango 40 |
 | I-frames del jugador tras un golpe | 0,5 s | 0,35 s |
 
-Sigue sin haber regeneración de vida: la vida solo vuelve al volver al guild.
+Sigue sin haber regeneración de vida: la vida solo vuelve al volver al guild o en el Altar del Voto (D23).
 
 **Reglas de diseño para todo enemigo nuevo**
 1. Todo golpe que daña tiene ≥0,35 s de anticipación con telegrafía visible en el saturado reservado (D5).

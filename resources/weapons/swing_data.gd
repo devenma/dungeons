@@ -18,6 +18,8 @@ extends Resource
 ## Paso hacia adelante durante el golpe activo (px); el resto del golpe el jugador queda plantado
 ## Forward step during the active hit (px); for the rest of the swing the player stays rooted
 @export var step_distance: float = 4.0
+## Rompe la guardia del escudo en vez de rebotar (D24) / Breaks the shield's guard instead of bouncing (D24)
+@export var guard_break: bool = false
 
 ## Preparación antes de que la hitbox se active (s) / Wind-up before the hitbox turns on (s)
 @export var anticipation_seconds: float = 0.18

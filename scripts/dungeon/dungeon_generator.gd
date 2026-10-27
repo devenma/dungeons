@@ -6,6 +6,13 @@ extends Node
 ## TileMap render. Geometry and tile roles come from DungeonGeometry; the
 ## render only places tiles from the prebuilt crypt TileSet.
 
+# Columnas mínimas al oeste de la arena del jefe: START nunca queda pegada a BOSS
+# Minimum columns west of the boss arena: START never borders BOSS
+const BOSS_GAP_CELLS: int = 2
+# Filas que avanza el jugador al entrar por una puerta norte (CameraLimitManager.north_landing_tiles)
+# Rows the player walks in through a north door (CameraLimitManager.north_landing_tiles)
+const NORTH_LANDING_ROWS: int = 1
+
 class Cell:
 	var gx: int
 	var gy: int
@@ -20,6 +27,14 @@ class FloorLayout:
 	var doors: Array  # of Zone.Door
 	var start_zone_id: int = -1
 	var exit_zone_id: int = -1
+	# Arena del jefe y su antesala (EVENT), o -1 en un piso sin jefe / Boss arena and its antechamber (EVENT), or -1 on a floor without a boss
+	var boss_zone_id: int = -1
+	var antechamber_zone_id: int = -1
+	# Puerta trabada de la bóveda y zona COMBAT cuya limpieza da la llave, o -1 / Vault locked door and COMBAT zone whose clearing gives the key, or -1
+	var locked_door_id: int = -1
+	var key_zone_id: int = -1
+	# Tiles ocupados por las plantillas (pilares y bloques) -> true; ahí no se spawnea / Tiles taken by templates (pillars and blocks) -> true; nothing spawns there
+	var blocked_tiles: Dictionary = {}
 	# Tile superior izquierdo de la escalera de la zona EXIT / Top-left tile of the EXIT zone's stairs
 	var exit_stairs: Vector2i = Vector2i(-1, -1)
 
@@ -96,34 +111,53 @@ func _rect_capacity(size: Vector2i, min_cells: Vector2i) -> int:
 	return (size.x / min_cells.x) * (size.y / min_cells.y)
 
 
-## START en el origen y el resto de la grilla (una L) en dos rectángulos; [] si alguno queda bajo el mínimo.
-## START at the origin and the rest of the grid (an L) as two rects; [] if any is below the minimum.
+## Rectángulos fijos que no se cortan: BOSS (si hay) y START, en ese orden al principio.
+## Fixed rects that are never cut: BOSS (if any) and START, in that order at the front.
+func _locked_rects(start_size: Vector2i, boss_size: Vector2i) -> int:
+	return int(start_size != Vector2i.ZERO) + int(boss_size != Vector2i.ZERO)
+
+
+## BOSS en la esquina sureste con su franja norte aparte, START en el origen y el resto de la grilla
+## (una L) en dos rectángulos; [] si alguno queda bajo el mínimo o la arena no deja lugar.
+## BOSS at the south-east corner with its north strip apart, START at the origin and the rest of the
+## grid (an L) as two rects; [] if any is below the minimum or the arena leaves no room.
 func _initial_rects(grid: Vector2i, start_size: Vector2i,
-		min_cells: Vector2i) -> Array[Rect2i]:
+		min_cells: Vector2i, boss_size: Vector2i = Vector2i.ZERO) -> Array[Rect2i]:
 	var rects: Array[Rect2i] = []
+	var area: Vector2i = grid
+	var strip: Rect2i = Rect2i()
+	if boss_size != Vector2i.ZERO:
+		if grid.x - boss_size.x < BOSS_GAP_CELLS or grid.y < boss_size.y:
+			return []
+		area.x = grid.x - boss_size.x
+		rects.append(Rect2i(area.x, grid.y - boss_size.y, boss_size.x, boss_size.y))
+		strip = Rect2i(area.x, 0, boss_size.x, grid.y - boss_size.y)
 	if start_size == Vector2i.ZERO:
-		rects.append(Rect2i(Vector2i.ZERO, grid))
+		rects.append(Rect2i(Vector2i.ZERO, area))
 	else:
-		if grid.x < start_size.x or grid.y < start_size.y:
+		if area.x < start_size.x or area.y < start_size.y:
 			return []
 		rects.append(Rect2i(Vector2i.ZERO, start_size))
-		if grid.x > start_size.x:
-			rects.append(Rect2i(start_size.x, 0, grid.x - start_size.x, grid.y))
-		if grid.y > start_size.y:
-			rects.append(Rect2i(0, start_size.y, start_size.x, grid.y - start_size.y))
+		if area.x > start_size.x:
+			rects.append(Rect2i(start_size.x, 0, area.x - start_size.x, area.y))
+		if area.y > start_size.y:
+			rects.append(Rect2i(0, start_size.y, start_size.x, area.y - start_size.y))
+	if strip.has_area():
+		rects.append(strip)
 	for r in rects:
 		if r.size.x < min_cells.x or r.size.y < min_cells.y:
 			return []
 	return rects
 
 
-## Máximo de zonas que admite la grilla (START cuenta 1, no se corta); 0 = no entra.
-## Max zones the grid allows (START counts 1, it is never cut); 0 = does not fit.
-func _grid_capacity(grid: Vector2i, start_size: Vector2i, min_cells: Vector2i) -> int:
-	var rects: Array[Rect2i] = _initial_rects(grid, start_size, min_cells)
+## Máximo de zonas que admite la grilla (START y BOSS cuentan 1, no se cortan); 0 = no entra.
+## Max zones the grid allows (START and BOSS count 1, they are never cut); 0 = does not fit.
+func _grid_capacity(grid: Vector2i, start_size: Vector2i, min_cells: Vector2i,
+		boss_size: Vector2i = Vector2i.ZERO) -> int:
+	var rects: Array[Rect2i] = _initial_rects(grid, start_size, min_cells, boss_size)
 	if rects.is_empty():
 		return 0
-	var locked: int = 0 if start_size == Vector2i.ZERO else 1
+	var locked: int = _locked_rects(start_size, boss_size)
 	var total: int = locked
 	for i in range(locked, rects.size()):
 		total += _rect_capacity(rects[i].size, min_cells)
@@ -133,8 +167,8 @@ func _grid_capacity(grid: Vector2i, start_size: Vector2i, min_cells: Vector2i) -
 ## Agranda la grilla sin RNG (puede pasar grid_max_*) hasta que entren target zonas de tamaño mínimo.
 ## Grows the grid without RNG (may exceed grid_max_*) until target min-size zones fit.
 func _fit_grid(grid: Vector2i, target_count: int, start_size: Vector2i,
-		min_cells: Vector2i) -> Vector2i:
-	while _grid_capacity(grid, start_size, min_cells) < target_count:
+		min_cells: Vector2i, boss_size: Vector2i = Vector2i.ZERO) -> Vector2i:
+	while _grid_capacity(grid, start_size, min_cells, boss_size) < target_count:
 		if grid.x * min_cells.y <= grid.y * min_cells.x:
 			grid.x += 1
 		else:
@@ -149,7 +183,8 @@ func _fit_grid(grid: Vector2i, target_count: int, start_size: Vector2i,
 ## the minimum size. Prefers the grid_* ranges; if none fits, searches up to zone_range.y cells per
 ## side; failing that, returns fallback.
 func _exact_grid(rng: RandomNumberGenerator, zone_range: Vector2i, start_size: Vector2i,
-		min_cells: Vector2i, data: FloorData, fallback: Vector2i) -> Vector2i:
+		min_cells: Vector2i, data: FloorData, fallback: Vector2i,
+		boss_size: Vector2i = Vector2i.ZERO) -> Vector2i:
 	var limits: Array[Rect2i] = [
 		Rect2i(data.grid_min_w, data.grid_min_h,
 				data.grid_max_w - data.grid_min_w + 1, data.grid_max_h - data.grid_min_h + 1),
@@ -159,7 +194,7 @@ func _exact_grid(rng: RandomNumberGenerator, zone_range: Vector2i, start_size: V
 		var fits: Array[Vector2i] = []
 		for w in range(limit.position.x, limit.end.x):
 			for h in range(limit.position.y, limit.end.y):
-				var capacity: int = _grid_capacity(Vector2i(w, h), start_size, min_cells)
+				var capacity: int = _grid_capacity(Vector2i(w, h), start_size, min_cells, boss_size)
 				if capacity >= zone_range.x and capacity <= zone_range.y:
 					fits.append(Vector2i(w, h))
 		if not fits.is_empty():
@@ -172,9 +207,9 @@ func _exact_grid(rng: RandomNumberGenerator, zone_range: Vector2i, start_size: V
 ## Splits the grid into target exact rects with guillotine cuts. Every cut keeps the total
 ## capacity, so target is always reached when _fit_grid allowed it.
 func _merge_cells(rng: RandomNumberGenerator, target_count: int, grid: Vector2i,
-		start_size: Vector2i, min_cells: Vector2i) -> Array:
-	var rects: Array[Rect2i] = _initial_rects(grid, start_size, min_cells)
-	var locked: int = 0 if start_size == Vector2i.ZERO else 1
+		start_size: Vector2i, min_cells: Vector2i, boss_size: Vector2i = Vector2i.ZERO) -> Array:
+	var rects: Array[Rect2i] = _initial_rects(grid, start_size, min_cells, boss_size)
+	var locked: int = _locked_rects(start_size, boss_size)
 	while rects.size() < target_count:
 		var splittable: Array[int] = []
 		for i in range(locked, rects.size()):
@@ -245,10 +280,12 @@ func _detect_neighbors(layout: FloorLayout, cells: Array) -> void:
 func validate_layout(layout: FloorLayout, data: FloorData) -> String:
 	var min_cells: Vector2i = _min_cells(data)
 	var start_size: Vector2i = _start_size(data)
+	var boss_floor: bool = data.boss_zone_cells != Vector2i.ZERO
 	var owner_by_cell: Dictionary = {}  # Vector2i -> zone id
 	var by_id: Dictionary = {}  # zone id -> Zone
 	var starts: int = 0
 	var exits: int = 0
+	var bosses: int = 0
 	for z in layout.zones:
 		var zone: Zone = z
 		if by_id.has(zone.id):
@@ -268,6 +305,10 @@ func validate_layout(layout: FloorLayout, data: FloorData) -> String:
 				return "START is %s cells, above the cap %s" % [size, start_size]
 		elif zone.type == Zone.ZoneType.EXIT:
 			exits += 1
+		elif zone.type == Zone.ZoneType.BOSS:
+			bosses += 1
+			if size != data.boss_zone_cells:
+				return "BOSS is %s cells, expected %s" % [size, data.boss_zone_cells]
 		for gy in range(zone.cell_min.y, zone.cell_max.y):
 			for gx in range(zone.cell_min.x, zone.cell_max.x):
 				var cell: Vector2i = Vector2i(gx, gy)
@@ -276,15 +317,21 @@ func validate_layout(layout: FloorLayout, data: FloorData) -> String:
 				owner_by_cell[cell] = zone.id
 	if owner_by_cell.size() != layout.grid_w * layout.grid_h:
 		return "%d of %d cells covered" % [owner_by_cell.size(), layout.grid_w * layout.grid_h]
-	if starts != 1 or exits != 1:
-		return "%d START and %d EXIT zones" % [starts, exits]
+	if starts != 1 or exits != (0 if boss_floor else 1) or bosses != (1 if boss_floor else 0):
+		return "%d START, %d EXIT and %d BOSS zones" % [starts, exits, bosses]
 	var start_zone: Zone = by_id.get(layout.start_zone_id) as Zone
-	var exit_zone: Zone = by_id.get(layout.exit_zone_id) as Zone
-	if start_zone == null or start_zone.type != Zone.ZoneType.START \
-			or exit_zone == null or exit_zone.type != Zone.ZoneType.EXIT:
-		return "start_zone_id/exit_zone_id do not point at START/EXIT"
-	if not stairs_fit(exit_zone, layout.doors, layout.exit_stairs):
-		return "exit stairs at %s do not fit EXIT zone %d" % [layout.exit_stairs, exit_zone.id]
+	if start_zone == null or start_zone.type != Zone.ZoneType.START:
+		return "start_zone_id does not point at START"
+	if boss_floor:
+		var boss_error: String = _validate_boss(layout, by_id)
+		if not boss_error.is_empty():
+			return boss_error
+	else:
+		var exit_zone: Zone = by_id.get(layout.exit_zone_id) as Zone
+		if exit_zone == null or exit_zone.type != Zone.ZoneType.EXIT:
+			return "exit_zone_id does not point at EXIT"
+		if not stairs_fit(exit_zone, layout.doors, layout.exit_stairs):
+			return "exit stairs at %s do not fit EXIT zone %d" % [layout.exit_stairs, exit_zone.id]
 
 	var links: Dictionary = {}  # zone id -> Array[int] linked by doors
 	var door_pairs: Dictionary = {}  # "a,b" -> true
@@ -306,6 +353,8 @@ func validate_layout(layout: FloorLayout, data: FloorData) -> String:
 	for z in layout.zones:
 		var zone: Zone = z
 		for nid in zone.neighbors:
+			if _sealed_pair(layout, zone.id, nid):
+				continue
 			if not door_pairs.has("%d,%d" % [mini(zone.id, nid), maxi(zone.id, nid)]):
 				return "zones %d and %d share an edge but have no door" % [zone.id, nid]
 
@@ -319,6 +368,40 @@ func validate_layout(layout: FloorLayout, data: FloorData) -> String:
 				queue.append(nid)
 	if visited.size() != layout.zones.size():
 		return "%d of %d zones reachable from START" % [visited.size(), layout.zones.size()]
+	return _validate_vault(layout, by_id)
+
+
+## Solvabilidad de la bóveda (D3): sin cruzar la puerta trabada se llega a la zona de la llave y a la
+## salida (o al jefe), y no a la bóveda.
+## Vault solvability (D3): without crossing the locked door the key zone and the exit (or the boss) are
+## reachable, and the vault is not.
+func _validate_vault(layout: FloorLayout, by_id: Dictionary) -> String:
+	if layout.locked_door_id < 0:
+		return ""
+	var locked: Zone.Door = null
+	for d in layout.doors:
+		if (d as Zone.Door).id == layout.locked_door_id:
+			locked = d
+	if locked == null or not locked.key_locked:
+		return "locked_door_id does not point at a key-locked door"
+	var key_zone: Zone = by_id.get(layout.key_zone_id) as Zone
+	if key_zone == null or key_zone.type != Zone.ZoneType.COMBAT:
+		return "the key zone is not a COMBAT zone"
+	var reached: Dictionary = {layout.start_zone_id: true}
+	var queue: Array[int] = [layout.start_zone_id]
+	while not queue.is_empty():
+		var cur: int = queue.pop_front()
+		for d in layout.doors:
+			var door: Zone.Door = d
+			if door.key_locked:
+				continue
+			var other: int = door.zone_b_id if door.zone_a_id == cur else (door.zone_a_id if door.zone_b_id == cur else -1)
+			if other >= 0 and not reached.has(other):
+				reached[other] = true
+				queue.append(other)
+	var goal: int = layout.boss_zone_id if layout.boss_zone_id >= 0 else layout.exit_zone_id
+	if not reached.has(layout.key_zone_id) or not reached.has(goal):
+		return "the key zone or the goal is behind the locked door"
 	return ""
 
 
@@ -334,6 +417,40 @@ func _door_on_shared_edge(door: Zone.Door, a: Rect2i, b: Rect2i) -> bool:
 		return on_line and door.pos_along >= maxi(a.position.x, b.position.x) \
 				and door.pos_along < mini(a.end.x, b.end.x)
 	return false
+
+
+## Vecinas de BOSS sin puerta: la arena solo se entra desde su antesala / BOSS neighbours without a door: the arena is only entered from its antechamber
+func _sealed_pair(layout: FloorLayout, a: int, b: int) -> bool:
+	if a != layout.boss_zone_id and b != layout.boss_zone_id:
+		return false
+	return a != layout.antechamber_zone_id and b != layout.antechamber_zone_id
+
+
+## La arena tiene una sola puerta, desde una antesala EVENT, y no toca START (D22).
+## The arena has a single door, from an EVENT antechamber, and does not touch START (D22).
+func _validate_boss(layout: FloorLayout, by_id: Dictionary) -> String:
+	var boss: Zone = by_id.get(layout.boss_zone_id) as Zone
+	var antechamber: Zone = by_id.get(layout.antechamber_zone_id) as Zone
+	if boss == null or boss.type != Zone.ZoneType.BOSS:
+		return "boss_zone_id does not point at BOSS"
+	if antechamber == null or antechamber.type != Zone.ZoneType.EVENT:
+		return "antechamber_zone_id does not point at an EVENT zone"
+	if boss.neighbors.has(layout.start_zone_id):
+		return "BOSS borders START"
+	if boss.doors.size() != 1:
+		return "BOSS has %d doors, expected 1" % boss.doors.size()
+	var door: Zone.Door = boss.doors[0]
+	if door.zone_a_id != antechamber.id and door.zone_b_id != antechamber.id:
+		return "the BOSS door does not lead to the antechamber"
+	return ""
+
+
+func _cell_center(z: Zone) -> Vector2i:
+	return z.cell_min + (z.cell_max - z.cell_min) / 2
+
+
+func _manhattan(a: Vector2i, b: Vector2i) -> int:
+	return absi(a.x - b.x) + absi(a.y - b.y)
 
 
 func _assign_types(layout: FloorLayout, rng: RandomNumberGenerator,
@@ -352,26 +469,21 @@ func _assign_types(layout: FloorLayout, rng: RandomNumberGenerator,
 	start_z.type = Zone.ZoneType.START
 	layout.start_zone_id = start_z.id
 
-	# EXIT = farthest from start zone by Manhattan on cell centers
-	var max_dist: int = -1
-	var exit_z: Zone = layout.zones[0]
-	var start_center: Vector2i = Vector2i(
-		start_z.cell_min.x + (start_z.cell_max.x - start_z.cell_min.x) / 2,
-		start_z.cell_min.y + (start_z.cell_max.y - start_z.cell_min.y) / 2
-	)
-	for z: Zone in layout.zones:
-		if z.id == start_z.id:
-			continue
-		var center: Vector2i = Vector2i(
-			z.cell_min.x + (z.cell_max.x - z.cell_min.x) / 2,
-			z.cell_min.y + (z.cell_max.y - z.cell_min.y) / 2
-		)
-		var d: int = absi(center.x - start_center.x) + absi(center.y - start_center.y)
-		if d > max_dist:
-			max_dist = d
-			exit_z = z
-	exit_z.type = Zone.ZoneType.EXIT
-	layout.exit_zone_id = exit_z.id
+	if data.boss_zone_cells != Vector2i.ZERO:
+		_assign_boss(layout, start_z)
+	else:
+		# EXIT = farthest from start zone by Manhattan on cell centers
+		var max_dist: int = -1
+		var exit_z: Zone = layout.zones[0]
+		for z: Zone in layout.zones:
+			if z.id == start_z.id:
+				continue
+			var d: int = _manhattan(_cell_center(z), _cell_center(start_z))
+			if d > max_dist:
+				max_dist = d
+				exit_z = z
+		exit_z.type = Zone.ZoneType.EXIT
+		layout.exit_zone_id = exit_z.id
 
 	# Remaining zones: COMBAT or REWARD by reward_ratio
 	for z: Zone in layout.zones:
@@ -379,6 +491,122 @@ func _assign_types(layout: FloorLayout, rng: RandomNumberGenerator,
 			continue  # START/EXIT already assigned
 		if rng.randf() < data.reward_ratio:
 			z.type = Zone.ZoneType.REWARD
+
+	# Sala de cura (D23): a lo sumo una, en una zona de una celda / Healing room (D23): one at most, in a one-cell zone
+	if data.event_chance > 0.0 and rng.randf() < data.event_chance:
+		var candidates: Array[Zone] = []
+		for z: Zone in layout.zones:
+			if (z.type == Zone.ZoneType.COMBAT or z.type == Zone.ZoneType.REWARD) \
+					and z.cell_max - z.cell_min == Vector2i.ONE:
+				candidates.append(z)
+		if not candidates.is_empty():
+			candidates[rng.randi_range(0, candidates.size() - 1)].type = Zone.ZoneType.EVENT
+
+
+## Bóveda (D3): una zona de una pantalla cuya ausencia no desconecta el piso pasa a REWARD con todas sus
+## puertas trabadas; la llave (una sola, abre todas) cae al limpiar otra zona COMBAT.
+## Vault (D3): a one-screen zone whose absence does not disconnect the floor becomes a REWARD with all its
+## doors locked; the key (just one, it opens them all) drops when another COMBAT zone is cleared.
+func _place_vault(layout: FloorLayout, rng: RandomNumberGenerator, data: FloorData) -> void:
+	if data.vault_chance <= 0.0 or rng.randf() >= data.vault_chance:
+		return
+	var candidates: Array[Zone] = []
+	var combat: Array[Zone] = []
+	for z: Zone in layout.zones:
+		if z.type == Zone.ZoneType.COMBAT:
+			combat.append(z)
+		var plain: bool = z.type == Zone.ZoneType.COMBAT or z.type == Zone.ZoneType.REWARD
+		if plain and z.cell_max - z.cell_min == Vector2i.ONE and _reached_without(layout, z.id).size() == layout.zones.size() - 1:
+			candidates.append(z)
+	if candidates.is_empty():
+		return
+	var vault: Zone = candidates[rng.randi_range(0, candidates.size() - 1)]
+	combat.erase(vault)
+	if combat.is_empty():
+		return
+	vault.type = Zone.ZoneType.REWARD
+	for d in vault.doors:
+		var door: Zone.Door = d
+		door.key_locked = true
+		door.state = 1
+	layout.locked_door_id = (vault.doors[0] as Zone.Door).id
+	layout.key_zone_id = combat[rng.randi_range(0, combat.size() - 1)].id
+
+
+## Zonas alcanzables desde START por puertas sin pasar por `skipped` / Zones reachable from START through doors without passing `skipped`
+func _reached_without(layout: FloorLayout, skipped: int) -> Dictionary:
+	var reached: Dictionary = {layout.start_zone_id: true}
+	var queue: Array[int] = [layout.start_zone_id]
+	while not queue.is_empty():
+		var cur: int = queue.pop_front()
+		for d in layout.doors:
+			var door: Zone.Door = d
+			var other: int = door.zone_b_id if door.zone_a_id == cur else (door.zone_a_id if door.zone_b_id == cur else -1)
+			if other >= 0 and other != skipped and not reached.has(other):
+				reached[other] = true
+				queue.append(other)
+	return reached
+
+
+## Una plantilla sembrada por zona COMBAT de una pantalla; sus pilares y bloques quedan en blocked_tiles.
+## Entrando por una puerta norte el jugador cae una fila dentro del piso (CameraLimitManager.north_landing_tiles),
+## sobre la primera fila del bloque: las plantillas que ocupan ese tile no se usan ahí y el tile queda
+## reservado para que tampoco se empuje un bloque encima.
+## One seeded template per one-screen COMBAT zone; its pillars and blocks go into blocked_tiles. Entering
+## through a north door the player lands one row into the floor (CameraLimitManager.north_landing_tiles),
+## on the block's first row: templates taking that tile are not used there and the tile stays reserved so no
+## block is pushed onto it either.
+func _assign_templates(layout: FloorLayout, rng: RandomNumberGenerator, data: FloorData) -> void:
+	layout.blocked_tiles = {}
+	if data.room_templates.is_empty():
+		return
+	for z: Zone in layout.zones:
+		if z.type != Zone.ZoneType.COMBAT or z.cell_max - z.cell_min != Vector2i.ONE:
+			continue
+		var landings: Array[Vector2i] = []
+		for d in z.doors:
+			var door: Zone.Door = d
+			if door.edge_axis == "h" and door.edge_line == z.tile_rect.position.y:
+				landings.append(Vector2i(door.pos_along, z.tile_rect.position.y + DungeonGeometry.WALL_RING_TILES
+						+ DungeonGeometry.NORTH_FACE_ROWS + NORTH_LANDING_ROWS))
+		var fitting: Array[RoomTemplate] = data.room_templates.filter(func(t: RoomTemplate) -> bool:
+				return landings.all(func(tile: Vector2i) -> bool:
+						return not (t.tiles_of(RoomTemplate.PILLAR, z.tile_rect.position) 								+ t.tiles_of(RoomTemplate.BLOCK, z.tile_rect.position)).has(tile)))
+		if fitting.is_empty():
+			continue
+		z.template = fitting[rng.randi_range(0, fitting.size() - 1)]
+		for character: String in [RoomTemplate.PILLAR, RoomTemplate.BLOCK]:
+			for tile: Vector2i in z.template.tiles_of(character, z.tile_rect.position):
+				layout.blocked_tiles[tile] = true
+		for tile: Vector2i in landings:
+			layout.blocked_tiles[tile] = true
+
+
+## BOSS = el rectángulo fijo de la esquina sureste; antesala = su vecina oeste más lejana de START
+## (la Madre mira al sur desde la pared norte, así que no se entra por el norte).
+## BOSS = the fixed south-east corner rect; antechamber = its west neighbour farthest from START
+## (the Mother faces south from the north wall, so the arena is not entered from the north).
+func _assign_boss(layout: FloorLayout, start_z: Zone) -> void:
+	var boss: Zone = null
+	for z: Zone in layout.zones:
+		if z.cell_max == Vector2i(layout.grid_w, layout.grid_h):
+			boss = z
+	if boss == null:
+		return
+	boss.type = Zone.ZoneType.BOSS
+	layout.boss_zone_id = boss.id
+	var best_dist: int = -1
+	for nid: int in boss.neighbors:
+		var z: Zone = _find_zone(layout, nid)
+		if z == start_z or z.cell_max.x != boss.cell_min.x:
+			continue
+		var d: int = _manhattan(_cell_center(z), _cell_center(start_z))
+		if d > best_dist:
+			best_dist = d
+			layout.antechamber_zone_id = z.id
+	var antechamber: Zone = _find_zone(layout, layout.antechamber_zone_id)
+	if antechamber != null:
+		antechamber.type = Zone.ZoneType.EVENT
 
 
 func _place_doors(layout: FloorLayout, rng: RandomNumberGenerator,
@@ -390,7 +618,7 @@ func _place_doors(layout: FloorLayout, rng: RandomNumberGenerator,
 	for z: Zone in layout.zones:
 		for nid: int in z.neighbors:
 			var key: String = "%d,%d" % [mini(z.id, nid), maxi(z.id, nid)]
-			if placed_pairs.has(key):
+			if placed_pairs.has(key) or _sealed_pair(layout, z.id, nid):
 				continue
 			placed_pairs[key] = true
 
@@ -440,14 +668,19 @@ func _place_doors(layout: FloorLayout, rng: RandomNumberGenerator,
 				# Doors start OPEN — a combat zone locks its doors when the player
 				# enters it (door_controller), not at floor start.
 				d.state = 0
-				# Doors bordering a COMBAT zone can lock on player entry
-				if z.type == Zone.ZoneType.COMBAT or other.type == Zone.ZoneType.COMBAT:
+				# Doors bordering a COMBAT or BOSS zone can lock on player entry
+				if locks_on_entry(z) or locks_on_entry(other):
 					d.combat_locked = true
 
 				layout.doors.append(d)
 				z.doors.append(d)
 				other.doors.append(d)
 				did += 1
+
+
+## Zonas que traban sus puertas al entrar hasta resolverse / Zones that lock their doors on entry until resolved
+static func locks_on_entry(zone: Zone) -> bool:
+	return zone.type == Zone.ZoneType.COMBAT or zone.type == Zone.ZoneType.BOSS
 
 
 ## Reglas de la escalera de salida en su zona: bajo la cara norte, un tile libre a cada lado,
@@ -540,17 +773,18 @@ func generate_floor(floor_number: int, base_seed: int,
 	var target_count: int = rng.randi_range(target_min, target_max)
 	var min_cells: Vector2i = _min_cells(data)
 	var start_size: Vector2i = _start_size(data)
-	grid_size = _fit_grid(grid_size, target_count, start_size, min_cells)
+	var boss_size: Vector2i = data.boss_zone_cells
+	grid_size = _fit_grid(grid_size, target_count, start_size, min_cells, boss_size)
 	if data.min_size_zones_only:
-		grid_size = _exact_grid(rng, zone_range, start_size, min_cells, data, grid_size)
-		target_count = _grid_capacity(grid_size, start_size, min_cells)
+		grid_size = _exact_grid(rng, zone_range, start_size, min_cells, data, grid_size, boss_size)
+		target_count = _grid_capacity(grid_size, start_size, min_cells, boss_size)
 
 	var last_error: String = "max_generation_retries is 0"
 	for retry in data.max_generation_retries:
 		# Seed derivada por intento / Per-attempt derived seed
 		var retry_rng: RandomNumberGenerator = _create_rng(base_seed ^ (retry * 7919), floor_number)
 		var zones: Array = _merge_cells(retry_rng, target_count, grid_size,
-				start_size, min_cells)
+				start_size, min_cells, boss_size)
 
 		var layout: FloorLayout = FloorLayout.new()
 		layout.floor_number = floor_number
@@ -569,6 +803,8 @@ func generate_floor(floor_number: int, base_seed: int,
 		_assign_types(layout, retry_rng, data)
 		_place_doors(layout, retry_rng, data)
 		_place_exit_stairs(layout, retry_rng)
+		_place_vault(layout, retry_rng, data)
+		_assign_templates(layout, retry_rng, data)
 
 		if zones.size() < target_min or zones.size() > target_max:
 			last_error = "%d zones, expected %d-%d" % [zones.size(), target_min, target_max]
@@ -605,8 +841,9 @@ func _render_layout(layout: FloorLayout, tilemap: TileMap) -> void:
 	var grid_bottom: int = layout.grid_h * DungeonGeometry.CELL_TILES.y
 	for z: Zone in layout.zones:
 		_paint_zone(tilemap, z, z.tile_rect.end.y < grid_bottom)
+	_paint_pillars(tilemap, layout)
 	_punch_doors(tilemap, layout)
-	_paint_exit_stairs(tilemap, layout.exit_stairs)
+	paint_stairs(tilemap, layout.exit_stairs)
 	_shade_wall_feet(tilemap)
 
 
@@ -642,8 +879,19 @@ func _punch_doors(tilemap: TileMap, layout: FloorLayout) -> void:
 			DungeonGeometry.set_door_closed(tilemap, door, true)
 
 
+## Pilares de las plantillas: un bloque de sillares de la cara de pared, sólido, en la capa de paredes.
+## Template pillars: an ashlar block from the wall face, solid, on the wall layer.
+func _paint_pillars(tilemap: TileMap, layout: FloorLayout) -> void:
+	for z: Zone in layout.zones:
+		if z.template == null:
+			continue
+		for tile: Vector2i in z.template.tiles_of(RoomTemplate.PILLAR, z.tile_rect.position):
+			tilemap.set_cell(DungeonGeometry.LAYER_WALL, tile, DungeonGeometry.DUNGEON_SOURCE_ID,
+					DungeonGeometry.FACE_LO + Vector2i(posmod(tile.x, 3), 0))
+
+
 ## Sobre la capa de piso; los tiles traen las colisiones del marco / On the floor layer; the tiles carry the frame colliders
-func _paint_exit_stairs(tilemap: TileMap, origin: Vector2i) -> void:
+static func paint_stairs(tilemap: TileMap, origin: Vector2i) -> void:
 	if origin == Vector2i(-1, -1):
 		return
 	for j in DungeonGeometry.STAIRS_DOWN_SIZE.y:

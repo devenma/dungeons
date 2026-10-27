@@ -1,0 +1,51 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/enemies/enemy_base.tscn" id="1"]
+[ext_resource type="Resource" path="res://resources/enemies/cosido_data.tres" id="2"]
+[ext_resource type="Script" path="res://scripts/enemies/kit_enemy_visuals.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/visual/kit_sprite.gd" id="4"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/hit_flesh.tres" id="5"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/bone_collapse.tres" id="6"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(28, 12)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hurt"]
+size = Vector2(36, 52)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_attack"]
+size = Vector2(64, 52)
+
+[node name="Cosido" instance=ExtResource("1")]
+enemy_data = ExtResource("2")
+
+[node name="Visuals" parent="."]
+script = ExtResource("3")
+
+[node name="Sprite" type="AnimatedSprite2D" parent="Visuals"]
+script = ExtResource("4")
+sheet_prefix = "res://assets/art/enemies/cosido_"
+animations = PackedStringArray("idle", "walk", "attack", "hurt", "death", "hook")
+
+[node name="CollisionShape2D" parent="."]
+position = Vector2(0, -6)
+shape = SubResource("RectangleShape2D_body")
+
+[node name="CollisionShape2D" parent="Hurtbox"]
+position = Vector2(0, -26)
+shape = SubResource("RectangleShape2D_hurt")
+
+[node name="EnemyHitbox" parent="."]
+camera_shake_pixels = 3
+
+[node name="CollisionShape2D" parent="EnemyHitbox"]
+position = Vector2(0, -18)
+shape = SubResource("RectangleShape2D_attack")
+
+[node name="HurtSound" parent="HealthSounds"]
+stream = ExtResource("5")
+volume_db = -4.0
+
+[node name="DeathSound" parent="HealthSounds"]
+stream = ExtResource("6")
+volume_db = -5.0

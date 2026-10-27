@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="AbilityData" format=3]
+
+[ext_resource type="Script" path="res://resources/abilities/ability_data.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/abilities/volley.tscn" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/projectiles/fireball.tscn" id="3"]
+
+[resource]
+script = ExtResource("1")
+id = &"fireball"
+name_key = "ability.fireball.name"
+effect_scene = ExtResource("2")
+mana_cost = 35
+damage = 20
+knockback = 220.0
+radius = 40.0
+projectile_scene = ExtResource("3")
+projectile_speed = 220.0

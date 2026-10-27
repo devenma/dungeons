@@ -5,6 +5,9 @@
 [ext_resource type="Script" uid="uid://cg6bw3t3sdn5q" path="res://scripts/dungeon/dungeon_manager.gd" id="3"]
 [ext_resource type="Script" uid="uid://cdm4p84h70p71" path="res://scripts/game/run_manager.gd" id="5"]
 [ext_resource type="Resource" path="res://resources/floors/floor_data.tres" id="6"]
+[ext_resource type="Resource" path="res://resources/dungeons/san_ulmo.tres" id="22"]
+[ext_resource type="PackedScene" path="res://scenes/ui/altar_panel.tscn" id="23"]
+[ext_resource type="PackedScene" path="res://scenes/ui/dialogue_panel.tscn" id="24"]
 [ext_resource type="Resource" path="res://resources/weapons/sword_basic.tres" id="9"]
 [ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="12"]
 [ext_resource type="Script" path="res://scripts/profile/profile_state.gd" id="13"]
@@ -42,6 +45,7 @@ run_manager_node_path = NodePath("../../RunManager")
 profile_state_node_path = NodePath("../../ProfileState")
 guild_node_path = NodePath("../Guild")
 floor_data = ExtResource("6")
+dungeon_data = ExtResource("22")
 
 [node name="DungeonAmbience" type="AudioStreamPlayer" parent="World/DungeonManager"]
 stream = ExtResource("17")
@@ -73,5 +77,9 @@ script = ExtResource("2")
 [node name="BackpackPanel" parent="UI" instance=ExtResource("16")]
 
 [node name="DeathScreen" parent="UI" instance=ExtResource("21")]
+
+[node name="AltarPanel" parent="UI" instance=ExtResource("23")]
+
+[node name="DialoguePanel" parent="UI" instance=ExtResource("24")]
 
 [node name="PauseMenu" parent="UI" instance=ExtResource("12")]

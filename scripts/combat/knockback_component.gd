@@ -11,6 +11,9 @@ extends Node
 @export var health_node_path: NodePath = NodePath("../Health")
 ## Duración del empuje hasta frenar (s) / Time for the push to stop (s)
 @export var decay_seconds: float = 0.2
+## Escala del empuje recibido: >1 sale volando, <1 aguanta (EnemyData.knockback_scale)
+## Scale of the push taken: >1 flies off, <1 holds ground (EnemyData.knockback_scale)
+@export var impulse_scale: float = 1.0
 
 var _velocity: Vector2 = Vector2.ZERO
 # Desaceleración (px/s²) para frenar en decay_seconds / Deceleration (px/s²) to stop in decay_seconds
@@ -38,4 +41,4 @@ func consume(delta: float) -> Vector2:
 
 
 func _on_damage_received(info: DamageInfo) -> void:
-	apply(info.knockback)
+	apply(info.knockback * impulse_scale)

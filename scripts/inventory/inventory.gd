@@ -59,6 +59,29 @@ func remove(item: ItemData, amount: int = 1) -> bool:
 	return true
 
 
+## Unidades de mayor ItemData.value primero hasta sumar `target` (o todas si no llega), sin las legendarias
+## (piedra azul y trofeos). No saca nada: es la vista previa del diezmo del altar (D23).
+## Highest ItemData.value units first until they add up to `target` (or all of them if short), leaving out
+## legendaries (blue stone and trophies). Removes nothing: it is the altar tithe preview (D23).
+func units_by_value(target: int) -> Array[ItemData]:
+	var units: Array[ItemData] = []
+	for slot in slots:
+		var item: ItemData = slot["item"]
+		if item.rarity == ItemData.Rarity.LEGENDARY:
+			continue
+		for i in int(slot["count"]):
+			units.append(item)
+	units.sort_custom(func(a: ItemData, b: ItemData) -> bool: return a.value > b.value)
+	var taken: Array[ItemData] = []
+	var total: int = 0
+	for item in units:
+		if total >= target:
+			break
+		taken.append(item)
+		total += item.value
+	return taken
+
+
 func count_of(item: ItemData) -> int:
 	var total: int = 0
 	for slot in slots:

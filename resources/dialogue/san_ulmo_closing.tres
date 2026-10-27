@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="DialogueData" format=3]
+
+[ext_resource type="Script" path="res://resources/dialogue/dialogue_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+lines = PackedStringArray("dialogue.san_ulmo.closing.1", "dialogue.san_ulmo.closing.2", "dialogue.san_ulmo.closing.3", "npc.guildmaster.victory.2", "npc.healer.victory.2")
+speakers = PackedStringArray("", "", "", "npc.guildmaster.name", "npc.healer.name")

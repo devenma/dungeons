@@ -4,8 +4,11 @@
 [ext_resource type="PackedScene" path="res://scenes/projectiles/arrow.tscn" id="2"]
 [ext_resource type="PackedScene" path="res://scenes/weapons/bow.tscn" id="3"]
 
+[ext_resource type="Resource" path="res://resources/abilities/triple_shot.tres" id="ability_1"]
+
 [resource]
 script = ExtResource("1")
+hit_stop_seconds = 0.04
 weapon_kind = 1
 weapon_scene = ExtResource("3")
 weapon_name = "Basic Bow"
@@ -16,3 +19,4 @@ stamina_cost = 12
 projectile_speed = 400.0
 projectile_scene = ExtResource("2")
 aim_spread_max_degrees = 12.0
+abilities = Array[Resource]([ExtResource("ability_1")])

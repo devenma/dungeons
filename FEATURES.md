@@ -90,7 +90,8 @@ confiable y feel · **P1** vertical slice v2 · **P2** profundidad · **P3** con
 | Slime | 30 HP, velocidad 60, daño 8, knockback 160. Detecta a 120 px, ataca a 20 px con una ventana de 0.2 s y cooldown de 1.2 s. Sprite fijo con aplaste/estiramiento por tween. |
 | Cadáver errante | 55 HP, velocidad 28, daño 14, knockback 260. Detecta a 140 px, ataca a 22 px: se queda quieto 0.6 s alzando el brazo (telegrafía) antes de abrir la hitbox; cooldown de 1.8 s. Animaciones del kit en 4 direcciones; al morir queda su cuerpo en el piso. |
 | IA | Persecución en línea recta dentro del radio de detección (sin pathfinding). |
-| Spawn | 3 enemigos por pantalla de zona COMBAT, +1 por piso después del primero y tope de 8 (D24, dificultad v1). Persiguen en toda su zona y la rodean. Sorteados con la seed de la lista `Spawner.enemy_scenes` (slime y errante), en tiles interiores (lejos de las paredes). |
+| Spawn | Pool por piso en `FloorData.enemy_pool` (`EnemySpawnData`: escena, coste de amenaza, peso, tamaño de grupo, a distancia, tope por zona) sorteado con la seed hasta gastar `threat_budget_per_cell` (San Ulmo: 4/5/6, D22). Siempre cabe un grupo a distancia; los siguientes no pasan de un tercio del presupuesto. Una zona por piso puede quedar para el élite solo (`elite_chance`: 0 / 1 / 0,25). Sin pool (rigs de test) se usa la lista fija `Spawner.enemy_scenes`. Persiguen en toda su zona y la rodean. |
+| Bestiario de la cripta | Rata (8 HP, grupos de 5-8, sale volando), reptante (salta 60 px tras 0,35 s), escupebilis (bilis en arco que deja un charco que daña; retrocede si te acercás), guardia osario (escudo frontal de 120° que gira lento; el 3.er golpe del combo rompe la guardia 0,8 s), cultista (virote de sangre y levanta errantes de 35 HP; un golpe corta la invocación) y el Cosido (élite de 96 px, 220 HP, sin aturdimiento). Arte del kit V3 en 4 direcciones. |
 | Muerte | Corta la IA y las colisiones, juega la muerte (animación o aplaste + estallido de sangre) y recién después libera al enemigo. |
 | Datos | `EnemyData` (.tres). |
 
@@ -129,15 +130,13 @@ confiable y feel · **P1** vertical slice v2 · **P2** profundidad · **P3** con
 
 | Problema | Impacto |
 |---|---|
-| `enemy_health/damage_multiplier` no se leen | La dificultad no sube con el piso. |
 | Sin números de daño | El combate se lee por el destello, el empuje y el sonido. |
-| El cofre es un `ColorRect` | Placeholder visual. |
 | SFX placeholder y sin música | Los sonidos son sintéticos (sirven para timing, no para el juego final) y no hay música. |
 | La mochila no se guarda entre sesiones | Una piedra azul comprada (va a la mochila) se pierde si se cierra el juego sin depositarla; el oro ya se cobró. |
 | Diálogo y tienda provisorios | Caja de texto sin nombre ni retrato, fuente por defecto y textos de respaldo en inglés hasta que entren las traducciones. |
 | Pantalla de muerte breve | Negro con lo que pasó con el botín (piedra azul gastada o expedición perdida) y fundido al guild. Todavía sin resumen de la run (piso, enemigos). |
-| No existe `DungeonData` | No hay techo de pisos: la muerte es la única forma de volver al guild. |
-| No existe maná ni coste dual | Todas las habilidades gastan solo stamina; el maná llega con la Fase 8 parte B (D19). |
+| Cierre de la Madre | Falta la escena de cierre (D14); la Escalera del Farol usa el arte de la escalera de bajada y la *Nana* no tiene sonido propio. |
+| Habilidades: solo el slot 1 | Una activa por arma; faltan los slots 2-4, Q/E/R y las opciones por slot. |
 | Los `.uid` están en el gitignore | Los UIDs cambian entre máquinas. |
 
 ---
@@ -173,24 +172,25 @@ Ya está en `main` y documentado en §1: knockback, i-frames, hit flash, pausa y
 - [x] Vuelta al guild en vez de wipe (`_return_to_guild()`), perdiendo lo de la expedición.
 - [x] Piedra azul: consumible que, al morir, te lleva al guild conservando el loot (D1).
 - [x] Guild con tienda en `scenes/guild/`: vender loot y comprar piedras azules.
-- [ ] Comprar equipo en la tienda.
-- [ ] `WorldClock` con fases día/noche.
+- [x] Comprar mejoras permanentes en la tienda: vendas, peto y cinturón (vida y aguante máximos, D11).
+- [~] Días: `ProfileState.day` avanza en cada vuelta al gremio y el HUD lo muestra ahí; faltan las fases día/noche con efecto (`WorldClock`).
 - [ ] Guardado del perfil y de los ajustes (`user://`).
 
 **Expedición y jefe**
-- [ ] `DungeonData` (id, cantidad de pisos, jefe) y techo de 3–4 pisos.
-- [ ] Tipo de zona BOSS.
-- [ ] Primer boss con 1–2 fases (`PhaseController`, ver `AGENTS.md` §26).
-- [ ] Usar los multiplicadores de `FloorData` en `Spawner` al instanciar enemigos.
+- [x] `DungeonData` (id, cantidad de pisos, jefe) y techo de pisos: San Ulmo tiene 3.
+- [x] Zonas BOSS y EVENT (antesala del jefe).
+- [x] Primer boss con 2 fases: la Madre de la Fosa (D21), con barra de vida y Escalera del Farol.
+- [x] La *Nana* y los charcos de bilis de la Madre.
+- [x] Usar los multiplicadores de `FloorData` en `Spawner` al instanciar enemigos.
 - [x] Escalar la cantidad de enemigos según el piso y el tamaño de la zona (`Spawner.enemies_per_screen`).
 
 **Flujo y presentación**
-- [ ] HUD: label de piso actual (`FloorLabel`, previsto en `AGENTS.md` §5).
+- [x] HUD: label de piso actual (`FloorLabel`, "Piso 2 de 3").
 - [ ] Pantalla de muerte: piso alcanzado, enemigos derrotados y botón de reintentar.
 - [ ] Menú principal (Jugar / Salir) como escena de entrada.
 - [ ] Prompt "F" visible al estar cerca de un cofre o de la salida.
 - [ ] Indicador visual de "puertas cerradas" y efecto al limpiar la zona (el sonido ya existe).
-- [ ] Sprite real para el cofre, con animación de abrir.
+- [~] Sprite del cofre cerrado y abierto (dibujado a mano, sin pasar por el kit ni el linter); falta la animación de abrir.
 - [ ] Transición (fade) entre pisos.
 - [x] Base de localización ES/EN (`tr()` + CSV) de los textos de UI.
 
@@ -202,35 +202,35 @@ Ya está en `main` y documentado en §1: knockback, i-frames, hit flash, pausa y
 ### P2 — profundidad
 
 **Mazmorra**
-- [ ] Pool de plantillas de sala en `scenes/rooms/`.
-- [ ] Obstáculos movibles que consumen stamina (D20); su colocación viene de las plantillas de sala.
-- [ ] Llaves y puertas cerradas + validación de solvabilidad en el generador.
-- [ ] Nuevos tipos de zona: EVENT y SHOP.
+- [x] Pool de plantillas de sala (`RoomTemplate` en `resources/rooms/`, 6 plantillas).
+- [x] Obstáculos movibles que consumen stamina (D20), puestos por las plantillas.
+- [x] Llave y bóveda tras puertas trabadas + validación de solvabilidad en el generador.
+- [x] Zona EVENT con el Altar del Voto: cura a cambio de carne, diezmo o piedra azul (D23). SHOP sigue pendiente.
 - [ ] Minimapa con las zonas visitadas.
-- [ ] Obstáculos y decoración estática dentro de las zonas (pilares, escombros) para variar el combate.
+- [x] Pilares dentro de las salas COMBAT (plantillas); faltan los escombros decorativos.
 - [ ] Trampas que usen el protocolo Hitbox (pinchos, explosiones).
 - [ ] Mostrar la seed en pausa o en la pantalla de muerte, y poder introducir una seed.
 
 **Habilidades (Fase 8 parte B, D12)**
-- [ ] `AbilityData` por kit de arma + abstracción de slot (activas 1-4, buffs/debuff Q/E/R).
-- [ ] `ManaComponent` + barra de maná + coste dual (`stamina_cost` / `mana_cost`) en `AbilityData` (D19).
-- [ ] Primer corte: 1-2 activas + 1 pasiva por arma.
+- [~] `AbilityData` por kit de arma (`WeaponData.abilities`, índice = slot); hoy solo el slot 1.
+- [x] Maná (segundo `StaminaComponent`) + barra en el HUD + coste dual atómico en `AbilityData` (D19).
+- [~] Primer corte: 1 activa por arma (tajo giratorio, disparo triple, bola de fuego); faltan las pasivas.
 - [ ] Ice Nova: AoE con ralentización (primer crowd control).
-- [ ] Fireball: proyectil que reutiliza `arrow.gd` y aplica daño en área al impactar.
+- [x] Fireball: proyectil que reutiliza `arrow.gd` y explota en área al impactar.
 - [ ] Speed Buff: buff temporal de velocidad.
-- [ ] Acciones de habilidad en el Input Map y en el HUD.
+- [x] `ability_1` en el Input Map (1 / RB) y en el HUD, junto al arma; parpadea en rojo si no alcanza el coste.
 
 **Estados y buffs**
 - [ ] Sistema mínimo de status effects (slow, burn, freeze) con duración, aplicado vía `DamageInfo`.
 - [ ] Buffs de stats temporales y permanentes (daño, velocidad, regeneración de stamina/maná).
 
 **Enemigos**
-- [ ] Segundo enemigo a distancia (dispara proyectiles con el mismo protocolo).
+- [x] Enemigos a distancia: escupebilis (bilis en arco + charco) y cultista (virote de sangre + invocación).
 - [x] Enemigo que telegrafía su ataque (cadáver errante).
-- [ ] Tercer enemigo con carga o embestida.
+- [x] Enemigos con embestida o salto: reptante, rata y guardia osario (con escudo).
 - [ ] Pathfinding básico (NavigationRegion2D o A* sobre la grilla) para no quedarse trabado en paredes.
-- [ ] Tabla de spawn por piso en `FloorData` (qué enemigos aparecen y con qué peso).
-- [ ] Elites: variante con más HP, tinte distinto y un modificador.
+- [x] Pool de spawn por piso en `FloorData` con presupuesto de amenaza (D22). Faltan las oleadas para zonas de varias pantallas.
+- [x] Élite: el Cosido, solo en su zona, con gancho que tira del jugador (la voltereta lo esquiva).
 
 **Loot y progresión**
 - [ ] `UpgradeData`: mejoras pasivas elegibles (elige 1 de 3) en las zonas REWARD.
@@ -241,9 +241,9 @@ Ya está en `main` y documentado en §1: knockback, i-frames, hit flash, pausa y
 - [ ] Balance: tabla de DPS por arma/coste y curvas de dificultad por piso.
 
 **Historia y pueblo**
-- [ ] Sistema de diálogo data-driven (`DialogueData`).
-- [ ] NPCs del pueblo con diálogo fijo.
-- [ ] Escena de cierre al terminar cada dungeon.
+- [x] Sistema de diálogo data-driven (`DialogueData` + `DialoguePanel`).
+- [~] NPCs del pueblo: saludo fijo y una línea según cómo volviste (muerte, piedra azul, victoria); faltan las conversaciones largas.
+- [x] Escena de cierre al limpiar San Ulmo por primera vez.
 
 ### P3 — contenido y pulido
 

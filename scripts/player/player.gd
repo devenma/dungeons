@@ -18,6 +18,14 @@ extends CharacterBody2D
 var last_move_direction: Vector2 = Vector2.DOWN
 # Un empuje lo movió este frame (aturdido): no puede rodar / A push moved it this frame (staggered): it cannot roll
 var _pushed: bool = false
+# Atracción sostenida de este frame (la Nana); se suma al movimiento y se vacía / This frame's sustained pull (the Lullaby); added to movement and cleared
+var _pull: Vector2 = Vector2.ZERO
+
+
+## Una fuerza externa lo arrastra este frame (px/s); caminando en contra se resiste
+## An outside force drags it this frame (px/s); walking against it resists
+func add_pull(velocity_px: Vector2) -> void:
+	_pull += velocity_px
 
 
 func _ready() -> void:
@@ -72,6 +80,8 @@ func _physics_process(delta: float) -> void:
 	_pushed = push != Vector2.ZERO
 	if _pushed:
 		velocity = push
+	velocity += _pull
+	_pull = Vector2.ZERO
 	move_and_slide()
 
 

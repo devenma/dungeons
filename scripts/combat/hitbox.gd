@@ -3,8 +3,9 @@ extends Area2D
 
 ## Damage source (HP-1): monitors opposing Hurtboxes during an active swing.
 ## begin_swing()/end_swing() toggle monitoring via set_deferred (HP-4) so a
-## target already overlapping at arm time is caught. Each target is hit at
-## most once per swing; _hit_targets is reset when a new swing begins.
+## target already overlapping at arm time is caught. Each target entity (the
+## Hurtbox's parent, so a boss with several boxes too) is hit at most once per
+## swing; _hit_targets is reset when a new swing begins.
 ## An accepted hit triggers HitStop for `hit_stop_seconds` (D4) and, with
 ## `camera_shake_pixels` > 0, shakes every camera in the "camera_shake" group.
 
@@ -20,8 +21,13 @@ const HitStopScript: GDScript = preload("res://scripts/combat/hit_stop.gd")
 @export var hit_stop_seconds: float = 0.0
 ## Temblor de cámara al impactar (px enteros); 0 = sin temblor / Camera shake on impact (whole px); 0 = no shake
 @export var camera_shake_pixels: int = 0
+## Rompe guardias de escudo / Breaks shield guards
+@export var guard_break: bool = false
+## Empuja a cada objetivo desde el centro de la caja con la fuerza de `knockback` (golpes de área)
+## Pushes each target away from the box centre with `knockback`'s strength (area hits)
+@export var radial_knockback: bool = false
 
-var _hit_targets: Array[Area2D] = []
+var _hit_targets: Array[Node] = []
 
 
 func _ready() -> void:
@@ -42,13 +48,14 @@ func end_swing() -> void:
 
 
 func _on_area_entered(area: Area2D) -> void:
-	if _hit_targets.has(area):
-		return
-	_hit_targets.append(area)
 	var hurtbox := area as Hurtbox
-	if hurtbox == null:
+	if hurtbox == null or _hit_targets.has(hurtbox.get_parent()):
 		return
-	if hurtbox.take_hit(DamageInfo.new(damage, knockback)):
+	_hit_targets.append(hurtbox.get_parent())
+	var push: Vector2 = knockback
+	if radial_knockback:
+		push = (hurtbox.global_position - global_position).normalized() * knockback.length()
+	if hurtbox.take_hit(DamageInfo.new(damage, push, guard_break)):
 		HitStopScript.apply(get_tree(), hit_stop_seconds)
 		if camera_shake_pixels > 0:
 			get_tree().call_group("camera_shake", "shake", camera_shake_pixels)

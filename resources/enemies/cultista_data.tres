@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="EnemyData" format=3]
+
+[ext_resource type="Script" path="res://resources/enemies/enemy_data.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/items/errante_drops.tres" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/projectiles/blood_bolt.tscn" id="3"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/errante.tscn" id="4"]
+
+[resource]
+script = ExtResource("1")
+health = 30
+speed = 30.0
+damage = 10
+detect_radius = 180.0
+attack_range = 180.0
+attack_cooldown = 2.4
+knockback = 120.0
+hit_stop_seconds = 0.06
+telegraph_seconds = 0.5
+stagger_seconds = 0.5
+drop_table = ExtResource("2")
+projectile_scene = ExtResource("3")
+keep_distance = 100.0
+summon_scene = ExtResource("4")
+summon_every_seconds = 9.0
+summon_telegraph_seconds = 1.0
+summon_max = 2
+summon_health = 35

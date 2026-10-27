@@ -17,11 +17,15 @@ const IMPACT_Z: int = 2
 
 # Capa propia: ninguna; nadie detecta al proyectil / Own layer: none; nothing detects the projectile
 const SPAWN_LAYER: int = 0
-# Choca con hurtboxes enemigas y con paredes / Hits enemy hurtboxes and walls
-const TARGET_MASK: int = CollisionLayers.ENEMY_HURTBOX | CollisionLayers.WORLD
+const HitStopScript: GDScript = preload("res://scripts/combat/hit_stop.gd")
 
+## Con qué choca: hurtboxes enemigas y paredes; los proyectiles enemigos apuntan a PLAYER_HURTBOX
+## What it hits: enemy hurtboxes and walls; enemy projectiles aim at PLAYER_HURTBOX
+@export var target_mask: int = CollisionLayers.ENEMY_HURTBOX | CollisionLayers.WORLD
 ## Daño (puntos de vida); el arma lo pisa con WeaponData.damage / Damage (health points); the weapon overrides it with WeaponData.damage
 @export var damage: int = 8
+## Congelación al impactar (s); 0 = sin hit-stop (D24) / Freeze on impact (s); 0 = no hit-stop (D24)
+@export var hit_stop_seconds: float = 0.0
 ## Empuje inicial (px/s, con dirección) / Initial push (px/s, directed)
 @export var knockback: Vector2 = Vector2.ZERO
 ## Velocidad (px/s) / Speed (px/s)
@@ -37,6 +41,10 @@ const TARGET_MASK: int = CollisionLayers.ENEMY_HURTBOX | CollisionLayers.WORLD
 @export var impact_sheet: Texture2D
 ## Velocidad del impacto (frames/s) / Impact speed (frames/s)
 @export var impact_fps: float = 15.0
+## Golpe de área que suelta al impactar (bola de fuego); null = ninguno / Area hit it releases on impact (fireball); null = none
+@export var explosion_scene: PackedScene
+## Radio de esa explosión, en px; lo pisa la habilidad / That explosion's radius, in px; the ability overrides it
+@export var explosion_radius: float = 36.0
 
 @onready var _visual: AnimatedSprite2D = $Visual
 @onready var _impact_sound: AudioStreamPlayer2D = $ImpactSound
@@ -48,7 +56,7 @@ func _ready() -> void:
 	# Keep monitorable=true: with layer 0 no other area can see the arrow,
 	# but monitorable=false stops body_entered (wall) detection.
 	set_deferred("collision_layer", SPAWN_LAYER)
-	set_deferred("collision_mask", TARGET_MASK)
+	set_deferred("collision_mask", target_mask)
 	set_deferred("monitoring", true)
 	rotation = direction.angle()
 	var row: String = KitSpriteScript.row_for(direction)
@@ -58,7 +66,7 @@ func _ready() -> void:
 	_visual.rotation = -float(ROW_ANGLES[row])
 	_visual.play()
 	collision_layer = SPAWN_LAYER
-	collision_mask = TARGET_MASK
+	collision_mask = target_mask
 	monitoring = true
 
 	# Connect handlers BEFORE any signal can fire (§44.16).
@@ -87,7 +95,8 @@ func _on_area_entered(area: Area2D) -> void:
 	if hurtbox == null:
 		return
 	_living = false
-	hurtbox.take_hit(DamageInfo.new(damage, knockback))
+	if hurtbox.take_hit(DamageInfo.new(damage, knockback)):
+		HitStopScript.apply(get_tree(), hit_stop_seconds)
 	_spawn_impact()
 	queue_free()
 
@@ -101,6 +110,14 @@ func _on_body_entered(_body: Node2D) -> void:
 
 
 func _spawn_impact() -> void:
+	if explosion_scene != null:
+		var explosion: Node2D = explosion_scene.instantiate() as Node2D
+		explosion.set("damage", damage)
+		explosion.set("knockback", Vector2(knockback.length(), 0.0))
+		explosion.set("radius", explosion_radius)
+		explosion.set("target_mask", target_mask & ~CollisionLayers.WORLD)
+		explosion.position = position
+		get_parent().add_child.call_deferred(explosion)
 	var cell: float = impact_sheet.get_height()
 	VfxScript.play_once(get_parent(), impact_sheet, int(impact_sheet.get_width() / cell), impact_fps,
 			Vector2(cell, cell) / 2.0, global_position, IMPACT_Z)

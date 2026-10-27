@@ -30,6 +30,11 @@ var storage: Inventory = Inventory.new(STORAGE_SLOTS)
 var owned_weapons: Array[WeaponData] = []
 ## Ids de desbloqueos del pueblo / Town unlock ids
 var unlocks: Array[String] = []
+## Mejoras compradas (D11), guardadas por ruta como las armas / Bought upgrades (D11), saved by path like weapons
+var owned_upgrades: Array[UpgradeData] = []
+## Día del pueblo: cada expedición es una noche y la vuelta abre el día siguiente (D2)
+## Town day: every expedition is a night and coming back opens the next day (D2)
+var day: int = 1
 
 
 func _ready() -> void:
@@ -45,6 +50,8 @@ func reset_profile() -> void:
 	if weapon_data != null:
 		owned_weapons.append(weapon_data)
 	unlocks.clear()
+	owned_upgrades.clear()
+	day = 1
 	profile_changed.emit()
 
 
@@ -67,6 +74,7 @@ func load_profile() -> bool:
 		DirAccess.rename_absolute(save_path, save_path + ".unsupported")
 		return false
 	banked_gold = maxi(_as_int(data.get("banked_gold")), 0)
+	day = maxi(_as_int(data.get("day", 1)), 1)
 	var storage_data: Variant = data.get("storage", {})
 	if storage_data is Dictionary:
 		storage.load_dict(storage_data)
@@ -77,7 +85,8 @@ func load_profile() -> bool:
 			var weapon_path: String = str(path)
 			if weapon_path.begins_with("res://") and ResourceLoader.exists(weapon_path):
 				var weapon_data: WeaponData = load(weapon_path) as WeaponData
-				if weapon_data != null:
+				# Guardados viejos podían repetir armas / Old saves could repeat weapons
+				if weapon_data != null and not loaded.has(weapon_data):
 					loaded.append(weapon_data)
 		if not loaded.is_empty():
 			owned_weapons = loaded
@@ -85,6 +94,14 @@ func load_profile() -> bool:
 	if unlock_ids is Array:
 		for unlock_id in unlock_ids:
 			unlocks.append(str(unlock_id))
+	var upgrade_paths: Variant = data.get("upgrades", [])
+	if upgrade_paths is Array:
+		for path in upgrade_paths:
+			var upgrade_path: String = str(path)
+			if upgrade_path.begins_with("res://") and ResourceLoader.exists(upgrade_path):
+				var upgrade: UpgradeData = load(upgrade_path) as UpgradeData
+				if upgrade != null:
+					owned_upgrades.append(upgrade)
 	profile_changed.emit()
 	return true
 
@@ -94,12 +111,17 @@ func save_profile() -> bool:
 	var weapon_paths: Array[String] = []
 	for weapon_data in owned_weapons:
 		weapon_paths.append(weapon_data.resource_path)
+	var upgrade_paths: Array[String] = []
+	for upgrade in owned_upgrades:
+		upgrade_paths.append(upgrade.resource_path)
 	var data: Dictionary = {
 		"version": SAVE_VERSION,
 		"banked_gold": banked_gold,
 		"storage": storage.to_dict(),
 		"owned_weapons": weapon_paths,
 		"unlocks": unlocks,
+		"upgrades": upgrade_paths,
+		"day": day,
 	}
 	var tmp_path: String = save_path + ".tmp"
 	var file: FileAccess = FileAccess.open(tmp_path, FileAccess.WRITE)
@@ -129,6 +151,46 @@ func sell(backpack: Inventory, item: ItemData) -> bool:
 	banked_gold += maxi(item.value, 0)
 	profile_changed.emit()
 	return true
+
+
+func advance_day() -> void:
+	day += 1
+	profile_changed.emit()
+
+
+## A la venta: no comprada y con su requisito ya comprado / For sale: not bought and with its requirement bought
+func can_offer(upgrade: UpgradeData) -> bool:
+	return not owned_upgrades.has(upgrade) and (upgrade.requires == null or owned_upgrades.has(upgrade.requires))
+
+
+## Sin oro o sin requisito no cobra nada / Charges nothing when broke or missing the requirement
+func buy_upgrade(upgrade: UpgradeData) -> bool:
+	if not can_offer(upgrade) or banked_gold < upgrade.price:
+		return false
+	banked_gold -= upgrade.price
+	owned_upgrades.append(upgrade)
+	profile_changed.emit()
+	return true
+
+
+## Puntos que suman las mejoras compradas a una estadística / Points the bought upgrades add to a stat
+func stat_bonus(stat: UpgradeData.Stat) -> int:
+	var total: int = 0
+	for upgrade in owned_upgrades:
+		if upgrade.stat == stat:
+			total += upgrade.amount
+	return total
+
+
+## Un dungeon limpio queda como desbloqueo "cleared:<id>" (D22) / A cleared dungeon is stored as the unlock "cleared:<id>" (D22)
+func has_cleared(dungeon_id: StringName) -> bool:
+	return unlocks.has("cleared:%s" % dungeon_id)
+
+
+func mark_cleared(dungeon_id: StringName) -> void:
+	if not has_cleared(dungeon_id):
+		unlocks.append("cleared:%s" % dungeon_id)
+		profile_changed.emit()
 
 
 ## Compra una unidad con oro bancado; sin oro o con la mochila llena no cobra nada.

@@ -19,6 +19,7 @@ var _profile: ProfileState
 @onready var _line: Label = %Line
 @onready var _gold: Label = %Gold
 @onready var _buy_button: Button = %BuyButton
+@onready var _upgrade_list: VBoxContainer = %UpgradeList
 @onready var _sell_title: Label = %SellTitle
 @onready var _sell_list: VBoxContainer = %SellList
 
@@ -73,6 +74,17 @@ func buy() -> bool:
 	return true
 
 
+## Mejora permanente (D11): una vez, con oro bancado / Permanent upgrade (D11): once, with banked gold
+func buy_upgrade(upgrade: UpgradeData) -> bool:
+	if not _profile.buy_upgrade(upgrade):
+		_say("npc.merchant.shop.no_money", "No gold, no deal. Go back down.")
+		return false
+	_profile.save_profile()
+	_say("npc.merchant.shop.upgrade", "It'll hold. Better than your skin does.")
+	_refresh()
+	return true
+
+
 func _say(key: String, fallback: String) -> void:
 	_line.text = UiText.tr_or(key, fallback)
 
@@ -86,9 +98,22 @@ func _refresh() -> void:
 	_buy_button.text = "%s %s  -%s" % [UiText.tr_or("ui.shop.buy", "Buy"), shop_data.item.display_name(),
 			_price(shop_data.price)]
 	# remove_child antes de liberar: el botón que se apretó sigue en su señal / remove_child before freeing: the pressed button is still in its signal
-	for child: Node in _sell_list.get_children():
-		_sell_list.remove_child(child)
+	for child: Node in _sell_list.get_children() + _upgrade_list.get_children():
+		child.get_parent().remove_child(child)
 		child.queue_free()
+	for upgrade: UpgradeData in shop_data.upgrades:
+		if not _profile.can_offer(upgrade):
+			continue
+		var stat_key: String = "ui.shop.stat.health" if upgrade.stat == UpgradeData.Stat.MAX_HEALTH \
+				else "ui.shop.stat.stamina"
+		var upgrade_button: Button = Button.new()
+		upgrade_button.text = "%s %s +%d %s  -%s" % [UiText.tr_or("ui.shop.buy", "Buy"), upgrade.display_name(),
+				upgrade.amount, UiText.tr_or(stat_key, "max"), _price(upgrade.price)]
+		upgrade_button.tooltip_text = tr(upgrade.desc_key)
+		upgrade_button.flat = true
+		upgrade_button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		upgrade_button.pressed.connect(buy_upgrade.bind(upgrade))
+		_upgrade_list.add_child(upgrade_button)
 	for slot: Dictionary in _run_manager.backpack.slots:
 		var item: ItemData = slot["item"]
 		var count: int = slot["count"]

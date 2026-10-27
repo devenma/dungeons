@@ -1,0 +1,80 @@
+[gd_scene load_steps=18 format=3]
+
+[ext_resource type="Script" path="res://scripts/bosses/madre_fosa.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/art/bosses/madre_rest.png" id="2"]
+[ext_resource type="Script" path="res://scripts/combat/hurtbox.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/combat/health_component.gd" id="4"]
+[ext_resource type="Script" path="res://scripts/combat/hit_flash.gd" id="5"]
+[ext_resource type="Script" path="res://scripts/visual/hit_vfx.gd" id="6"]
+[ext_resource type="Script" path="res://scripts/audio/health_sounds.gd" id="7"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/hit_flesh.tres" id="8"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/bone_collapse.tres" id="9"]
+[ext_resource type="Resource" path="res://resources/bosses/madre_slam.tres" id="10"]
+[ext_resource type="Resource" path="res://resources/bosses/madre_sweep.tres" id="11"]
+[ext_resource type="Resource" path="res://resources/bosses/madre_hands.tres" id="12"]
+[ext_resource type="Resource" path="res://resources/bosses/madre_vomit.tres" id="13"]
+[ext_resource type="Resource" path="res://resources/items/madre_drops.tres" id="14"]
+[ext_resource type="Resource" path="res://resources/bosses/madre_nana.tres" id="15"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_pile"]
+size = Vector2(128, 112)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_torso"]
+size = Vector2(96, 48)
+
+[node name="MadreFosa" type="StaticBody2D"]
+z_index = 1
+collision_layer = 4
+collision_mask = 0
+script = ExtResource("1")
+attacks = Array[Resource]([ExtResource("10"), ExtResource("11"), ExtResource("12"), ExtResource("13"), ExtResource("15")])
+drop_table = ExtResource("14")
+
+[node name="Sprite" type="Sprite2D" parent="."]
+texture = ExtResource("2")
+centered = false
+offset = Vector2(-72, -126)
+
+[node name="Focus" type="Marker2D" parent="."]
+position = Vector2(0, -80)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -56)
+shape = SubResource("RectangleShape2D_pile")
+
+[node name="Hurtbox" type="Area2D" parent="."]
+collision_layer = 16
+collision_mask = 0
+monitoring = false
+monitorable = true
+script = ExtResource("3")
+layer_bit = 16
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
+position = Vector2(0, -24)
+shape = SubResource("RectangleShape2D_torso")
+
+[node name="Health" type="Node" parent="."]
+script = ExtResource("4")
+max_health = 600
+
+[node name="HitFlash" type="Node" parent="."]
+script = ExtResource("5")
+visual_path = NodePath("../Sprite")
+
+[node name="HitVfx" type="Node" parent="."]
+script = ExtResource("6")
+hit_height = 40.0
+
+[node name="HealthSounds" type="Node2D" parent="."]
+script = ExtResource("7")
+
+[node name="HurtSound" type="AudioStreamPlayer2D" parent="HealthSounds"]
+stream = ExtResource("8")
+volume_db = -3.0
+bus = &"SFX"
+
+[node name="DeathSound" type="AudioStreamPlayer2D" parent="HealthSounds"]
+stream = ExtResource("9")
+volume_db = -2.0
+bus = &"SFX"

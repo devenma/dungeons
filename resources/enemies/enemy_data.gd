@@ -33,3 +33,37 @@ extends Resource
 @export var poise_while_attacking: bool = false
 ## Botín que suelta al morir; null = nada / Loot dropped on death; null = nothing
 @export var drop_table: DropTable
+## Escala del empuje que recibe (D24): >1 sale volando, <1 aguanta / Scale of the push it takes (D24): >1 flies off, <1 holds ground
+@export var knockback_scale: float = 1.0
+
+@export_group("Ranged")
+## Proyectil que dispara al terminar la telegrafía en lugar de abrir la hitbox; null = cuerpo a cuerpo
+## Projectile fired when the telegraph ends instead of opening the hitbox; null = melee
+@export var projectile_scene: PackedScene
+## Distancia que mantiene: más cerca retrocede (px); 0 = no retrocede
+## Distance it keeps: any closer and it backs off (px); 0 = never backs off
+@export var keep_distance: float = 0.0
+
+@export_group("Summon")
+## Lo que invoca (errantes a medio formar); null = no invoca / What it summons (half-formed errantes); null = never summons
+@export var summon_scene: PackedScene
+## Cada cuánto invoca (s) / How often it summons (s)
+@export var summon_every_seconds: float = 8.0
+## Telegrafía quieto antes de invocar (s); un golpe la corta / Standing telegraph before summoning (s); a hit cancels it
+@export var summon_telegraph_seconds: float = 1.0
+## Invocados vivos a la vez, como máximo / Most summons alive at once
+@export var summon_max: int = 2
+## Vida del invocado (puntos) / Summon health (points)
+@export var summon_health: int = 35
+
+@export_group("Hook")
+## Tirón del gancho hacia el enemigo, en px/s; 0 = sin gancho / Hook yank toward the enemy, in px/s; 0 = no hook
+@export var hook_speed: float = 0.0
+## Distancia del jugador en la que engancha, en px / Player distance it hooks at, in px
+@export var hook_min_distance: float = 64.0
+@export var hook_max_distance: float = 160.0
+## Cada cuánto engancha y su telegrafía, en s / How often it hooks and its telegraph, in s
+@export var hook_every_seconds: float = 6.0
+@export var hook_telegraph_seconds: float = 0.6
+## Daño del gancho (puntos) / Hook damage (points)
+@export var hook_damage: int = 6

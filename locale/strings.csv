@@ -9,7 +9,6 @@ ui.hud.weapon,Arma: %s,Weapon: %s
 ui.hud.blue_stones,Piedras azules: %d,Blue stones: %d
 ui.hud.picked_up,Recogido: %s,Picked up: %s
 ui.hud.no_stamina,Sin aliento,Out of breath
-ui.hud.no_mana,Sin maná,Out of mana
 ui.hud.pack_full,La mochila no da para más.,Your pack can't take any more.
 ui.hud.zone_locked,Las puertas se cierran.,The doors seal shut.
 ui.hud.zone_cleared,Silencio.,Silence.
@@ -434,3 +433,38 @@ item.bone_shard.desc,Afilada por algo que mordía.,Sharpened by something that c
 item.silver_ring.name,Anillo de plata,Silver ring
 item.silver_ring.desc,El dedo que lo llevaba no vino con él.,The finger that wore it did not come along.
 ui.hud.gold_amount,%d oro,%d gold
+boss.madre.name,La Madre de la Fosa,The Mother of the Pit
+item.corona_velas.name,Corona de velas,Candle crown
+item.corona_velas.desc,Sigue tibia. Las velas no se apagan del todo.,Still warm. The candles never quite go out.
+dungeon.san_ulmo.name,Cripta de San Ulmo,Crypt of San Ulmo
+ui.altar.title,Altar del Voto,Altar of the Vow
+ui.altar.line,Cura todo. Algo se lleva.,It heals everything. It takes something.
+ui.altar.not_hurt,No necesitas cura.,You need no healing.
+ui.altar.nothing,El altar no acepta nada más.,The altar accepts nothing more.
+ui.altar.flesh,Carne,Flesh
+ui.altar.flesh.cost,-20 % de vida máx. hasta el gremio,-20% max health until the guild
+ui.altar.flesh.none,No te queda nada que dar,Nothing left to give
+ui.altar.tithe,Diezmo,Tithe
+ui.altar.tithe.all,Se lleva toda la mochila,It takes the whole pack
+ui.altar.tithe.empty,La mochila está vacía,The pack is empty
+ui.altar.stone,Piedra azul,Blue stone
+ui.altar.stone.cost,Piedras: %d,Stones: %d
+ui.altar.stone.none,No tienes piedra azul,You have no blue stone
+ui.shop.stat.health,vida máx.,max health
+ui.shop.stat.stamina,aguante máx.,max stamina
+npc.merchant.shop.upgrade,"Aguanta. Más que tu piel, seguro.",It'll hold. Better than your skin does.
+upgrade.vendas.name,Vendas cosidas,Stitched bandages
+upgrade.vendas.desc,Lino hervido y cosido en capas. Huele a la Hermana.,Boiled linen stitched in layers. Smells of the Sister.
+upgrade.peto.name,Peto de cuero hervido,Boiled leather cuirass
+upgrade.peto.desc,"Duro como una suela, y casi igual de limpio.","Hard as a boot sole, and about as clean."
+upgrade.cinturon.name,Cinturón de aguante,Stamina belt
+upgrade.cinturon.desc,Te aprieta las tripas para que no se te salga el aire.,Cinches your guts so the air stays in.
+ability.spin_slash.name,Tajo giratorio,Spinning slash
+ability.triple_shot.name,Disparo triple,Triple shot
+ability.fireball.name,Bola de fuego,Fireball
+ui.hud.day,Día %d,Day %d
+item.llave_osario.name,Llave del osario,Ossuary key
+item.llave_osario.desc,Hierro ennegrecido y frío. Abre la bóveda del piso.,Blackened, cold iron. Opens the floor's vault.
+dialogue.san_ulmo.closing.1,"Las velas de la fosa se apagan una por una. La canción sigue un momento más, sin nadie que la cante.","The candles of the pit go out one by one. The song goes on a moment longer, with no one left to sing it."
+dialogue.san_ulmo.closing.2,"Un cultista se ríe con la boca llena de tierra: «No era la Madre. Era una hija que aprendió la canción.»","A cultist laughs with a mouthful of dirt: 'She was not the Mother. She was a daughter who learned the song.'"
+dialogue.san_ulmo.closing.3,"Subes por la Escalera del Farol con la corona tibia entre las manos. Arriba, Hondoval duerme sin soñar.","You climb the Lantern Stair with the warm crown in your hands. Above, Hondoval sleeps without dreaming."

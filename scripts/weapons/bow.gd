@@ -63,6 +63,7 @@ func try_attack(aim_dir: Vector2 = Vector2.ZERO) -> bool:
 	arrow.knockback = aim * data.knockback
 	arrow.direction = aim
 	arrow.speed = data.projectile_speed
+	arrow.hit_stop_seconds = data.hit_stop_seconds
 	var scene_root: Node = get_tree().current_scene
 	scene_root.add_child(arrow)
 	arrow.global_position = origin + aim * SPAWN_OFFSET

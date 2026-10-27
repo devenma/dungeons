@@ -153,7 +153,7 @@ func _on_door_body_exited(body: Node2D, door: Zone.Door,
 	# once the player is on its floor, so the closed tiles never land on the body. A crossing
 	# elsewhere drops a lock still waiting.
 	_lock_zone_id = -1
-	if target_zone.type == Zone.ZoneType.COMBAT and not target_zone.cleared:
+	if DungeonGenerator.locks_on_entry(target_zone) and not target_zone.cleared:
 		_lock_zone_id = target_zone.id
 		_lock_body = player
 	zone_entered.emit(target_zone.id)
@@ -256,7 +256,7 @@ func on_zone_cleared(zone_id: int) -> void:
 	var opened_any: bool = false
 	for door in _zone_doors[zone_id]:
 		var d: Zone.Door = door
-		if not d.combat_locked:
+		if not d.combat_locked or d.key_locked:
 			continue
 		opened_any = opened_any or d.state != 0
 		# Se abren todas las puertas con traba de la zona, aunque la vecina sea COMBAT sin limpiar
@@ -265,3 +265,21 @@ func on_zone_cleared(zone_id: int) -> void:
 		DungeonGeometry.set_door_closed(_tilemap, d, false)
 	if opened_any:
 		doors_opened.emit(zone_id)
+
+
+## La llave abre la bóveda: todas las puertas trabadas del piso (hay una sola bóveda); false si `door_id`
+## no estaba trabada.
+## The key opens the vault: every locked door on the floor (there is a single vault); false if `door_id`
+## was not locked.
+func unlock(door_id: int) -> bool:
+	var asked: Array = _doors.filter(func(d: Zone.Door) -> bool: return d.id == door_id and d.key_locked)
+	if asked.is_empty():
+		return false
+	for d in _doors:
+		var door: Zone.Door = d
+		if door.key_locked:
+			door.key_locked = false
+			door.state = 0
+			DungeonGeometry.set_door_closed(_tilemap, door, false)
+	doors_opened.emit((asked[0] as Zone.Door).zone_a_id)
+	return true

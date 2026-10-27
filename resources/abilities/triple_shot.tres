@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="AbilityData" format=3]
+
+[ext_resource type="Script" path="res://resources/abilities/ability_data.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/abilities/volley.tscn" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"triple_shot"
+name_key = "ability.triple_shot.name"
+effect_scene = ExtResource("2")
+stamina_cost = 30
+damage = 8
+knockback = 120.0
+projectile_count = 3
+spread_degrees = 24.0

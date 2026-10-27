@@ -1,0 +1,30 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/projectiles/arrow.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/art/vfx/bolt_impact.png" id="2"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/magic_bolt_impact.tres" id="3"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bolt"]
+size = Vector2(8, 4)
+
+[node name="BloodBolt" type="Area2D"]
+modulate = Color(1, 0.35, 0.3, 1)
+collision_layer = 0
+collision_mask = 9
+monitoring = true
+script = ExtResource("1")
+target_mask = 9
+speed = 170.0
+max_lifetime = 3.0
+flight_sheet_prefix = "res://assets/art/vfx/bolt_flight_"
+impact_sheet = ExtResource("2")
+
+[node name="Visual" type="AnimatedSprite2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_bolt")
+
+[node name="ImpactSound" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("3")
+volume_db = -5.0
+bus = &"SFX"

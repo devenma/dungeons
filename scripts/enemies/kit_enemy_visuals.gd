@@ -43,6 +43,22 @@ func show_attack(facing: Vector2, _telegraph_seconds: float) -> void:
 	_play_one_shot("attack")
 
 
+# Con hoja propia (summon, hook, block) la usa; si no, la de ataque o la de golpe / With its own sheet (summon, hook, block) it uses it; otherwise the attack or hurt one
+func show_special(animation_base: String, facing: Vector2, telegraph_seconds: float) -> void:
+	if not _sprite.sprite_frames.has_animation(animation_base + "_S"):
+		show_attack(facing, telegraph_seconds)
+		return
+	if facing != Vector2.ZERO:
+		_facing = KitSpriteScript.row_for(facing)
+	_play_one_shot(animation_base)
+
+
+func show_block(facing: Vector2) -> void:
+	if facing != Vector2.ZERO:
+		_facing = KitSpriteScript.row_for(facing)
+	_play_one_shot("block" if _sprite.sprite_frames.has_animation("block_S") else "hurt")
+
+
 func play_death() -> void:
 	_spawn_death_burst()
 	_play_one_shot("death")

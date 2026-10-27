@@ -123,7 +123,7 @@ La arquitectura principal debe mantenerse aproximadamente así:
                    Enemy
 ```
 
-`ProfileState` es el perfil persistente (oro bancado, almacén del guild, armas aseguradas, desbloqueos). `RunManager` es **solo** el estado de la expedición (seed, piso actual, loot de la mochila, oro encima y armas recogidas en esta expedición) y muere con ella. `Guild` (`scenes/guild/`) es el hub donde arranca el juego y se vuelve al morir; `WorldClock` (fases día/noche) todavía no existe. No crear managers nuevos para estas responsabilidades: ya tienen dueño.
+`ProfileState` es el perfil persistente (oro bancado, almacén del guild, armas aseguradas, desbloqueos). `RunManager` es **solo** el estado de la expedición (seed, piso actual, loot de la mochila, oro encima y armas recogidas en esta expedición) y muere con ella. `Guild` (`scenes/guild/`) es el hub donde arranca el juego y se vuelve al morir; El día del pueblo vive en `ProfileState.day` y avanza en cada vuelta al guild; `WorldClock` (fases día/noche con efecto en el juego) todavía no existe. No crear managers nuevos para estas responsabilidades: ya tienen dueño.
 
 ## 3.1. Flujo de juego
 
@@ -465,6 +465,7 @@ move_right
 attack             # Space / clic izquierdo / X (oeste)
 swap_weapon        # Tab / Y (norte): cambia el arma equipada
 roll               # Shift / B (este): voltereta de esquive (reemplaza al dash previsto)
+ability_1          # 1 / RB: habilidad del slot 1 del arma equipada (D12)
 
 aim_up / aim_down / aim_left / aim_right   # stick derecho: apuntado con gamepad
 
@@ -783,7 +784,7 @@ Buffs/debuff   → slots Q/E/R
 - Los ataques físicos de arma siguen costando solo stamina.
 - Sin cooldown, salvo para el slot "ultimate".
 
-El maná todavía no existe en el código: entra con la Fase 8 parte B (`ManaComponent`).
+Estado actual: cada `WeaponData.abilities` trae su slot 1 (`AbilityData` en `resources/abilities/`): tajo giratorio (espada, stamina), disparo triple (arco, stamina) y bola de fuego (bastón, maná). `AbilityCaster` (nodo `Abilities` del jugador) cobra el coste de forma atómica y crea el efecto: `burst` (golpe de área con empuje radial) o `volley` (proyectiles en abanico; `arrow.gd` puede explotar con `explosion_scene`). El maná es un segundo `StaminaComponent` (nodo `Mana`, 100 de pozo, 4/s) con su barra en el HUD. Faltan los slots 2-4 y Q/E/R, las opciones por slot y la maestría.
 
 Para el vertical slice alcanza con 1-2 activas + 1 pasiva por arma, pero la
 abstracción de slot se conserva para no reescribir después.
@@ -897,7 +898,7 @@ Responsabilidad:
 - generar la estructura lógica de un piso;
 - crear la grilla de celdas y mergearlas en zonas rectangulares;
 - detectar adyacencia entre zonas;
-- asignar tipos de zona (START, COMBAT, REWARD, EXIT y, más adelante, BOSS);
+- asignar tipos de zona (START, COMBAT, REWARD, EXIT; en el último piso BOSS y su antesala EVENT en lugar de EXIT);
 - colocar puertas en posiciones irregulares sobre aristas compartidas;
 - elegir la plantilla de sala de cada zona con la seed (`scenes/rooms/`);
 - colocar llaves y puertas cerradas;
@@ -978,8 +979,9 @@ Boss
 Exit
 ```
 
-En el código actual existen START, COMBAT, REWARD y EXIT. **BOSS** entra con D10
-(piso de jefe al final de cada dungeon); EVENT y SHOP quedan para más adelante.
+En el código existen START, COMBAT, REWARD, EXIT, **BOSS** y **EVENT**. En el último piso de un `DungeonData`
+(`FloorData.boss_zone_cells`) el generador fija una arena BOSS de 2×2 celdas en la esquina sureste, sin EXIT,
+con una sola puerta desde una antesala EVENT al oeste (D22). SHOP queda para más adelante.
 
 Las zonas se generan mediante grid-merging: se divide el piso en una grilla de celdas, se mergean celdas contiguas en clusters rectangulares, y cada cluster recibe un tipo de zona. Todas las celdas pertenecen exactamente a una zona (sin espacios muertos ni solapes).
 
@@ -989,7 +991,7 @@ Las zonas se generan mediante grid-merging: se divide el piso en una grilla de c
 
 Las zonas son la unidad funcional del piso. Cada zona tiene:
 
-- un tipo (START, COMBAT, REWARD, EXIT; BOSS llega con D10)
+- un tipo (START, COMBAT, REWARD, EXIT, BOSS o EVENT)
 - un rectángulo en la grilla (cell_min/cell_max)
 - un rectángulo en tiles (tile_rect, para renderizado y cámara)
 - una lista de zonas vecinas (por adyacencia de celdas)
@@ -1046,9 +1048,10 @@ start_zone_max_cells             # Tamaño de la zona START en celdas (1×1 por 
 min_zone_cells                   # Tamaño mínimo de zona en celdas (1×1 = una pantalla de 480×288 px, cubre el viewport)
 enemy_health_multiplier
 enemy_damage_multiplier
+boss_zone_cells                  # Arena BOSS en celdas en el último piso; ZERO = piso sin jefe
 ```
 
-Los multiplicadores `enemy_health_multiplier` y `enemy_damage_multiplier` existen pero **hoy no se leen**: deben consumirse en `Spawner` al instanciar enemigos; hasta entonces la dificultad no escala con el piso.
+`DungeonManager` pasa `enemy_health_multiplier` y `enemy_damage_multiplier` al `Spawner`, que se los da a cada enemigo antes de `add_child` (San Ulmo: 1,0/1,0, 1,1/1,1 y 1,2/1,15). `boss_zone_cells` (≠ 0) marca el piso de jefe.
 
 La dificultad no debe aumentar únicamente mediante multiplicadores de estadísticas.
 
@@ -1073,6 +1076,8 @@ boss
 ```
 
 La progresión debe priorizar variedad y nuevas amenazas sobre inflar artificialmente la vida de los enemigos.
+
+Estado actual: cada `FloorData` trae su `enemy_pool` (`EnemySpawnData`) y `threat_budget_per_cell`; el `Spawner` sortea grupos con la seed hasta gastar el presupuesto y puede dejar una zona al élite (`elite_scene`, `elite_chance`). Los comportamientos nuevos son datos de `EnemyData` sobre el mismo `enemy.gd`: `projectile_scene` + `keep_distance` (a distancia), `summon_*` (invocar), `knockback_scale` (D24). El escudo frontal es un nodo `Guard` (`guard_component.gd`) que la `Hurtbox` consulta antes de la vida; `DamageInfo.guard_break` lo rompe.
 
 ---
 
@@ -1111,6 +1116,8 @@ Phase 3
 El `DungeonGenerator` no debe implementar la lógica interna del boss.
 
 El piso de jefe lo decide `DungeonData` (cantidad de pisos y jefe) junto con el generador; las fases y los ataques viven en la escena del boss.
+
+Estado actual: la Madre de la Fosa (`scenes/bosses/madre_fosa.tscn`, D21) es el jefe de San Ulmo. Es fija y elige ataques por distancia; cada ataque es un `BossAttackData` (`resources/bosses/`) con tiempos por fase, y la forma vive en el script. La fase 2 entra con la mitad de la vida. `Hurtbox.damage_multiplier` arma los puntos débiles. La barra del jefe (`BossBar`) y el sesgo de cámara (`CameraLimitManager.set_focus`) se piden por grupos (`boss_bar`, `camera_focus`). Al caer, el `Spawner` tira su `drop_table` y `DungeonManager` pinta la Escalera del Farol, que vuelve al guild con todo y marca el dungeon como limpio (`ProfileState.has_cleared`). La fase 2 suma el vómito (deja charcos de bilis) y la *Nana* (atrae, corta la regeneración de stamina y abraza; 60 de daño la cortan).
 
 ---
 
@@ -1299,7 +1306,7 @@ Grid cells
  ↓
 Cortes guillotina → Zonas rectangulares exactas (tamaño mínimo)
  ↓
-Tipo de zona (START/COMBAT/REWARD/EXIT)
+Tipo de zona (START/COMBAT/REWARD/EXIT; BOSS/EVENT en el último piso)
  ↓
 Puertas en aristas compartidas (posición irregular)
  ↓
@@ -1420,7 +1427,7 @@ de las armas). Sin cooldowns: el gating es de stamina únicamente.
 
 ## Fase 8 — Habilidades
 
-**Estado:** parte A ✅ hecha y archivada; parte B ⏳ pendiente.
+**Estado:** parte A ✅ hecha y archivada; parte B ✅ primer corte (maná + slot 1 por arma).
 
 - **Parte A — `weapon-equip`:** una sola arma equipada a la vez (`EquipmentController`), cambio con Tab.
 - **Parte B — `abilities`:** kits de habilidad por arma (D12).
@@ -1465,12 +1472,12 @@ Sin XP ni niveles: el poder viene del equipo del pueblo y de las mejoras de expe
 
 ## Fase 10 — Pueblo y economía
 
-**Estado:** perfil, oro, inventario, guild, tienda y NPCs ✅ hechos; `WorldClock` ⏳ pendiente.
+**Estado:** perfil, oro, inventario, guild, tienda, mejoras y NPCs ✅ hechos; contador de días ✅; `WorldClock` con fases ⏳ pendiente.
 
 - ✅ `ProfileState` persistente en `user://profile.json` (oro bancado, almacén, armas aseguradas, desbloqueos).
 - ✅ Oro, loot e inventario (mochila y almacén), con panel `inventory` (I).
 - ✅ Guild mínimo en `scenes/guild/`: se arranca ahí y se vuelve ahí al morir (`_return_to_guild()`).
-- ✅ Tienda de la reducidora en el guild (`scripts/ui/shop_panel.gd`): compra lo de la mochila a su `ItemData.value` y vende piedras azules (`resources/shop/fence_shop.tres`, `ShopData`), todo en oro bancado.
+- ✅ Tienda de la reducidora en el guild (`scripts/ui/shop_panel.gd`): compra lo de la mochila a su `ItemData.value` y vende piedras azules y las mejoras permanentes (`ShopData.upgrades`, `UpgradeData` en `resources/upgrades/`: vida y aguante máximos, D11), todo en oro bancado. Las mejoras viven en `ProfileState.owned_upgrades` y `DungeonManager._apply_player_stats` las suma a los máximos del jugador.
 - ✅ 7 NPCs quietos con idle del kit y un saludo fijo (`npc.<id>.greet.N` con `tr()`); diálogo provisorio.
 - `WorldClock` con fases día/noche.
 
@@ -1478,32 +1485,34 @@ Sin XP ni niveles: el poder viene del equipo del pueblo y de las mejoras de expe
 
 ## Fase 11 — Expedición con jefe
 
-**Estado: ⏳ pendiente.**
+**Estado:** ✅ hecha.
 
-- `DungeonData` (id, cantidad de pisos, jefe) y techo de 3–4 pisos.
-- Tipo de zona BOSS.
-- Primer boss con 1–2 fases.
+- ✅ `DungeonData` (id, cantidad de pisos, jefe) y techo de pisos: San Ulmo tiene 3 (`resources/dungeons/san_ulmo.tres`).
+- ✅ Zonas BOSS y EVENT (antesala).
+- ✅ Primer boss con 2 fases: la Madre de la Fosa (D21).
 - ✅ Piedra azul (consumible) que conserva el loot al morir (D1).
 
 ---
 
 ## Fase 12 — Plantillas, llaves y solvabilidad
 
-**Estado: ⏳ pendiente.**
+**Estado: ✅ primer corte** (falta el objeto que abre un atajo).
 
 - ✅ Arreglar `_merge_cells` (rectángulos exactos) y tamaño mínimo de zona.
-- Pool de plantillas de sala en `scenes/rooms/`.
-- Llaves y puertas cerradas.
-- Validación de solvabilidad en el generador.
+- ✅ Pool de plantillas de sala: `RoomTemplate` (`resources/rooms/`), el bloque central de 9×3 tiles en texto (`#` pilar, `M` bloque movible); el anillo de piso queda libre, así la solvabilidad sale por construcción.
+- ✅ Llave y bóveda: una zona cuya ausencia no desconecta el piso pasa a REWARD con todas sus puertas trabadas (`Door.key_locked`); la llave cae al limpiar otra zona COMBAT y abre todas (`DoorController.unlock`).
+- ✅ Obstáculos movibles (D20): `push_block.tscn`, `interact` y 20 de stamina, solo dentro del bloque de su plantilla.
+- ✅ Validación de solvabilidad en el generador (`_validate_vault`: sin cruzar la traba se llega a la llave y a la salida).
 
 ---
 
 ## Fase 13 — Historia
 
-**Estado: ⏳ pendiente.**
+**Estado:** ✅ primer corte (diálogo, cierre de San Ulmo y comentarios de los NPCs).
 
-- Sistema de diálogo data-driven (`DialogueData`).
-- Escena de cierre al terminar cada dungeon.
+- ✅ Sistema de diálogo data-driven (`DialogueData` en `resources/dialogue/`: claves de líneas y de hablantes) con `DialoguePanel` (UI, pausa, máquina de escribir).
+- ✅ Escena de cierre la primera vez que se limpia un dungeon (`DungeonData.closing_dialogue`, señal `DungeonManager.dungeon_cleared`).
+- ✅ Los NPCs del gremio comentan cómo volviste (`npc.<id>.death|return_stone|victory.N`) la primera vez que les hablás.
 - Localización ES/EN con `tr()`: la base ya existe (`locale/strings.csv`, textos de UI e ítems); faltan los de historia y diálogo.
 
 ---
@@ -1517,8 +1526,8 @@ Cuando haya dudas sobre qué desarrollar a continuación, priorizar:
 2. ✅ Hit-stop + combo de 3 (falta el arte del swing)
 3. ✅ `ProfileState` + oro + inventario + piedra azul + `_return_to_guild()`
 4. ✅ Guild con tienda (scenes/guild/)
-5. Pool de plantillas de sala
-6. `WorldClock` día/noche + techo de pisos por dungeon + zona BOSS
+5. ✅ Pool de plantillas de sala
+6. `WorldClock` día/noche (✅ techo de pisos por dungeon + zona BOSS)
 ```
 
 El paso 1 es prerrequisito del 5. Los pasos 2 y 3 son independientes entre sí y pueden ir en paralelo.
@@ -1849,7 +1858,7 @@ Sword.gd
 
 determina cómo ejecutar el ataque.
 
-Otros recursos planificados: `DungeonData` (id, cantidad de pisos, jefe) y `DialogueData` (diálogo data-driven del pueblo y la historia).
+Otros recursos: `DungeonData` (id, pisos, jefe, trofeo, escena de cierre) y `DialogueData` (diálogo data-driven del pueblo y la historia).
 
 ---
 
@@ -1964,14 +1973,14 @@ Después:
 [x] Una sola arma equipada + cambio con Tab (weapon-equip, Fase 8 parte A)
 [x] P0 de combate: knockback, i-frames, hit flash y pausa
 [x] Tope de la zona START
-[ ] Habilidades (kits por arma, Fase 8 parte B)
+[x] Habilidades (kits por arma, Fase 8 parte B: slot 1)
 [ ] Buffs
 [ ] Crowd Control
 [x] Loot (mochila, almacén del guild, tablas de botín)
 [ ] Progresión (equipo + mejoras, sin XP)
-[x] Enemigos adicionales (cadáver errante)
-[ ] Elites
-[ ] Bosses
+[x] Enemigos adicionales (bestiario de la cripta: errante, rata, reptante, escupebilis, guardia, cultista)
+[x] Elites (el Cosido)
+[x] Bosses (la Madre de la Fosa, D21)
 ```
 
 Pendiente para el vertical slice v2:
@@ -1981,10 +1990,10 @@ Pendiente para el vertical slice v2:
 [x] Hit-stop + combo de 3
 [x] Tienda en el guild
 [ ] WorldClock
-[ ] DungeonData + techo de pisos + zona BOSS
-[ ] Plantillas de sala + llaves + solvabilidad
-[ ] Maná (recurso + barra HUD)
-[ ] Obstáculos movibles con coste de stamina
+[x] DungeonData + techo de pisos + zona BOSS
+[x] Plantillas de sala + llaves + solvabilidad
+[x] Maná (recurso + barra HUD)
+[x] Obstáculos movibles con coste de stamina
 [ ] Historia + localización ES/EN
 ```
 

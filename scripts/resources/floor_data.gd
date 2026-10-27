@@ -24,9 +24,35 @@ extends Resource
 @export var reward_ratio: float = 0.3
 ## Piso desde el que aplica → [mín., máx.] de zonas / Floor it applies from → [min, max] zones
 @export var zone_count_by_floor_depth: Dictionary = {1: [4, 6], 10: [7, 12]}
-## Multiplicadores de vida y daño enemigo; todavía no se leen (§25) / Enemy health and damage multipliers; not read yet (§25)
+## Multiplicadores de vida y daño enemigo; los aplica el Spawner (§25) / Enemy health and damage multipliers; the Spawner applies them (§25)
 @export var enemy_health_multiplier: float = 1.0
 @export var enemy_damage_multiplier: float = 1.0
+## Zona BOSS en celdas, en la esquina sureste, con una antesala EVENT como única entrada; el piso no
+## tiene EXIT. ZERO = piso sin jefe (D22)
+## BOSS zone in cells, at the south-east corner, with an EVENT antechamber as its only way in; the
+## floor has no EXIT. ZERO = floor without a boss (D22)
+@export var boss_zone_cells: Vector2i = Vector2i.ZERO
+## Probabilidad de que una zona COMBAT o REWARD pase a EVENT con el altar de cura (D23); como máximo una
+## Chance that one COMBAT or REWARD zone becomes an EVENT with the healing altar (D23); one at most
+@export var event_chance: float = 0.0
+
+@export_group("Rooms")
+## Plantillas para las zonas COMBAT de una pantalla, sorteadas con la seed; vacío = salas lisas (D3)
+## Templates for one-screen COMBAT zones, drawn with the seed; empty = plain rooms (D3)
+@export var room_templates: Array[RoomTemplate] = []
+## Probabilidad de una bóveda: una zona hoja tras una puerta trabada cuya llave cae al limpiar otra zona
+## Chance of a vault: a leaf zone behind a locked door whose key drops when another zone is cleared
+@export var vault_chance: float = 0.0
+
+@export_group("Enemies")
+## Pool de enemigos del piso; vacío = la lista fija del Spawner (rigs de test) / Floor enemy pool; empty = the Spawner's fixed list (test rigs)
+@export var enemy_pool: Array[EnemySpawnData] = []
+## Presupuesto de amenaza por pantalla de sala (D22) / Threat budget per room screen (D22)
+@export var threat_budget_per_cell: int = 4
+## Élite que ocupa sola una zona COMBAT; null = sin élite / Elite that takes a COMBAT zone alone; null = no elite
+@export var elite_scene: PackedScene
+## Probabilidad de que el piso tenga zona de élite (1 = garantizada) / Chance the floor has an elite zone (1 = guaranteed)
+@export var elite_chance: float = 0.0
 ## Tamaño de la zona START en celdas, recortado en el origen (0 = sin tope); si es menor que
 ## min_zone_cells gana el mínimo. 1×1 = una pantalla.
 ## START zone size in grid cells, carved at the origin (0 = no cap); min_zone_cells wins if larger.

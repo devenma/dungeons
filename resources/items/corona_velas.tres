@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://resources/items/item_data.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/art/items/corona_velas.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"corona_velas"
+name_key = "item.corona_velas.name"
+desc_key = "item.corona_velas.desc"
+icon = ExtResource("2")
+rarity = 4
+max_stack = 1
+category = 2
+value = 200
