@@ -2,11 +2,11 @@ class_name ProfileState
 extends Node
 
 ## Perfil persistente (§6.3, D1): oro bancado, depósito del gremio, armas y desbloqueos.
-## Sobrevive a la muerte y entre sesiones (JSON en user://). No conoce el piso ni la mochila.
-## La tienda del gremio cobra y paga en oro bancado (D2).
+## Sobrevive a la muerte y entre sesiones (JSON en user://). No conoce el piso. De la mochila solo guarda
+## una foto mientras estás en el pueblo (D25). La tienda del gremio cobra y paga en oro bancado (D2).
 ## Persistent profile (§6.3, D1): banked gold, guild storage, weapons and unlocks.
-## Survives death and sessions (JSON in user://). Knows nothing about the floor or the backpack.
-## The guild shop charges and pays in banked gold (D2).
+## Survives death and sessions (JSON in user://). Knows nothing about the floor. Of the backpack it only
+## keeps a snapshot while you are in town (D25). The guild shop charges and pays in banked gold (D2).
 
 signal profile_changed
 
@@ -35,6 +35,16 @@ var owned_upgrades: Array[UpgradeData] = []
 ## Día del pueblo: cada expedición es una noche y la vuelta abre el día siguiente (D2)
 ## Town day: every expedition is a night and coming back opens the next day (D2)
 var day: int = 1
+## Fase del pueblo: de la cripta se vuelve de noche y al dormir amanece (D25)
+## Town phase: you come back from the crypt at night and sleeping brings the morning (D25)
+var night: bool = false
+## Foto de la mochila y del oro encima mientras estás en el pueblo (D25, excepción a D1), en el formato de Inventory.to_dict()
+## Snapshot of the backpack and carried gold while you are in town (D25, exception to D1), in Inventory.to_dict() format
+var carried_backpack: Dictionary = {}
+var carried_gold: int = 0
+## Hay una expedición en curso: si el juego se abre con esto prendido, se cerró en la cripta y cuenta como morir sin piedra azul
+## An expedition is under way: if the game opens with this on, it was closed in the crypt and counts as dying without a blue stone
+var expedition_in_progress: bool = false
 
 
 func _ready() -> void:
@@ -52,6 +62,10 @@ func reset_profile() -> void:
 	unlocks.clear()
 	owned_upgrades.clear()
 	day = 1
+	night = false
+	carried_backpack = {}
+	carried_gold = 0
+	expedition_in_progress = false
 	profile_changed.emit()
 
 
@@ -75,6 +89,16 @@ func load_profile() -> bool:
 		return false
 	banked_gold = maxi(_as_int(data.get("banked_gold")), 0)
 	day = maxi(_as_int(data.get("day", 1)), 1)
+	night = data.get("night", false) == true
+	if data.get("expedition_in_progress", false) == true:
+		# Se cerró el juego en la cripta: cuenta como morir sin piedra azul (D25)
+		# The game was closed in the crypt: counts as dying without a blue stone (D25)
+		night = true
+	else:
+		var carried_data: Variant = data.get("carried_backpack", {})
+		if carried_data is Dictionary:
+			carried_backpack = carried_data
+		carried_gold = maxi(_as_int(data.get("carried_gold")), 0)
 	var storage_data: Variant = data.get("storage", {})
 	if storage_data is Dictionary:
 		storage.load_dict(storage_data)
@@ -122,6 +146,10 @@ func save_profile() -> bool:
 		"unlocks": unlocks,
 		"upgrades": upgrade_paths,
 		"day": day,
+		"night": night,
+		"carried_backpack": carried_backpack,
+		"carried_gold": carried_gold,
+		"expedition_in_progress": expedition_in_progress,
 	}
 	var tmp_path: String = save_path + ".tmp"
 	var file: FileAccess = FileAccess.open(tmp_path, FileAccess.WRITE)
@@ -156,6 +184,30 @@ func sell(backpack: Inventory, item: ItemData) -> bool:
 func advance_day() -> void:
 	day += 1
 	profile_changed.emit()
+
+
+func set_night(value: bool) -> void:
+	night = value
+	profile_changed.emit()
+
+
+func store_carried(backpack: Inventory, gold: int) -> void:
+	carried_backpack = backpack.to_dict()
+	carried_gold = maxi(gold, 0)
+
+
+## Llena la mochila con la foto guardada y devuelve el oro encima / Fills the backpack from the saved snapshot and returns the carried gold
+func restore_carried(backpack: Inventory) -> int:
+	backpack.load_dict(carried_backpack)
+	return carried_gold
+
+
+func begin_expedition() -> void:
+	expedition_in_progress = true
+
+
+func end_expedition() -> void:
+	expedition_in_progress = false
 
 
 ## A la venta: no comprada y con su requisito ya comprado / For sale: not bought and with its requirement bought
@@ -193,9 +245,11 @@ func mark_cleared(dungeon_id: StringName) -> void:
 		profile_changed.emit()
 
 
-## Compra una unidad con oro bancado; sin oro o con la mochila llena no cobra nada.
-## Buys one unit with banked gold; when broke or with a full backpack nothing is charged.
+## Compra una unidad con oro bancado; sin oro, con la mochila llena o con el tope de ese objeto no cobra nada.
+## Buys one unit with banked gold; when broke, with a full backpack or at the item's cap nothing is charged.
 func buy(backpack: Inventory, item: ItemData, price: int) -> bool:
+	if item.max_carried > 0 and backpack.count_of(item) >= item.max_carried:
+		return false
 	if banked_gold < price or backpack.add(item, 1) > 0:
 		return false
 	banked_gold -= price

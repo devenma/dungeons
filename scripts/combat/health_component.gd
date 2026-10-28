@@ -86,3 +86,13 @@ func set_max_health(value: int) -> void:
 func heal_full() -> void:
 	current_health = max_health
 	health_changed.emit(current_health, max_health)
+
+
+## Cura hasta el máximo y devuelve lo curado; muerto no cura (vial, D25) / Heals up to the max and returns the amount healed; dead it does not heal (vial, D25)
+func heal(amount: int) -> int:
+	if _dead:
+		return 0
+	var healed: int = clampi(amount, 0, max_health - current_health)
+	current_health += healed
+	health_changed.emit(current_health, max_health)
+	return healed

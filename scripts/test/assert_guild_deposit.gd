@@ -54,10 +54,11 @@ func _run() -> void:
 
 	var run_manager: RunManager = main.get_node("RunManager")
 	var profile: ProfileState = main.get_node("ProfileState")
-	var guild: Node2D = main.get_node("World/Guild")
+	var guild: Node2D = main.get_node("World/Hondoval/Guild")
 	var player := main.get_node("World/Player") as CharacterBody2D
 	var chest: Area2D = guild.get_node("StorageChest")
-	var door: Area2D = guild.get_node("ExpeditionDoor")
+	var town: Node2D = main.get_node("World/Hondoval")
+	var door: Area2D = town.get_node("Exterior/CryptEntrance")
 
 	var loot: Array[ItemData] = [gel, gel, stone]
 	run_manager.add_loot(loot, 12)
@@ -82,11 +83,12 @@ func _run() -> void:
 			"deposit: saved to disk")
 	reloaded.free()
 
+	town.call("go_to", &"exterior", &"crypt")
 	player.global_position = door.global_position
 	await _frames(3)
 	_press_interact(door)
 	await _frames(3)
-	_check(run_manager.current_floor == 1 and not guild.visible, "door: expedition starts at floor 1")
+	_check(run_manager.current_floor == 1 and not town.visible, "crypt entrance: expedition starts at floor 1")
 
 	var spawner: Node = main.get_node("World/DungeonManager/Dungeon/Spawner")
 	var table: DropTable = DropTable.new()

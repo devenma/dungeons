@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ShopData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://resources/shop/shop_data.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/upgrades/peto.tres" id="2"]
+[ext_resource type="Resource" path="res://resources/upgrades/cinturon.tres" id="3"]
+
+[resource]
+script = ExtResource("1")
+upgrades = Array[Resource]([ExtResource("2"), ExtResource("3")])
+title_key = "ui.shop.smithy_title"
+lines_prefix = "npc.blacksmith.shop"
+buys_loot = false

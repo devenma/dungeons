@@ -100,6 +100,10 @@ armas del perfil, y el perfil se guarda en `user://profile.json`. En el guild, e
 la mochila y el almacén: se pasan objetos en las dos direcciones (pila o de a uno) y "Guardar todo" deposita
 la mochila y banca el oro. El generador no se tocó.
 
+**Excepción (D25, 2026-10-28):** mientras estás en el pueblo, la mochila y el oro encima se guardan con el
+perfil. Al bajar vuelven a estar en riesgo: cerrar el juego dentro de la cripta cuenta como morir sin piedra
+azul.
+
 **Alternativas descartadas:**
 - *Perder todo menos los desbloqueos* (roguelite clásico): pelea con el pueblo persistente y con Stardew.
 - *Sin muerte permanente*: deja el juego sin tensión y tira a la basura la arquitectura de runs con seed,
@@ -702,6 +706,52 @@ Sigue sin haber regeneración de vida: la vida solo vuelve al volver al guild o 
 - `EnemyData.knockback_scale` es nuevo: lo aplica `KnockbackComponent`.
 - El bloqueo frontal del guardia pide que `Hurtbox` conozca la orientación (un componente de guardia).
 - El hit-stop de los proyectiles es sumar `hit_stop_seconds` a `WeaponData` y llamarlo en `arrow.gd`.
+
+---
+
+### D25 — Hondoval: un pueblo que se camina [PROPUESTA]
+
+**Propuesta (2026-10-28):** Hondoval deja de ser una sola sala. Es un mapa exterior fijo (D3) de unas 3×2
+pantallas, más las afueras, con la cámara siguiendo al jugador. Cada local es por dentro una sala de una
+pantalla. El diseño completo está en [`odd/tasks/hondoval-design.md`](odd/tasks/hondoval-design.md).
+
+- **Los NPCs del gremio se reparten:**
+  - Tienda de Ilse: loot y piedras azules.
+  - Botica de la Hermana Ancel: vial de sangre y vendas.
+  - Herrería de Hesse Brun: peto y cinturón.
+  - Nela, en la plaza.
+  - Tomé, en las afueras.
+  - El gremio se queda con Odran Vell, Maren Tull, aventureros nuevos, el almacén y el catre.
+- **La entrada a la cripta** sale del gremio y pasa a la catedral de San Ulmo, en las afueras.
+- **Día y noche en dos fases (D2) con `WorldClock`:** de la cripta se vuelve de noche, con los locales
+  cerrados. El día avanza al dormir en el gremio.
+- **Vial de sangre (D23):**
+  - se compra con oro y cura 35;
+  - tomarlo te deja expuesto 0,8 s;
+  - viaja en la mochila y se llevan 3 como máximo.
+  - El Altar del Voto sigue siendo lo único que cura todo.
+- **Mientras estás en el pueblo,** la mochila y el oro encima se guardan con el perfil (excepción a D1).
+
+**Alternativas consideradas**
+- *Pueblo por pantallas*, con el deslizamiento de cámara de la cripta: es más barato de armar, pero se siente
+  mazmorra y no pueblo.
+- *Varios viales a elegir* (aguante y maná): pide elegir cuál tomar. Queda para después.
+- *Depositar todo al dormir o al salir del juego*: obliga a sacar del almacén las piedras y los viales antes
+  de cada bajada.
+- *Aceptar la pérdida al cerrar el juego*: como se vuelve de noche y con los locales cerrados, se perdería el
+  botín sin aviso.
+
+**[IMPACTO]** Hecho el 2026-10-28 en `feat/hondoval` (plan en [`odd/tasks/hondoval-plan.md`](odd/tasks/hondoval-plan.md)):
+- `World/Hondoval` (`scripts/town/hondoval.gd`) reemplaza a `World/Guild` como hub de `DungeonManager`.
+- Cada lugar es un `TownArea` y hay uno solo activo; el exterior se arma en bloqueo desde un mapa de texto.
+- `ProfileState` guarda la fase, la marca de expedición y, en el pueblo, la mochila y el oro encima.
+- El día avanza al dormir, ya no en `DungeonManager._go_home()`.
+- `ShopData` describe cada tienda por datos. Al final no hizo falta venderle más de un objeto: cada local vende
+  uno como mucho.
+- El vial lo toma `PotionDrinker`, con la acción `use_potion` (H / LB).
+
+Queda para el plan de arte: el suelo con transiciones (prueba con PixelLab), las fachadas, los interiores, los
+aventureros del gremio y las variantes de noche.
 
 ---
 

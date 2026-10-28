@@ -78,6 +78,9 @@ func _ready() -> void:
 	if run_manager != null:
 		run_manager.stats_changed.connect(_apply_player_stats)
 		run_manager.start_new_run(_base_weapons())
+		if profile != null:
+			run_manager.set_backpack_gold(profile.restore_carried(run_manager.backpack))
+		run_manager.backpack_changed.connect(_on_backpack_changed)
 	_guild = get_node_or_null(guild_node_path) as Node2D if guild_node_path else null
 	if _guild == null:
 		_start_floor()
@@ -106,6 +109,13 @@ func start_expedition() -> void:
 	_in_guild = false
 	if _guild != null:
 		_guild.set_active(false)
+	# Lo que se lleva queda en riesgo: cerrar el juego adentro cuenta como morir sin piedra (D25)
+	# What you carry is now at risk: closing the game inside counts as dying without a stone (D25)
+	var profile: ProfileState = _get_profile_state()
+	if profile != null:
+		profile.store_carried(run_manager.backpack, run_manager.backpack_gold)
+		profile.begin_expedition()
+		profile.save_profile()
 	_start_floor()
 
 
@@ -145,9 +155,9 @@ func _set_guild_mood(mood: String) -> void:
 
 
 ## keep_loot conserva la mochila y asegura en el perfil las armas recogidas; si no, se pierde todo lo de
-## la expedición. La seed se re-rollea siempre y el jugador vuelve curado.
+## la expedición. La seed se re-rollea siempre, el jugador vuelve curado y es de noche (D25).
 ## keep_loot keeps the backpack and secures the picked-up weapons in the profile; otherwise the whole
-## expedition is lost. The seed is always re-rolled and the player comes back healed.
+## expedition is lost. The seed is always re-rolled, the player comes back healed and it is night (D25).
 func _go_home(keep_loot: bool) -> void:
 	var run_manager: RunManager = _get_run_manager()
 	var profile: ProfileState = _get_profile_state()
@@ -158,7 +168,10 @@ func _go_home(keep_loot: bool) -> void:
 			profile.owned_weapons = run_manager.owned_weapons.duplicate()
 		run_manager.start_new_run(_base_weapons())
 	if profile != null:
-		profile.advance_day()
+		profile.set_night(true)
+		profile.end_expedition()
+		if run_manager != null:
+			profile.store_carried(run_manager.backpack, run_manager.backpack_gold)
 		profile.save_profile()
 	var health := player.get_node_or_null("Health") as HealthComponent
 	if health != null:
@@ -169,6 +182,16 @@ func _go_home(keep_loot: bool) -> void:
 		_start_floor()
 	else:
 		_enter_guild()
+
+
+# En el pueblo lo que llevás se guarda con el perfil (D25) / In town what you carry is saved with the profile (D25)
+func _on_backpack_changed() -> void:
+	var run_manager: RunManager = _get_run_manager()
+	var profile: ProfileState = _get_profile_state()
+	if not _in_guild or run_manager == null or profile == null:
+		return
+	profile.store_carried(run_manager.backpack, run_manager.backpack_gold)
+	profile.save_profile()
 
 
 ## Máximos del jugador: base + mejoras del perfil (D11), menos un 20 % de vida por ofrenda de carne (D23).

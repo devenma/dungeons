@@ -15,6 +15,7 @@ Términos que se traducen **siempre igual** en `strings.csv`. Si la misma palabr
 | almacén | storage / storeroom | | "storeroom" solo cuando lo dice un personaje. |
 | aguante | stamina | | El recurso de los golpes y la voltereta. |
 | piedra azul / piedras azules | blue stone / blue stones | | Consumible que salva la mochila al morir (D1). |
+| vial de sangre / viales de sangre | blood vial / blood vials | | Lo vende la botica: cura 35 y se llevan 3 como máximo (D25). |
 | maná | mana | | |
 | expedición | expedition | | Una bajada, de la puerta del gremio a la vuelta. |
 | botín | loot | | |
@@ -22,6 +23,8 @@ Términos que se traducen **siempre igual** en `strings.csv`. Si la misma palabr
 | Urraca | Magpie | | Ilse, la reducidora. |
 | Hermana | Sister | | La sanadora, Hermana Ancel. |
 | herrera | blacksmith | | |
+| botica | apothecary | | El local de la Hermana Ancel en Hondoval (D25). |
+| Hondoval | Hondoval | | El pueblo, encima de la cripta de San Ulmo (D25). |
 | Cosido | Stitched | | Jefe. "El Cosido" → "The Stitched"; "del Cosido" → "Stitched's". |
 | Madre | Mother | | Jefa, "la Madre de la Fosa" → "the Mother of the Pit". |
 | fosa | pit | | |

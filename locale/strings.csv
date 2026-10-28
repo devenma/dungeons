@@ -20,6 +20,10 @@ ui.prompt.talk,%s Hablar,%s Talk
 ui.prompt.open,%s Abrir,%s Open
 ui.prompt.pick_up,%s Recoger,%s Pick up
 ui.prompt.descend,%s Bajar,%s Go down
+ui.prompt.enter,%s Entrar,%s Enter
+ui.prompt.leave,%s Salir,%s Leave
+ui.prompt.sleep,%s Dormir,%s Sleep
+ui.prompt.closed,%s Cerrado,%s Closed
 ui.prompt.push,%s Empujar (gasta aguante),%s Push (costs stamina)
 ui.prompt.unlock,%s Abrir con llave,%s Unlock
 ui.inventory.title,Mochila,Pack
@@ -53,6 +57,8 @@ ui.shop.price,%d oro,%d gold
 ui.shop.not_enough,No te alcanza.,You can't afford it.
 ui.shop.confirm_sell_relic,Las reliquias no vuelven. ¿Vender igual?,Relics don't come back. Sell anyway?
 ui.shop.merchant_title,Lo de la Urraca,The Magpie's
+ui.shop.apothecary_title,La botica de la Hermana,The Sister's apothecary
+ui.shop.smithy_title,La fragua de Hesse,Hesse's forge
 ui.shop.blacksmith_title,Fragua,Forge
 ui.shop.healer_title,Enfermería,Infirmary
 ui.shop.upgrade,Mejorar,Upgrade
@@ -207,6 +213,9 @@ npc.healer.shop.buy,Úsalo antes de necesitarlo. Después suele ser tarde.,Use i
 npc.healer.shop.heal,"No te muevas. Esto va a doler. Bien: sigue doliendo, sigue siendo tuyo.","Don't move. This will hurt. Good: it still hurts, it's still yours."
 npc.healer.shop.no_money,"Sin oro no hay láudano. Las oraciones son gratis, pero no cierran heridas.","No gold, no laudanum. Prayers are free, but they don't close wounds."
 npc.healer.shop.leave,"Vuelve con todo puesto. O vuelve, al menos.",Come back with everything attached. Or just come back.
+npc.healer.shop.upgrade,Vendas hervidas dos veces. Para la tercera no hubo agua.,Bandages boiled twice. There was no water for a third time.
+npc.healer.shop.full,No te cabe nada más. Deja algo antes de llevarte esto.,You can't carry anything else. Leave something before you take this.
+npc.healer.shop.capped,"Tres por cabeza. Con más no te curas: te ahogas en sangre ajena.","Three per head. Any more won't heal you; you'll drown in someone else's blood."
 npc.questgiver.name,Maren Tull,Maren Tull
 npc.questgiver.role,Escriba y cartógrafo,Scribe and cartographer
 npc.questgiver.greet.1,Hay encargos nuevos en la pared. Algunos los dejaron los vivos.,New bounties on the wall. Some were posted by the living.
@@ -463,6 +472,9 @@ ability.spin_slash.name,Tajo giratorio,Spinning slash
 ability.triple_shot.name,Disparo triple,Triple shot
 ability.fireball.name,Bola de fuego,Fireball
 ui.hud.day,Día %d,Day %d
+ui.hud.day_night,"Día %d, noche","Day %d, night"
+ui.town.closed,Cerrado. Vuelve de día.,Closed. Come back by day.
+ui.town.not_sleepy,Todavía no tienes sueño. Afuera sigue siendo de día.,You are not tired yet. It is still day outside.
 item.llave_osario.name,Llave del osario,Ossuary key
 item.llave_osario.desc,Hierro ennegrecido y frío. Abre la bóveda del piso.,Blackened, cold iron. Opens the floor's vault.
 dialogue.san_ulmo.closing.1,"Las velas de la fosa se apagan una por una. La canción sigue un momento más, sin nadie que la cante.","The candles of the pit go out one by one. The song goes on a moment longer, with no one left to sing it."

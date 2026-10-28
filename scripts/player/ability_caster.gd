@@ -60,12 +60,7 @@ func cast(slot: int, aim: Vector2) -> bool:
 
 
 func _busy() -> bool:
-	if _player.call("is_dead"):
-		return true
-	var roll: RollComponent = _player.get_node_or_null("Roll") as RollComponent
-	var weapon: Node = _mounted_weapon()
-	return (roll != null and roll.is_rolling()) \
-			or (weapon != null and weapon.has_method("is_rooting") and weapon.call("is_rooting") as bool)
+	return _player.call("is_busy") as bool
 
 
 func _equipped_data() -> WeaponData:

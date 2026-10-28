@@ -1,0 +1,166 @@
+[gd_scene load_steps=17 format=3]
+
+[ext_resource type="Script" path="res://scripts/town/hondoval.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/town/town_exterior.gd" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/guild/guild.tscn" id="3"]
+[ext_resource type="PackedScene" path="res://scenes/town/interior.tscn" id="4"]
+[ext_resource type="PackedScene" path="res://scenes/guild/guild_npc.tscn" id="5_npc"]
+[ext_resource type="Script" path="res://scripts/ui/dialogue_box.gd" id="7_dialogue"]
+[ext_resource type="Texture2D" path="res://assets/art/ui/caja_dialogo.png" id="8_box"]
+[ext_resource type="PackedScene" path="res://scenes/ui/shop_panel.tscn" id="9_shop"]
+[ext_resource type="Resource" path="res://resources/shop/fence_shop.tres" id="10_fence"]
+[ext_resource type="Resource" path="res://resources/shop/apothecary_shop.tres" id="11_apothecary"]
+[ext_resource type="Resource" path="res://resources/shop/smithy_shop.tres" id="12_smithy"]
+[ext_resource type="Script" path="res://scripts/world/world_clock.gd" id="13_clock"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_hint"]
+font_size = 11
+font_color = Color(0.75, 0.7, 0.6, 1)
+
+[sub_resource type="LabelSettings" id="LabelSettings_line"]
+font_size = 11
+font_color = Color(0.78, 0.72, 0.62, 1)
+
+[node name="Hondoval" type="Node2D"]
+y_sort_enabled = true
+script = ExtResource("1")
+
+[node name="Exterior" type="Node2D" parent="."]
+script = ExtResource("2")
+area_id = &"exterior"
+
+[node name="Things" type="Node2D" parent="Exterior"]
+
+[node name="Guild" parent="." instance=ExtResource("3")]
+
+[node name="Shop" parent="." instance=ExtResource("4")]
+area_id = &"shop"
+shop_data = ExtResource("10_fence")
+shopkeeper_path = NodePath("Things/Fence")
+
+[node name="StreetDoor" parent="Shop" index="8"]
+target_marker = &"shop_door"
+
+[node name="Apothecary" parent="." instance=ExtResource("4")]
+area_id = &"apothecary"
+shop_data = ExtResource("11_apothecary")
+shopkeeper_path = NodePath("Things/Healer")
+
+[node name="StreetDoor" parent="Apothecary" index="8"]
+target_marker = &"apothecary_door"
+
+[node name="Smithy" parent="." instance=ExtResource("4")]
+area_id = &"smithy"
+shop_data = ExtResource("12_smithy")
+shopkeeper_path = NodePath("Things/Blacksmith")
+
+[node name="StreetDoor" parent="Smithy" index="8"]
+target_marker = &"smithy_door"
+
+[node name="Fence" parent="Shop/Things" instance=ExtResource("5_npc")]
+position = Vector2(240, 96)
+npc_id = "merchant"
+sheet_prefix = "res://assets/art/characters/fence_"
+facing = "W"
+fallback_greeting = "What have you brought me? If it still has an owner, I don't want to know."
+
+[node name="Hint" type="Label" parent="Shop/Things/Fence"]
+offset_left = -30.0
+offset_top = 2.0
+offset_right = 30.0
+offset_bottom = 14.0
+visible = false
+text = "Shop [F]"
+label_settings = SubResource("LabelSettings_hint")
+horizontal_alignment = 1
+
+[node name="Healer" parent="Apothecary/Things" instance=ExtResource("5_npc")]
+position = Vector2(240, 96)
+npc_id = "healer"
+sheet_prefix = "res://assets/art/characters/healer_"
+fallback_greeting = "Sit. Let me see what you've brought back open."
+
+[node name="Hint" type="Label" parent="Apothecary/Things/Healer"]
+offset_left = -30.0
+offset_top = 2.0
+offset_right = 30.0
+offset_bottom = 14.0
+visible = false
+label_settings = SubResource("LabelSettings_hint")
+horizontal_alignment = 1
+
+[node name="Blacksmith" parent="Smithy/Things" instance=ExtResource("5_npc")]
+position = Vector2(240, 96)
+npc_id = "blacksmith"
+sheet_prefix = "res://assets/art/characters/blacksmith_"
+fallback_greeting = "WHAT? Oh. You. Put the weapon on the anvil."
+
+[node name="Hint" type="Label" parent="Smithy/Things/Blacksmith"]
+offset_left = -30.0
+offset_top = 2.0
+offset_right = 30.0
+offset_bottom = 14.0
+visible = false
+label_settings = SubResource("LabelSettings_hint")
+horizontal_alignment = 1
+
+[node name="Nela" parent="Exterior/Things" instance=ExtResource("5_npc")]
+position = Vector2(720, 368)
+npc_id = "refugee_nela"
+sheet_prefix = "res://assets/art/characters/refugee_child_"
+fallback_greeting = "Have you seen my dad? He wears a red scarf. His name is Bastián."
+
+[node name="Tome" parent="Exterior/Things" instance=ExtResource("5_npc")]
+position = Vector2(1680, 368)
+npc_id = "refugee_tome"
+sheet_prefix = "res://assets/art/characters/refugee_wounded_"
+facing = "E"
+fallback_greeting = "Morning. Buried anyone today? I have. The usual one."
+
+[node name="WorldClock" type="Node" parent="."]
+script = ExtResource("13_clock")
+
+[node name="NightTint" type="CanvasModulate" parent="."]
+visible = false
+color = Color(0.42, 0.45, 0.62, 1)
+
+[node name="TownUI" type="CanvasLayer" parent="."]
+
+[node name="DialogueBox" type="NinePatchRect" parent="TownUI"]
+offset_left = 60.0
+offset_top = 212.0
+offset_right = 420.0
+offset_bottom = 262.0
+texture = ExtResource("8_box")
+patch_margin_left = 6
+patch_margin_top = 6
+patch_margin_right = 6
+patch_margin_bottom = 6
+script = ExtResource("7_dialogue")
+
+[node name="Label" type="Label" parent="TownUI/DialogueBox"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 6.0
+offset_right = -10.0
+offset_bottom = -6.0
+label_settings = SubResource("LabelSettings_line")
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="Timer" type="Timer" parent="TownUI/DialogueBox"]
+one_shot = true
+
+[node name="ShopPanel" parent="TownUI" instance=ExtResource("9_shop")]
+
+[node name="Fade" type="ColorRect" parent="TownUI"]
+modulate = Color(1, 1, 1, 0)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 1)

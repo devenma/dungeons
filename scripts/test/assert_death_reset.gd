@@ -44,7 +44,7 @@ func _run() -> void:
 
 	var run_manager: RunManager = main.get_node("RunManager")
 	var dm: Node = main.get_node("World/DungeonManager")
-	var guild: Node2D = main.get_node("World/Guild")
+	var guild: Node2D = main.get_node("World/Hondoval/Guild")
 	var player := main.get_node("World/Player") as Node2D
 	var health := player.get_node("Health") as HealthComponent
 	var stamina := player.get_node("Stamina") as StaminaComponent
