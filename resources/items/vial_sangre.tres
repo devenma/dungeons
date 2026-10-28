@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://resources/items/item_data.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/art/items/vial_salud.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"vial_sangre"
+name_key = "item.vial_salud.name"
+desc_key = "item.vial_salud.desc"
+icon = ExtResource("2")
+rarity = 1
+max_stack = 3
+category = 1
+value = 15
+heal_amount = 35
+max_carried = 3

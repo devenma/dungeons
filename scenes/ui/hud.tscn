@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=3]
+[gd_scene load_steps=22 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/health_bar.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/ui/stamina_bar.gd" id="2"]
@@ -28,6 +28,7 @@
 [ext_resource type="Texture2D" path="res://assets/ui/hud/barra_mana_relleno.png" id="26"]
 [ext_resource type="Texture2D" path="res://assets/ui/hud/barra_mana_dano.png" id="27"]
 [ext_resource type="Script" path="res://scripts/ui/ability_label.gd" id="28"]
+[ext_resource type="Texture2D" path="res://assets/ui/hud/hud_vial.png" id="29"]
 
 [node name="HUD" type="Control"]
 layout_mode = 3
@@ -242,6 +243,27 @@ texture = ExtResource("20")
 unique_name_in_owner = true
 layout_mode = 2
 text = "x0"
+
+[node name="VialPlate" type="PanelContainer" parent="Counters"]
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"CounterPlate"
+
+[node name="Row" type="HBoxContainer" parent="Counters/VialPlate"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="Icon" type="TextureRect" parent="Counters/VialPlate/Row"]
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("29")
+
+[node name="VialLabel" type="Label" parent="Counters/VialPlate/Row"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "0/3"
 
 [node name="ToastArea" type="CenterContainer" parent="."]
 layout_mode = 1

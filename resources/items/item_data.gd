@@ -35,6 +35,10 @@ enum Rarity {
 @export var category: Category = Category.MATERIAL
 ## Valor de venta en oro / Sell value in gold
 @export var value: int = 0
+## Vida que cura al tomarlo; 0 = no se toma (D25) / Health it heals when drunk; 0 = not drinkable (D25)
+@export var heal_amount: int = 0
+## Tope de unidades encima; 0 = sin tope / Cap of units carried; 0 = no cap
+@export var max_carried: int = 0
 
 
 func display_name() -> String:

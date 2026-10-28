@@ -6,6 +6,8 @@ extends CharacterBody2D
 ## Muerto no se mueve ni ataca; rodando manda RollComponent; durante un golpe de espada queda plantado
 ## (salvo el paso del golpe). Dead it neither moves nor attacks; rolling, RollComponent drives it; during a
 ## sword swing it stays rooted (except for the swing's step).
+## Tomando un vial (PotionDrinker) camina despacio y no ataca ni rueda.
+## Drinking a vial (PotionDrinker) it walks slowly and neither attacks nor rolls.
 
 ## Velocidad de caminata (px/s) / Walk speed (px/s)
 @export var speed: float = 60.0
@@ -13,6 +15,7 @@ extends CharacterBody2D
 @onready var _health: HealthComponent = get_node_or_null("Health") as HealthComponent
 @onready var _roll: RollComponent = get_node_or_null("Roll") as RollComponent
 @onready var _weapons: Node = get_node_or_null("Weapons")
+@onready var _potions: PotionDrinker = get_node_or_null("Potions") as PotionDrinker
 
 # Last nonzero move direction; aim for weapons defaults to Down (SW-3).
 var last_move_direction: Vector2 = Vector2.DOWN
@@ -44,16 +47,23 @@ func is_dead() -> bool:
 	return _health != null and _health.is_dead()
 
 
-## Las armas preguntan antes de atacar: muerto se descarta, rodando se guarda para el final
-## Weapons ask before attacking: dead it is dropped, rolling it is buffered for the end
+## Muerto, rodando, en un golpe que planta o tomando un vial no empieza otra acción (habilidad, vial)
+## Dead, rolling, in a rooting swing or drinking a vial it starts no other action (ability, vial)
+func is_busy() -> bool:
+	return is_dead() or (_roll != null and _roll.is_rolling()) or _weapon_rooting() or _drinking()
+
+
+## Las armas preguntan antes de atacar: muerto o tomando un vial se descarta, rodando se guarda para el final
+## Weapons ask before attacking: dead or drinking a vial it is dropped, rolling it is buffered for the end
 func hold_attack(aim: Vector2) -> bool:
-	if is_dead():
+	if is_dead() or _drinking():
 		return true
 	return _roll != null and _roll.buffer_attack(aim)
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not event.is_action_pressed("roll") or _roll == null or is_dead() or _pushed or _weapon_rooting():
+	if not event.is_action_pressed("roll") or _roll == null or is_dead() or _pushed or _weapon_rooting() \
+			or _drinking():
 		return
 	var direction: Vector2 = Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	if direction == Vector2.ZERO:
@@ -66,7 +76,7 @@ func _physics_process(delta: float) -> void:
 	var direction: Vector2 = Vector2.ZERO
 	if not is_dead():
 		direction = Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	velocity = direction * speed
+	velocity = direction * speed * (_potions.move_scale if _drinking() else 1.0)
 	if _roll != null and _roll.is_rolling():
 		velocity = _roll.roll_velocity()
 	else:
@@ -88,6 +98,10 @@ func _physics_process(delta: float) -> void:
 func _weapon_rooting() -> bool:
 	var weapon: Node = _mounted_weapon()
 	return weapon != null and weapon.has_method("is_rooting") and weapon.call("is_rooting") as bool
+
+
+func _drinking() -> bool:
+	return _potions != null and _potions.is_drinking()
 
 
 func _mounted_weapon() -> Node:

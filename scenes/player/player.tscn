@@ -18,6 +18,8 @@
 [ext_resource type="AudioStream" path="res://assets/audio/sfx/player_death.tres" id="18"]
 [ext_resource type="AudioStream" path="res://assets/audio/sfx/dash_whoosh.tres" id="19"]
 [ext_resource type="AudioStream" path="res://assets/audio/sfx/footstep_stone.tres" id="20"]
+[ext_resource type="Script" path="res://scripts/player/potion_drinker.gd" id="22"]
+[ext_resource type="Resource" path="res://resources/items/vial_sangre.tres" id="23"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
 size = Vector2(12, 6)
@@ -90,6 +92,10 @@ default_weapon_data = ExtResource("10")
 
 [node name="Roll" type="Node" parent="."]
 script = ExtResource("14")
+
+[node name="Potions" type="Node" parent="."]
+script = ExtResource("22")
+potion = ExtResource("23")
 
 [node name="RollSound" type="AudioStreamPlayer2D" parent="."]
 stream = ExtResource("19")

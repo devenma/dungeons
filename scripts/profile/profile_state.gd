@@ -245,9 +245,11 @@ func mark_cleared(dungeon_id: StringName) -> void:
 		profile_changed.emit()
 
 
-## Compra una unidad con oro bancado; sin oro o con la mochila llena no cobra nada.
-## Buys one unit with banked gold; when broke or with a full backpack nothing is charged.
+## Compra una unidad con oro bancado; sin oro, con la mochila llena o con el tope de ese objeto no cobra nada.
+## Buys one unit with banked gold; when broke, with a full backpack or at the item's cap nothing is charged.
 func buy(backpack: Inventory, item: ItemData, price: int) -> bool:
+	if item.max_carried > 0 and backpack.count_of(item) >= item.max_carried:
+		return false
 	if banked_gold < price or backpack.add(item, 1) > 0:
 		return false
 	banked_gold -= price
