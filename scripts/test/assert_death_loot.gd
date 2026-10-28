@@ -57,7 +57,7 @@ func _run() -> void:
 	var run_manager: RunManager = main.get_node("RunManager")
 	var profile: ProfileState = main.get_node("ProfileState")
 	var dm: Node = main.get_node("World/DungeonManager")
-	var guild: Node2D = main.get_node("World/Guild")
+	var guild: Node2D = main.get_node("World/Hondoval/Guild")
 	var player := main.get_node("World/Player") as Node2D
 	var death_screen: Control = main.get_node("UI/DeathScreen") as Control
 	var death_title: Label = death_screen.get_node("%Title") as Label

@@ -1,4 +1,4 @@
-[gd_scene load_steps=26 format=3]
+[gd_scene load_steps=27 format=3]
 
 [ext_resource type="Script" path="res://scripts/guild/guild.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/guild/guild_interactable.gd" id="2"]
@@ -10,6 +10,7 @@
 [ext_resource type="Texture2D" path="res://assets/art/ui/caja_dialogo.png" id="8_box"]
 [ext_resource type="PackedScene" path="res://scenes/ui/shop_panel.tscn" id="9_shop"]
 [ext_resource type="AudioStream" path="res://assets/audio/sfx/guild_ambience_loop_01.wav" id="10_amb"]
+[ext_resource type="Script" path="res://scripts/town/town_door.gd" id="11_door"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_chests"]
 size = Vector2(28, 72)
@@ -68,6 +69,7 @@ fill_to = Vector2(1, 0.5)
 [node name="Guild" type="Node2D"]
 y_sort_enabled = true
 script = ExtResource("1")
+area_id = &"guild"
 
 [node name="Room" type="Node2D" parent="."]
 script = ExtResource("3_room")
@@ -186,8 +188,13 @@ shape = SubResource("RectangleShape2D_barrel_broken")
 position = Vector2(396, 226)
 shape = SubResource("RectangleShape2D_forge")
 
-[node name="SpawnPoint" type="Marker2D" parent="."]
+[node name="Markers" type="Node2D" parent="."]
+
+[node name="spawn" type="Marker2D" parent="Markers"]
 position = Vector2(262, 178)
+
+[node name="from_street" type="Marker2D" parent="Markers"]
+position = Vector2(326, 110)
 
 [node name="StorageChest" type="Area2D" parent="."]
 position = Vector2(108, 172)
@@ -207,23 +214,25 @@ label_settings = SubResource("LabelSettings_hint")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="StorageChest"]
 shape = SubResource("RectangleShape2D_storage")
 
-[node name="ExpeditionDoor" type="Area2D" parent="."]
+[node name="StreetDoor" type="Area2D" parent="."]
 position = Vector2(326, 88)
 collision_layer = 0
 collision_mask = 2
-script = ExtResource("2")
+script = ExtResource("11_door")
+target_area = &"exterior"
+target_marker = &"guild_door"
 
-[node name="Hint" type="Label" parent="ExpeditionDoor"]
+[node name="Hint" type="Label" parent="StreetDoor"]
 offset_left = -40.0
 offset_top = 4.0
 offset_right = 40.0
 offset_bottom = 16.0
 visible = false
-text = "Dungeon [F]"
+text = "Leave [F]"
 label_settings = SubResource("LabelSettings_hint")
 horizontal_alignment = 1
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="ExpeditionDoor"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StreetDoor"]
 shape = SubResource("RectangleShape2D_gate")
 
 [node name="NoticeBoard" type="Area2D" parent="."]

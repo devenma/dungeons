@@ -1,24 +1,18 @@
-extends Node2D
+extends "res://scripts/town/town_area.gd"
 
-## Gremio (hub, D2): primera escena del juego. El cofre del depósito abre el panel de mochila y
-## almacén; el portón pide una expedición, que arma DungeonManager. La reducidora abre la tienda,
-## el resto de los NPC saluda y el tablón muestra una línea.
-## Guild (hub, D2): the game's first scene. The storage chest opens the backpack and storage
-## panel; the gate requests an expedition, which DungeonManager builds. The fence opens the
-## shop, the other NPCs greet and the notice board shows a line.
-
-signal expedition_requested
+## Gremio: un área de Hondoval (D25), donde arranca el juego y adonde se vuelve. El cofre del depósito abre el
+## panel de mochila y almacén, la reducidora abre la tienda, el resto de los NPC saluda y el tablón muestra una
+## línea. Su portón sale a la calle; la expedición se pide desde la entrada a la cripta (Hondoval).
+## Guild: a Hondoval area (D25), where the game starts and where you come back. The storage chest opens the
+## backpack and storage panel, the fence opens the shop, the other NPCs greet and the notice board shows a
+## line. Its gate leads to the street; the expedition is requested from the crypt entrance (Hondoval).
 
 const UiText: GDScript = preload("res://scripts/ui/ui_text.gd")
 
-@export var run_manager_path: NodePath = NodePath("../../RunManager")
-@export var profile_state_path: NodePath = NodePath("../../ProfileState")
-@export var backpack_panel_path: NodePath = NodePath("../../UI/BackpackPanel")
-## Límites de cámara del gremio, en px locales / Guild camera limits, in local px
-@export var camera_bounds: Rect2i = Rect2i(0, 0, 480, 270)
+@export var run_manager_path: NodePath = NodePath("../../../RunManager")
+@export var profile_state_path: NodePath = NodePath("../../../ProfileState")
+@export var backpack_panel_path: NodePath = NodePath("../../../UI/BackpackPanel")
 
-@onready var _spawn_point: Marker2D = $SpawnPoint
-@onready var _ui: CanvasLayer = $GuildUI
 @onready var _dialogue: Node = $GuildUI/DialogueBox
 @onready var _shop: Node = $GuildUI/ShopPanel
 @onready var _fence: Area2D = $Things/Fence
@@ -31,13 +25,11 @@ var _told: Array[Node] = []
 
 func _ready() -> void:
 	$StorageChest.interacted.connect(open_storage)
-	$ExpeditionDoor.interacted.connect(expedition_requested.emit)
 	$NoticeBoard.interacted.connect(func() -> void: _dialogue.say(UiText.tr_or("npc.questgiver.quest.none",
 			"No bounties today. That's either very good or very bad news.")))
 	_fence.interacted.connect(open_shop)
 	_set_hint($Things/Fence, "ui.prompt.talk", "Shop")
 	_set_hint($StorageChest, "ui.prompt.open", "Storage")
-	_set_hint($ExpeditionDoor, "ui.prompt.descend", "Dungeon")
 	_set_hint($NoticeBoard, "ui.prompt.interact", "Board")
 	for npc: Node in $Things.get_children():
 		if npc != _fence and npc.has_method("greeting"):
@@ -75,23 +67,8 @@ func open_shop() -> void:
 	_shop.open(run_manager, profile)
 
 
-## Apagado también saca sus colisiones de la física (disable_mode REMOVE) y esconde su UI.
-## Disabled also removes its collisions from physics (disable_mode REMOVE) and hides its UI.
+## Apagado también saca sus colisiones de la física y esconde su UI (town_area); además corta el diálogo.
+## Off it also takes its collisions out of physics and hides its UI (town_area); it also cuts the dialogue.
 func set_active(active: bool) -> void:
-	visible = active
-	process_mode = Node.PROCESS_MODE_INHERIT if active else Node.PROCESS_MODE_DISABLED
-	# process_mode no saca de la física las colisiones de un TileMapLayer, y el gremio comparte el
-	# origen con la mazmorra / process_mode does not remove a TileMapLayer's collisions, and the
-	# guild shares the origin with the dungeon
-	$Room/Tiles.collision_enabled = active
-	_ui.visible = active
+	super(active)
 	_dialogue.hide()
-	$Ambience.playing = active
-
-
-func spawn_position() -> Vector2:
-	return _spawn_point.global_position
-
-
-func camera_rect() -> Rect2i:
-	return Rect2i(Vector2i(global_position) + camera_bounds.position, camera_bounds.size)

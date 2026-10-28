@@ -11,7 +11,7 @@
 [ext_resource type="Resource" path="res://resources/weapons/sword_basic.tres" id="9"]
 [ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="12"]
 [ext_resource type="Script" path="res://scripts/profile/profile_state.gd" id="13"]
-[ext_resource type="PackedScene" path="res://scenes/guild/guild.tscn" id="14"]
+[ext_resource type="PackedScene" path="res://scenes/town/hondoval.tscn" id="14"]
 [ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="15"]
 [ext_resource type="PackedScene" path="res://scenes/ui/backpack_panel.tscn" id="16"]
 [ext_resource type="AudioStream" path="res://assets/audio/sfx/dungeon_ambience_loop_01.wav" id="17"]
@@ -33,7 +33,7 @@ default_weapon = ExtResource("9")
 [node name="World" type="Node2D" parent="." unique_id=428461756]
 y_sort_enabled = true
 
-[node name="Guild" parent="World" instance=ExtResource("14")]
+[node name="Hondoval" parent="World" instance=ExtResource("14")]
 
 [node name="Player" parent="World" unique_id=244688153 instance=ExtResource("1")]
 position = Vector2(800, 600)
@@ -43,7 +43,7 @@ script = ExtResource("3")
 player_node_path = NodePath("../Player")
 run_manager_node_path = NodePath("../../RunManager")
 profile_state_node_path = NodePath("../../ProfileState")
-guild_node_path = NodePath("../Guild")
+guild_node_path = NodePath("../Hondoval")
 floor_data = ExtResource("6")
 dungeon_data = ExtResource("22")
 

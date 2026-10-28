@@ -1,13 +1,12 @@
 extends SceneTree
 
-## Guild hub assertion (D2): the API DungeonManager uses (set_active, spawn_position,
-## camera_rect, expedition_requested), the interactables (storage, gate, notice board,
+## Guild hub assertion (D2, D25): the API DungeonManager uses, now on Hondoval (set_active, spawn_position,
+## camera_rect, expedition_requested), the interactables (storage, street door, notice board,
 ## 7 NPCs), and the fence shop: selling banks ItemData.value and saves, buying a blue
 ## stone spends banked gold and saves, and it is refused when broke or with a full
 ## backpack. Exit 0 = pass, 1 = fail.
 
 const SAVE_PATH: String = "user://test_guild_shop.json"
-const InteractableScript: GDScript = preload("res://scripts/guild/guild_interactable.gd")
 const NPC_NAMES: PackedStringArray = [
 	"Guildmaster", "Fence", "Blacksmith", "Healer", "Questgiver", "RefugeeChild", "RefugeeWounded",
 ]
@@ -66,22 +65,23 @@ func _run() -> void:
 
 	var run_manager: RunManager = main.get_node("RunManager")
 	var profile: ProfileState = main.get_node("ProfileState")
-	var guild: Node2D = main.get_node("World/Guild")
+	var town: Node2D = main.get_node("World/Hondoval")
+	var guild: Node2D = town.get_node("Guild")
 	var player := main.get_node("World/Player") as CharacterBody2D
 	var dialogue: CanvasItem = guild.get_node("GuildUI/DialogueBox")
 	var shop: Control = guild.get_node("GuildUI/ShopPanel")
 
 	# API used by DungeonManager.
-	var bounds: Rect2i = guild.call("camera_rect")
-	var spawn: Vector2 = guild.call("spawn_position")
+	var bounds: Rect2i = town.call("camera_rect")
+	var spawn: Vector2 = town.call("spawn_position")
 	_check(bounds == Rect2i(0, 0, 480, 270), "api: camera_rect is the 480x270 room")
 	_check(bounds.has_point(Vector2i(spawn)) and player.position == spawn, "api: boot places the player at spawn_position")
-	_check(guild.get_signal_connection_list("expedition_requested").size() > 0,
+	_check(town.get_signal_connection_list("expedition_requested").size() > 0,
 			"api: DungeonManager listens to expedition_requested")
-	guild.call("set_active", false)
-	_check(not guild.visible and guild.process_mode == Node.PROCESS_MODE_DISABLED
+	town.call("set_active", false)
+	_check(not town.visible and town.process_mode == Node.PROCESS_MODE_DISABLED and not guild.visible
 			and not (guild.get_node("GuildUI") as CanvasLayer).visible, "api: set_active(false) hides and disables")
-	guild.call("set_active", true)
+	town.call("set_active", true)
 	_check(guild.visible and (guild.get_node("GuildUI") as CanvasLayer).visible, "api: set_active(true) restores")
 
 	# Art: 13x9 room + the east corridor tile, floor props Y-sorted with the NPCs.
@@ -90,9 +90,9 @@ func _run() -> void:
 	_check(guild.get_node("Things").get_child_count() == 11 + NPC_NAMES.size(), "art: floor props and NPCs in Things")
 
 	# Interactables.
-	for spot_name: String in ["StorageChest", "ExpeditionDoor", "NoticeBoard"]:
+	for spot_name: String in ["StorageChest", "StreetDoor", "NoticeBoard"]:
 		var spot: Node = guild.get_node_or_null(spot_name)
-		_check(spot != null and spot.get_script() == InteractableScript, "interactable: " + spot_name)
+		_check(spot != null and spot.has_signal("interacted"), "interactable: " + spot_name)
 	for npc_name: String in NPC_NAMES:
 		var npc: Node = guild.get_node_or_null("Things/" + npc_name)
 		var greeting: String = npc.call("greeting") if npc != null else ""

@@ -1,0 +1,45 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/town/hondoval.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/town/town_exterior.gd" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/guild/guild.tscn" id="3"]
+[ext_resource type="PackedScene" path="res://scenes/town/interior.tscn" id="4"]
+
+[node name="Hondoval" type="Node2D"]
+script = ExtResource("1")
+
+[node name="Exterior" type="Node2D" parent="."]
+script = ExtResource("2")
+area_id = &"exterior"
+
+[node name="Guild" parent="." instance=ExtResource("3")]
+
+[node name="Shop" parent="." instance=ExtResource("4")]
+area_id = &"shop"
+
+[node name="StreetDoor" parent="Shop" index="8"]
+target_marker = &"shop_door"
+
+[node name="Apothecary" parent="." instance=ExtResource("4")]
+area_id = &"apothecary"
+
+[node name="StreetDoor" parent="Apothecary" index="8"]
+target_marker = &"apothecary_door"
+
+[node name="Smithy" parent="." instance=ExtResource("4")]
+area_id = &"smithy"
+
+[node name="StreetDoor" parent="Smithy" index="8"]
+target_marker = &"smithy_door"
+
+[node name="TownUI" type="CanvasLayer" parent="."]
+
+[node name="Fade" type="ColorRect" parent="TownUI"]
+modulate = Color(1, 1, 1, 0)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 1)

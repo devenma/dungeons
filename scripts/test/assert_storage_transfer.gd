@@ -85,7 +85,7 @@ func _run() -> void:
 
 	var run_manager: RunManager = main.get_node("RunManager")
 	var profile: ProfileState = main.get_node("ProfileState")
-	var guild: Node2D = main.get_node("World/Guild")
+	var guild: Node2D = main.get_node("World/Hondoval/Guild")
 	var player := main.get_node("World/Player") as CharacterBody2D
 	var panel: Control = main.get_node("UI/BackpackPanel")
 	var pause_menu: Control = main.get_node("UI/PauseMenu")
@@ -176,7 +176,7 @@ func _run() -> void:
 	await _tap_action("inventory")
 	_check(not panel.visible and not paused, "inventory key closes it and unpauses")
 
-	guild.emit_signal("expedition_requested")
+	main.get_node("World/Hondoval").emit_signal("expedition_requested")
 	await _frames(3)
 	_check(run_manager.current_floor == 1, "dungeon: expedition started")
 	run_manager.add_loot([gel] as Array[ItemData], 0)

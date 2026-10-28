@@ -20,6 +20,8 @@ ui.prompt.talk,%s Hablar,%s Talk
 ui.prompt.open,%s Abrir,%s Open
 ui.prompt.pick_up,%s Recoger,%s Pick up
 ui.prompt.descend,%s Bajar,%s Go down
+ui.prompt.enter,%s Entrar,%s Enter
+ui.prompt.leave,%s Salir,%s Leave
 ui.prompt.push,%s Empujar (gasta aguante),%s Push (costs stamina)
 ui.prompt.unlock,%s Abrir con llave,%s Unlock
 ui.inventory.title,Mochila,Pack

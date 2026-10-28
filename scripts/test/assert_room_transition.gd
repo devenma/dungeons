@@ -69,7 +69,7 @@ func _run() -> void:
 	_cams = main.get_node("World/CameraLimitManager")
 	_player = main.find_child("Player", true, false)
 	_player.set("speed", TEST_SPEED)
-	var guild_tiles: TileMapLayer = main.get_node("World/Guild/Room/Tiles")
+	var guild_tiles: TileMapLayer = main.get_node("World/Hondoval/Guild/Room/Tiles")
 	_check(guild_tiles.collision_enabled, "guild tiles collide while in the guild")
 	for dir: Vector2i in ACTION_FOR:
 		_crossed[dir] = 0

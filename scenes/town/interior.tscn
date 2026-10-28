@@ -1,0 +1,75 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/town/town_area.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/town/town_door.tscn" id="2"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_h"]
+size = Vector2(480, 32)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_v"]
+size = Vector2(32, 270)
+
+[node name="Interior" type="Node2D"]
+script = ExtResource("1")
+
+[node name="Floor" type="ColorRect" parent="."]
+offset_right = 480.0
+offset_bottom = 270.0
+mouse_filter = 2
+color = Color(0.24, 0.2, 0.17, 1)
+
+[node name="WallTop" type="ColorRect" parent="."]
+offset_right = 480.0
+offset_bottom = 32.0
+mouse_filter = 2
+color = Color(0.36, 0.3, 0.26, 1)
+
+[node name="WallBottom" type="ColorRect" parent="."]
+offset_top = 238.0
+offset_right = 480.0
+offset_bottom = 270.0
+mouse_filter = 2
+color = Color(0.36, 0.3, 0.26, 1)
+
+[node name="WallLeft" type="ColorRect" parent="."]
+offset_right = 32.0
+offset_bottom = 270.0
+mouse_filter = 2
+color = Color(0.36, 0.3, 0.26, 1)
+
+[node name="WallRight" type="ColorRect" parent="."]
+offset_left = 448.0
+offset_right = 480.0
+offset_bottom = 270.0
+mouse_filter = 2
+color = Color(0.36, 0.3, 0.26, 1)
+
+[node name="Walls" type="StaticBody2D" parent="."]
+collision_mask = 0
+
+[node name="North" type="CollisionShape2D" parent="Walls"]
+position = Vector2(240, 16)
+shape = SubResource("RectangleShape2D_wall_h")
+
+[node name="South" type="CollisionShape2D" parent="Walls"]
+position = Vector2(240, 254)
+shape = SubResource("RectangleShape2D_wall_h")
+
+[node name="West" type="CollisionShape2D" parent="Walls"]
+position = Vector2(16, 135)
+shape = SubResource("RectangleShape2D_wall_v")
+
+[node name="East" type="CollisionShape2D" parent="Walls"]
+position = Vector2(464, 135)
+shape = SubResource("RectangleShape2D_wall_v")
+
+[node name="Things" type="Node2D" parent="."]
+
+[node name="Markers" type="Node2D" parent="."]
+
+[node name="from_street" type="Marker2D" parent="Markers"]
+position = Vector2(240, 190)
+
+[node name="StreetDoor" parent="." instance=ExtResource("2")]
+position = Vector2(240, 226)
+target_area = &"exterior"

@@ -64,7 +64,7 @@ func _run() -> void:
 	dm.call("_return_victorious")
 	_check(not panel.visible, "the second clear has no closing scene")
 
-	var guild: Node = main.get_node("World/Guild")
+	var guild: Node = main.get_node("World/Hondoval/Guild")
 	var box: Node = guild.get_node("GuildUI/DialogueBox")
 	var healer: Node = guild.get_node("Things/Healer")
 	guild.call("set_mood", "death")
