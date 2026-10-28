@@ -1,4 +1,4 @@
-[gd_scene load_steps=23 format=3]
+[gd_scene load_steps=24 format=3]
 
 [ext_resource type="Script" path="res://scripts/town/town_area.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/guild/guild_interactable.gd" id="2"]
@@ -38,6 +38,9 @@ size = Vector2(56, 20)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_board"]
 size = Vector2(44, 20)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bed"]
+size = Vector2(28, 20)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_counter_front"]
 size = Vector2(64, 14)
@@ -204,6 +207,25 @@ horizontal_alignment = 1
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="NoticeBoard"]
 shape = SubResource("RectangleShape2D_board")
+
+[node name="Bed" type="Area2D" parent="."]
+position = Vector2(150, 200)
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("2")
+
+[node name="Hint" type="Label" parent="Bed"]
+offset_left = -40.0
+offset_top = -26.0
+offset_right = 40.0
+offset_bottom = -14.0
+visible = false
+text = "Sleep [F]"
+label_settings = SubResource("LabelSettings_hint")
+horizontal_alignment = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Bed"]
+shape = SubResource("RectangleShape2D_bed")
 
 [node name="Ambience" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("10_amb")

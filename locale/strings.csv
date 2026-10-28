@@ -22,6 +22,8 @@ ui.prompt.pick_up,%s Recoger,%s Pick up
 ui.prompt.descend,%s Bajar,%s Go down
 ui.prompt.enter,%s Entrar,%s Enter
 ui.prompt.leave,%s Salir,%s Leave
+ui.prompt.sleep,%s Dormir,%s Sleep
+ui.prompt.closed,%s Cerrado,%s Closed
 ui.prompt.push,%s Empujar (gasta aguante),%s Push (costs stamina)
 ui.prompt.unlock,%s Abrir con llave,%s Unlock
 ui.inventory.title,Mochila,Pack
@@ -470,6 +472,9 @@ ability.spin_slash.name,Tajo giratorio,Spinning slash
 ability.triple_shot.name,Disparo triple,Triple shot
 ability.fireball.name,Bola de fuego,Fireball
 ui.hud.day,Día %d,Day %d
+ui.hud.day_night,"Día %d, noche","Day %d, night"
+ui.town.closed,Cerrado. Vuelve de día.,Closed. Come back by day.
+ui.town.not_sleepy,Todavía no tienes sueño. Afuera sigue siendo de día.,You are not tired yet. It is still day outside.
 item.llave_osario.name,Llave del osario,Ossuary key
 item.llave_osario.desc,Hierro ennegrecido y frío. Abre la bóveda del piso.,Blackened, cold iron. Opens the floor's vault.
 dialogue.san_ulmo.closing.1,"Las velas de la fosa se apagan una por una. La canción sigue un momento más, sin nadie que la cante.","The candles of the pit go out one by one. The song goes on a moment longer, with no one left to sing it."

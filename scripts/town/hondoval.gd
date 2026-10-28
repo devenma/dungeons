@@ -33,6 +33,7 @@ var _told: Array[Node] = []
 @onready var _fade: ColorRect = $TownUI/Fade
 @onready var _dialogue: Node = $TownUI/DialogueBox
 @onready var _shop: Node = $TownUI/ShopPanel
+@onready var _clock: Node = $WorldClock
 
 
 func _ready() -> void:
@@ -59,6 +60,10 @@ func _ready() -> void:
 	for npc: Node in find_children("*", "Area2D", true, false):
 		if npc.has_method("greeting") and not keepers.has(npc):
 			npc.interacted.connect(_greet.bind(npc))
+	$Guild/Bed.interacted.connect(_sleep)
+	_set_hint($Guild/Bed, "ui.prompt.sleep", "Sleep")
+	_clock.connect("phase_changed", _on_phase_changed)
+	_on_phase_changed(_clock.call("is_night") as bool)
 	_current = _guild
 
 
@@ -72,6 +77,8 @@ func set_active(active: bool) -> void:
 	for area: Node in _areas():
 		area.call("set_active", active and area == _guild)
 	_current = _guild
+	if active:
+		_clock.call("refresh")
 
 
 func spawn_position() -> Vector2:
@@ -135,7 +142,22 @@ func _greet(npc: Node) -> void:
 
 
 func _use_door(door: Node) -> void:
+	if door.get("closes_at_night") and _clock.call("is_night"):
+		say(UiText.tr_or("ui.town.closed", "Closed. Come back by day."))
+		return
 	go_to(door.get("target_area") as StringName, door.get("target_marker") as StringName)
+
+
+func _sleep() -> void:
+	if not _clock.call("sleep"):
+		say(UiText.tr_or("ui.town.not_sleepy", "You are not tired yet. It is still day outside."))
+
+
+# De noche las puertas de los locales dicen que están cerradas / At night the shops' doors say they are closed
+func _on_phase_changed(night: bool) -> void:
+	for door: Node in find_children("*", "Area2D", true, false):
+		if door.is_in_group("town_door") and door.get("closes_at_night"):
+			_set_hint(door, "ui.prompt.closed" if night else "ui.prompt.enter", "Closed" if night else "Enter")
 
 
 func _areas() -> Array[Node]:

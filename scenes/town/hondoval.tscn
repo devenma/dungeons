@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3]
+[gd_scene load_steps=17 format=3]
 
 [ext_resource type="Script" path="res://scripts/town/hondoval.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/town/town_exterior.gd" id="2"]
@@ -11,6 +11,7 @@
 [ext_resource type="Resource" path="res://resources/shop/fence_shop.tres" id="10_fence"]
 [ext_resource type="Resource" path="res://resources/shop/apothecary_shop.tres" id="11_apothecary"]
 [ext_resource type="Resource" path="res://resources/shop/smithy_shop.tres" id="12_smithy"]
+[ext_resource type="Script" path="res://scripts/world/world_clock.gd" id="13_clock"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_hint"]
 font_size = 11
@@ -114,6 +115,13 @@ npc_id = "refugee_tome"
 sheet_prefix = "res://assets/art/characters/refugee_wounded_"
 facing = "E"
 fallback_greeting = "Morning. Buried anyone today? I have. The usual one."
+
+[node name="WorldClock" type="Node" parent="."]
+script = ExtResource("13_clock")
+
+[node name="NightTint" type="CanvasModulate" parent="."]
+visible = false
+color = Color(0.42, 0.45, 0.62, 1)
 
 [node name="TownUI" type="CanvasLayer" parent="."]
 
