@@ -55,9 +55,17 @@ const DOORS: Dictionary = {
 }
 
 
+var _blockout: Node2D
+
+
 func _ready() -> void:
 	var tile: int = DungeonGeometryScript.TILE_SIZE
 	camera_bounds = Rect2i(Vector2i.ZERO, Vector2i(MAP[0].length(), MAP.size()) * tile)
+	# Primer hijo: el bloqueo se dibuja debajo de los NPCs de Things / First child: the blockout is drawn under the NPCs in Things
+	_blockout = Node2D.new()
+	_blockout.name = "Blockout"
+	add_child(_blockout)
+	move_child(_blockout, 0)
 	_add_rect(Vector2.ZERO, Vector2(camera_bounds.size), COLORS["."])
 	var solids: StaticBody2D = StaticBody2D.new()
 	solids.name = "Solids"
@@ -90,7 +98,7 @@ func _add_rect(at: Vector2, size_px: Vector2, color: Color) -> void:
 	rect.size = size_px
 	rect.color = color
 	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(rect)
+	_blockout.add_child(rect)
 
 
 func _add_solid(solids: StaticBody2D, at: Vector2, size_px: Vector2, color: Color) -> void:

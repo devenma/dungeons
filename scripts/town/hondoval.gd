@@ -2,24 +2,37 @@ extends Node2D
 
 ## Hondoval (D25): el pueblo y el hub con el que habla DungeonManager. Pide la expedición desde la entrada a la
 ## cripta, se apaga mientras dura y al volver te deja en el gremio. Prende un área por vez (el exterior o un
-## interior) y las puertas llevan de una a otra con un fundido a negro.
+## interior) y las puertas llevan de una a otra con un fundido a negro. Atiende lo que se toca en el pueblo:
+## el almacén y el tablón del gremio, la tienda de cada local y el saludo de los NPCs, que la primera vez
+## comentan cómo volviste.
 ## Hondoval (D25): the town and the hub DungeonManager talks to. It requests the expedition from the crypt
 ## entrance, is switched off while it lasts and on return leaves you in the guild. It turns on one area at a
-## time (the exterior or an interior) and doors lead between them with a fade from black.
+## time (the exterior or an interior) and doors lead between them with a fade from black. It handles what is
+## touched in town: the guild's storage and notice board, each venue's shop and the NPCs' greetings, which
+## remark on how you came back the first time.
 
 signal expedition_requested
 
 const UiText: GDScript = preload("res://scripts/ui/ui_text.gd")
 
 @export var camera_manager_path: NodePath = NodePath("../CameraLimitManager")
+@export var run_manager_path: NodePath = NodePath("../../RunManager")
+@export var profile_state_path: NodePath = NodePath("../../ProfileState")
+@export var backpack_panel_path: NodePath = NodePath("../../UI/BackpackPanel")
 ## Duración del fundido al cruzar una puerta, en s / Fade duration when crossing a door, in s
 @export var fade_seconds: float = 0.25
 
 var _current: Node2D
+# Cómo volvió el jugador (death, return_stone, victory) y a quién ya se lo comentaron; vacío = nada que comentar
+# How the player came back (death, return_stone, victory) and who already remarked on it; empty = nothing to say
+var _mood: String = ""
+var _told: Array[Node] = []
 
 @onready var _guild: Node2D = $Guild
 @onready var _ui: CanvasLayer = $TownUI
 @onready var _fade: ColorRect = $TownUI/Fade
+@onready var _dialogue: Node = $TownUI/DialogueBox
+@onready var _shop: Node = $TownUI/ShopPanel
 
 
 func _ready() -> void:
@@ -31,6 +44,21 @@ func _ready() -> void:
 	var crypt: Node = $Exterior/CryptEntrance
 	crypt.interacted.connect(expedition_requested.emit)
 	_set_hint(crypt, "ui.prompt.descend", "Go down")
+	$Guild/StorageChest.interacted.connect(open_storage)
+	_set_hint($Guild/StorageChest, "ui.prompt.open", "Storage")
+	$Guild/NoticeBoard.interacted.connect(func() -> void: say(UiText.tr_or("npc.questgiver.quest.none",
+			"No bounties today. That's either very good or very bad news.")))
+	_set_hint($Guild/NoticeBoard, "ui.prompt.interact", "Board")
+	var keepers: Array[Node] = []
+	for area: Node in _areas():
+		if area.get("shop_data") != null:
+			var keeper: Node = area.get_node(area.get("shopkeeper_path") as NodePath)
+			keeper.interacted.connect(open_shop.bind(area))
+			_set_hint(keeper, "ui.prompt.talk", "Shop")
+			keepers.append(keeper)
+	for npc: Node in find_children("*", "Area2D", true, false):
+		if npc.has_method("greeting") and not keepers.has(npc):
+			npc.interacted.connect(_greet.bind(npc))
 	_current = _guild
 
 
@@ -40,6 +68,7 @@ func set_active(active: bool) -> void:
 	visible = active
 	process_mode = Node.PROCESS_MODE_INHERIT if active else Node.PROCESS_MODE_DISABLED
 	_ui.visible = active
+	_dialogue.hide()
 	for area: Node in _areas():
 		area.call("set_active", active and area == _guild)
 	_current = _guild
@@ -58,7 +87,12 @@ func current_area() -> StringName:
 
 
 func set_mood(mood: String) -> void:
-	_guild.call("set_mood", mood)
+	_mood = mood
+	_told.clear()
+
+
+func say(text: String) -> void:
+	_dialogue.say(text)
 
 
 func go_to(area_id: StringName, marker: StringName) -> void:
@@ -69,6 +103,7 @@ func go_to(area_id: StringName, marker: StringName) -> void:
 	_current.call("set_active", false)
 	target.call("set_active", true)
 	_current = target
+	_dialogue.hide()
 	var player: Node2D = get_tree().get_first_node_in_group("player") as Node2D
 	if player != null:
 		player.global_position = target.call("marker_position", marker) as Vector2
@@ -77,6 +112,26 @@ func go_to(area_id: StringName, marker: StringName) -> void:
 			cam_manager.call("frame_rect", player, camera_rect())
 	_fade.modulate.a = 1.0
 	create_tween().tween_property(_fade, "modulate:a", 0.0, fade_seconds)
+
+
+func open_storage() -> void:
+	var panel: Control = get_node_or_null(backpack_panel_path) as Control
+	if panel != null:
+		panel.call("set_open", true)
+
+
+## Abre la tienda del local con su ShopData / Opens the venue's shop with its ShopData
+func open_shop(area: Node) -> void:
+	var run_manager: RunManager = get_node_or_null(run_manager_path) as RunManager
+	var profile: ProfileState = get_node_or_null(profile_state_path) as ProfileState
+	if run_manager == null or profile == null:
+		return
+	_shop.call("open", run_manager, profile, area.get("shop_data"))
+
+
+func _greet(npc: Node) -> void:
+	say(npc.call("greeting", "" if _told.has(npc) else _mood))
+	_told.append(npc)
 
 
 func _use_door(door: Node) -> void:

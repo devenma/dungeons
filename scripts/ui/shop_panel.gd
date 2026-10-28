@@ -1,15 +1,28 @@
 extends Control
 
-## Tienda de la reducidora (D2): compra lo de la mochila por su ItemData.value y vende lo de ShopData, todo
-## en oro bancado. Pausa el juego mientras está abierta y guarda el perfil después de cada trato.
-## `interact` o `pause` la cierran. Corre con PROCESS_MODE_ALWAYS (en la escena) para recibir input en pausa.
-## Fence shop (D2): buys backpack items for their ItemData.value and sells the ShopData item, all in banked
-## gold. Pauses the game while open and saves the profile after every deal. `interact` or `pause` close it.
-## Runs with PROCESS_MODE_ALWAYS (set in the scene) to get input while paused.
+## Tienda de un local del pueblo (D2, D25): vende lo de su ShopData (un objeto y mejoras) en oro bancado y, si
+## ShopData.buys_loot (la Urraca), compra lo de la mochila por su ItemData.value. El título y las líneas de
+## quien atiende salen de ShopData. Pausa el juego mientras está abierta y guarda el perfil después de cada
+## trato. `interact` o `pause` la cierran. Corre con PROCESS_MODE_ALWAYS (en la escena) para recibir input
+## en pausa.
+## Shop of a town venue (D2, D25): sells its ShopData (an item and upgrades) in banked gold and, when
+## ShopData.buys_loot (the Magpie), buys backpack items for their ItemData.value. The title and the keeper's
+## lines come from ShopData. Pauses the game while open and saves the profile after every deal. `interact`
+## or `pause` close it. Runs with PROCESS_MODE_ALWAYS (set in the scene) to get input while paused.
 
 const UiText: GDScript = preload("res://scripts/ui/ui_text.gd")
+## Texto de respaldo por línea mientras falte la clave / Fallback text per line while the key is missing
+const LINE_FALLBACKS: Dictionary = {
+	"open": "Look, don't touch. Touch it and you pay.",
+	"sell": "Here's what I'll give. It isn't fair, but neither is the world.",
+	"buy": "Done. No returns; not of things, not of people.",
+	"no_money": "No gold, no deal. Go back down.",
+	"full": "Your pack is full. Sell before you buy; I'm not your mule.",
+	"upgrade": "It'll hold. Better than your skin does.",
+	"capped": "That's all you can carry.",
+}
 
-## Qué vende y a qué precio / What it sells and for how much
+## Qué vende y a qué precio; open() puede cambiarlo / What it sells and for how much; open() can change it
 @export var shop_data: ShopData
 
 var _run_manager: RunManager
@@ -35,16 +48,24 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 
-func open(run_manager: RunManager, profile: ProfileState) -> void:
+func open(run_manager: RunManager, profile: ProfileState, data: ShopData = null) -> void:
 	_run_manager = run_manager
 	_profile = profile
-	_title.text = UiText.tr_or("ui.shop.merchant_title", "The Magpie's")
+	if data != null:
+		shop_data = data
+	_title.text = UiText.tr_or(shop_data.title_key, "The Magpie's")
 	_sell_title.text = UiText.tr_or("ui.shop.sell", "Sell")
-	_say("npc.merchant.shop.open", "Look, don't touch. Touch it and you pay.")
+	_sell_title.visible = shop_data.buys_loot
+	_sell_list.visible = shop_data.buys_loot
+	_buy_button.visible = shop_data.item != null
+	_say("open")
 	get_tree().paused = true
 	show()
 	_refresh()
-	_buy_button.grab_focus()
+	if _buy_button.visible:
+		_buy_button.grab_focus()
+	elif _upgrade_list.get_child_count() > 0:
+		(_upgrade_list.get_child(0) as Button).grab_focus()
 
 
 func close() -> void:
@@ -56,20 +77,24 @@ func sell(item: ItemData) -> bool:
 	if not _profile.sell(_run_manager.backpack, item):
 		return false
 	_profile.save_profile()
-	_say("npc.merchant.shop.sell", "Here's what I'll give. It isn't fair, but neither is the world.")
+	_say("sell")
 	_refresh()
 	return true
 
 
 func buy() -> bool:
-	if _profile.banked_gold < shop_data.price:
-		_say("npc.merchant.shop.no_money", "No gold, no deal. Go back down.")
+	var item: ItemData = shop_data.item
+	if item.max_carried > 0 and _run_manager.backpack.count_of(item) >= item.max_carried:
+		_say("capped")
 		return false
-	if not _profile.buy(_run_manager.backpack, shop_data.item, shop_data.price):
-		_say("npc.merchant.shop.full", "Your pack is full. Sell before you buy; I'm not your mule.")
+	if _profile.banked_gold < shop_data.price:
+		_say("no_money")
+		return false
+	if not _profile.buy(_run_manager.backpack, item, shop_data.price):
+		_say("full")
 		return false
 	_profile.save_profile()
-	_say("npc.merchant.shop.buy", "Done. No returns; not of things, not of people.")
+	_say("buy")
 	_refresh()
 	return true
 
@@ -77,16 +102,17 @@ func buy() -> bool:
 ## Mejora permanente (D11): una vez, con oro bancado / Permanent upgrade (D11): once, with banked gold
 func buy_upgrade(upgrade: UpgradeData) -> bool:
 	if not _profile.buy_upgrade(upgrade):
-		_say("npc.merchant.shop.no_money", "No gold, no deal. Go back down.")
+		_say("no_money")
 		return false
 	_profile.save_profile()
-	_say("npc.merchant.shop.upgrade", "It'll hold. Better than your skin does.")
+	_say("upgrade")
 	_refresh()
 	return true
 
 
-func _say(key: String, fallback: String) -> void:
-	_line.text = UiText.tr_or(key, fallback)
+# Línea de quien atiende: <lines_prefix>.<line> / Keeper's line: <lines_prefix>.<line>
+func _say(line: String) -> void:
+	_line.text = UiText.tr_or("%s.%s" % [shop_data.lines_prefix, line], LINE_FALLBACKS[line])
 
 
 func _price(gold: int) -> String:
@@ -95,8 +121,9 @@ func _price(gold: int) -> String:
 
 func _refresh() -> void:
 	_gold.text = UiText.tr_or("ui.storage.gold_banked", "Banked gold: %d") % _profile.banked_gold
-	_buy_button.text = "%s %s  -%s" % [UiText.tr_or("ui.shop.buy", "Buy"), shop_data.item.display_name(),
-			_price(shop_data.price)]
+	if shop_data.item != null:
+		_buy_button.text = "%s %s  -%s" % [UiText.tr_or("ui.shop.buy", "Buy"), shop_data.item.display_name(),
+				_price(shop_data.price)]
 	# remove_child antes de liberar: el botón que se apretó sigue en su señal / remove_child before freeing: the pressed button is still in its signal
 	for child: Node in _sell_list.get_children() + _upgrade_list.get_children():
 		child.get_parent().remove_child(child)
@@ -114,14 +141,15 @@ func _refresh() -> void:
 		upgrade_button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		upgrade_button.pressed.connect(buy_upgrade.bind(upgrade))
 		_upgrade_list.add_child(upgrade_button)
-	for slot: Dictionary in _run_manager.backpack.slots:
-		var item: ItemData = slot["item"]
-		var count: int = slot["count"]
-		var button: Button = Button.new()
-		button.text = "%s x%d  +%s" % [item.display_name(), count, _price(item.value)]
-		button.flat = true
-		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		button.pressed.connect(sell.bind(item))
-		_sell_list.add_child(button)
-	if get_viewport().gui_get_focus_owner() == null:
+	if shop_data.buys_loot:
+		for slot: Dictionary in _run_manager.backpack.slots:
+			var item: ItemData = slot["item"]
+			var count: int = slot["count"]
+			var button: Button = Button.new()
+			button.text = "%s x%d  +%s" % [item.display_name(), count, _price(item.value)]
+			button.flat = true
+			button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+			button.pressed.connect(sell.bind(item))
+			_sell_list.add_child(button)
+	if get_viewport().gui_get_focus_owner() == null and _buy_button.visible:
 		_buy_button.grab_focus()

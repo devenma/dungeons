@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ShopData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://resources/shop/shop_data.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/items/vial_sangre.tres" id="2"]
+[ext_resource type="Resource" path="res://resources/upgrades/vendas.tres" id="3"]
+
+[resource]
+script = ExtResource("1")
+item = ExtResource("2")
+price = 40
+upgrades = Array[Resource]([ExtResource("3")])
+title_key = "ui.shop.apothecary_title"
+lines_prefix = "npc.healer.shop"
+buys_loot = false

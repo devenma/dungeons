@@ -7,8 +7,9 @@ extends SceneTree
 ## backpack. Exit 0 = pass, 1 = fail.
 
 const SAVE_PATH: String = "user://test_guild_shop.json"
-const NPC_NAMES: PackedStringArray = [
-	"Guildmaster", "Fence", "Blacksmith", "Healer", "Questgiver", "RefugeeChild", "RefugeeWounded",
+const NPC_PATHS: PackedStringArray = [
+	"Guild/Things/Guildmaster", "Shop/Things/Fence", "Smithy/Things/Blacksmith", "Apothecary/Things/Healer",
+	"Guild/Things/Questgiver", "Exterior/Things/Nela", "Exterior/Things/Tome",
 ]
 
 var _failures: int = 0
@@ -68,8 +69,8 @@ func _run() -> void:
 	var town: Node2D = main.get_node("World/Hondoval")
 	var guild: Node2D = town.get_node("Guild")
 	var player := main.get_node("World/Player") as CharacterBody2D
-	var dialogue: CanvasItem = guild.get_node("GuildUI/DialogueBox")
-	var shop: Control = guild.get_node("GuildUI/ShopPanel")
+	var dialogue: CanvasItem = town.get_node("TownUI/DialogueBox")
+	var shop: Control = town.get_node("TownUI/ShopPanel")
 
 	# API used by DungeonManager.
 	var bounds: Rect2i = town.call("camera_rect")
@@ -80,25 +81,26 @@ func _run() -> void:
 			"api: DungeonManager listens to expedition_requested")
 	town.call("set_active", false)
 	_check(not town.visible and town.process_mode == Node.PROCESS_MODE_DISABLED and not guild.visible
-			and not (guild.get_node("GuildUI") as CanvasLayer).visible, "api: set_active(false) hides and disables")
+			and not (town.get_node("TownUI") as CanvasLayer).visible, "api: set_active(false) hides and disables")
 	town.call("set_active", true)
-	_check(guild.visible and (guild.get_node("GuildUI") as CanvasLayer).visible, "api: set_active(true) restores")
+	_check(guild.visible and (town.get_node("TownUI") as CanvasLayer).visible, "api: set_active(true) restores")
 
 	# Art: 13x9 room + the east corridor tile, floor props Y-sorted with the NPCs.
 	var tiles: TileMapLayer = guild.get_node("Room/Tiles")
 	_check(tiles.get_used_cells().size() == 13 * 9 + 1, "art: room tiles painted")
-	_check(guild.get_node("Things").get_child_count() == 11 + NPC_NAMES.size(), "art: floor props and NPCs in Things")
+	# 11 objetos de piso + Odran y Maren; el resto se fue a sus locales (D25) / 11 floor props + Odran and Maren; the rest moved to their venues (D25)
+	_check(guild.get_node("Things").get_child_count() == 11 + 2, "art: floor props and NPCs in Things")
 
 	# Interactables.
 	for spot_name: String in ["StorageChest", "StreetDoor", "NoticeBoard"]:
 		var spot: Node = guild.get_node_or_null(spot_name)
 		_check(spot != null and spot.has_signal("interacted"), "interactable: " + spot_name)
-	for npc_name: String in NPC_NAMES:
-		var npc: Node = guild.get_node_or_null("Things/" + npc_name)
+	for npc_path: String in NPC_PATHS:
+		var npc: Node = town.get_node_or_null(npc_path)
 		var greeting: String = npc.call("greeting") if npc != null else ""
 		var sprite: AnimatedSprite2D = npc.get_node("Sprite") if npc != null else null
 		_check(greeting != "" and not greeting.begins_with("npc.") and sprite.is_playing(),
-				"npc: %s idles and greets" % npc_name)
+				"npc: %s idles and greets" % npc_path)
 
 	var board: Area2D = guild.get_node("NoticeBoard")
 	player.global_position = board.global_position
@@ -108,17 +110,19 @@ func _run() -> void:
 	var board_line: String = line.text
 	_check(dialogue.visible and board_line != "", "board: shows a line")
 
-	var healer: Area2D = guild.get_node("Things/Healer")
-	player.global_position = healer.global_position + Vector2(0, 8)
+	var questgiver: Area2D = guild.get_node("Things/Questgiver")
+	player.global_position = questgiver.global_position + Vector2(0, 8)
 	await _frames(3)
-	healer._unhandled_input(_interact_event())
+	questgiver._unhandled_input(_interact_event())
 	_check(line.text != "" and line.text != board_line, "npc: talking shows its greeting")
 
 	# Shop opens from the fence with a real interact.
 	var loot: Array[ItemData] = [ring, gel, gel]
 	run_manager.add_loot(loot, 0)
 	profile.banked_gold = 10
-	var fence: Area2D = guild.get_node("Things/Fence")
+	town.call("go_to", &"shop", &"from_street")
+	await _frames(2)
+	var fence: Area2D = town.get_node("Shop/Things/Fence")
 	player.global_position = fence.global_position + Vector2(0, 8)
 	await _frames(3)
 	fence._unhandled_input(_interact_event())

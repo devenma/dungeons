@@ -25,7 +25,15 @@ func _check(condition: bool, label: String) -> void:
 		print("FAIL: " + label)
 
 
+func _cleanup() -> void:
+	for path in [SAVE_PATH, SAVE_PATH + ".tmp"]:
+		if FileAccess.file_exists(path):
+			DirAccess.remove_absolute(path)
+
+
 func _run() -> void:
+	# Un guardado que dejó una corrida cortada marcaría San Ulmo como limpio / A save left by an aborted run would mark San Ulmo as cleared
+	_cleanup()
 	var main := (load("res://scenes/main/main.tscn") as PackedScene).instantiate() as Node
 	main.get_node("ProfileState").set("save_path", SAVE_PATH)
 	root.add_child(main)
@@ -64,22 +72,20 @@ func _run() -> void:
 	dm.call("_return_victorious")
 	_check(not panel.visible, "the second clear has no closing scene")
 
-	var guild: Node = main.get_node("World/Hondoval/Guild")
-	var box: Node = guild.get_node("GuildUI/DialogueBox")
-	var healer: Node = guild.get_node("Things/Healer")
-	guild.call("set_mood", "death")
-	guild.call("_greet", healer)
+	var town: Node = main.get_node("World/Hondoval")
+	var box: Node = town.get_node("TownUI/DialogueBox")
+	var guildmaster: Node = town.get_node("Guild/Things/Guildmaster")
+	town.call("set_mood", "death")
+	town.call("_greet", guildmaster)
 	var said: String = (box.get_node("Label") as Label).text
 	var death_lines: Array[String] = []
 	for i in range(1, 4):
-		death_lines.append(TranslationServer.translate("npc.healer.death.%d" % i))
-	_check(death_lines.has(said), "back from a death the healer says a death line")
-	guild.call("_greet", healer)
+		death_lines.append(TranslationServer.translate("npc.guildmaster.death.%d" % i))
+	_check(death_lines.has(said), "back from a death the guild master says a death line")
+	town.call("_greet", guildmaster)
 	said = (box.get_node("Label") as Label).text
-	_check(not death_lines.has(said), "after that she greets as usual")
+	_check(not death_lines.has(said), "after that the greeting is the usual one")
 
 	main.queue_free()
-	for path in [SAVE_PATH, SAVE_PATH + ".tmp"]:
-		if FileAccess.file_exists(path):
-			DirAccess.remove_absolute(path)
+	_cleanup()
 	quit(0 if _failures == 0 else 1)

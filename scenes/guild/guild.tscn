@@ -1,14 +1,11 @@
-[gd_scene load_steps=27 format=3]
+[gd_scene load_steps=23 format=3]
 
-[ext_resource type="Script" path="res://scripts/guild/guild.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/town/town_area.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/guild/guild_interactable.gd" id="2"]
 [ext_resource type="Script" path="res://scripts/guild/guild_room.gd" id="3_room"]
 [ext_resource type="TileSet" path="res://tilesets/guild.tres" id="4_tiles"]
 [ext_resource type="PackedScene" path="res://scenes/guild/guild_npc.tscn" id="5_npc"]
 [ext_resource type="Script" path="res://scripts/dungeon/torch_flicker.gd" id="6_flicker"]
-[ext_resource type="Script" path="res://scripts/ui/dialogue_box.gd" id="7_dialogue"]
-[ext_resource type="Texture2D" path="res://assets/art/ui/caja_dialogo.png" id="8_box"]
-[ext_resource type="PackedScene" path="res://scenes/ui/shop_panel.tscn" id="9_shop"]
 [ext_resource type="AudioStream" path="res://assets/audio/sfx/guild_ambience_loop_01.wav" id="10_amb"]
 [ext_resource type="Script" path="res://scripts/town/town_door.gd" id="11_door"]
 
@@ -48,10 +45,6 @@ size = Vector2(64, 14)
 [sub_resource type="LabelSettings" id="LabelSettings_hint"]
 font_size = 11
 font_color = Color(0.75, 0.7, 0.6, 1)
-
-[sub_resource type="LabelSettings" id="LabelSettings_line"]
-font_size = 11
-font_color = Color(0.78, 0.72, 0.62, 1)
 
 [sub_resource type="Gradient" id="Gradient_rings"]
 interpolation_mode = 1
@@ -99,53 +92,11 @@ fallback_greeting = "Still breathing. I'll write it in ink; blood fades."
 position = Vector2(0, 22)
 shape = SubResource("RectangleShape2D_counter_front")
 
-[node name="Fence" parent="Things" instance=ExtResource("5_npc")]
-position = Vector2(396, 140)
-npc_id = "merchant"
-sheet_prefix = "res://assets/art/characters/fence_"
-facing = "W"
-fallback_greeting = "What have you brought me? If it still has an owner, I don't want to know."
-
-[node name="Hint" type="Label" parent="Things/Fence"]
-offset_left = -30.0
-offset_top = 2.0
-offset_right = 30.0
-offset_bottom = 14.0
-visible = false
-text = "Shop [F]"
-label_settings = SubResource("LabelSettings_hint")
-horizontal_alignment = 1
-
-[node name="Blacksmith" parent="Things" instance=ExtResource("5_npc")]
-position = Vector2(352, 214)
-npc_id = "blacksmith"
-sheet_prefix = "res://assets/art/characters/blacksmith_"
-fallback_greeting = "WHAT? Oh. You. Put the weapon on the anvil."
-
-[node name="Healer" parent="Things" instance=ExtResource("5_npc")]
-position = Vector2(154, 206)
-npc_id = "healer"
-sheet_prefix = "res://assets/art/characters/healer_"
-fallback_greeting = "Sit. Let me see what you've brought back open."
-
 [node name="Questgiver" parent="Things" instance=ExtResource("5_npc")]
 position = Vector2(178, 100)
 npc_id = "questgiver"
 sheet_prefix = "res://assets/art/characters/questgiver_"
 fallback_greeting = "New bounties on the wall. Some were posted by the living."
-
-[node name="RefugeeChild" parent="Things" instance=ExtResource("5_npc")]
-position = Vector2(112, 106)
-npc_id = "refugee_nela"
-sheet_prefix = "res://assets/art/characters/refugee_child_"
-fallback_greeting = "Have you seen my dad? He wears a red scarf. His name is Bastián."
-
-[node name="RefugeeWounded" parent="Things" instance=ExtResource("5_npc")]
-position = Vector2(140, 104)
-npc_id = "refugee_tome"
-sheet_prefix = "res://assets/art/characters/refugee_wounded_"
-facing = "E"
-fallback_greeting = "Morning. Buried anyone today? I have. The usual one."
 
 [node name="FireLight" type="PointLight2D" parent="."]
 position = Vector2(98, 66)
@@ -253,37 +204,6 @@ horizontal_alignment = 1
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="NoticeBoard"]
 shape = SubResource("RectangleShape2D_board")
-
-[node name="GuildUI" type="CanvasLayer" parent="."]
-
-[node name="DialogueBox" type="NinePatchRect" parent="GuildUI"]
-offset_left = 60.0
-offset_top = 212.0
-offset_right = 420.0
-offset_bottom = 262.0
-texture = ExtResource("8_box")
-patch_margin_left = 6
-patch_margin_top = 6
-patch_margin_right = 6
-patch_margin_bottom = 6
-script = ExtResource("7_dialogue")
-
-[node name="Label" type="Label" parent="GuildUI/DialogueBox"]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 10.0
-offset_top = 6.0
-offset_right = -10.0
-offset_bottom = -6.0
-label_settings = SubResource("LabelSettings_line")
-vertical_alignment = 1
-autowrap_mode = 3
-
-[node name="Timer" type="Timer" parent="GuildUI/DialogueBox"]
-one_shot = true
-
-[node name="ShopPanel" parent="GuildUI" instance=ExtResource("9_shop")]
 
 [node name="Ambience" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("10_amb")

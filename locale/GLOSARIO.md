@@ -23,6 +23,7 @@ Términos que se traducen **siempre igual** en `strings.csv`. Si la misma palabr
 | Urraca | Magpie | | Ilse, la reducidora. |
 | Hermana | Sister | | La sanadora, Hermana Ancel. |
 | herrera | blacksmith | | |
+| botica | apothecary | | El local de la Hermana Ancel en Hondoval (D25). |
 | Cosido | Stitched | | Jefe. "El Cosido" → "The Stitched"; "del Cosido" → "Stitched's". |
 | Madre | Mother | | Jefa, "la Madre de la Fosa" → "the Mother of the Pit". |
 | fosa | pit | | |
