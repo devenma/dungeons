@@ -89,6 +89,12 @@ func take_backpack_gold() -> int:
 	return gold
 
 
+## Oro encima guardado en el perfil al abrir el juego en el pueblo (D25) / Carried gold saved in the profile, when the game opens in town (D25)
+func set_backpack_gold(gold: int) -> void:
+	backpack_gold = maxi(gold, 0)
+	backpack_changed.emit()
+
+
 ## Un arma que ya está no se duplica: devuelve su índice / A weapon already owned is not duplicated: returns its index
 func add_weapon(data: WeaponData) -> int:
 	if data == null:
