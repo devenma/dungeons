@@ -92,9 +92,20 @@ func _run() -> void:
 			"the vial heals 35 at the end even after a hit (%d)" % health.current_health)
 	_check(hud_vial_label.text == "2/3", "the HUD shows vials as x/3 (%s)" % hud_vial_label.text)
 
+	# El tope vale también al sacar del almacén (D25) / The cap also applies when taking from storage (D25)
+	run_manager.backpack.add(VIAL, 1)
+	profile.storage.add(VIAL, 3)
+	var panel: Control = main.get_node("UI/BackpackPanel") as Control
+	panel.call("set_open", true)
+	await _frames(1)
+	panel.call("_transfer_slot", panel.get("_storage_grid"), 0, false)
+	_check(run_manager.backpack.count_of(VIAL) == 3 and profile.storage.count_of(VIAL) == 3,
+			"the storage cannot push you past three vials (%d)" % run_manager.backpack.count_of(VIAL))
+	panel.call("set_open", false)
+
 	await _physics_seconds(0.4)
 	health.take_damage(DamageInfo.new(999))
-	_check(health.is_dead() and not drinker.call("try_drink") and run_manager.backpack.count_of(VIAL) == 2,
+	_check(health.is_dead() and not drinker.call("try_drink") and run_manager.backpack.count_of(VIAL) == 3,
 			"dead you cannot drink")
 
 	main.queue_free()

@@ -62,10 +62,7 @@ func open(run_manager: RunManager, profile: ProfileState, data: ShopData = null)
 	get_tree().paused = true
 	show()
 	_refresh()
-	if _buy_button.visible:
-		_buy_button.grab_focus()
-	elif _upgrade_list.get_child_count() > 0:
-		(_upgrade_list.get_child(0) as Button).grab_focus()
+	_focus_first()
 
 
 func close() -> void:
@@ -151,5 +148,14 @@ func _refresh() -> void:
 			button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 			button.pressed.connect(sell.bind(item))
 			_sell_list.add_child(button)
-	if get_viewport().gui_get_focus_owner() == null and _buy_button.visible:
+	# El botón que se apretó ya no existe: el foco del mando pasa al primero que quede (D8)
+	# The pressed button is gone: the gamepad focus moves to the first one left (D8)
+	if get_viewport().gui_get_focus_owner() == null:
+		_focus_first()
+
+
+func _focus_first() -> void:
+	if _buy_button.visible:
 		_buy_button.grab_focus()
+	elif _upgrade_list.get_child_count() > 0:
+		(_upgrade_list.get_child(0) as Button).grab_focus()

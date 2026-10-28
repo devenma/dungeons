@@ -105,7 +105,12 @@ func _transfer_slot(grid: GridContainer, index: int, one_unit: bool) -> void:
 	if index >= source.slots.size():
 		return
 	var count: int = source.slots[index]["count"]
-	if source.move_slot_to(index, target, 1 if one_unit else count) == 0:
+	var item: ItemData = source.slots[index]["item"]
+	var amount: int = 1 if one_unit else count
+	# El tope de lo que se lleva encima vale también al sacar del almacén (D25) / The carry cap also applies when taking from storage (D25)
+	if target == _run_manager.backpack and item.max_carried > 0:
+		amount = mini(amount, item.max_carried - target.count_of(item))
+	if source.move_slot_to(index, target, amount) == 0:
 		return
 	_profile.save_profile()
 	# La mochila avisa antes de que el almacén termine de cambiar / The backpack signals before storage finishes changing

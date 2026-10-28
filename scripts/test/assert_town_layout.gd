@@ -108,6 +108,15 @@ func _run() -> void:
 
 	_check(_town.call("current_area") == &"guild" and _player.global_position == _marker(guild, &"spawn"),
 			"the game starts in the guild")
+	# Para ordenarse por profundidad con el jugador, toda la cadena desde World tiene que ordenar por Y
+	# To sort by depth with the player, the whole chain from World has to sort by Y
+	var world: Node = main.get_node("World")
+	var sorted_chain: bool = (world as CanvasItem).y_sort_enabled
+	var link: Node = guild.get_node("Things")
+	while link != world:
+		sorted_chain = sorted_chain and (link as CanvasItem).y_sort_enabled
+		link = link.get_parent()
+	_check(sorted_chain, "the guild's props and NPCs sort by depth with the player")
 	guild.get_node("StreetDoor").emit_signal("interacted")
 	_check(fade.modulate.a == 1.0, "a door starts from black")
 	await _frames(2)

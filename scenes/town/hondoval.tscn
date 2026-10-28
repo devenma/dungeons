@@ -22,6 +22,7 @@ font_size = 11
 font_color = Color(0.78, 0.72, 0.62, 1)
 
 [node name="Hondoval" type="Node2D"]
+y_sort_enabled = true
 script = ExtResource("1")
 
 [node name="Exterior" type="Node2D" parent="."]

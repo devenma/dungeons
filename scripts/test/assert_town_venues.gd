@@ -113,7 +113,13 @@ func _run() -> void:
 
 	_check(await _opens(&"shop", FENCE_SHOP, true, true), "Ilse's panel buys loot and sells stones")
 	_panel.call("close")
+	profile.banked_gold = 1000
+	profile.buy_upgrade(load("res://resources/upgrades/vendas.tres") as UpgradeData)
 	_check(await _opens(&"smithy", SMITHY_SHOP, false, false), "the smithy's panel only sells upgrades")
+	_panel.call("buy_upgrade", load("res://resources/upgrades/peto.tres") as UpgradeData)
+	var focused: Control = _panel.get_viewport().gui_get_focus_owner()
+	_check(focused != null and focused.get_parent() == _panel.get_node("%UpgradeList"),
+			"after buying, the gamepad focus moves to the next upgrade")
 	_panel.call("close")
 	profile.banked_gold = 500
 	for i in range(3):
