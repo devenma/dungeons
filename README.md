@@ -31,7 +31,7 @@ El juego arranca en un guild. Morir no borra el progreso: perdés todo lo de la 
 | Combate v2 | ✅ | Hit-stop y combo de 3 de la espada (`SwingData`), con animación de ataque, smear, chispa y sangre |
 | Combate con peso | ✅ | Jugador plantado durante el golpe, voltereta con i-frames (`roll`), desvío del arco y el bastón al moverse, aturdimiento de enemigos (con aguante en el errante), temblor de cámara, gamepad en todas las acciones y SFX placeholder con buses (Master, SFX, Ambience, UI) |
 | Fase 8 — Habilidades | ⏳ | Parte A (`weapon-equip`) archivada; parte B (`abilities`, kits por arma) pendiente |
-| Fase 10 — Guild y economía | ⏳ | Hecho: perfil persistente (`user://profile.json`), oro, loot, mochila y almacén (I), piedra azul, guild como hub con su arte, 7 NPCs y la tienda de la reducidora (vender loot, comprar piedras azules). Falta: equipo en la tienda, día/noche |
+| Fase 10 — Pueblo y economía | ✅ | Hecho: perfil persistente (`user://profile.json`), oro, loot, mochila y almacén (I), piedra azul, Hondoval caminable con un local por NPC (D25), tiendas, vial de sangre y día/noche (`WorldClock`). Falta: el arte del pueblo y equipo nuevo a la venta |
 | Fase 9, 11+ — Progresión y jefes | ⏳ | Pendiente: mejoras, `DungeonData`, zona BOSS y bosses |
 
 Los tests headless pasan: **52 tests verdes** (`scripts/test/`).
@@ -76,7 +76,7 @@ Main
 └── UI (CanvasLayer: barras, arma, oro, mochila, toast, pausa)
 ```
 
-`ProfileState` guarda lo que sobrevive a la muerte: oro bancado, almacén del guild, armas aseguradas y desbloqueos. `RunManager` es **solo** el estado de una expedición (seed del dungeon, piso actual, loot de la mochila, oro encima y armas recogidas) y muere con ella. `Guild` (`scenes/guild/`) es el hub donde arranca el juego; `WorldClock` (día/noche) todavía no existe.
+`ProfileState` guarda lo que sobrevive a la muerte: oro bancado, almacén del guild, armas aseguradas y desbloqueos. `RunManager` es **solo** el estado de una expedición (seed del dungeon, piso actual, loot de la mochila, oro encima y armas recogidas) y muere con ella. `Hondoval` (`scenes/town/`) es el hub: un pueblo con locales, donde el gremio es el área en la que arranca el juego y adonde se vuelve; `WorldClock` aplica las fases día y noche (D25).
 
 El piso se genera mediante **grid-merging**: se divide el área en una grilla, se mergean celdas contiguas en zonas, y cada zona recibe un tipo funcional (START, COMBAT, REWARD, EXIT). Todo el piso se renderiza en un TileMap único que consume el tileset pre-construido `res://tilesets/crypt_dark.tres` (cripta oscura, atlas `assets/art/environment/crypt/crypt_tiles.png`, 32px; lo genera `scripts/tools/build_crypt_tileset.gd`). Las puertas se colocan en posiciones irregulares sobre aristas compartidas. La dirección es conservar esa topología y llenar el interior de cada zona con plantillas de sala hechas a mano (`scenes/rooms/`).
 
@@ -100,7 +100,7 @@ Orden técnico sugerido (detalle y justificación en [`DECISIONES.md`](DECISIONE
 3. ✅ `ProfileState` + oro + inventario + piedra azul + vuelta al guild (`_return_to_guild()`).
 4. ✅ Guild con tienda, en `scenes/guild/`.
 5. Pool de plantillas de sala, ya con el generador confiable.
-6. `WorldClock` día/noche + techo de pisos por dungeon + zona BOSS.
+6. ✅ `WorldClock` día/noche + techo de pisos por dungeon + zona BOSS.
 
 El paso 1 es prerrequisito del 5. Los pasos 2 y 3 son independientes entre sí y pueden ir en paralelo.
 

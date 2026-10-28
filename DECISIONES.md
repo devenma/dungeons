@@ -741,12 +741,17 @@ pantalla. El diseño completo está en [`odd/tasks/hondoval-design.md`](odd/task
 - *Aceptar la pérdida al cerrar el juego*: como se vuelve de noche y con los locales cerrados, se perdería el
   botín sin aviso.
 
-**[IMPACTO]** Todavía no está implementado. Hay que tocar:
-- `ProfileState`: pasa a guardar la fase y la marca de expedición en curso, y también la mochila y el oro
-  encima mientras estás en el pueblo.
-- El día: deja de avanzar en `DungeonManager._go_home()` y pasa a avanzar al dormir.
-- `ShopData`: tiene que vender más de un objeto.
-- El input: hace falta una acción nueva para tomar el vial.
+**[IMPACTO]** Hecho el 2026-10-28 en `feat/hondoval` (plan en [`odd/tasks/hondoval-plan.md`](odd/tasks/hondoval-plan.md)):
+- `World/Hondoval` (`scripts/town/hondoval.gd`) reemplaza a `World/Guild` como hub de `DungeonManager`.
+- Cada lugar es un `TownArea` y hay uno solo activo; el exterior se arma en bloqueo desde un mapa de texto.
+- `ProfileState` guarda la fase, la marca de expedición y, en el pueblo, la mochila y el oro encima.
+- El día avanza al dormir, ya no en `DungeonManager._go_home()`.
+- `ShopData` describe cada tienda por datos. Al final no hizo falta venderle más de un objeto: cada local vende
+  uno como mucho.
+- El vial lo toma `PotionDrinker`, con la acción `use_potion` (H / LB).
+
+Queda para el plan de arte: el suelo con transiciones (prueba con PixelLab), las fachadas, los interiores, los
+aventureros del gremio y las variantes de noche.
 
 ---
 

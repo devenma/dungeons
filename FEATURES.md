@@ -171,9 +171,12 @@ Ya está en `main` y documentado en §1: knockback, i-frames, hit flash, pausa y
 - [x] Inventario de mochila (slots con apilado) y almacén del guild; panel con `inventory` (I) y pase de objetos entre los dos en el guild.
 - [x] Vuelta al guild en vez de wipe (`_return_to_guild()`), perdiendo lo de la expedición.
 - [x] Piedra azul: consumible que, al morir, te lleva al guild conservando el loot (D1).
-- [x] Guild con tienda en `scenes/guild/`: vender loot y comprar piedras azules.
-- [x] Comprar mejoras permanentes en la tienda: vendas, peto y cinturón (vida y aguante máximos, D11).
-- [~] Días: `ProfileState.day` avanza en cada vuelta al gremio y el HUD lo muestra ahí; faltan las fases día/noche con efecto (`WorldClock`).
+- [x] Hondoval caminable (D25): exterior en bloqueo con plaza, locales y la entrada a la cripta en las afueras; cada NPC en su local.
+- [x] Una tienda por local: Ilse compra el loot y vende piedras azules; la botica vende el vial de sangre y las vendas; la herrería, el peto y el cinturón (D11).
+- [x] Vial de sangre (D25): cura 35 al terminar una toma de 0,8 s en la que quedás expuesto; se llevan 3 como máximo (H / LB).
+- [x] Día y noche (`WorldClock`, D25): de la cripta se vuelve de noche, los locales cierran y dormir en el gremio trae el día siguiente.
+- [x] En el pueblo, lo que llevás encima se guarda con el perfil; cerrar el juego en la cripta cuenta como morir sin piedra azul (D25).
+- [ ] Arte de Hondoval: suelo, fachadas, interiores, aventureros y variantes de noche (plan aparte).
 - [ ] Guardado del perfil y de los ajustes (`user://`).
 
 **Expedición y jefe**

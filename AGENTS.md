@@ -99,8 +99,9 @@ La arquitectura principal debe mantenerse aproximadamente así:
         │                 ├── TileMap único (3 capas: floor/wall/door)
         │                 └── ExitArea (transición de piso)
         │
-        └── Guild (hub: almacén y puerta de expedición)
-              └── WorldClock (día/noche, previsto)
+        └── Hondoval (hub: pueblo con locales y la entrada a la cripta)
+              ├── Exterior, Guild, Shop, Apothecary, Smithy (áreas)
+              └── WorldClock (día/noche)
 
 
                          Player
@@ -123,7 +124,7 @@ La arquitectura principal debe mantenerse aproximadamente así:
                    Enemy
 ```
 
-`ProfileState` es el perfil persistente (oro bancado, almacén del guild, armas aseguradas, desbloqueos). `RunManager` es **solo** el estado de la expedición (seed, piso actual, loot de la mochila, oro encima y armas recogidas en esta expedición) y muere con ella. `Guild` (`scenes/guild/`) es el hub donde arranca el juego y se vuelve al morir; El día del pueblo vive en `ProfileState.day` y avanza en cada vuelta al guild; `WorldClock` (fases día/noche con efecto en el juego) todavía no existe. No crear managers nuevos para estas responsabilidades: ya tienen dueño.
+`ProfileState` es el perfil persistente (oro bancado, almacén del guild, armas aseguradas, desbloqueos). `RunManager` es **solo** el estado de la expedición (seed, piso actual, loot de la mochila, oro encima y armas recogidas en esta expedición) y muere con ella. `Hondoval` (`scenes/town/`) es el hub: un pueblo caminable con locales (D25). El gremio es una de sus áreas: ahí arranca el juego y ahí se vuelve de la cripta. El día y la fase (día o noche) viven en `ProfileState`: de la cripta se vuelve de noche y el día avanza al dormir. `WorldClock` aplica la fase. No crear managers nuevos para estas responsabilidades: ya tienen dueño.
 
 ## 3.1. Flujo de juego
 
@@ -186,8 +187,14 @@ res://
 │   │   └── player.tscn
 │   │
 │   ├── guild/
-│   │   ├── guild.tscn               # Hub: sala, NPCs, almacén, tienda y portón de expedición
+│   │   ├── guild.tscn               # Área del gremio: sala, Odran y Maren, almacén, tablón y catre
 │   │   └── guild_npc.tscn           # NPC quieto con idle y saludo
+│   │
+│   ├── town/
+│   │   ├── hondoval.tscn            # El pueblo: exterior, interiores, reloj y UI del pueblo (D25)
+│   │   ├── interior.tscn            # Interior provisorio de un local
+│   │   ├── town_spot.tscn           # Punto de interacción base
+│   │   └── town_door.tscn           # Puerta entre áreas
 │   │
 │   ├── dungeon/                     # chest.tscn, exit.tscn, wall_torch.tscn
 │   │
@@ -227,13 +234,18 @@ res://
 │   │   └── inventory.gd            # Slots con apilado (mochila y almacén)
 │   │
 │   ├── guild/
-│   │   ├── guild.gd                # Hub: depósito, tienda, saludos y pedido de expedición
 │   │   ├── guild_room.gd           # Arte de la sala: tiles, pasadas, calcos y objetos
 │   │   ├── guild_npc.gd
 │   │   └── guild_interactable.gd
 │   │
+│   ├── town/
+│   │   ├── hondoval.gd             # Hub del pueblo: áreas, puertas, tiendas, saludos y pedido de expedición
+│   │   ├── town_area.gd            # Un lugar del pueblo; se prende de a uno
+│   │   ├── town_exterior.gd        # Exterior en bloqueo, armado desde un mapa de texto
+│   │   └── town_door.gd
+│   │
 │   ├── world/
-│   │   └── world_clock.gd          # Fases día/noche
+│   │   └── world_clock.gd          # Fases día/noche: tinte, locales cerrados y dormir
 │   │
 │   ├── dungeon/
 │   │   ├── dungeon_generator.gd     # Grid-merging + TileMap renderer
@@ -310,7 +322,7 @@ Main
 ├── ProfileState
 │
 ├── World
-│   ├── Guild
+│   ├── Hondoval      (exterior, gremio, tienda, botica, herrería, WorldClock)
 │   ├── Player
 │   ├── DungeonManager
 │   │   └── Dungeon          (se crea en cada piso)
@@ -368,7 +380,7 @@ Dos capas de estado, separadas a propósito (D1 en `DECISIONES.md`):
 
 | Capa | Vive en | Contenido | Persiste |
 |---|---|---|---|
-| Perfil | `ProfileState` (`user://profile.json`) | Oro bancado, almacén del guild, armas aseguradas, desbloqueos | Sí, entre sesiones |
+| Perfil | `ProfileState` (`user://profile.json`) | Oro bancado, almacén del guild, armas aseguradas, desbloqueos, día y fase; en el pueblo, lo que llevás encima (D25) | Sí, entre sesiones |
 | Expedición | `RunManager` | Seed del dungeon, piso actual, loot de la mochila, oro encima y armas recogidas en esta expedición | No, muere con la expedición |
 
 Al morir sin piedra azul: se vuelve al guild, se pierde todo lo de la expedición (la mochila y lo que se agarró o equipó durante la expedición) y se re-rollea la seed del dungeon. Lo guardado en el guild (oro bancado, almacén, desbloqueos) queda. Si se muere con una piedra azul en la mochila, se gasta y se vuelve al guild conservando el loot (D1).
@@ -466,6 +478,7 @@ attack             # Space / clic izquierdo / X (oeste)
 swap_weapon        # Tab / Y (norte): cambia el arma equipada
 roll               # Shift / B (este): voltereta de esquive (reemplaza al dash previsto)
 ability_1          # 1 / RB: habilidad del slot 1 del arma equipada (D12)
+use_potion         # H / LB: toma un vial de sangre de la mochila (D25)
 
 aim_up / aim_down / aim_left / aim_right   # stick derecho: apuntado con gamepad
 
@@ -1019,8 +1032,8 @@ Responsabilidades:
 - detectar finalización del piso;
 - iniciar transición al siguiente piso;
 - respetar el techo de pisos por dungeon (`DungeonData`) y disparar el piso de jefe;
-- arrancar en el guild y armar el piso 1 con `start_expedition()` (lo pide la puerta del guild);
-- al morir, `_return_to_guild()`: vuelve al guild sin borrar el perfil; con piedra azul conserva la mochila y asegura las armas recogidas.
+- arrancar en el gremio de Hondoval y armar el piso 1 con `start_expedition()` (lo pide la entrada a la cripta, en las afueras);
+- al morir, `_return_to_guild()`: vuelve al guild sin borrar el perfil; con piedra azul conserva la mochila y asegura las armas recogidas. De la cripta siempre se vuelve al gremio y de noche (D25).
 
 No debe almacenar permanentemente el estado completo de la partida.
 
@@ -1472,14 +1485,16 @@ Sin XP ni niveles: el poder viene del equipo del pueblo y de las mejoras de expe
 
 ## Fase 10 — Pueblo y economía
 
-**Estado:** perfil, oro, inventario, guild, tienda, mejoras y NPCs ✅ hechos; contador de días ✅; `WorldClock` con fases ⏳ pendiente.
+**Estado:** ✅ hecha, con el pueblo caminable de D25. El arte del pueblo va en su propio plan.
 
 - ✅ `ProfileState` persistente en `user://profile.json` (oro bancado, almacén, armas aseguradas, desbloqueos).
 - ✅ Oro, loot e inventario (mochila y almacén), con panel `inventory` (I).
-- ✅ Guild mínimo en `scenes/guild/`: se arranca ahí y se vuelve ahí al morir (`_return_to_guild()`).
-- ✅ Tienda de la reducidora en el guild (`scripts/ui/shop_panel.gd`): compra lo de la mochila a su `ItemData.value` y vende piedras azules y las mejoras permanentes (`ShopData.upgrades`, `UpgradeData` en `resources/upgrades/`: vida y aguante máximos, D11), todo en oro bancado. Las mejoras viven en `ProfileState.owned_upgrades` y `DungeonManager._apply_player_stats` las suma a los máximos del jugador.
-- ✅ 7 NPCs quietos con idle del kit y un saludo fijo (`npc.<id>.greet.N` con `tr()`); diálogo provisorio.
-- `WorldClock` con fases día/noche.
+- ✅ Hondoval (`scenes/town/`, D25): exterior en bloqueo con la herrería, la botica, la tienda, el gremio y la catedral de San Ulmo en las afueras, donde está la entrada a la cripta. Cada local es un área de una pantalla y las puertas llevan de una a otra con un fundido.
+- ✅ Gremio (`scenes/guild/`): se arranca ahí y se vuelve ahí de la cripta (`_return_to_guild()`).
+- ✅ Mejoras permanentes (`UpgradeData` en `resources/upgrades/`: vida y aguante máximos, D11), compradas con oro bancado. Viven en `ProfileState.owned_upgrades` y `DungeonManager._apply_player_stats` las suma a los máximos del jugador.
+- ✅ 7 NPCs quietos con idle del kit, cada uno en su local, con un saludo fijo (`npc.<id>.greet.N` con `tr()`) y una línea según cómo volviste.
+- ✅ Una tienda por local (`ShopPanel` con su `ShopData`): Ilse compra el loot y vende piedras azules; la botica de la Hermana Ancel vende el vial de sangre (D25) y las vendas; la herrería de Hesse Brun, el peto y el cinturón.
+- ✅ `WorldClock` (`scripts/world/world_clock.gd`): fases día y noche. De noche los locales cierran y el gremio no; dormir en su catre trae el día siguiente.
 
 ---
 
@@ -1527,7 +1542,7 @@ Cuando haya dudas sobre qué desarrollar a continuación, priorizar:
 3. ✅ `ProfileState` + oro + inventario + piedra azul + `_return_to_guild()`
 4. ✅ Guild con tienda (scenes/guild/)
 5. ✅ Pool de plantillas de sala
-6. `WorldClock` día/noche (✅ techo de pisos por dungeon + zona BOSS)
+6. ✅ `WorldClock` día/noche + techo de pisos por dungeon + zona BOSS
 ```
 
 El paso 1 es prerrequisito del 5. Los pasos 2 y 3 son independientes entre sí y pueden ir en paralelo.
@@ -1989,7 +2004,7 @@ Pendiente para el vertical slice v2:
 [x] ProfileState + oro + retorno al guild + piedra azul
 [x] Hit-stop + combo de 3
 [x] Tienda en el guild
-[ ] WorldClock
+[x] WorldClock
 [x] DungeonData + techo de pisos + zona BOSS
 [x] Plantillas de sala + llaves + solvabilidad
 [x] Maná (recurso + barra HUD)
