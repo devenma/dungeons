@@ -241,7 +241,7 @@ res://
 │   ├── town/
 │   │   ├── hondoval.gd             # Hub del pueblo: áreas, puertas, tiendas, saludos y pedido de expedición
 │   │   ├── town_area.gd            # Un lugar del pueblo; se prende de a uno
-│   │   ├── town_exterior.gd        # Exterior en bloqueo, armado desde un mapa de texto
+│   │   ├── town_exterior.gd        # Exterior: sólidos y puertas desde un mapa de texto, arte de assets/art/town/
 │   │   └── town_door.gd
 │   │
 │   ├── world/
@@ -1489,7 +1489,7 @@ Sin XP ni niveles: el poder viene del equipo del pueblo y de las mejoras de expe
 
 - ✅ `ProfileState` persistente en `user://profile.json` (oro bancado, almacén, armas aseguradas, desbloqueos).
 - ✅ Oro, loot e inventario (mochila y almacén), con panel `inventory` (I).
-- ✅ Hondoval (`scenes/town/`, D25): exterior en bloqueo con la herrería, la botica, la tienda, el gremio y la catedral de San Ulmo en las afueras, donde está la entrada a la cripta. Cada local es un área de una pantalla y las puertas llevan de una a otra con un fundido.
+- ✅ Hondoval (`scenes/town/`, D25): exterior con arte (suelo horneado y un sprite por edificio y prop, ordenados por Y, en `assets/art/town/`) con la herrería, la botica, la tienda, el gremio y la catedral de San Ulmo en las afueras, donde está la entrada a la cripta. Cada local es un área de una pantalla y las puertas llevan de una a otra con un fundido.
 - ✅ Gremio (`scenes/guild/`): se arranca ahí y se vuelve ahí de la cripta (`_return_to_guild()`).
 - ✅ Mejoras permanentes (`UpgradeData` en `resources/upgrades/`: vida y aguante máximos, D11), compradas con oro bancado. Viven en `ProfileState.owned_upgrades` y `DungeonManager._apply_player_stats` las suma a los máximos del jugador.
 - ✅ 7 NPCs quietos con idle del kit, cada uno en su local, con un saludo fijo (`npc.<id>.greet.N` con `tr()`) y una línea según cómo volviste.
