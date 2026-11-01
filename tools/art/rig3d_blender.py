@@ -50,10 +50,17 @@ def ramp_material(name, tones, cuts):
     r = ramp.color_ramp; r.interpolation = "CONSTANT"
     spec = tones if isinstance(tones, dict) else {}
     if spec: tones, cuts = spec["tonos"], spec.get("umbrales", cuts)  # rampa con umbrales propios / own cuts
+    if spec.get("plano"): tones = [tones[-1]] * len(tones)  # luz plana: siempre el tono claro / flat light: always the light tone
     for i, tone in enumerate(tones):
         e = r.elements[i] if i < 2 else r.elements.new(cuts[i - 1])
         e.position = 0.0 if i == 0 else cuts[i - 1]; e.color = (*[lin(c) for c in tone], 1)
     nt.links.new(dif.outputs[0], s2r.inputs[0]); nt.links.new(s2r.outputs[0], ramp.inputs[0])
+    light = s2r.outputs[0]
+    if spec.get("ambiente"):
+        # Luz mínima del material: lo que no mira al sol queda en el tono medio, no en el oscuro
+        # Material ambient: what does not face the sun stays in the mid tone, not the dark one
+        amb = nt.nodes.new("ShaderNodeMath"); amb.operation = "ADD"; amb.inputs[1].default_value = spec["ambiente"]
+        nt.links.new(light, amb.inputs[0]); light = amb.outputs[0]; nt.links.new(light, ramp.inputs[0])
     if spec.get("mechas"):
         # Mechas: el atributo "mecha" de la malla oscurece la luz antes de la rampa / strands darken the light
         at = nt.nodes.new("ShaderNodeAttribute"); at.attribute_name = "mecha"
@@ -61,7 +68,7 @@ def ramp_material(name, tones, cuts):
         k.inputs[1].default_value = -spec["mechas"]; k.inputs[2].default_value = 1.0
         nt.links.new(at.outputs["Fac"], k.inputs[0])
         mul = nt.nodes.new("ShaderNodeMath"); mul.operation = "MULTIPLY"
-        nt.links.new(s2r.outputs[0], mul.inputs[0]); nt.links.new(k.outputs[0], mul.inputs[1])
+        nt.links.new(light, mul.inputs[0]); nt.links.new(k.outputs[0], mul.inputs[1])
         nt.links.new(mul.outputs[0], ramp.inputs[0])
     nt.links.new(ramp.outputs[0], em.inputs[0]); nt.links.new(em.outputs[0], out.inputs[0])
     return m, nt, ramp
@@ -257,6 +264,11 @@ def pose(frame, base_yaw):
     for p, o in PARTS:
         g = p.get("grupo")
         o.hide_render = g in HIDDEN and g not in shown
+        if p.get("ocultar_lejos"):
+            # Costado que mira lejos de la cámara (de perfil): la oreja de atrás no se apila sobre la de adelante
+            # Side facing away from the camera (in profile): the far ear does not stack over the near one
+            k, deg = p["ocultar_lejos"]; yaw = math.radians(base_yaw + root.get("giro", 0))
+            o.hide_render = o.hide_render or -k * math.sin(yaw) < -math.cos(math.radians(deg))
         s = scales.get(g) or scales.get(p["nombre"])
         o.scale = s if s else (1, 1, 1)
     bpy.context.view_layer.update()

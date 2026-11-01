@@ -208,7 +208,8 @@ def p_cuerpo(s, M):
     hip, nb, nt = H["hips"]["cabeza"][2], H["neck"]["cabeza"][2], H["neck"]["cola"][2]
     rings = [((0, cy, hip + t * (nb - hip)), (rx, ry), w_tronco(H, hip + t * (nb - hip))) for t, rx, ry, cy in c["torso_perfil"]]
     r, cy = c.get("cuello_r", 1.3), c.get("cuello_y", 0.6)
-    neck = [((0, cy, z), (r, r), w_tronco(H, z)) for z in (nb - 1.5, nb, nt - 1, nt + 0.5)]
+    r = tuple(r) if isinstance(r, list) else (r, r)  # radio o [x, y] / radius or [x, y]
+    neck = [((0, cy, z), r, w_tronco(H, z)) for z in (nb - 1.5, nb, nt - 1, nt + 0.5)]
     return unir(tubo(rings, 16, (0.7, 0)), tubo(neck, 10, (0, 0)))
 
 
@@ -250,11 +251,26 @@ def cabeza_centro(M):
 def p_cabeza(s, M):
     # Cráneo grande y mandíbula que se angosta hacia el mentón / big skull and a jaw that narrows to the chin
     h = M["cuerpo"]["cabeza"]; c = cabeza_centro(M); r = h["radios"]; jaw = h.get("mandibula", 0.4)
+    n = h.get("cuadrar_abajo", 2.0)  # superelipse de la mitad de abajo: más de 2 da mejillas llenas / fuller cheeks above 2
     def deform(p, la, lo):
         if la >= 0: return p
+        if n != 2:
+            cl, sl = math.cos(math.radians(la)) ** (2 / n), -(-math.sin(math.radians(la))) ** (2 / n)
+            p = (c[0] + r[0] * cl * math.cos(math.radians(lo)), c[1] + r[1] * cl * math.sin(math.radians(lo)), c[2] + r[2] * sl)
         t = (-la / 90) ** 1.3
         return (c[0] + (p[0] - c[0]) * (1 - jaw * t), p[1] - h.get("menton", 0.6) * t, p[2])
-    return elipsoide(c, r, 24, 16, deformar=deform, pesos=lambda p: {"neck": 1})
+    # "alto_arriba" y "fondo": radio de la mitad de arriba (z) y de la de atrás (y), sin mover cara ni mentón
+    # "alto_arriba" and "fondo": radius of the top half (z) and the back half (y), face and chin stay put
+    return elipsoide(c, r, 24, 16, deformar=lambda p, la, lo: achicar(deform(p, la, lo), c, r, h.get("alto_arriba"), h.get("fondo")),
+                     pesos=lambda p: {"neck": 1})
+
+
+def achicar(p, c, r, arriba=None, fondo=None):
+    # Escala la mitad de arriba a radio "arriba" y la de atrás a radio "fondo" / scales the top and back halves
+    x, y, z = p
+    if arriba and z > c[2]: z = c[2] + (z - c[2]) * arriba / r[2]
+    if fondo and y > c[1]: y = c[1] + (y - c[1]) * fondo / r[1]
+    return (x, y, z)
 
 
 def p_pelo(s, M):
@@ -290,9 +306,10 @@ def p_pelo(s, M):
         # costados no puede quedar delante de la cara / in profile the camera lowers the near side 0.375 rows per px:
         # up to that height over the eyes the side hair cannot sit in front of the face
         side = smooth((abs(p[0] - c[0]) - cara[0] + 0.8) / 0.8)
-        lim = ojos_z + s.get("sien", 0.7) + 0.375 * abs(p[0] - c[0])
+        # "compensar": false deja el modelo neutro, sin la corrección para la cámara de 22° / neutral, no 22° fix
+        lim = ojos_z + s.get("sien", 0.7) + (0.375 * abs(p[0] - c[0]) if s.get("compensar", True) else 0)
         f = side * smooth((lim + 0.5 - p[2]) / 1.0)  # el flequillo no se aplana / the fringe is not flattened
-        return (p[0], p[1] + f * max(0.0, c[1] - cortina - p[1]), p[2])
+        return achicar((p[0], p[1] + f * max(0.0, c[1] - cortina - p[1]), p[2]), c, r, None, s.get("fondo"))
     # La ventana de la cara se angosta hacia el mentón: las puntas del pelo tapan el hueco junto a la mandíbula
     # The face window narrows toward the chin: the hair tips cover the gap beside the jaw
     menton = s.get("menton", cara[0])
@@ -387,6 +404,88 @@ def p_mechon(s, M):
     rings = [(lerp(a, z, t), (r0 + (r1 - r0) * t ** 1.5, (r0 + (r1 - r0) * t ** 1.5) * s.get("aplanar", 1.0)),
               mezcla(({"neck": 1}, 1 - smooth(t * 2)), ({f"lock_{s['lado']}": 1}, smooth(t * 2)))) for t in (0, .25, .5, .75, 1)]
     return tubo(rings, 10, (1.0, 0.6))
+
+
+def p_tarjeta(s, M):
+    # Tarjeta de pelo con grosor, como el pelo anime low-poly (flequillo, cortinas, melena, mechones). Coordenadas
+    # relativas al centro de la cabeza; "lados" la espeja en X. "camino": línea central de arriba abajo; "ancho": medio
+    # ancho por punto; "lado": eje del ancho; "curva": cuánto se doblan los bordes hacia la normal (envuelve la cabeza);
+    # "puntas": largo extra (o menos) del borde de abajo a lo ancho, para puntas; "mechas": posiciones (-1..1) de las
+    # mechas oscuras y "curvo" cuánto se abren al bajar. Arriba pesa al cuello y abajo a "hueso".
+    # Hair card with thickness, like low-poly anime hair (fringe, curtains, back mass, locks). Coordinates relative to
+    # the head centre; "lados" mirrors it in X. "camino": centre line top to bottom; "ancho": half width per point;
+    # "lado": width axis; "curva": how much the edges bend toward the normal (wraps the head); "puntas": extra (or less)
+    # length of the bottom edge across the width, for tips; "mechas": dark strand positions (-1..1), "curvo" how much
+    # they open going down. The top weighs on the neck and the bottom on "hueso".
+    k = SIDE.get(s.get("lado"), 1); c = cabeza_centro(M)
+    pts = [(c[0] + k * p[0], c[1] + p[1], c[2] + p[2]) for p in s["camino"]]
+    n = len(pts); an = s["ancho"] if isinstance(s["ancho"], list) else [s["ancho"]] * n
+    cu = s.get("curva", 0); cu = cu if isinstance(cu, list) else [cu] * n
+    lx, ly, lz = s.get("lado_eje", [1, 0, 0]); eje = unit((k * lx, ly, lz))
+    largos = [math.dist(a, b) for a, b in zip(pts[:-1], pts[1:])]; L = sum(largos)
+    nv = s.get("nv", 8); nu = s.get("nu", max(4, round(L / 0.6)))
+    vs = [-1 + 2 * j / nv for j in range(nv + 1)]
+    pun = s.get("puntas", [0])
+    def punta(v):  # interpolada a lo ancho / interpolated across the width
+        if len(pun) == 1: return pun[0]
+        t = (v + 1) / 2 * (len(pun) - 1); i = min(int(t), len(pun) - 2); return pun[i] + (pun[i + 1] - pun[i]) * (t - i)
+    def at(sd):  # punto, tangente e índice a la distancia sd (sigue recto pasado el final) / point at arc length sd
+        acc = 0
+        for i, Li in enumerate(largos):
+            if sd <= acc + Li or i == len(largos) - 1:
+                t = (sd - acc) / Li; tg = unit(sub(pts[i + 1], pts[i]))
+                return lerp(pts[i], pts[i + 1], t), tg, i + min(max(t, 0), 1)
+            acc += Li
+    g = s.get("grosor", 0.8) / 2; hueso = s.get("hueso", "hair").replace("<lado>", s.get("lado", "") or "")
+    rig = s.get("rigido", 0.3); mch = s.get("mechas", []); curvo = s.get("curvo", 0.0)
+    m = malla(); m["mecha"] = []; filas = []; fuera = []
+    for i in range(nu + 1):
+        u = i / nu; fila = []; caras = ([], [])
+        for v in vs:
+            p, tg, f = at(u * (L + punta(v)))
+            j = min(int(f), n - 2); t = f - j
+            w_ = an[j] + (an[j + 1] - an[j]) * t; c_ = cu[j] + (cu[j + 1] - cu[j]) * t
+            nr = unit(cross(tg, eje)); ej = unit(cross(nr, tg))
+            base = add(add(p, mul(ej, w_ * v)), mul(nr, c_ * v * v))
+            pe = smooth((u - rig) / max(1 - rig, 1e-3))
+            w = mezcla(({"neck": 1}, 1 - pe), ({hueso: 1}, pe))
+            mc = max([math.exp(-((v - (q + curvo * u * (1 if q > 0 else -1 if q < 0 else 0))) / 0.18) ** 2) for q in mch] or [0])
+            for sg, lst in ((1, caras[0]), (-1, caras[1])):
+                m["v"].append(add(base, mul(nr, sg * g))); m["w"].append(w); m["mecha"].append(mc)
+                fuera.append(mul(nr, sg)); lst.append(len(m["v"]) - 1)
+        filas.append(caras[0] + caras[1][::-1])
+    m["f"] = grilla(filas)
+    # Tapas en los extremos y caras orientadas hacia afuera / end caps and faces turned outward
+    for fila, sg in ((filas[0], -1), (filas[-1], 1)):
+        cen = mul(tuple(map(sum, zip(*[m["v"][i] for i in fila]))), 1 / len(fila))
+        tg = at(0)[1] if sg < 0 else at(L)[1]
+        m["v"].append(cen); m["w"].append(m["w"][fila[0]]); m["mecha"].append(0); fuera.append(mul(tg, sg))
+        m["f"] += [(len(m["v"]) - 1, fila[q], fila[(q + 1) % len(fila)]) for q in range(len(fila))]
+    out = []
+    for f in m["f"]:
+        a, b, cc = (m["v"][i] for i in f[:3]); nf = cross(sub(b, a), sub(cc, a))
+        want = tuple(map(sum, zip(*[fuera[i] for i in f])))
+        out.append(f if dot(nf, want) >= 0 else tuple(reversed(f)))
+    m["f"] = out
+    if not mch: m.pop("mecha")
+    return m
+
+
+def p_oreja(s, M):
+    # Oreja de gato: cono aplanado desde la base (hundida en el pelo) hasta la punta. "pos": base relativa al centro de
+    # la cabeza; "afuera": inclinación hacia el costado (°); "atras": hacia atrás (°); "giro": abre la cara hacia afuera
+    # (°); "escala" achica ancho y grosor y "adelante" corre la pieza hacia la cara (la parte rosa) / Cat ear: flattened cone from the base (sunk in
+    # the hair) to the tip; pos relative to the head centre; afuera/atras tilt, giro opens the face outward (degrees)
+    k = SIDE[s["lado"]]; c = cabeza_centro(M); p = s["pos"]; base = (c[0] + k * p[0], c[1] + p[1], c[2] + p[2])
+    alto, ancho, grosor = s["alto"], s["ancho"], s["grosor"]
+    f = s.get("escala", [1, 1, 1]); dy = s.get("adelante", 0.0)
+    # Ancho casi parejo hasta arriba y punta roma, como el dibujo / almost even width up to a blunt tip, like the drawing
+    rings = [((0, dy, alto * t), (ancho * f[0] * a + 0.1, grosor * f[1] * (1 - 0.6 * t)), {"neck": 1})
+             for t, a in (s.get("perfil", [[0, 1.0], [0.5, 0.85], [0.8, 0.55], [1.0, 0.12]]))]
+    m = tubo([(cc, r, w) for cc, r, w in rings], 12, (0, 0.3))
+    rot = (s.get("atras", 0), k * s.get("afuera", 0), k * s.get("giro", 0))
+    m["v"] = [add(rotar(v, rot), base) for v in m["v"]]
+    return m
 
 
 def p_esfera(s, M):
@@ -527,7 +626,8 @@ def p_lazo(s, M):
 
 PARTES = {"cuerpo": p_cuerpo, "brazo": p_brazo, "pierna": p_pierna, "cabeza": p_cabeza, "pelo": p_pelo,
           "mechon": p_mechon, "esfera": p_esfera, "toro": p_toro, "lofteo": p_lofteo, "parche": p_parche,
-          "tubo": p_tubo_hueso, "lazo": p_lazo, "importada": p_importada}
+          "tubo": p_tubo_hueso, "lazo": p_lazo, "importada": p_importada,
+          "tarjeta": p_tarjeta, "oreja": p_oreja}
 # Grupo de línea interna por tipo; brazos y piernas llevan el lado / inner-line group per type; limbs carry the side
 LINEA = {"brazo": "brazo", "pierna": "pierna"}
 
@@ -541,6 +641,8 @@ def construir(s, M):
     linea = linea.replace("<lado>", lado) or None
     m.update(nombre=s.get("nombre", s["tipo"]) + (f"_{lado}" if lado else ""), material=s["material"],
              capa=s.get("capa", "ropa"), linea=linea, grupo=s.get("grupo"))
+    if s.get("ocultar_lejos"):  # [lado, grados]: se oculta si ese costado mira lejos de la cámara / hidden facing away
+        m["ocultar_lejos"] = [SIDE.get(lado, 1), s["ocultar_lejos"]]
     return m
 
 
