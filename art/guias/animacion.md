@@ -65,7 +65,10 @@ JSON con claves en español y huesos en inglés. Forma cuadro a cuadro:
 
 Forma por claves: `cantidad` + `claves` (`{"en": cuadro, "raiz": ..., "cadera": ..., "pose": ...}`) + `suavizado`
 (`"lineal"`, `"entrada_salida"` o `"escalon"`); la herramienta interpola los cuadros del medio
-(`tools/art/motion.py`). `duraciones_ms` (una por cuadro) reemplaza a `ms` en las dos formas.
+(`tools/art/motion.py`). `duraciones_ms` (una por cuadro) reemplaza a `ms` en las dos formas. En los ciclos
+(caminar, correr), `velocidad_px_s` es la velocidad para la que se armó el paso: rig3d la copia a la hoja como
+`move_speed` y el juego acelera la animación en proporción a la velocidad real (`kit_sprite.gd`), así ninguna
+criatura patina aunque cambie su velocidad en `EnemyData` o por un buff.
 
 ```json
 {

@@ -186,7 +186,7 @@ def build():
         w = peso[i - 1]
         for name, gain in (("skirt", -6), ("lock_L", -7), ("lock_R", -7), ("hair", -6), ("bow_back", -14)):
             motion.put(f, f"pose.{name}.lado", gain * w)
-    return {"nombre": "correr", "bucle": True, "lienzo": 64, "duraciones_ms": [MS] * n, "cuadros": frames}
+    return {"nombre": "correr", "bucle": True, "lienzo": 64, "duraciones_ms": [MS] * n, "velocidad_px_s": SPEED, "cuadros": frames}
 
 
 def feet(frame):

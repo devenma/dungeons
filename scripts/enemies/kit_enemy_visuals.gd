@@ -6,10 +6,6 @@ extends "res://scripts/enemies/enemy_visuals.gd"
 ## death. Whatever lies on the floor at the end of the death stays as a floor decal.
 
 const KitSpriteScript: GDScript = preload("res://scripts/visual/kit_sprite.gd")
-# Velocidad de la caminata (veces la hoja): el paso dibujado barre ~17 px/s y el errante va a 28 px/s, así que
-# acelerarla evita que los pies patinen / Walk speed (times the sheet): the drawn stride sweeps ~17 px/s and the
-# errante moves at 28 px/s, so speeding it up keeps the feet from sliding
-const WALK_ANIMATION_SPEED: float = 1.5
 
 # Fila (S, E, N o W) hacia la que mira / Row (S, E, N or W) it faces
 var _facing: String = "S"
@@ -30,7 +26,10 @@ func show_motion(velocity: Vector2, facing: Vector2) -> void:
 	if facing != Vector2.ZERO:
 		_facing = KitSpriteScript.row_for(facing)
 	if velocity != Vector2.ZERO:
-		_sprite.play("walk_" + _facing, WALK_ANIMATION_SPEED)
+		# Cada hoja trae su move_speed: la caminata se acelera con la velocidad real y los pies no patinan
+		# Each sheet carries its move_speed: the walk speeds up with the real speed so the feet do not slide
+		var walk_name: StringName = "walk_" + _facing
+		_sprite.play(walk_name, _sprite.call("playback_speed", walk_name, velocity.length()))
 	else:
 		_sprite.play("idle_" + _facing)
 

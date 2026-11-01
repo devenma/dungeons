@@ -339,6 +339,9 @@ def export(anim, frames, out, prefix):
     if has_fx: fx_sheet.save(base + "_efectos.png")
     meta = {"cell": [size, size], "rows": [ROW[d] for d in DIRS], "frames": n, "durations_ms": ms,
             "anchor": {"feet_x": size // 2, "sole_y": size - SOLE_MARGIN}}
+    # Ciclos: px/s a los que el pie de apoyo no patina con la hoja a 1x; el juego acelera en proporción
+    # Cycles: px/s at which the planted foot does not slide at 1x; the game scales playback to match
+    if "velocidad_px_s" in anim: meta["move_speed"] = anim["velocidad_px_s"]
     json.dump(meta, open(base + ".json", "w"), indent=1)
     try:
         names = list(dict.fromkeys(k for d in DIRS for lay in frames[d] for k in lay))

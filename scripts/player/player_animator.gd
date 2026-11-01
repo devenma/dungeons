@@ -71,10 +71,10 @@ func _process(delta: float) -> void:
 		return
 	_facing = KitSpriteScript.row_for(_body.call("aim_direction") as Vector2)
 	if _body.velocity != Vector2.ZERO:
-		# La velocidad sale de la hoja: la vieja del aventurero trae 1,5 para que los pies no patinen
-		# Speed comes from the sheet: the old adventurer one carries 1.5 so the feet do not slide
+		# La hoja dice a qué velocidad no patina; la vieja del aventurero trae un 1,5 fijo
+		# The sheet says at which speed it does not slide; the adventurer's old one carries a fixed 1.5
 		var walk_name: StringName = "walk_" + _facing
-		_sprite.play(walk_name, _sprite.call("playback_speed", walk_name))
+		_sprite.play(walk_name, _sprite.call("playback_speed", walk_name, _body.velocity.length()))
 	else:
 		_sprite.play("idle_" + _facing)
 

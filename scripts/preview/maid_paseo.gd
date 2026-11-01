@@ -60,14 +60,15 @@ func _process(delta: float) -> void:
 	var running: bool = direction != Vector2.ZERO and Input.is_action_pressed("roll")
 	var animation: String = "idle" if direction == Vector2.ZERO else ("run" if running and _sheets.has("run") else "walk")
 	var speed: float = RUN_SPEED if running else _move_speed
-	# Sin hoja de carrera, la caminata se acelera en proporción / without a run sheet the walk speeds up in proportion
-	var playback: float = _animation_scale * (RUN_SPEED / GAME_SPEED if running and animation == "walk" else 1.0)
 	if direction != Vector2.ZERO:
 		# La fila sigue al eje dominante, como el jugador / the row follows the dominant axis, like the player
 		var axis: Vector2i = Vector2i(signi(roundi(direction.x)), 0) if absf(direction.x) >= absf(direction.y) else Vector2i(0, signi(roundi(direction.y)))
 		_row = ROW_FOR_DIRECTION.get(axis, _row)
 		_sprite.position = (_sprite.position + direction * speed * delta).clamp(Vector2(24, 48), Vector2(456, 266))
 	var meta: Dictionary = _sheets[animation]["meta"]
+	# Como en el juego: la hoja se acelera en proporción a la velocidad sobre su move_speed / as in the game: the sheet
+	# scales with the speed over its move_speed
+	var playback: float = _animation_scale * (speed / float(meta["move_speed"]) if meta.has("move_speed") else 1.0)
 	var durations: Array = meta["durations_ms"]
 	_frame %= durations.size()
 	_frame_ms += delta * 1000.0 * playback
