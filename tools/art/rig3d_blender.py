@@ -314,11 +314,14 @@ def pose(frame, base_yaw):
         PB[bone].rotation_euler = rot; PB[bone].scale = sc
         if b["tipo"] == "clavicula": PB[bone].location = loc
     shown = set(frame.get("mostrar", []))
+    # "mostrar_lejos": partes o grupos que se dibujan aunque tengan ocultar_lejos (la mano de la espada en el oeste)
+    # "mostrar_lejos": parts or groups drawn even with ocultar_lejos (the sword hand in the west)
+    far_shown = set(frame.get("mostrar_lejos", []))
     scales = frame.get("escala_piezas", {})
     for p, o in PARTS:
         g = p.get("grupo")
         o.hide_render = g in HIDDEN and g not in shown
-        if p.get("ocultar_lejos"):
+        if p.get("ocultar_lejos") and not far_shown & {p.get("nombre"), g}:
             # Costado que mira lejos de la cámara (de perfil): la oreja de atrás no se apila sobre la de adelante
             # Side facing away from the camera (in profile): the far ear does not stack over the near one
             k, deg = p["ocultar_lejos"]; yaw = math.radians(base_yaw + root.get("giro", 0))
@@ -327,6 +330,21 @@ def pose(frame, base_yaw):
         s = scales.get(g) or scales.get(p["nombre"])
         o.scale = s if s else (1, 1, 1)
     bpy.context.view_layer.update()
+    if PIXEL_REF and not root.get("giro"):
+        # "pixel_pantalla": la cadera conserva la fracción de px de pantalla del reposo; se corre todo el rig en el plano
+        # de la cámara (x = eje X del mundo, filas = (0, sen, cos)). Con giro de raíz no se ajusta (sacude)
+        # "pixel_pantalla": the hips keep the rest pose's screen-px fraction; the whole rig shifts in the camera plane
+        v = world_to_camera_view(scene, cam, rig.matrix_world @ PB["hips"].head)
+        dx, dy = v.x * R.resolution_x - PIXEL_REF[0], v.y * R.resolution_y - PIXEL_REF[1]
+        u = cam.data.ortho_scale / R.resolution_x  # unidades del modelo por px / model units per px
+        fx, fy = (dx - round(dx)) * u, (dy - round(dy)) * u
+        rig.location = rig.location - Vector((fx, fy * math.sin(TILT), fy * math.cos(TILT)))
+        bpy.context.view_layer.update()
+
+
+# Cadera del reposo en px de pantalla (x, y hacia arriba) mientras se renderiza una animación con "pixel_pantalla"
+# Rest-pose hips in screen px (x, y up) while rendering an animation with "pixel_pantalla"
+PIXEL_REF = None
 
 
 # Rango de profundidad (px) que cubre la pasada de ID, centrado en el origen / depth range (px) of the ID pass
@@ -343,6 +361,7 @@ def por_direccion(frame, anim, d):
     # resueltos por plantar: no se pisan acá / overrides channels by the render's base direction; the frame wins
     out = {k: (dict(v) if isinstance(v, dict) else v) for k, v in frame.items()}
     out["pose"] = {b: dict(c) for b, c in frame.get("pose", {}).items()}
+    if "mostrar_lejos" in anim: out.setdefault("mostrar_lejos", anim["mostrar_lejos"])
     for src in (anim.get("por_direccion", {}), frame.get("por_direccion", {})):
         for block, v in src.get(d, {}).items():
             if block == "pose":
@@ -551,6 +570,10 @@ else:
                                                   (1 - world_to_camera_view(scene, cam, w).y) * size)]
         for d in JOB.get("dirs", list(YAW)):
             frames = [por_direccion(f, anim, d) for f in anim["cuadros"]]
+            PIXEL_REF = None
+            if anim.get("pixel_pantalla"):
+                pose({}, YAW[d]); v = world_to_camera_view(scene, cam, rig.matrix_world @ PB["hips"].head)
+                PIXEL_REF = (v.x * size, v.y * size)
             for i, frame in enumerate(frames):
                 arc = None
                 if "estela" in frame.get("mostrar", []) and (i > 0 or anim.get("bucle")):
