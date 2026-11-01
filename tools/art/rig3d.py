@@ -164,6 +164,29 @@ def stamp_eyes(eyes, spec, mask):
     return out
 
 
+def ramp_darkest(img, part, parts, model):
+    # Cada píxel toma el tono más oscuro del material de su parte (el primero de la rampa); por parte y no por color,
+    # porque dos materiales pueden compartir un tono / each pixel takes its part's material darkest tone, by part and
+    # not by colour, since two materials can share a tone
+    dark = {k: tones(r)[0] for k, r in model["rampas"].items()}
+    lut = np.array([dark.get(p.get("material"), (0, 0, 0)) for p in parts] + [(0, 0, 0)], np.uint8)
+    out = np.zeros_like(img); out[..., :3] = lut[part]; out[..., 3] = img[..., 3]
+    return out
+
+
+def selout_ramp(dark, o):
+    # Contorno de color con el tono más oscuro del material vecino (regla de Sam: sin negro); entre materiales gana
+    # el de más vecinos y, si empatan, el más oscuro / colour outline in the neighbour material's darkest tone (no
+    # black); among materials the one with most neighbours wins, ties go to the darker
+    h, w = o.shape; out = np.zeros(o.shape + (4,), np.uint8)
+    P = np.pad(dark, ((1, 1), (1, 1), (0, 0)))
+    near = [P[1 + dy:h + 1 + dy, 1 + dx:w + 1 + dx] for dy, dx in ((-1, 0), (1, 0), (0, -1), (0, 1))]
+    for y, x in zip(*np.nonzero(o)):
+        cols = [tuple(int(v) for v in q[y, x, :3]) for q in near if q[y, x, 3] > 127]
+        if cols: out[y, x] = (*min(set(cols), key=lambda c: (-cols.count(c), 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2])), 255)
+    return out
+
+
 def layers_parts(img, ids, parts, fmeta, model, size, gap, fx=None, pal=None):
     # Receta de malla: una capa por grupo de partes con solo lo que se ve de cada una, las líneas internas, los ojos
     # y el contorno de color, cada uno en su capa / mesh recipe: one layer per part group holding only what shows of
@@ -172,10 +195,12 @@ def layers_parts(img, ids, parts, fmeta, model, size, gap, fx=None, pal=None):
     part[(part < 0) & (img[..., 3] > 127)] = 0  # nunca perder un píxel del render / never drop a rendered pixel
     names = sorted({p["linea"] for p in parts if p.get("linea")})
     grp = np.array([names.index(p["linea"]) if p.get("linea") else -2 for p in parts] + [-1])
-    lines = inner_lines(img, grp[part], depth)
+    ramp = model.get("contorno") == "rampa"  # líneas y contorno en el tono más oscuro de cada material / darkest ramp tone
+    lines = inner_lines(ramp_darkest(img, part, parts, model), grp[part], depth, 1.0) if ramp else inner_lines(img, grp[part], depth)
     dark = None if pal is None else np.unique(np.round(pal * OUTLINE_SHADE), axis=0)
-    if dark is not None: lines = quantize(lines, dark)
-    face = np.isin(part, [k for k, p in enumerate(parts) if p["nombre"] == model.get("ojos", {}).get("parte", "cabeza")])
+    if dark is not None and not ramp: lines = quantize(lines, dark)
+    names = model.get("ojos", {}).get("parte", "cabeza")  # una parte o lista: la pestaña puede pisar el flequillo / one part or a list
+    face = np.isin(part, [k for k, p in enumerate(parts) if p["nombre"] in ([names] if isinstance(names, str) else names)])
     eyes = stamp_eyes(fmeta.get("ojos"), model.get("ojos"), face)
     out = {"Efectos": fx} if fx is not None else {}
     capa = np.array([p["capa"] for p in parts] + [""])
@@ -185,6 +210,7 @@ def layers_parts(img, ids, parts, fmeta, model, size, gap, fx=None, pal=None):
     out["Lineas"], out["Ojos"] = lines, eyes
     comp = flatten({k: v for k, v in out.items() if k != "Efectos"})
     o = outline(comp, size - SOLE_MARGIN - LEG_GAP_ROWS if gap else None)
+    if ramp: out["Contorno"] = selout_ramp(ramp_darkest(comp, part, parts, model), o); return out
     line = selout(comp, o, OUTLINE_SHADE)
     out["Contorno"] = quantize(line, dark) if dark is not None else line
     return out

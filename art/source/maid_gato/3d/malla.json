@@ -1,0 +1,1272 @@
+{
+ "nombre": "maid_gato",
+ "inclinacion_camara": 22,
+ "contorno": "rampa",
+ "umbrales": [
+  0.12,
+  0.66
+ ],
+ "luz": {
+  "rot": [
+   45,
+   0,
+   0
+  ],
+  "energia": 3.2,
+  "sombras": false
+ },
+ "rampas": {
+  "piel": {
+   "tonos": [
+    [
+     122,
+     88,
+     76
+    ],
+    [
+     160,
+     122,
+     106
+    ],
+    [
+     196,
+     160,
+     144
+    ]
+   ],
+   "umbrales": [
+    0.1,
+    0.15
+   ]
+  },
+  "pelo": {
+   "tonos": [
+    [
+     84,
+     34,
+     30
+    ],
+    [
+     134,
+     58,
+     42
+    ],
+    [
+     178,
+     92,
+     62
+    ]
+   ],
+   "mechas": 0.25,
+   "umbrales": [
+    0.3,
+    0.45
+   ]
+  },
+  "oreja": {
+   "tonos": [
+    [
+     50,
+     48,
+     56
+    ],
+    [
+     74,
+     72,
+     80
+    ]
+   ],
+   "umbrales": [
+    0.2
+   ]
+  },
+  "oreja_dentro": {
+   "tonos": [
+    [
+     50,
+     48,
+     56
+    ],
+    [
+     122,
+     62,
+     76
+    ]
+   ],
+   "umbrales": [
+    0.01
+   ]
+  },
+  "vestido": {
+   "tonos": [
+    [
+     20,
+     18,
+     24
+    ],
+    [
+     36,
+     32,
+     40
+    ],
+    [
+     58,
+     53,
+     66
+    ]
+   ],
+   "umbrales": [
+    0.25,
+    0.45
+   ]
+  },
+  "blanco": {
+   "tonos": [
+    [
+     184,
+     178,
+     168
+    ],
+    [
+     224,
+     219,
+     210
+    ],
+    [
+     242,
+     238,
+     230
+    ]
+   ],
+   "umbrales": [
+    0.25,
+    0.75
+   ]
+  },
+  "piel_sombra": {
+   "tonos": [
+    [
+     122,
+     88,
+     76
+    ],
+    [
+     160,
+     122,
+     106
+    ],
+    [
+     196,
+     160,
+     144
+    ]
+   ],
+   "umbrales": [
+    0.5,
+    0.8
+   ]
+  },
+  "blanco_sombra": {
+   "tonos": [
+    [
+     184,
+     178,
+     168
+    ],
+    [
+     224,
+     219,
+     210
+    ],
+    [
+     242,
+     238,
+     230
+    ]
+   ],
+   "umbrales": [
+    0.6,
+    0.95
+   ]
+  },
+  "rosa_oscuro": {
+   "tonos": [
+    [
+     122,
+     62,
+     76
+    ],
+    [
+     122,
+     62,
+     76
+    ]
+   ],
+   "umbrales": [
+    0.5
+   ]
+  },
+  "zapatos_sombra": {
+   "tonos": [
+    [
+     30,
+     26,
+     28
+    ],
+    [
+     53,
+     48,
+     50
+    ]
+   ],
+   "umbrales": [
+    0.95
+   ]
+  },
+  "zapatos_luz": {
+   "tonos": [
+    [
+     30,
+     26,
+     28
+    ],
+    [
+     53,
+     48,
+     50
+    ]
+   ],
+   "umbrales": [
+    0.2
+   ]
+  },
+  "blanco_borde": {
+   "tonos": [
+    [
+     184,
+     178,
+     168
+    ],
+    [
+     224,
+     219,
+     210
+    ],
+    [
+     242,
+     238,
+     230
+    ]
+   ],
+   "umbrales": [
+    0.85,
+    0.99
+   ]
+  },
+  "rosa": {
+   "tonos": [
+    [
+     122,
+     62,
+     76
+    ],
+    [
+     184,
+     95,
+     114
+    ]
+   ],
+   "umbrales": [
+    0.2
+   ]
+  },
+  "zapatos": {
+   "tonos": [
+    [
+     30,
+     26,
+     28
+    ],
+    [
+     53,
+     48,
+     50
+    ]
+   ],
+   "umbrales": [
+    0.65
+   ]
+  },
+  "acero": [
+   [
+    70,
+    74,
+    88
+   ],
+   [
+    132,
+    138,
+    152
+   ],
+   [
+    214,
+    218,
+    226
+   ]
+  ],
+  "oro": [
+   [
+    120,
+    84,
+    40
+   ],
+   [
+    176,
+    132,
+    62
+   ],
+   [
+    220,
+    182,
+    96
+   ]
+  ],
+  "corte": [
+   [
+    196,
+    232,
+    255
+   ],
+   [
+    196,
+    232,
+    255
+   ],
+   [
+    240,
+    250,
+    255
+   ]
+  ]
+ },
+ "cuerpo": {
+  "tobillo": 1,
+  "pierna": [
+   4,
+   3.5
+  ],
+  "caderas": [
+   3.5,
+   1.0
+  ],
+  "cintura": 5.5,
+  "pecho": 7.5,
+  "cuello": 3,
+  "hombros": [
+   8.0,
+   0.2,
+   -1.8
+  ],
+  "brazo": [
+   3.5,
+   5.0
+  ],
+  "apertura_brazo": 5,
+  "pie": [
+   3.0,
+   0.4
+  ],
+  "pollera": [
+   0.5,
+   9
+  ],
+  "mo\u00f1o": [
+   5.8,
+   0.4,
+   3
+  ],
+  "pelo": [
+   2,
+   8,
+   -1
+  ],
+  "mechones": [
+   5.3,
+   0.3,
+   4,
+   -4
+  ],
+  "grosor_brazo": [
+   1.8,
+   1.8,
+   1.8,
+   2.6
+  ],
+  "mano": 1.6,
+  "grosor_pierna": [
+   2.0,
+   1.8,
+   1.6,
+   1.4
+  ],
+  "plano_pierna": 0.8,
+  "cuello_r": 2.0,
+  "cuello_y": 0.6,
+  "cabeza": {
+   "centro": [
+    0,
+    1.5,
+    4.0
+   ],
+   "radios": [
+    6.2,
+    5.0,
+    5.0
+   ],
+   "mandibula": -0.25,
+   "menton": 1.6
+  },
+  "torso_perfil": [
+   [
+    -0.13,
+    3.6,
+    2.6,
+    1.0
+   ],
+   [
+    0.0,
+    4.2,
+    3.0,
+    1.1
+   ],
+   [
+    0.3,
+    4.0,
+    2.8,
+    1.2
+   ],
+   [
+    0.6,
+    4.3,
+    2.9,
+    1.3
+   ],
+   [
+    0.85,
+    4.6,
+    2.8,
+    1.3
+   ],
+   [
+    0.95,
+    4.2,
+    2.5,
+    1.2
+   ],
+   [
+    1.0,
+    2.4,
+    1.9,
+    0.9
+   ]
+  ]
+ },
+ "ojos": {
+  "parte": [
+   "cabeza",
+   "pelo"
+  ],
+  "x": 3.5,
+  "z": 0.0,
+  "hundir": 0.3,
+  "colores": {
+   "l": [
+    58,
+    30,
+    34
+   ],
+   "w": [
+    202,
+    201,
+    201
+   ],
+   "g": [
+    70,
+    104,
+    84
+   ],
+   "p": [
+    184,
+    95,
+    114
+   ],
+   "k": [
+    122,
+    88,
+    76
+   ]
+  },
+  "sellos": {
+   "frente_R": {
+    "px": [
+     "llll..",
+     ".wgg..",
+     "..gg..",
+     ".p....",
+     ".....k"
+    ],
+    "ancla": [
+     2,
+     1
+    ]
+   },
+   "frente_L": {
+    "px": [
+     "..llll",
+     "..ggw.",
+     "..gg..",
+     "....p.",
+     "k....."
+    ],
+    "ancla": [
+     3,
+     1
+    ]
+   },
+   "perfil": {
+    "px": [
+     "ll",
+     "wg",
+     ".g"
+    ],
+    "ancla": [
+     0,
+     1
+    ]
+   }
+  }
+ },
+ "marcadores": {
+  "cuello": [
+   "neck",
+   "cabeza"
+  ],
+  "cadera": [
+   "hips",
+   "cabeza"
+  ],
+  "pie_L": [
+   "shin_L",
+   "cola"
+  ],
+  "pie_R": [
+   "shin_R",
+   "cola"
+  ],
+  "mano_R": [
+   "fore_R",
+   "cola"
+  ],
+  "punta_espada": [
+   "weapon_R",
+   "cola"
+  ],
+  "mano_L": [
+   "fore_L",
+   "cola"
+  ]
+ },
+ "grupos_ocultos": [
+  "espada",
+  "arco_corte",
+  "onda"
+ ],
+ "partes": [
+  {
+   "tipo": "cuerpo",
+   "material": "piel_sombra",
+   "capa": "cuerpo"
+  },
+  {
+   "tipo": "brazo",
+   "lados": [
+    "L",
+    "R"
+   ],
+   "material": "piel",
+   "capa": "cuerpo"
+  },
+  {
+   "tipo": "pierna",
+   "lados": [
+    "L",
+    "R"
+   ],
+   "material": "zapatos",
+   "capa": "cuerpo",
+   "linea": ""
+  },
+  {
+   "tipo": "cabeza",
+   "nombre": "cabeza",
+   "material": "piel",
+   "capa": "cuerpo"
+  },
+  {
+   "tipo": "pelo",
+   "material": "pelo",
+   "capa": "pelo",
+   "radios": [
+    6.9,
+    6.0,
+    6.3
+   ],
+   "bajo": 7.6,
+   "bajo_atras": 8.0,
+   "cierre": 0.0,
+   "abierto": 20,
+   "campana": 0.3,
+   "flequillo": 1.9,
+   "cara": [
+    5.6,
+    2.0
+   ],
+   "cortina": 3.0,
+   "cuadrar": 6.0,
+   "mechas": 14,
+   "sien": 0.7,
+   "arco": 0.1,
+   "menton": 4.8
+  },
+  {
+   "tipo": "esfera",
+   "nombre": "oreja",
+   "lados": [
+    "L",
+    "R"
+   ],
+   "material": "oreja",
+   "capa": "pelo",
+   "linea": "",
+   "hueso": "neck",
+   "relativo": "cabeza",
+   "pos": [
+    4.8,
+    -0.3,
+    8.3
+   ],
+   "radios": [
+    1.3,
+    0.6,
+    2.4
+   ],
+   "rot": [
+    0,
+    8,
+    0
+   ]
+  },
+  {
+   "tipo": "esfera",
+   "nombre": "oreja_dentro",
+   "lados": [
+    "L",
+    "R"
+   ],
+   "material": "oreja_dentro",
+   "capa": "pelo",
+   "linea": "",
+   "hueso": "neck",
+   "relativo": "cabeza",
+   "pos": [
+    4.2,
+    -0.9,
+    8.9
+   ],
+   "radios": [
+    0.8,
+    0.3,
+    1.2
+   ],
+   "rot": [
+    0,
+    12,
+    0
+   ]
+  },
+  {
+   "tipo": "lofteo",
+   "nombre": "corpino",
+   "base": "torso",
+   "material": "vestido",
+   "capa": "ropa",
+   "sobre": 0.5,
+   "desde": -1.5,
+   "hasta": 8.0,
+   "tapas": [
+    0,
+    0
+   ]
+  },
+  {
+   "tipo": "tubo",
+   "nombre": "manga",
+   "lados": [
+    "L",
+    "R"
+   ],
+   "hueso": "upper_<lado>",
+   "material": "vestido",
+   "capa": "ropa",
+   "linea": "brazo_<lado>",
+   "radios": [
+    [
+     0.0,
+     2.3
+    ],
+    [
+     0.3,
+     2.4
+    ],
+    [
+     0.55,
+     2.5
+    ],
+    [
+     0.75,
+     2.2
+    ]
+   ],
+   "mezcla": [
+    "chest",
+    0.25
+   ],
+   "tapas": [
+    0.8,
+    0
+   ]
+  },
+  {
+   "tipo": "tubo",
+   "nombre": "puno",
+   "lados": [
+    "L",
+    "R"
+   ],
+   "hueso": "upper_<lado>",
+   "material": "blanco_sombra",
+   "capa": "ropa",
+   "linea": "brazo_<lado>",
+   "radios": [
+    [
+     0.6,
+     3.0
+    ],
+    [
+     0.9,
+     2.5
+    ]
+   ],
+   "tapas": [
+    0,
+    0
+   ]
+  },
+  {
+   "tipo": "esfera",
+   "nombre": "cuello",
+   "lados": [
+    "L",
+    "R"
+   ],
+   "material": "blanco_sombra",
+   "capa": "ropa",
+   "hueso": "chest",
+   "pos": [
+    3.0,
+    -0.8,
+    22.0
+   ],
+   "radios": [
+    1.1,
+    0.6,
+    2.1
+   ]
+  },
+  {
+   "tipo": "toro",
+   "nombre": "cinta",
+   "material": "rosa_oscuro",
+   "capa": "ropa",
+   "hueso": "chest",
+   "pos": [
+    0,
+    -1.2,
+    21.2
+   ],
+   "R": 1.25,
+   "r": 0.35,
+   "rot": [
+    65,
+    0,
+    0
+   ]
+  },
+  {
+   "tipo": "lazo",
+   "nombre": "lazo",
+   "material": "rosa",
+   "capa": "ropa",
+   "hueso": "chest",
+   "pos": [
+    0,
+    -3.4,
+    19.4
+   ],
+   "ancho": 5.4,
+   "lazo": [
+    1.9,
+    0.8,
+    1.7
+   ],
+   "giro": 10,
+   "nudo": [
+    0.05,
+    0.05,
+    0.05
+   ]
+  },
+  {
+   "tipo": "esfera",
+   "nombre": "nudo",
+   "material": "rosa_oscuro",
+   "capa": "ropa",
+   "hueso": "chest",
+   "pos": [
+    0,
+    -3.9,
+    19.1
+   ],
+   "radios": [
+    0.9,
+    0.6,
+    1.3
+   ]
+  },
+  {
+   "tipo": "lofteo",
+   "nombre": "pollera",
+   "material": "vestido",
+   "capa": "ropa",
+   "pesos": "pollera",
+   "muslo": 0.45,
+   "desde": 0.6,
+   "hasta": -10.4,
+   "tapas": [
+    0,
+    null
+   ],
+   "perfil": [
+    [
+     0.6,
+     4.6,
+     3.4,
+     1.2
+    ],
+    [
+     -1,
+     5.0,
+     4.0,
+     1.2
+    ],
+    [
+     -3,
+     6.2,
+     5.0,
+     1.2
+    ],
+    [
+     -5,
+     7.6,
+     6.0,
+     1.2
+    ],
+    [
+     -6.5,
+     9.4,
+     6.4,
+     1.2
+    ],
+    [
+     -9.6,
+     9.8,
+     6.4,
+     1.2
+    ],
+    [
+     -10.4,
+     9.4,
+     6.2,
+     1.2
+    ]
+   ]
+  },
+  {
+   "tipo": "parche",
+   "nombre": "delantal",
+   "material": "blanco",
+   "capa": "ropa",
+   "pesos": "pollera",
+   "muslo": 0.45,
+   "lado_y": "frente",
+   "desde": 0.6,
+   "hasta": -7.6,
+   "x0": [
+    [
+     0,
+     -4.0
+    ]
+   ],
+   "x1": [
+    [
+     0,
+     4.0
+    ]
+   ],
+   "sobre": 0.35,
+   "perfil": [
+    [
+     0.6,
+     4.6,
+     3.4,
+     1.2
+    ],
+    [
+     -1,
+     5.0,
+     4.0,
+     1.2
+    ],
+    [
+     -3,
+     6.2,
+     5.0,
+     1.2
+    ],
+    [
+     -5,
+     7.6,
+     6.0,
+     1.2
+    ],
+    [
+     -6.5,
+     9.4,
+     6.4,
+     1.2
+    ],
+    [
+     -9.6,
+     9.8,
+     6.4,
+     1.2
+    ],
+    [
+     -10.4,
+     9.4,
+     6.2,
+     1.2
+    ]
+   ]
+  },
+  {
+   "tipo": "parche",
+   "nombre": "pechera",
+   "base": "torso",
+   "material": "blanco",
+   "capa": "ropa",
+   "lado_y": "frente",
+   "desde": -2.0,
+   "hasta": 4.0,
+   "x0": [
+    [
+     -2.0,
+     -4.0
+    ],
+    [
+     4.0,
+     -4.0
+    ]
+   ],
+   "x1": [
+    [
+     -2.0,
+     4.0
+    ],
+    [
+     4.0,
+     4.0
+    ]
+   ],
+   "sobre": 0.75
+  },
+  {
+   "tipo": "parche",
+   "nombre": "pechera_sombra",
+   "base": "torso",
+   "material": "blanco_borde",
+   "capa": "ropa",
+   "lado_y": "frente",
+   "desde": 2.2,
+   "hasta": 3.2,
+   "x0": [
+    [
+     2.2,
+     -4.0
+    ],
+    [
+     3.2,
+     -4.0
+    ]
+   ],
+   "x1": [
+    [
+     2.2,
+     4.0
+    ],
+    [
+     3.2,
+     4.0
+    ]
+   ],
+   "sobre": 0.8
+  },
+  {
+   "tipo": "tubo",
+   "nombre": "zapato",
+   "lados": [
+    "L",
+    "R"
+   ],
+   "hueso": "foot_<lado>",
+   "material": "zapatos",
+   "capa": "ropa",
+   "linea": "",
+   "radios": [
+    [
+     -0.2,
+     2.3,
+     1.2
+    ],
+    [
+     0.3,
+     2.4,
+     1.2
+    ],
+    [
+     0.7,
+     2.2,
+     1.0
+    ],
+    [
+     0.9,
+     1.8,
+     0.8
+    ]
+   ],
+   "desplazar": [
+    0,
+    0,
+    -0.1
+   ]
+  },
+  {
+   "tipo": "tubo",
+   "nombre": "mango",
+   "hueso": "weapon_R",
+   "material": "vestido",
+   "capa": "arma",
+   "grupo": "espada",
+   "linea": "",
+   "radios": [
+    [
+     -0.17,
+     0.6
+    ],
+    [
+     0.04,
+     0.6
+    ]
+   ],
+   "tapas": [
+    0,
+    0
+   ]
+  },
+  {
+   "tipo": "tubo",
+   "nombre": "guarda",
+   "hueso": "weapon_R",
+   "material": "oro",
+   "capa": "arma",
+   "grupo": "espada",
+   "linea": "",
+   "radios": [
+    [
+     0.03,
+     2.0,
+     0.6
+    ],
+    [
+     0.075,
+     2.0,
+     0.6
+    ]
+   ],
+   "tapas": [
+    0,
+    0
+   ]
+  },
+  {
+   "tipo": "tubo",
+   "nombre": "hoja",
+   "hueso": "weapon_R",
+   "material": "acero",
+   "capa": "arma",
+   "grupo": "espada",
+   "linea": "",
+   "radios": [
+    [
+     0.07,
+     0.9,
+     0.4
+    ],
+    [
+     0.93,
+     0.9,
+     0.4
+    ],
+    [
+     1.0,
+     0.25,
+     0.3
+    ]
+   ],
+   "tapas": [
+    0,
+    0
+   ]
+  }
+ ],
+ "piezas": [
+  {
+   "nombre": "arco",
+   "forma": "toro",
+   "material": "corte",
+   "pos": [
+    0,
+    0,
+    13
+   ],
+   "escala": [
+    1,
+    1,
+    0.35
+   ],
+   "R": 15,
+   "r": 1.1,
+   "grupo": "arco_corte"
+  },
+  {
+   "nombre": "onda",
+   "forma": "toro",
+   "material": "corte",
+   "pos": [
+    0,
+    0,
+    0.4
+   ],
+   "escala": [
+    1,
+    1,
+    0.3
+   ],
+   "R": 8,
+   "r": 0.8,
+   "grupo": "onda"
+  },
+  {
+   "nombre": "suela_L",
+   "forma": "caja",
+   "material": "zapatos_luz",
+   "capa": "ropa",
+   "linea": "",
+   "hueso": "foot_L",
+   "pos": [
+    5.3,
+    -2.25,
+    0.2
+   ],
+   "escala": [
+    2.6,
+    2.0,
+    0.4
+   ]
+  },
+  {
+   "nombre": "suela_dentro_L",
+   "forma": "caja",
+   "material": "zapatos_sombra",
+   "capa": "ropa",
+   "linea": "",
+   "hueso": "foot_L",
+   "pos": [
+    2.5,
+    -2.25,
+    0.2
+   ],
+   "escala": [
+    3.0,
+    2.0,
+    0.4
+   ]
+  },
+  {
+   "nombre": "suela_R",
+   "forma": "caja",
+   "material": "zapatos_luz",
+   "capa": "ropa",
+   "linea": "",
+   "hueso": "foot_R",
+   "pos": [
+    -5.3,
+    -2.25,
+    0.2
+   ],
+   "escala": [
+    2.6,
+    2.0,
+    0.4
+   ]
+  },
+  {
+   "nombre": "suela_dentro_R",
+   "forma": "caja",
+   "material": "zapatos_sombra",
+   "capa": "ropa",
+   "linea": "",
+   "hueso": "foot_R",
+   "pos": [
+    -2.5,
+    -2.25,
+    0.2
+   ],
+   "escala": [
+    3.0,
+    2.0,
+    0.4
+   ]
+  }
+ ]
+}

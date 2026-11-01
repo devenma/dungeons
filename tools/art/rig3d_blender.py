@@ -215,11 +215,12 @@ R = scene.render; R.engine = "BLENDER_EEVEE"; R.film_transparent = True
 scene.view_settings.view_transform = "Standard"
 
 
-def canvas(size):
+def canvas(size, zoom=1.0):
     # Suelo a 17 px del borde inferior, como el ancla de las hojas / ground 17 px above the bottom, like the sheet anchor
+    # zoom: px por unidad del modelo (1 = la figura mide lo que dice la receta) / px per model unit
     ground = size - 19  # el último píxel del pie, contorno incluido, cae en la fila del ancla (64 - 17 = 47)
-    R.resolution_x = R.resolution_y = size; cam.data.ortho_scale = size
-    below = ground + 0.5 - size / 2
+    R.resolution_x = R.resolution_y = size; cam.data.ortho_scale = size / zoom
+    below = (ground + 0.5 - size / 2) / zoom
     cam.location = Vector((0, -200 * math.cos(TILT), below / math.cos(TILT) + 200 * math.sin(TILT)))
     return ground
 
@@ -411,7 +412,7 @@ else:
             nt.links.new(comb.outputs[0], em.inputs[0]); nt.links.new(em.outputs[0], out.inputs[0])
             ID_MATS[o.name] = m
         meta["partes"] = [{"nombre": o.name, "capa": p.get("capa", "arma" if p.get("grupo") == "espada" else "efectos3d"),
-                           "linea": p.get("linea")} for p, o in PARTS]
+                           "linea": p.get("linea"), "material": p.get("material")} for p, o in PARTS]
 
     # Pasada de normales: normal en espacio de cámara (x derecha, y arriba, z hacia la cámara) codificada n * 0.5 + 0.5,
     # como espera un normal map 2D de Godot / normals pass: camera-space normal encoded n * 0.5 + 0.5, as Godot 2D expects
@@ -441,7 +442,7 @@ else:
             for sl, mat in zip(o.material_slots, saved[o.name]): sl.material = mat
 
     for anim in JOB["anims"]:
-        size = anim.get("lienzo", 64); canvas(size)
+        size = anim.get("lienzo", 64); canvas(size, anim.get("zoom", 1.0))
         frames = anim["cuadros"]
         project = lambda w: [round(c, 2) for c in (world_to_camera_view(scene, cam, w).x * size,
                                                   (1 - world_to_camera_view(scene, cam, w).y) * size)]
