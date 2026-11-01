@@ -142,6 +142,29 @@ diferencia entre dos rondas rechazadas y una base aprobable.
 - **Poses de estrés:** `rig3d.py estres <receta> --salida <dir>` (poses de `tools/art/estres.json`) antes de animar:
   piel que asoma, suelas bajo la fila 47 y piernas que atraviesan la pollera, por cuadro.
 
+## Personajes por módulos
+
+Un personaje es una receta corta que junta módulos de `art/source/modulos/` con `"incluir"`; las variantes viven en
+`art/source/variantes/<nombre>/malla.json`. Ejemplo: `art/source/maid_gato/3d/malla.json`.
+
+- **Orden:** cuerpo → cara → peinado → adorno de cabeza → ropa → calzado → arma. Los diccionarios se mezclan en
+  profundidad, las listas de partes se suman y la receta principal pisa a sus módulos.
+- **Reemplazar o quitar:** una parte con el mismo `nombre` en un módulo posterior se mezcla con la anterior;
+  `"quitar": true` la borra. Así la ropa le pide al cuerpo `{"nombre": "cuerpo", "tronco": false}` y
+  `{"nombre": "brazo", "desde": 0.6}`, y el calzado `{"nombre": "pierna", "pie": false}`.
+- **Contrato del cuerpo:** define las proporciones, el cráneo (`cuerpo.cabeza`) y las rampas `piel_sombra`,
+  `piel_plana`, `piel_mano` y `pierna` (piel por defecto; el calzado la redefine para las medias). No lleva la parte
+  `cabeza`: la pone la cara. Queda neutro (sin saber de la ropa).
+- **Anclas:** las piezas sueltas (cuello, moños, mano, suelas) usan `"relativo": [hueso, "cabeza"|"cola"]` para
+  seguir al hueso en cualquier cuerpo.
+- **Cabeza:** peinado, orejas y ojos declaran `"craneo"` (los radios de la cabeza sobre la que se midieron) y se
+  escalan solos a otro cráneo.
+- **Animaciones compartidas:** si un personaje no tiene un hueso que la animación pide (por ejemplo, sin orejas), se
+  ignora.
+- **Pendiente para que sea "enchufar y listo":** anclar los moños a la superficie del pecho y no al hueso, decidir si
+  la forma de la cabeza es del cuerpo o de la cara, largo de la pollera según el largo de pierna, y un comando que
+  arme las láminas de variantes.
+
 ## Cómo medir
 
 Se mide con dos cámaras, cada una para lo suyo:
