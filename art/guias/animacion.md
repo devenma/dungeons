@@ -30,12 +30,12 @@ render y con Sam.
   cada fase al tiempo de su `SwingData`; las duraciones del JSON solo reparten el peso entre los cuadros de una fase.
 - Hoy una sola hoja `attack` sirve para los 3 golpes del combo. **Propuesta:** una hoja por golpe; pide un cambio
   chico en `PlayerAnimator`. Mientras tanto se entregan igual, con la misma estructura 2+1+2.
-- Pisadas (polvo y sonido) en `FOOTSTEP_FRAMES = [0, 2]`, pensado para la caminata vieja de 4 cuadros. Con 8 cuadros
-  tiene que ser `[0, 4]`.
-- La caminata se reproduce ×1,5 (`WALK_ANIMATION_SPEED`), un parche de la hoja vieja. **Propuesta:** con la hoja
-  nueva, volver a 1,0 para que las duraciones del JSON sean las de pantalla.
-- `kit_sprite.gd` usa un solo ancla para todas las hojas del sprite. **Propuesta:** ancla por animación, para mezclar
-  hojas de 64 y de 96.
+- Pisadas (polvo y sonido): `PlayerAnimator.footstep_frames(cantidad)` devuelve el cuadro 0 y el de la mitad del
+  ciclo ([0, 2] con 4 cuadros, [0, 4] con 8).
+- Velocidad por hoja: clave opcional `"speed"` en el JSON (1 si falta). La hoja vieja del aventurero lleva 1,5; las
+  de rig3d juegan a 1,0, así que las duraciones del JSON son las de pantalla.
+- `kit_sprite.gd` guarda el ancla de cada hoja y la aplica al cambiar de animación: se pueden mezclar hojas de 48, 64
+  y 96.
 - Correr, dash, bloqueo, parry, sentarse, golpe recibido y muerte todavía no los reproduce el juego (D26).
 
 ## 2. El archivo de animación
@@ -445,6 +445,11 @@ Un mismo JSON sale en las 4 direcciones: lo que no se lee en una se arregla con 
   efectos y la telegrafía; la sangre fresca es uno de los pocos acentos.
 - Paleta fija y contorno de color en su capa salen después del render: el movimiento no puede dejar islas de 1 px,
   porque el contorno las vuelve manchas.
+- **Herramientas candidatas para efectos sueltos** (fuego, humo, rayos, explosiones, magia), todavía sin elegir:
+  el plugin pixelbolt (fuentes de fluidos y partículas, local), el banco de efectos de PixelLab (`vfx_workbench`) y
+  el skill [codixel](https://github.com/mankidev/codixel) (MIT; efectos de fuego, humo y rayos dibujados por código
+  con bandas y tramado sobre paleta limitada). Antes de elegir, probar el mismo efecto con las tres y juzgarlo a ×4
+  sobre la cripta oscura.
 
 ## 9. Revisión
 
@@ -493,6 +498,15 @@ una sección de esta guía, se corrige la sección en el mismo cambio y la lecci
 - AAAA-MM-DD, <acción> <dirección>: <qué estaba mal>. Regla: <la regla que lo evita>.
 ```
 
+- 2026-11-01, caminar este/oeste: la mano se leía como muslo. Regla: el brazo pasa hacia adelante (vaivén de -28 a
+  +4 aprox.) y la mano cae sobre el delantal claro, no sobre la pollera oscura; el codo dobla más cuando el brazo va
+  atrás. Sin clavícula en el rig, el giro desde el hombro casi no se ve.
+- 2026-11-01, caminar sur: en el paso, el pie de apoyo va atrás y la cámara lo sube 1 fila: con pierna corta toca el
+  piso la punta del pie libre. Medir la fila 47 en las 4 direcciones antes de mover los pies.
+- 2026-11-01, caminar sur: el puño desaparecía cuando el brazo iba hacia la cámara. Regla: `afuera` mayor cuando el
+  brazo va atrás, para que la manga no tape el puño.
+- 2026-11-01, caminar este/oeste: el delantal hacía "sierra". Regla: el delantal no sigue a los muslos ni cambia de
+  largo (`skirt_F` sin seguimiento).
 - 2026-11-01, caminar sur: los hombros se balanceaban de más (el pecho compensaba la cadera con 10°). Regla:
   balanceo de cadera chico y hombros quietos.
 - 2026-11-01, caminar sur: el moño del cuello se deformaba con el resorte y volvía la "lengua". Regla: lo rígido

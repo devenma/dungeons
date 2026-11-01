@@ -131,6 +131,14 @@ diferencia entre dos rondas rechazadas y una base aprobable.
 - **Tela con normales del reposo** (`normales_reposo` en la rampa): el tono no salta cuando los sectores giran.
 - **Partes lejanas:** `ocultar_lejos` oculta la mano del lado lejano de perfil (la cámara la dibuja ~6 px más
   arriba que la cercana). Ojo en los ataques de perfil: esa mano desaparece.
+- **Brazos de perfil:** con la cámara a 22°, la mano del lado cercano se dibuja unas 3 filas más abajo que de frente
+  (está a ~8 px del centro). `cuerpo.plano_brazo` afina el brazo de perfil; el puño va por encima de la cinturilla.
+  Si la mano baja hasta la pollera y pivota a la altura de la cadera, se lee como un muslo.
+- **Orejas de tela:** el 5.º valor de `cuerpo.orejas` crea `ear_tip_L/R` (dobla solo la punta); `punta_1px` deja la
+  punta siempre de 1 px.
+- **Contorno entre las piernas:** no se dibuja (regla de Sam), pero `contorno_hueco` conserva el contorno de un
+  material claro (medias) en huecos de 3 px o más.
+- **Delantal con cuerpo de perfil:** `"grosor"` en un parche crea los cantos.
 - **Poses de estrés:** `rig3d.py estres <receta> --salida <dir>` (poses de `tools/art/estres.json`) antes de animar:
   piel que asoma, suelas bajo la fila 47 y piernas que atraviesan la pollera, por cuadro.
 
