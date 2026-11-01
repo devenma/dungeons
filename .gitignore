@@ -25,3 +25,8 @@ assets/References/
 
 # Ignore Atlassian IDE files
 .atl
+# Caché de Python de tools/art
+__pycache__/
+
+# Pruebas de arte (capturas, renders y scripts de prueba): se guardan en local, no se versionan
+art/pruebas/
