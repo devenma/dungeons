@@ -1,0 +1,316 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/preview/guild_preview.gd" id="1_root"]
+[ext_resource type="Script" path="res://scripts/preview/guild_preview_room.gd" id="2_room"]
+[ext_resource type="Texture2D" path="res://assets/art/guild_preview/fondo.png" id="3_fondo"]
+[ext_resource type="Texture2D" path="res://assets/art/guild_preview/fondo_llamas.png" id="4_llamas"]
+[ext_resource type="Texture2D" path="res://assets/art/guild_preview/rug.png" id="5_rug"]
+[ext_resource type="Script" path="res://scripts/preview/preview_player.gd" id="6_player"]
+[ext_resource type="Script" path="res://scripts/visual/kit_sprite.gd" id="7_kit"]
+[ext_resource type="PackedScene" path="res://scenes/preview/bench.tscn" id="8_bench"]
+[ext_resource type="Texture2D" path="res://assets/art/guild_preview/bench_n.png" id="9_bench_n"]
+[ext_resource type="Texture2D" path="res://assets/art/guild_preview/bench_side.png" id="10_bench_side"]
+[ext_resource type="Script" path="res://scripts/dungeon/torch_flicker.gd" id="11_flicker"]
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_unshaded"]
+light_mode = 1
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_halo"]
+blend_mode = 1
+light_mode = 1
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_n"]
+size = Vector2(480, 80)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_side"]
+size = Vector2(12, 270)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_s"]
+size = Vector2(480, 8)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_feet"]
+size = Vector2(12, 6)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bench_n"]
+size = Vector2(44, 18)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bench_n_interact"]
+size = Vector2(52, 42)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bench_side"]
+size = Vector2(14, 34)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bench_side_interact"]
+size = Vector2(42, 46)
+
+[sub_resource type="Gradient" id="Gradient_falloff"]
+offsets = PackedFloat32Array(0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1)
+colors = PackedColorArray(1, 1, 1, 1, 0.765625, 0.765625, 0.765625, 1, 0.5625, 0.5625, 0.5625, 1, 0.390625, 0.390625, 0.390625, 1, 0.25, 0.25, 0.25, 1, 0.140625, 0.140625, 0.140625, 1, 0.0625, 0.0625, 0.0625, 1, 0.015625, 0.015625, 0.015625, 1, 0, 0, 0, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_falloff"]
+gradient = SubResource("Gradient_falloff")
+width = 256
+height = 256
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[sub_resource type="Gradient" id="Gradient_halo"]
+offsets = PackedFloat32Array(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1)
+colors = PackedColorArray(1, 1, 1, 1, 0.914, 0.914, 0.914, 1, 0.698, 0.698, 0.698, 1, 0.445, 0.445, 0.445, 1, 0.237, 0.237, 0.237, 1, 0.105, 0.105, 0.105, 1, 0.039, 0.039, 0.039, 1, 0.003, 0.003, 0.003, 1, 0, 0, 0, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_halo_fire"]
+gradient = SubResource("Gradient_halo")
+width = 122
+height = 122
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_halo_candle"]
+gradient = SubResource("Gradient_halo")
+width = 68
+height = 68
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_halo_sconce"]
+gradient = SubResource("Gradient_halo")
+width = 50
+height = 50
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[node name="GuildPreview" type="Node2D"]
+script = ExtResource("1_root")
+
+[node name="Room" type="Node2D" parent="."]
+script = ExtResource("2_room")
+
+[node name="Fondo" type="Sprite2D" parent="Room"]
+light_mask = 2
+texture = ExtResource("3_fondo")
+centered = false
+
+[node name="Llamas" type="Sprite2D" parent="Room"]
+material = SubResource("CanvasItemMaterial_unshaded")
+texture = ExtResource("4_llamas")
+centered = false
+
+[node name="Rug" type="Sprite2D" parent="Room"]
+light_mask = 2
+position = Vector2(240, 232)
+texture = ExtResource("5_rug")
+centered = false
+offset = Vector2(-64, -80)
+
+[node name="Walls" type="StaticBody2D" parent="Room"]
+collision_mask = 0
+
+[node name="North" type="CollisionShape2D" parent="Room/Walls"]
+position = Vector2(240, 40)
+shape = SubResource("RectangleShape2D_wall_n")
+
+[node name="West" type="CollisionShape2D" parent="Room/Walls"]
+position = Vector2(6, 135)
+shape = SubResource("RectangleShape2D_wall_side")
+
+[node name="East" type="CollisionShape2D" parent="Room/Walls"]
+position = Vector2(474, 135)
+shape = SubResource("RectangleShape2D_wall_side")
+
+[node name="South" type="CollisionShape2D" parent="Room/Walls"]
+position = Vector2(240, 266)
+shape = SubResource("RectangleShape2D_wall_s")
+
+[node name="Things" type="Node2D" parent="Room"]
+y_sort_enabled = true
+
+[node name="Player" type="CharacterBody2D" parent="Room/Things" groups=["preview_characters", "player"]]
+position = Vector2(160, 222)
+collision_layer = 2
+collision_mask = 1
+motion_mode = 1
+script = ExtResource("6_player")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Room/Things/Player"]
+position = Vector2(0, -3)
+shape = SubResource("RectangleShape2D_feet")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Room/Things/Player"]
+script = ExtResource("7_kit")
+sheet_prefix = "res://assets/art/characters/pelirroja/pelirroja_"
+animations = PackedStringArray("idle", "walk", "sit")
+looping = PackedStringArray("idle", "walk", "sit")
+
+[node name="BenchS" parent="Room/Things" instance=ExtResource("8_bench")]
+position = Vector2(240, 128)
+
+[node name="BenchN" parent="Room/Things" instance=ExtResource("8_bench")]
+position = Vector2(240, 187)
+facing = "N"
+
+[node name="Sprite2D" parent="Room/Things/BenchN" index="0"]
+texture = ExtResource("9_bench_n")
+offset = Vector2(-32, -13)
+
+[node name="CollisionShape2D" parent="Room/Things/BenchN" index="1"]
+position = Vector2(0, 9)
+shape = SubResource("RectangleShape2D_bench_n")
+
+[node name="Seat" parent="Room/Things/BenchN" index="2"]
+position = Vector2(0, 8)
+
+[node name="StandPoint" parent="Room/Things/BenchN" index="3"]
+position = Vector2(0, 35)
+
+[node name="CollisionShape2D" parent="Room/Things/BenchN/Interact" index="0"]
+position = Vector2(0, 19)
+shape = SubResource("RectangleShape2D_bench_n_interact")
+
+[node name="Hint" parent="Room/Things/BenchN/Interact" index="1"]
+offset_top = 42.0
+offset_bottom = 54.0
+
+[node name="BenchE" parent="Room/Things" instance=ExtResource("8_bench")]
+position = Vector2(356, 206)
+facing = "E"
+
+[node name="Sprite2D" parent="Room/Things/BenchE" index="0"]
+texture = ExtResource("10_bench_side")
+offset = Vector2(-16, -4)
+
+[node name="CollisionShape2D" parent="Room/Things/BenchE" index="1"]
+position = Vector2(0, 17)
+shape = SubResource("RectangleShape2D_bench_side")
+
+[node name="Seat" parent="Room/Things/BenchE" index="2"]
+position = Vector2(0, 22)
+
+[node name="StandPoint" parent="Room/Things/BenchE" index="3"]
+position = Vector2(-22, 24)
+
+[node name="CollisionShape2D" parent="Room/Things/BenchE/Interact" index="0"]
+position = Vector2(-9, 21)
+shape = SubResource("RectangleShape2D_bench_side_interact")
+
+[node name="BenchW" parent="Room/Things" instance=ExtResource("8_bench")]
+position = Vector2(428, 206)
+facing = "W"
+
+[node name="Sprite2D" parent="Room/Things/BenchW" index="0"]
+texture = ExtResource("10_bench_side")
+offset = Vector2(-16, -4)
+
+[node name="CollisionShape2D" parent="Room/Things/BenchW" index="1"]
+position = Vector2(0, 17)
+shape = SubResource("RectangleShape2D_bench_side")
+
+[node name="Seat" parent="Room/Things/BenchW" index="2"]
+position = Vector2(0, 22)
+
+[node name="StandPoint" parent="Room/Things/BenchW" index="3"]
+position = Vector2(24, 24)
+
+[node name="CollisionShape2D" parent="Room/Things/BenchW/Interact" index="0"]
+position = Vector2(9, 21)
+shape = SubResource("RectangleShape2D_bench_side_interact")
+
+[node name="Lights" type="Node2D" parent="."]
+
+[node name="Fireplace" type="PointLight2D" parent="Lights" groups=["preview_lights"]]
+position = Vector2(64, 66)
+color = Color(1, 0.58, 0.28, 1)
+energy = 1.15
+texture = SubResource("GradientTexture2D_falloff")
+texture_scale = 1.328125
+script = ExtResource("11_flicker")
+
+[node name="FloorShadows" type="PointLight2D" parent="Lights/Fireplace" groups=["preview_lights"]]
+color = Color(1, 0.58, 0.28, 1)
+energy = 1.15
+range_item_cull_mask = 2
+shadow_enabled = true
+shadow_item_cull_mask = 2
+texture = SubResource("GradientTexture2D_falloff")
+texture_scale = 1.328125
+script = ExtResource("11_flicker")
+
+[node name="Halo" type="Sprite2D" parent="Lights/Fireplace"]
+modulate = Color(0.4025, 0.2335, 0.1127, 1)
+material = SubResource("CanvasItemMaterial_halo")
+texture = SubResource("GradientTexture2D_halo_fire")
+
+[node name="Candelabra" type="PointLight2D" parent="Lights" groups=["preview_lights"]]
+position = Vector2(262, 150)
+color = Color(1, 0.72, 0.42, 1)
+energy = 0.9
+texture = SubResource("GradientTexture2D_falloff")
+texture_scale = 0.7421875
+script = ExtResource("11_flicker")
+flicker_seed = 11
+
+[node name="FloorShadows" type="PointLight2D" parent="Lights/Candelabra" groups=["preview_lights"]]
+color = Color(1, 0.72, 0.42, 1)
+energy = 0.9
+range_item_cull_mask = 2
+shadow_enabled = true
+shadow_item_cull_mask = 2
+texture = SubResource("GradientTexture2D_falloff")
+texture_scale = 0.7421875
+script = ExtResource("11_flicker")
+flicker_seed = 11
+
+[node name="Halo" type="Sprite2D" parent="Lights/Candelabra"]
+modulate = Color(0.315, 0.2268, 0.1323, 1)
+material = SubResource("CanvasItemMaterial_halo")
+texture = SubResource("GradientTexture2D_halo_candle")
+
+[node name="Sconce" type="PointLight2D" parent="Lights" groups=["preview_lights"]]
+position = Vector2(160, 30)
+color = Color(1, 0.72, 0.42, 1)
+energy = 0.55
+range_item_cull_mask = 3
+texture = SubResource("GradientTexture2D_falloff")
+texture_scale = 0.546875
+script = ExtResource("11_flicker")
+flicker_seed = 3
+
+[node name="Halo" type="Sprite2D" parent="Lights/Sconce"]
+modulate = Color(0.1925, 0.1386, 0.0809, 1)
+material = SubResource("CanvasItemMaterial_halo")
+texture = SubResource("GradientTexture2D_halo_sconce")
+
+[node name="WindowWest" type="PointLight2D" parent="Lights" groups=["preview_lights"]]
+position = Vector2(216, 60)
+color = Color(0.45, 0.55, 0.9, 1)
+energy = 0.25
+range_item_cull_mask = 3
+texture = SubResource("GradientTexture2D_falloff")
+texture_scale = 0.3125
+
+[node name="WindowEast" type="PointLight2D" parent="Lights" groups=["preview_lights"]]
+position = Vector2(328, 60)
+color = Color(0.45, 0.55, 0.9, 1)
+energy = 0.25
+range_item_cull_mask = 3
+texture = SubResource("GradientTexture2D_falloff")
+texture_scale = 0.3125
+
+[node name="CanvasModulate" type="CanvasModulate" parent="."]
+color = Color(0.304, 0.288, 0.4, 1)
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="DarknessLabel" type="Label" parent="UI"]
+offset_left = 4.0
+offset_top = 2.0
+offset_right = 120.0
+offset_bottom = 14.0
+text = "Oscuridad: 0.60"
+
+[editable path="Room/Things/BenchN"]
+[editable path="Room/Things/BenchE"]
+[editable path="Room/Things/BenchW"]

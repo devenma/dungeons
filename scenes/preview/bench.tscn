@@ -1,0 +1,53 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/preview/bench.gd" id="1_bench"]
+[ext_resource type="Texture2D" path="res://assets/art/guild_preview/bench_s_m.png" id="2_sprite"]
+[ext_resource type="Script" path="res://scripts/guild/guild_interactable.gd" id="3_interact"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_footprint"]
+size = Vector2(38, 14)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_interact"]
+size = Vector2(52, 36)
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_unshaded"]
+light_mode = 1
+
+[node name="Bench" type="StaticBody2D" groups=["preview_benches"]]
+collision_mask = 0
+script = ExtResource("1_bench")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_sprite")
+centered = false
+offset = Vector2(-24, -18)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, 7)
+shape = SubResource("RectangleShape2D_footprint")
+
+[node name="Seat" type="Marker2D" parent="."]
+position = Vector2(0, 8)
+
+[node name="StandPoint" type="Marker2D" parent="."]
+position = Vector2(0, 30)
+
+[node name="Interact" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("3_interact")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Interact"]
+position = Vector2(0, 16)
+shape = SubResource("RectangleShape2D_interact")
+
+[node name="Hint" type="Label" parent="Interact"]
+visible = false
+z_index = 1
+material = SubResource("CanvasItemMaterial_unshaded")
+offset_left = -40.0
+offset_top = -34.0
+offset_right = 40.0
+offset_bottom = -22.0
+text = "Sentarse [F]"
+horizontal_alignment = 1

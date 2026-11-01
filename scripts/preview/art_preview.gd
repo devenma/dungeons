@@ -65,10 +65,15 @@ func _fit_window(root: Window) -> void:
 	root.position = usable.position + (usable.size - root.size) / 2
 
 
+## Poses de captura; una escena hija las sobrescribe / Capture poses; a child scene overrides them.
+func _shots() -> Array:
+	return SHOTS
+
+
 func _capture(dir: String) -> void:
 	DirAccess.make_dir_recursive_absolute(dir)
 	player.set_physics_process(false)
-	for shot: Array in SHOTS:
+	for shot: Array in _shots():
 		player.position = shot[1]
 		player.face(shot[2])
 		await _save(dir.path_join(shot[0]))
