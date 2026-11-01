@@ -355,7 +355,8 @@ def export(anim, frames, out, prefix):
         for j, d in enumerate(DIRS):
             im = Image.fromarray(flatten(frames[d][i], d != "north")); c.paste(im, (j * size, 0), im)
         strip.append(c.resize((c.width * 3, c.height * 3), Image.NEAREST))
-    strip[0].save(base + ".gif", save_all=True, append_images=strip[1:], duration=ms, loop=0)
+    # Los navegadores pasan a 100 ms los cuadros de menos de 20 (el modo denso) / browsers turn < 20 ms frames into 100 ms
+    strip[0].save(base + ".gif", save_all=True, append_images=strip[1:], duration=[max(round(m), 20) for m in ms], loop=0)
     s = 3; review = Image.new("RGB", (n * size * s, len(DIRS) * (size * s + 14)), BG)
     draw = ImageDraw.Draw(review)
     for r, d in enumerate(DIRS):
@@ -390,7 +391,7 @@ def export_skeleton(anim, frames, meta, out, soles=(53,)):
     os.makedirs(out, exist_ok=True)
     s = 4; sheet = Image.new("RGB", (n * size * s, len(DIRS) * (size * s + 14)), BG); draw = ImageDraw.Draw(sheet)
     for r, d in enumerate(DIRS):
-        sk = [meta[f"{name}_{d}_{i}"]["esqueleto"] for i in range(n)]
+        sk = [meta[f"{name}_{d}_{i}"]["esqueleto"] for i in anim.get("_origen", range(n))]
         for dy, tag in [(0, "")] + [(row - (size - SOLE_MARGIN), f"_suelas{row}") for row in soles]:
             data = [[{"x": round(f[k][0] / size, 4), "y": round((f[k][1] + dy) / size, 4), "label": k} for k in POSE_LABELS]
                     for f in sk]
@@ -434,15 +435,31 @@ def normal_sheet(anim, frames, raw, base, dirs):
         if d not in dirs: continue
         for i, lay in enumerate(frames[d]):
             alpha = flatten({k: v for k, v in lay.items() if k != "Efectos"})[..., 3] > 0
-            path = os.path.join(raw, f"{anim['nombre']}_{d}_{i}_n.png")
+            path = os.path.join(raw, f"{anim['nombre']}_{d}_{anim.get('_origen', range(n))[i]}_n.png")
             sheet.paste(Image.fromarray(normal_frame(path, alpha)), (i * size, r * size))
     sheet.save(base + "_normales.png")
 
 
+def fundir(anim, frames, dirs):
+    # Cuadros seguidos con los mismos píxeles en todas las direcciones se funden y suman su duración (la hoja comparte
+    # duraciones entre filas); anim["_origen"] guarda qué cuadro renderizado quedó / consecutive frames with the same
+    # pixels in every direction merge and add up their durations; anim["_origen"] keeps the rendered frame index
+    keep, ms = [0], [anim["duraciones_ms"][0]]
+    for i in range(1, len(anim["cuadros"])):
+        j = keep[-1]
+        if all(frames[d][i].keys() == frames[d][j].keys() and all(np.array_equal(frames[d][i][k], frames[d][j][k])
+                                                                   for k in frames[d][i]) for d in dirs):
+            ms[-1] += anim["duraciones_ms"][i]
+        else: keep.append(i); ms.append(anim["duraciones_ms"][i])
+    for d in DIRS: frames[d] = [frames[d][i] for i in keep]
+    anim["_origen"], anim["cuadros"], anim["duraciones_ms"] = keep, [anim["cuadros"][i] for i in keep], ms
+    if "etiquetas" in anim: anim["etiquetas"] = [anim["etiquetas"][i] for i in keep]
+
+
 def cmd_frames(args):
     model = load_model(args.modelo)
-    anims = [motion.plantar(motion.expand(json.load(open(p, encoding="utf-8"))), model.get("cuerpo"))
-             for p in args.anims]
+    anims = [motion.plantar(motion.limitar(motion.expand(json.load(open(p, encoding="utf-8"))), getattr(args, "denso", None)),
+                            model.get("cuerpo")) for p in args.anims]
     dirs = args.dirs.split(",") if args.dirs else DIRS
     raw = os.path.join(args.salida, "_render")
     run_blender({"modelo": model, "anims": anims, "dirs": dirs, "salida": raw, "modo": "cuadros", "normales": args.normales})
@@ -466,6 +483,7 @@ def cmd_frames(args):
                     frames[d].append(layers_parts(img, ids, parts, fm, model, size, d in ("south", "north"), fx, pal))
                 else:
                     frames[d].append(layers(img, size, d in ("south", "north"), fx, pal))
+        if anim.get("fundir") or getattr(args, "fundir", False): fundir(anim, frames, dirs)
         base = export(anim, frames, args.salida, prefix)
         report = {k: v for k, v in meta.items() if k.startswith(anim["nombre"] + "_")}
         if parts: report["partes"] = parts
@@ -587,6 +605,8 @@ def main():
     f = sub.add_parser("cuadros"); f.add_argument("modelo"); f.add_argument("anims", nargs="+")
     f.add_argument("--salida", required=True); f.add_argument("--dirs"); f.add_argument("--prefijo")
     f.add_argument("--esqueleto", help="carpeta para los esqueletos OpenPose por cuadro / folder for per-frame OpenPose skeletons")
+    f.add_argument("--denso", type=int, help="interpola N-1 cuadros entre cada par, solo para mirar (truco 3) / look-only in-betweens")
+    f.add_argument("--fundir", action="store_true", help="funde cuadros seguidos iguales sumando su duración / merge equal frames")
     f.add_argument("--normales", action="store_true",
                    help="hoja <base>_normales.png para luz 2D en Godot / <base>_normales.png sheet for Godot 2D lighting")
     v = sub.add_parser("vistas"); v.add_argument("modelo"); v.add_argument("--salida", required=True)

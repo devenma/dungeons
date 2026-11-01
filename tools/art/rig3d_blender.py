@@ -33,6 +33,11 @@ CHANNELS = {
     # "afuera": como "lado" pero en espejo, abre las dos puntas hacia afuera / like "lado" but mirrored: tips go outward
     "oreja": {"adelante": (0, 1), "lado": (2, -1), "afuera": (2, None)},
     "arma": {"doblar": (0, -1), "girar": (1, 1)},
+    # Clavícula falsa: no gira, traslada el hombro en px (eje local X izquierda, Y arriba, Z adelante, como hips)
+    # Fake clavicle: no rotation, it moves the shoulder in px (local X left, Y up, Z forward, like hips)
+    "clavicula": {"afuera": (0, None), "subir": (1, 1), "adelantar": (2, 1)},
+    # Mano: solo el canal "escala", común a todos los huesos / hand: only the "escala" channel shared by every bone
+    "mano": {},
 }
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -282,14 +287,19 @@ def pose(frame, base_yaw):
         # Animations are shared: a bone this character lacks (ears) is skipped
         if bone not in MODEL["huesos"]: continue
         b = MODEL["huesos"][bone]; table = CHANNELS[b["tipo"]]
-        rot = [0.0, 0.0, 0.0]
+        rot, loc, sc = [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [1.0, 1.0, 1.0]
         for chan, value in chans.items():
             if chan == "largo":  # estira o acorta el hueso: la pollera sobre los muslos al sentarse / bone length factor
-                PB[bone].scale = (1, value, 1); continue
+                sc[1] *= value; continue
+            if chan == "escala":  # agranda o achica el hueso y lo que cuelga de él (la mano) / scales the bone and its children
+                sc = [v * value for v in sc]; continue
             axis, sign = table[chan]
             if sign is None: sign = 1 if bone.endswith("_R") else -1  # afuera: espejo por lado / mirrored per side
+            if b["tipo"] == "clavicula":
+                loc[axis] += -sign * value if chan == "afuera" else sign * value; continue
             rot[axis] += math.radians(sign * value)
-        PB[bone].rotation_euler = rot
+        PB[bone].rotation_euler = rot; PB[bone].scale = sc
+        if b["tipo"] == "clavicula": PB[bone].location = loc
     shown = set(frame.get("mostrar", []))
     scales = frame.get("escala_piezas", {})
     for p, o in PARTS:
@@ -300,6 +310,7 @@ def pose(frame, base_yaw):
             # Side facing away from the camera (in profile): the far ear does not stack over the near one
             k, deg = p["ocultar_lejos"]; yaw = math.radians(base_yaw + root.get("giro", 0))
             o.hide_render = o.hide_render or -k * math.sin(yaw) < -math.cos(math.radians(deg))
+        if p.get("ocultar_si") in shown: o.hide_render = True  # la reemplaza otra versión / replaced by another version
         s = scales.get(g) or scales.get(p["nombre"])
         o.scale = s if s else (1, 1, 1)
     bpy.context.view_layer.update()
@@ -310,7 +321,7 @@ ID_DEPTH = 128
 # Pasos intermedios con los que se muestrea el recorrido de la hoja para la estela / in-between steps sampled for the trail
 TRAIL_STEPS = 8
 # Valor de reposo de los canales que no valen 0 / rest value of channels that are not 0
-REST = {"aplastar": 1.0, "largo": 1.0}
+REST = {"aplastar": 1.0, "largo": 1.0, "escala": 1.0}
 
 
 def blend(a, b, t):

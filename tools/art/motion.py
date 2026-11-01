@@ -5,6 +5,9 @@
 import copy, math
 
 DEFAULT_MS = 100
+# Canales cuyo reposo no es 0 al interpolar (solo los nuevos: largo y aplastar quedan como estaban)
+# Channels whose rest is not 0 when interpolating (only new ones: largo and aplastar stay as they were)
+REPOSO = {"escala": 1.0}
 
 
 def _path(name):
@@ -69,7 +72,8 @@ def expand(anim):
             t = 0.0 if end == k0["en"] else (i - k0["en"]) / (end - k0["en"])
             w = ease(t, kind)
             a, b = _flat(k0), _flat(k1)
-            values = {c: a.get(c, 0.0) + (b.get(c, 0.0) - a.get(c, 0.0)) * w for c in set(a) | set(b)}
+            r = lambda c: REPOSO.get(c[2], 0.0)
+            values = {c: a.get(c, r(c)) + (b.get(c, r(c)) - a.get(c, r(c))) * w for c in set(a) | set(b)}
             extra = {k: copy.deepcopy(k0[k]) for k in ("mostrar", "escala_piezas") if k in k0}
             frames.append(_unflat(values, extra))
     n = len(frames)
@@ -165,4 +169,39 @@ def plantar(anim, cuerpo):
         pose = fr.setdefault("pose", {}); hb = pose.get("hips", {})
         for side, args in pies.items():
             pose.update(_leg(side, hips.get("subir", 0), c, *args, girar=hb.get("girar", 0), lado=hb.get("lado", 0)))
+    return anim
+
+
+def limitar(anim, denso=None):
+    """Animación limitada (truco 3): "denso": N interpola N-1 cuadros entre cada par para mirar el movimiento;
+    "elegir": [índices del denso] deja esos cuadros y cada uno dura hasta el siguiente. denso (CLI) fuerza el modo de
+    mirar: interpola y no elige. Va antes de plantar: interpola los "pies" y el IK los resuelve en cada cuadro.
+    Limited animation (trick 3): "denso": N inserts N-1 in-betweens per pair to look at the motion; "elegir": [dense
+    indices] keeps those frames, each lasting until the next. denso (CLI) forces look mode: interpolate, no picking."""
+    n = denso or anim.get("denso")
+    if not n or n <= 1: return anim
+    frames, ms, loop = anim["cuadros"], anim["duraciones_ms"], anim.get("bucle", False)
+    out, dur = [], []
+    for i, a in enumerate(frames):
+        b = frames[(i + 1) % len(frames)] if loop or i + 1 < len(frames) else a
+        fa, fb = _flat(a), _flat(b)
+        for k in range(n):
+            t = k / n; r = lambda c: REPOSO.get(c[2], 0.0)
+            vals = {c: fa.get(c, r(c)) + (fb.get(c, r(c)) - fa.get(c, r(c))) * t for c in set(fa) | set(fb)}
+            f = _unflat(vals, {key: copy.deepcopy(a[key]) for key in ("mostrar", "escala_piezas") if key in a})
+            if "pies" in a:
+                f["pies"] = {s: [p if q is None or p is None else p + (q - p) * t for p, q in zip(a["pies"][s], b["pies"][s])]
+                             for s in a["pies"]}
+            out.append(f); dur.append(ms[i] / n)
+    pick = None if denso else anim.get("elegir")
+    if pick:
+        # Cada cuadro elegido dura hasta el siguiente; en bucle el último empalma con el primero; ms enteros sin
+        # perder el total / each picked frame lasts until the next; looping wraps; whole ms keeping the total
+        start = [sum(dur[:i]) for i in range(len(dur))]; total = sum(dur)
+        ends = [start[j] for j in pick[1:]] + [total + start[pick[0]] if loop else total]
+        cum = [round(e - start[pick[0]]) for e in ends]
+        dur = [c - p for c, p in zip(cum, [0] + cum[:-1])]
+        out = [out[j] for j in pick]
+    anim = {**anim, "cuadros": out, "duraciones_ms": dur}
+    if denso: anim.pop("etiquetas", None)
     return anim

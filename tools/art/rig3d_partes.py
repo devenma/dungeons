@@ -74,7 +74,16 @@ def esqueleto(c):
     for s, k in SIDE.items():
         sh = (k * sx, sy, nb + sz); el = add(sh, (k * math.sin(a) * c["brazo"][0], 0, -math.cos(a) * c["brazo"][0]))
         wr = add(el, (0, 0, -c["brazo"][1]))
-        bone(f"upper_{s}", sh, el, "chest", "miembro"); bone(f"fore_{s}", el, wr, f"upper_{s}", "codo")
+        padre = "chest"
+        if c.get("clavicula"):
+            # Clavícula falsa (truco del doble codo): pivote vertical de "clavicula" px que termina en el hombro y solo
+            # se traslada, así el brazo gira desde un hombro que se corre / fake clavicle: a vertical pivot ending at
+            # the shoulder that only translates, so the arm turns from a shoulder that shifts
+            bone(f"clavicle_{s}", add(sh, (0, 0, -c["clavicula"])), sh, "chest", "clavicula"); padre = f"clavicle_{s}"
+        bone(f"upper_{s}", sh, el, padre, "miembro"); bone(f"fore_{s}", el, wr, f"upper_{s}", "codo")
+        if c.get("mano_hueso"):
+            # Hueso de la mano (de la muñeca a la punta) para escalarla sola / hand bone, so it can scale on its own
+            bone(f"hand_{s}", wr, add(wr, (0, 0, -c.get("mano", 1.6))), f"fore_{s}", "mano")
     wy, wl = c["espada"]; hand = B["fore_R"]["cola"]
     bone("weapon_R", add(hand, (0, wy, 0)), add(hand, (0, wy, -wl)), "fore_R", "arma")
     for s, k in SIDE.items():
@@ -246,7 +255,9 @@ def p_brazo(s, M):
     sh, el, wr = up["cabeza"], up["cola"], fo["cola"]
     d = unit(sub(wr, el)); mano = c.get("mano", 1.6)
     pts = [add(sh, (-k * 1.6, 0, -1.0)), sh, el, wr, add(wr, mul(d, mano * 0.6)), add(wr, mul(d, mano))]
-    bones = ["chest", f"upper_{s['lado']}", f"fore_{s['lado']}", f"fore_{s['lado']}", f"fore_{s['lado']}"]
+    cl, hd = f"clavicle_{s['lado']}", f"hand_{s['lado']}"
+    hd = hd if hd in H else f"fore_{s['lado']}"
+    bones = [cl if cl in H else "chest", f"upper_{s['lado']}", f"fore_{s['lado']}", hd, hd]
     rad = [r[0] * 0.8, r[0], r[1], r[2], r[3], r[3] * 0.8]
     if s.get("desde") is not None:
         # Brazo desde una fracción del hueso upper (un anillo bajo el puño): sin piel tapada por la manga
@@ -772,10 +783,13 @@ def p_manga(s, M):
     H, lado = M["huesos"], s["lado"]; k = SIDE[lado]; bone = f"upper_{lado}"
     a, e = H[bone]["cabeza"], H[bone]["cola"]; nb = H["neck"]["cabeza"][2]
     sx, sz, alto, fondo = s["sisa"]; A = (k * sx, a[1], nb + sz); tm = s.get("mezcla", 0.3)
-    rings = [(A, (alto, fondo), w_tronco(H, A[2]))]
+    wt = lambda z: w_tronco(H, z)
+    if f"clavicle_{lado}" in H:  # con clavícula la sisa va mitad con ella / with a clavicle the armhole follows it halfway
+        wt = lambda z: mezcla((w_tronco(H, z), 0.5), ({f"clavicle_{lado}": 1}, 0.5))
+    rings = [(A, (alto, fondo), wt(A[2]))]
     for t, ra, rb in s["radios"]:
         q = smooth(t / tm)
-        rings.append((lerp(a, e, t), (ra, rb), mezcla((w_tronco(H, lerp(a, e, t)[2]), 1 - q), ({bone: 1}, q))))
+        rings.append((lerp(a, e, t), (ra, rb), mezcla((wt(lerp(a, e, t)[2]), 1 - q), ({bone: 1}, q))))
     m = tubo(rings, s.get("seg", 16), tuple(s.get("tapas", [0, 0])))
     if s.get("normales") == "capsula":
         B = rings[-1][0]; d = sub(B, A); L2 = max(dot(d, d), 1e-9)
@@ -824,7 +838,9 @@ def construir(s, M):
     linea = s["linea"] if "linea" in s else (f"{LINEA[s['tipo']]}_{lado}" if s["tipo"] in LINEA else "tronco")
     linea = linea.replace("<lado>", lado) or None
     m.update(nombre=s.get("nombre", s["tipo"]) + (f"_{lado}" if lado else ""), material=s["material"],
-             capa=s.get("capa", "ropa"), linea=linea, grupo=s.get("grupo"))
+             capa=s.get("capa", "ropa"), linea=linea, grupo=s.get("grupo") and s["grupo"].replace("<lado>", lado))
+    if s.get("ocultar_si"):  # grupo que la reemplaza cuando la animación lo muestra / group that replaces it when shown
+        m["ocultar_si"] = s["ocultar_si"].replace("<lado>", lado)
     if s.get("ocultar_lejos"):  # [lado, grados]: se oculta si ese costado mira lejos de la cámara / hidden facing away
         m["ocultar_lejos"] = [SIDE.get(lado, 1), s["ocultar_lejos"]]
     if s["tipo"] == "lofteo" and s.get("pesos") == "pollera":
