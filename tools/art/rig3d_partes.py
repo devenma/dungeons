@@ -410,7 +410,15 @@ def p_pelo(s, M):
     # la amplitud varía por mechón para que no queden barras parejas / amplitude varies per strand, no even bars
     m["mecha"] = [(0.5 + 0.5 * math.cos(math.radians(nm * lo + 25 * math.sin(math.radians(2 * la))))) ** 3
                   * (0.6 + 0.4 * math.cos(math.radians(3 * lo + 40))) for la, lo in m.pop("lalo")] if nm else None
-    if not nm: m.pop("mecha")
+    raya = s.get("raya")
+    if raya:
+        # "raya": [[x de cada línea (px desde el centro)], medio ancho, fuerza, desde y]: líneas de mechón que suben
+        # por adelante de la tapa (y < desde, px desde el centro) hasta la coronilla; fuerza > 1 oscurece la luz plena
+        # strand lines up the front of the cap (y < desde) to the crown; fuerza > 1 darkens full light too
+        xs_, a_, k_, y0 = (list(raya) + [1.0, 0.0])[:4]; prev = m["mecha"] or [0.0] * len(m["v"])
+        m["mecha"] = [max(prev[i], k_ * smooth((c[1] + y0 - v[1]) / 2) * max(math.exp(-((v[0] - c[0] - q) / a_) ** 2) for q in xs_))
+                      for i, v in enumerate(m["v"])]
+    if not m["mecha"]: m.pop("mecha")
     return m
 
 
@@ -521,6 +529,10 @@ def p_tarjeta(s, M):
             pe = smooth((u - rig) / max(1 - rig, 1e-3))
             w = mezcla(({"neck": 1}, 1 - pe), ({hueso: 1}, pe))
             mc = max([math.exp(-((v - (q + curvo * u * (1 if q > 0 else -1 if q < 0 else 0))) / 0.18) ** 2) for q in mch] or [0])
+            # "mechas_desde": las mechas empiezan a esa fracción del largo; "punta_oscura": desde ahí abajo todo oscuro
+            # strands start at that length fraction; "punta_oscura": everything below it is dark (the tips)
+            if u < s.get("mechas_desde", 0): mc = 0
+            if u >= s.get("punta_oscura", 2): mc = 1
             for sg, lst in ((1, caras[0]), (-1, caras[1])):
                 m["v"].append(add(base, mul(nr, sg * g))); m["w"].append(w); m["mecha"].append(mc)
                 fuera.append(mul(nr, sg)); lst.append(len(m["v"]) - 1)
@@ -538,7 +550,7 @@ def p_tarjeta(s, M):
         want = tuple(map(sum, zip(*[fuera[i] for i in f])))
         out.append(f if dot(nf, want) >= 0 else tuple(reversed(f)))
     m["f"] = out
-    if not mch: m.pop("mecha")
+    if not any(m["mecha"]): m.pop("mecha")
     return m
 
 

@@ -74,7 +74,7 @@ def expand(anim):
             a, b = _flat(k0), _flat(k1)
             r = lambda c: REPOSO.get(c[2], 0.0)
             values = {c: a.get(c, r(c)) + (b.get(c, r(c)) - a.get(c, r(c))) * w for c in set(a) | set(b)}
-            extra = {k: copy.deepcopy(k0[k]) for k in ("mostrar", "escala_piezas") if k in k0}
+            extra = {k: copy.deepcopy(k0[k]) for k in ("mostrar", "escala_piezas", "por_direccion") if k in k0}
             frames.append(_unflat(values, extra))
     n = len(frames)
     durations = anim.get("duraciones_ms") or [anim.get("ms", DEFAULT_MS)] * n
@@ -188,7 +188,7 @@ def limitar(anim, denso=None):
         for k in range(n):
             t = k / n; r = lambda c: REPOSO.get(c[2], 0.0)
             vals = {c: fa.get(c, r(c)) + (fb.get(c, r(c)) - fa.get(c, r(c))) * t for c in set(fa) | set(fb)}
-            f = _unflat(vals, {key: copy.deepcopy(a[key]) for key in ("mostrar", "escala_piezas") if key in a})
+            f = _unflat(vals, {key: copy.deepcopy(a[key]) for key in ("mostrar", "escala_piezas", "por_direccion") if key in a})
             if "pies" in a:
                 f["pies"] = {s: [p if q is None or p is None else p + (q - p) * t for p, q in zip(a["pies"][s], b["pies"][s])]
                              for s in a["pies"]}

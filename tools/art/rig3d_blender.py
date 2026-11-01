@@ -274,6 +274,19 @@ def pose(frame, base_yaw):
         for bone, chans in MODEL.get("pose_base", {}).items():
             for chan, value in chans.items():
                 chans_all.setdefault(bone, {})[chan] = chans_all.get(bone, {}).get(chan, 0) + value
+    if JOB.get("modo") != "sondeo":
+        # "gravedad": {hueso: factor}: el colgante cuelga a plomo; suma la inclinación de la columna sobre él (cadera,
+        # pecho, cuello) a su "adelante" y "lado", además de lo que pida la animación
+        # "gravedad": the hanging bone stays plumb; adds the spine tilt above it to its "adelante" and "lado"
+        for bone, k in MODEL.get("gravedad", {}).items():
+            if bone not in MODEL["huesos"]: continue
+            inc = side = 0.0; p = MODEL["huesos"][bone]["padre"]
+            while p:
+                if MODEL["huesos"][p]["tipo"] == "columna":
+                    inc += chans_all.get(p, {}).get("inclinar", 0); side += chans_all.get(p, {}).get("lado", 0)
+                p = MODEL["huesos"][p]["padre"]
+            own = chans_all.setdefault(bone, {})
+            own["adelante"] = own.get("adelante", 0) + k * inc; own["lado"] = own.get("lado", 0) + k * side
     if "skirt_F" in MODEL["huesos"]:
         # Sectores de la pollera: siguen a los muslos y al canal skirt, sumados a lo que pide la animación
         # Skirt sectors: follow the thighs and the skirt channel, added to what the animation asks
@@ -322,6 +335,21 @@ ID_DEPTH = 128
 TRAIL_STEPS = 8
 # Valor de reposo de los canales que no valen 0 / rest value of channels that are not 0
 REST = {"aplastar": 1.0, "largo": 1.0, "escala": 1.0}
+
+
+def por_direccion(frame, anim, d):
+    # "por_direccion": {"east": {"pose": {...}, "raiz": {...}, "mostrar": [...]}} en la animación o en un cuadro pisa
+    # canales según la dirección base del render (nunca según el giro del cuadro); el cuadro gana. Los pies ya vienen
+    # resueltos por plantar: no se pisan acá / overrides channels by the render's base direction; the frame wins
+    out = {k: (dict(v) if isinstance(v, dict) else v) for k, v in frame.items()}
+    out["pose"] = {b: dict(c) for b, c in frame.get("pose", {}).items()}
+    for src in (anim.get("por_direccion", {}), frame.get("por_direccion", {})):
+        for block, v in src.get(d, {}).items():
+            if block == "pose":
+                for b, c in v.items(): out["pose"].setdefault(b, {}).update(c)
+            elif isinstance(v, dict): out.setdefault(block, {}).update(v)
+            else: out[block] = v
+    return out
 
 
 def blend(a, b, t):
@@ -522,6 +550,7 @@ else:
         project = lambda w: [round(c, 2) for c in (world_to_camera_view(scene, cam, w).x * size,
                                                   (1 - world_to_camera_view(scene, cam, w).y) * size)]
         for d in JOB.get("dirs", list(YAW)):
+            frames = [por_direccion(f, anim, d) for f in anim["cuadros"]]
             for i, frame in enumerate(frames):
                 arc = None
                 if "estela" in frame.get("mostrar", []) and (i > 0 or anim.get("bucle")):
