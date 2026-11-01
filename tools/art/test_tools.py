@@ -243,6 +243,35 @@ def test_punta_1px():
     assert img[1, 4, 3] == 255
 
 
+def test_filo():
+    # La hoja diagonal de 1 px toma el brillo entera; en la de 2 filas, solo la de arriba / a 1 px diagonal blade takes
+    # the highlight whole; a 2-row blade only its top row
+    import rig3d
+    img = np.full((5, 6, 4), 255, np.uint8); part = np.full((5, 6), -1)
+    for y, x in ((0, 0), (1, 1), (2, 2)): part[y, x] = 0
+    part[3:5, 2:6] = 0
+    out = rig3d.filo(img, part, [{"nombre": "hoja"}], {"hoja": [1, 2, 3]})[..., 0]
+    assert (out[(0, 1, 2), (0, 1, 2)] == 1).all() and (out[3, 2:6] == 1).all(), out
+    assert out[4, 2] == 1 and (out[4, 3:6] == 255).all(), out
+
+
+def test_achicar_prioridad():
+    # Bloque 4×4: la mano con 4 sub-píxeles le gana a la pollera con 12; sin prioridad gana la que más cubre, y el vacío
+    # gana los empates / 4×4 block: the hand with 4 sub-pixels beats the skirt with 12; without priority the larger
+    # one wins and empty wins ties
+    import rig3d
+    parts = [{"nombre": "pollera"}, {"nombre": "mano_R"}]
+    ids = np.zeros((8, 8, 4), np.uint8); img = np.zeros((8, 8, 4), np.uint8)
+    ids[:4, :4] = (1, 128, 0, 255); ids[:1, :4] = (2, 128, 0, 255)  # bloque 0: pollera 12, mano 4
+    ids[4:, 4:6] = (1, 128, 0, 255)  # bloque 3: pollera 8, vacío 8
+    img[ids[..., 3] > 0] = (9, 9, 9, 255); img[:1, :4] = (5, 5, 5, 255); img[1, 0] = (7, 7, 7, 255)
+    c, i = rig3d.achicar(img, ids, parts, {"prioridad": {"mano_R": 9}}, 2)
+    assert i[0, 0, 0] == 2 and tuple(c[0, 0]) == (5, 5, 5, 255), (i[..., 0], c[0, 0])
+    assert i[1, 1, 3] == 0 and c[1, 1, 3] == 0
+    c, i = rig3d.achicar(img, ids, parts, {"prioridad": {}}, 2)
+    assert i[0, 0, 0] == 1 and tuple(c[0, 0]) == (9, 9, 9, 255)
+
+
 def test_superelipse():
     # Lofteo y parche con "superelipse": los anillos cumplen |x/rx|^n + |y/ry|^n = 1 y el parche queda sobre esa
     # superficie; sin la opción, el lofteo sigue siendo una elipse / loft and patch share the superellipse surface

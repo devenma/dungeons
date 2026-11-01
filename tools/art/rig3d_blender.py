@@ -18,6 +18,11 @@ OUT = JOB["salida"]
 os.makedirs(OUT, exist_ok=True)
 TILT = math.radians(MODEL.get("inclinacion_camara", 22))
 YAW = {"south": 0, "east": 90, "north": 180, "west": -90}
+DIR_OF = {v: k for k, v in YAW.items()}
+mode = JOB.get("modo", "cuadros")
+# "prioridad": color e IDs a ×SUPER y rig3d.py achica por bloques (solo con partes, en "prioridad_en" o en todas)
+# "prioridad": colour and IDs at ×SUPER, rig3d.py reduces them by blocks (parts only, in "prioridad_en" or all)
+SUPER = 4
 
 # Canal semántico -> (eje de Euler, signo) por tipo de hueso; los signos los verifica el sondeo en test_tools.py
 # Semantic channel -> (Euler axis, sign) per bone type; the probe in test_tools.py checks the signs
@@ -327,6 +332,10 @@ def pose(frame, base_yaw):
             k, deg = p["ocultar_lejos"]; yaw = math.radians(base_yaw + root.get("giro", 0))
             o.hide_render = o.hide_render or -k * math.sin(yaw) < -math.cos(math.radians(deg))
         if p.get("ocultar_si") in shown: o.hide_render = True  # la reemplaza otra versión / replaced by another version
+        if p.get("solo_en") and mode == "cuadros" and DIR_OF.get(base_yaw) not in p["solo_en"]:
+            # "solo_en": direcciones base del render donde se dibuja (no el giro del cuadro, como por_direccion)
+            # "solo_en": base render directions where it is drawn (not the frame's turn, like por_direccion)
+            o.hide_render = True
         s = scales.get(g) or scales.get(p["nombre"])
         o.scale = s if s else (1, 1, 1)
     bpy.context.view_layer.update()
@@ -335,8 +344,8 @@ def pose(frame, base_yaw):
         # de la cámara (x = eje X del mundo, filas = (0, sen, cos)). Con giro de raíz no se ajusta (sacude)
         # "pixel_pantalla": the hips keep the rest pose's screen-px fraction; the whole rig shifts in the camera plane
         v = world_to_camera_view(scene, cam, rig.matrix_world @ PB["hips"].head)
-        dx, dy = v.x * R.resolution_x - PIXEL_REF[0], v.y * R.resolution_y - PIXEL_REF[1]
-        u = cam.data.ortho_scale / R.resolution_x  # unidades del modelo por px / model units per px
+        dx, dy = v.x * CANVAS - PIXEL_REF[0], v.y * CANVAS - PIXEL_REF[1]
+        u = cam.data.ortho_scale / CANVAS  # unidades del modelo por px del lienzo / model units per canvas px
         fx, fy = (dx - round(dx)) * u, (dy - round(dy)) * u
         rig.location = rig.location - Vector((fx, fy * math.sin(TILT), fy * math.cos(TILT)))
         bpy.context.view_layer.update()
@@ -345,6 +354,8 @@ def pose(frame, base_yaw):
 # Cadera del reposo en px de pantalla (x, y hacia arriba) mientras se renderiza una animación con "pixel_pantalla"
 # Rest-pose hips in screen px (x, y up) while rendering an animation with "pixel_pantalla"
 PIXEL_REF = None
+# Lado del lienzo en px del sprite (el render puede ir a ×SUPER) / canvas side in sprite px (the render may be ×SUPER)
+CANVAS = 64
 
 
 # Rango de profundidad (px) que cubre la pasada de ID, centrado en el origen / depth range (px) of the ID pass
@@ -453,7 +464,6 @@ def legs_in_skirt():
     return out
 
 
-mode = JOB.get("modo", "cuadros")
 if mode == "sondeo":
     # Para cada hueso y canal con +20: cuánto se mueven su punta y un punto pegado 3 px a su izquierda
     # For each bone and channel at +20: how far its tail and a point stuck 3 px to its left move
@@ -534,7 +544,7 @@ else:
             nt.links.new(comb.outputs[0], em.inputs[0]); nt.links.new(em.outputs[0], out.inputs[0])
             ID_MATS[o.name] = m
         meta["partes"] = [{"nombre": o.name, "capa": p.get("capa", "arma" if p.get("grupo") == "espada" else "efectos3d"),
-                           "linea": p.get("linea"), "material": p.get("material")} for p, o in PARTS]
+                           "linea": p.get("linea"), "material": p.get("material"), "grupo": p.get("grupo")} for p, o in PARTS]
 
     # Pasada de normales: normal en espacio de cámara (x derecha, y arriba, z hacia la cámara) codificada n * 0.5 + 0.5,
     # como espera un normal map 2D de Godot / normals pass: camera-space normal encoded n * 0.5 + 0.5, as Godot 2D expects
@@ -570,6 +580,10 @@ else:
                                                   (1 - world_to_camera_view(scene, cam, w).y) * size)]
         for d in JOB.get("dirs", list(YAW)):
             frames = [por_direccion(f, anim, d) for f in anim["cuadros"]]
+            CANVAS = size
+            if ID_MATS and MODEL.get("prioridad") is not None and d in MODEL.get("prioridad_en", YAW):
+                R.resolution_x = R.resolution_y = size * SUPER
+            else: R.resolution_x = R.resolution_y = size
             PIXEL_REF = None
             if anim.get("pixel_pantalla"):
                 pose({}, YAW[d]); v = world_to_camera_view(scene, cam, rig.matrix_world @ PB["hips"].head)

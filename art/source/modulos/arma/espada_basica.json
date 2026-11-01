@@ -5,6 +5,7 @@
     "acero": [[47, 42, 44], [71, 64, 62], [101, 91, 85]],
     "corte": [[196, 232, 255], [196, 232, 255], [240, 250, 255]]
   },
+  "filo": {"hoja": [139, 125, 114]},
   "grupos_ocultos": ["espada", "arco_corte", "onda"],
   "marcadores": {"punta_espada": ["weapon_R", "cola"]},
   "partes": [

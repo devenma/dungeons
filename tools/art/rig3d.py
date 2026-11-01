@@ -181,6 +181,44 @@ def decode_ids(ids):
     return part, depth
 
 
+def achicar(img, ids, parts, model, size, extra=()):
+    # Render a ×k achicado por prioridad (Pixelat3D): en cada bloque k×k gana la parte de "prioridad" más alta que
+    # cubre "min_sub" sub-píxeles o más; si ninguna, la que más cubre (el vacío cuenta y gana los empates). El píxel
+    # toma el sub-píxel con el tono más frecuente de esa parte: color, ID y "extra" (normales) salen del mismo.
+    # ×k render reduced by priority: per k×k block the highest "prioridad" part covering "min_sub" sub-pixels or more
+    # wins; otherwise the part covering most (empty counts and wins ties). The pixel takes the sub-pixel with that
+    # part's most frequent tone: colour, ID and "extra" (normals) come from the same one.
+    part, _ = decode_ids(ids)
+    part[(part < 0) & (img[..., 3] > 127)] = 0
+    n, h = len(parts), size; k = img.shape[0] // size
+    blk = lambda a: a.reshape(h, k, h, k, *a.shape[2:]).swapaxes(1, 2).reshape(h, h, k * k, *a.shape[2:])
+    P = blk(part)
+    cnt = np.stack([(P == j).sum(-1) for j in range(-1, n)], -1)  # columna 0 = vacío / column 0 = empty
+    prio = model.get("prioridad", {})
+    rank = np.array([0] + [prio.get(p["nombre"], prio.get(p.get("grupo"), 0)) for p in parts])
+    ok = (cnt >= model.get("min_sub", 4)) & (rank > 0)
+    win = np.where(ok.any(-1), np.where(ok, rank * 1000 + cnt, -1).argmax(-1), cnt.argmax(-1)) - 1
+    C = blk(img)
+    key = (C[..., 0].astype(np.int64) << 16) | (C[..., 1].astype(np.int64) << 8) | C[..., 2]
+    mine = P == win[..., None]
+    freq = ((key[..., :, None] == key[..., None, :]) & mine[..., None, :]).sum(-1)
+    pick = np.where(mine, freq, -1).argmax(-1)[..., None, None]
+    take = lambda a: np.take_along_axis(blk(a), pick, 2)[:, :, 0]
+    out_img, out_ids = take(img), take(ids)
+    out_img[win < 0] = 0; out_ids[win < 0] = 0
+    return (out_img, out_ids) + tuple(take(e) for e in extra)
+
+
+def reduce_frame(img, ids, parts, model, size, path=None, normals=False):
+    # Cuadro renderizado a ×k: lo achica por prioridad; las normales (<cuadro>_n.png) se reescriben a 1× con el mismo
+    # sub-píxel / ×k frame: reduced by priority; the normals are rewritten at 1× from the same sub-pixel
+    if not normals: return achicar(img, ids, parts, model, size)
+    n_path = path[:-4] + "_n.png"
+    img, ids, nrm = achicar(img, ids, parts, model, size, (np.array(Image.open(n_path).convert("RGBA")),))
+    Image.fromarray(nrm).save(n_path)
+    return img, ids
+
+
 def inner_lines(img, group, depth, shade=OUTLINE_SHADE, gap=LINE_GAP):
     # Línea de 1 px sobre la parte de atrás donde una parte de otro grupo queda delante, con el color de la de
     # adelante oscurecido, como el sel-out (el brazo sobre el torso). group: -1 vacío, -2 sin líneas.
@@ -265,6 +303,18 @@ def punta_1px(img, part, parts, grupos):
         img[ys[0], drop] = 0; part[ys[0], drop] = -1
 
 
+def filo(img, part, parts, spec):
+    # "filo": {parte: color}: los píxeles de la parte con el vecino de arriba o de la izquierda fuera de ella (el lado de
+    # la luz) toman ese color: brillo de 1 px en el borde de la hoja / "filo": pixels of the part whose upper or left
+    # neighbour is outside it (the lit side) take that colour: a 1 px edge highlight on the blade
+    img = img.copy()
+    for k, p in enumerate(parts):
+        if p["nombre"] not in spec: continue
+        m = part == k; P = np.pad(m, ((1, 0), (1, 0)))
+        img[m & (~P[:-1, 1:] | ~P[1:, :-1]), :3] = spec[p["nombre"]]
+    return img
+
+
 def layers_parts(img, ids, parts, fmeta, model, size, gap, fx=None, pal=None):
     # Receta de malla: una capa por grupo de partes con solo lo que se ve de cada una, las líneas internas, los ojos
     # y el contorno de color, cada uno en su capa / mesh recipe: one layer per part group holding only what shows of
@@ -272,6 +322,7 @@ def layers_parts(img, ids, parts, fmeta, model, size, gap, fx=None, pal=None):
     part, depth = decode_ids(ids)
     part[(part < 0) & (img[..., 3] > 127)] = 0  # nunca perder un píxel del render / never drop a rendered pixel
     if model.get("punta_1px"): img = img.copy(); punta_1px(img, part, parts, model["punta_1px"])
+    if model.get("filo"): img = filo(img, part, parts, model["filo"])
     names = sorted({p["linea"] for p in parts if p.get("linea")})
     grp = np.array([names.index(p["linea"]) if p.get("linea") else -2 for p in parts] + [-1])
     ramp = model.get("contorno") == "rampa"  # líneas y contorno en el tono más oscuro de cada material / darkest ramp tone
@@ -483,6 +534,7 @@ def cmd_frames(args):
                 fx = trail(size, fm["arco"]) if fm.get("arco") else None
                 if parts:
                     ids = np.array(Image.open(p[:-4] + "_id.png").convert("RGBA")) if d in dirs else np.zeros((size, size, 4), np.uint8)
+                    if img.shape[0] != size: img, ids = reduce_frame(img, ids, parts, model, size, p, args.normales)
                     frames[d].append(layers_parts(img, ids, parts, fm, model, size, d in ("south", "north"), fx, pal))
                 else:
                     frames[d].append(layers(img, size, d in ("south", "north"), fx, pal))
@@ -534,7 +586,9 @@ def cmd_fit(args):
         render = np.array(Image.open(os.path.join(raw, f"reposo_{d}_0.png")).convert("RGBA"))
         if meta.get("partes"):  # con ojos y líneas internas, sin contorno / with eyes and inner lines, no outline
             ids = np.array(Image.open(os.path.join(raw, f"reposo_{d}_0_id.png")).convert("RGBA"))
-            lay = layers_parts(quantize(render, ramp_palette(model, pal)), ids, meta["partes"], meta.get(f"reposo_{d}_0", {}),
+            render = quantize(render, ramp_palette(model, pal))
+            if render.shape[0] != 64: render, ids = reduce_frame(render, ids, meta["partes"], model, 64)
+            lay = layers_parts(render, ids, meta["partes"], meta.get(f"reposo_{d}_0", {}),
                                model, 64, d in ("south", "north"), None, pal)
             render = flatten({k: v for k, v in lay.items() if k != "Contorno"})
         ref = np.array(Image.open(os.path.join(args.refs, f"{d}.png")).convert("RGBA"))

@@ -855,6 +855,7 @@ def construir(s, M):
         m["ocultar_si"] = s["ocultar_si"].replace("<lado>", lado)
     if s.get("ocultar_lejos"):  # [lado, grados]: se oculta si ese costado mira lejos de la cámara / hidden facing away
         m["ocultar_lejos"] = [SIDE.get(lado, 1), s["ocultar_lejos"]]
+    if s.get("solo_en"): m["solo_en"] = s["solo_en"]  # direcciones base donde se dibuja / base directions where it renders
     if s["tipo"] == "lofteo" and s.get("pesos") == "pollera":
         m["pollera"] = True  # la usa el control de piernas dentro de la pollera / used by the legs-inside-skirt check
     return m

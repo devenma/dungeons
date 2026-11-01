@@ -129,6 +129,21 @@ diferencia entre dos rondas rechazadas y una base aprobable.
 - **Hombro y manga como una sola superficie** (parte `manga`): sale de la sisa del torso, sin esfera en el hombro;
   `"normales": "capsula"` evita los anillos de bola en la rampa.
 - **Tela con normales del reposo** (`normales_reposo` en la rampa): el tono no salta cuando los sectores giran.
+- **Pieza por dirección:** `"solo_en": ["north", "south"]` en una parte (o pieza) la dibuja solo en esas direcciones
+  base del render, nunca según el giro del cuadro (como `por_direccion`). Las colas del moño de la maid van así: de
+  perfil dibujaban una tira blanca de 1-2 px detrás de la pollera que se leía como otro delantal. `vistas` las muestra
+  siempre.
+- **Brillo del filo:** `"filo": {"hoja": [139, 125, 114]}` en la receta pinta con ese color los píxeles de la parte
+  que tienen fuera de ella el vecino de arriba o el de la izquierda (el lado de la luz). La hoja de 1 px queda entera
+  en ese tono y la de 2 filas, con la de arriba clara y la de abajo oscura: se lee sobre el delantal y sobre la
+  pollera negra. `#8b7d72` es el paso siguiente de la rampa Hierro (+38, +34, +29 por canal, cálido, no azulado).
+- **Achicar por prioridad** (Pixelat3D, apagado por defecto): con `"prioridad": {"mano_R": 9, "espada": 8, ...}`
+  (nombre de parte o grupo) y `"min_sub": 4`, el color y los IDs se renderizan a ×4 y cada bloque 4×4 lo gana la
+  parte de mayor prioridad que cubra 4 sub-píxeles o más; si no hay, la que más cubre (el vacío gana los empates). El
+  color es el tono más frecuente de esa parte en el bloque. `"prioridad_en": ["east", "west"]` lo limita a esas
+  direcciones (las demás quedan como hoy). Ojos, `punta_1px`, `filo` y `contorno_hueco` van después. En la maid: la
+  hoja de perfil queda continua y el puño de perfil siempre de 2 filas, pero de frente engorda las manos 1 px y no
+  arregla la sombra de la mano de perfil (es tono, no cobertura). Cuesta ~10 % más de tiempo de render.
 - **Partes lejanas:** `ocultar_lejos` oculta la mano del lado lejano de perfil (la cámara la dibuja ~6 px más
   arriba que la cercana). Ojo en los ataques de perfil: esa mano desaparece.
 - **Brazos de perfil:** con la cámara a 22°, la mano del lado cercano se dibuja unas 3 filas más abajo que de frente

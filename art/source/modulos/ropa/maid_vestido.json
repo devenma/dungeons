@@ -118,7 +118,8 @@
       "pos": [2.0, 6.3, -3.2],
       "relativo": ["hips", "cola"],
       "radios": [1.0, 0.35, 3.0],
-      "rot": [32, -22, 0]
+      "rot": [32, -22, 0],
+      "solo_en": ["north", "south"]
     },
     {
       "tipo": "esfera",
