@@ -22,20 +22,14 @@ const ATTACK_PHASE_FRAMES: Dictionary = {
 	SwordScript.SwingState.ACTIVE: Vector2i(2, 1),
 	SwordScript.SwingState.RECOVERY: Vector2i(3, 2),
 }
-# Frames de la caminata en que un pie toca el piso / Walk frames where a foot lands
-const FOOTSTEP_FRAMES: Array[int] = [0, 2]
 # Polvo de pisada: frames, fps y pivote (suela) de la hoja / Footstep dust: sheet frames, fps and pivot (sole)
 const FOOTSTEP_FRAME_COUNT: int = 3
 const FOOTSTEP_FPS: float = 12.0
 const FOOTSTEP_PIVOT: Vector2 = Vector2(8, 11)
 # z del polvo en el padre del jugador: sobre el piso, debajo del jugador / Dust z in the player's parent: above the floor, below the player
 const FOOTSTEP_Z: int = 1
-# Velocidad de la caminata durante la voltereta (veces la normal) / Walk sheet speed during the roll (times normal)
+# Velocidad de la caminata durante la voltereta (veces las duraciones de la hoja) / Walk sheet speed during the roll (times the sheet durations)
 const ROLL_ANIMATION_SPEED: float = 2.5
-# Velocidad de la caminata (veces la hoja): el paso dibujado barre ~17 px/s y el cuerpo va a 60 px/s, así que
-# acelerarla achica el patinado de los pies sin piernas frenéticas / Walk speed (times the sheet): the drawn
-# stride sweeps ~17 px/s while the body moves at 60 px/s, so speeding it up shrinks foot sliding without frantic legs
-const WALK_ANIMATION_SPEED: float = 1.5
 
 @export var sprite_path: NodePath = NodePath("../AnimatedSprite2D")
 @export var weapons_path: NodePath = NodePath("../Weapons")
@@ -77,7 +71,10 @@ func _process(delta: float) -> void:
 		return
 	_facing = KitSpriteScript.row_for(_body.call("aim_direction") as Vector2)
 	if _body.velocity != Vector2.ZERO:
-		_sprite.play("walk_" + _facing, WALK_ANIMATION_SPEED)
+		# La velocidad sale de la hoja: la vieja del aventurero trae 1,5 para que los pies no patinen
+		# Speed comes from the sheet: the old adventurer one carries 1.5 so the feet do not slide
+		var walk_name: StringName = "walk_" + _facing
+		_sprite.play(walk_name, _sprite.call("playback_speed", walk_name))
 	else:
 		_sprite.play("idle_" + _facing)
 
@@ -117,8 +114,16 @@ func _attack_frame() -> int:
 	return span.x + span.y - 1
 
 
+## Frames de una caminata en que un pie toca el piso: el primero y el de la mitad del ciclo (4 → [0, 2], 8 → [0, 4])
+## Walk frames where a foot lands: the first one and the one halfway through the cycle (4 → [0, 2], 8 → [0, 4])
+static func footstep_frames(frame_count: int) -> Array[int]:
+	return [0, floori(frame_count / 2.0)]
+
+
 func _on_frame_changed() -> void:
-	if not String(_sprite.animation).begins_with("walk_") or not FOOTSTEP_FRAMES.has(_sprite.frame):
+	if not String(_sprite.animation).begins_with("walk_"):
+		return
+	if not footstep_frames(_sprite.sprite_frames.get_frame_count(_sprite.animation)).has(_sprite.frame):
 		return
 	if _roll != null and _roll.is_rolling():
 		return
