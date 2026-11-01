@@ -151,7 +151,8 @@ def stamp_eyes(eyes, spec, mask):
     a = eyes["giro"]; front = spec.get("frente_max", 35)
     picks = ([("R", "frente_R", False), ("L", "frente_L", False)] if abs(a) <= front else
              [("R", "perfil", False)] if front < a < 180 - front else
-             [("L", "perfil", True)] if -180 + front < a < -front else [])
+             [("L", "perfil_izq", False) if "perfil_izq" in spec["sellos"] else ("L", "perfil", True)]
+             if -180 + front < a < -front else [])  # perfil_izq: sello propio mirando a la izquierda / own left-facing stamp
     for eye, name, flip in picks:
         st = spec["sellos"][name]; rows = [r[::-1] for r in st["px"]] if flip else st["px"]
         ax = len(rows[0]) - 1 - st["ancla"][0] if flip else st["ancla"][0]

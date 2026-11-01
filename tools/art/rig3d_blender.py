@@ -229,6 +229,8 @@ def pose(frame, base_yaw):
     root = frame.get("raiz", {})
     squash = root.get("aplastar", 1.0)
     rig.rotation_euler = (0, 0, math.radians(base_yaw + root.get("giro", 0)))
+    if light.get("sigue"):  # luz fija al personaje: cada dirección iluminada desde su frente / light turns with the character
+        sun.rotation_euler = [math.radians(a) for a in light["rot"][:2]] + [math.radians(light["rot"][2] + base_yaw + root.get("giro", 0))]
     rig.location = (0, 0, root.get("salto", 0) / math.cos(TILT))
     rig.scale = (1 / squash ** 0.5, 1 / squash ** 0.5, squash / math.cos(TILT))
     for b in PB: b.rotation_euler = (0, 0, 0); b.location = (0, 0, 0); b.scale = (1, 1, 1)
