@@ -168,9 +168,9 @@ Un personaje es una receta corta que junta módulos de `art/source/modulos/` con
   ignora.
 - **Gravedad del pelo:** el peinado declara `"gravedad": {"hair": 1, "lock_L": 1, "lock_R": 1}` y esos colgantes
   compensan la inclinación de la columna (ver `animacion.md` §5).
-- **Pelo de espaldas:** la tarjeta de la melena lleva `mechas` (dos líneas), `mechas_desde` (fracción del largo donde
-  empiezan: 0,7 en la melena, 0,55 en el bob) y `punta_oscura` (desde ahí abajo, tono oscuro: 0,93). Las mechas
-  largas titilan al caminar: se dejan cortas, abajo, como la hoja de giro.
+- **Pelo de espaldas:** la tarjeta puede llevar `mechas` (líneas), `mechas_desde` (fracción del largo donde empiezan:
+  0,55 en el bob) y `punta_oscura` (desde ahí abajo, tono oscuro: 0,93). La melena de la maid va sin mechas
+  (`mechas: []`): de espaldas titilaban 64-69 px al caminar y sin ellas quedan 14. Si hacen falta, cortas y abajo.
 - **Raya de la coronilla:** la tapa lleva `"raya": [[x...], medio ancho, fuerza, desde y]` (líneas de mechón por la
   mitad de adelante de la tapa; fuerza > 1 oscurece aun la luz plena). En la maid, `[[-2.3, 2.3], 0.4, 4.0, -1.5]`
   sube las líneas del flequillo hasta y9. La fila de arriba del flequillo (y11) queda sin línea: el flequillo tapa la

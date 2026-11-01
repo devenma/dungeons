@@ -8,6 +8,7 @@
     "blanco_sombra": {"tonos": [[184, 178, 168], [224, 219, 210], [242, 238, 230]], "umbrales": [0.4, 0.8]},
     "blanco_borde": {"tonos": [[184, 178, 168], [224, 219, 210], [242, 238, 230]], "umbrales": [0.6, 0.95]},
     "blanco_lazo": {"tonos": [[184, 178, 168], [224, 219, 210], [242, 238, 230]], "umbrales": [0.0, 0.3]},
+    "blanco_nudo": [[184, 178, 168], [184, 178, 168], [184, 178, 168]],
     "blanco_delantal": {"tonos": [[184, 178, 168], [224, 219, 210], [242, 238, 230]], "umbrales": [0.05, 0.6], "normales_reposo": true},
     "rosa": {"tonos": [[122, 62, 76], [184, 95, 114]], "umbrales": [0.2], "plano": true},
     "rosa_oscuro": {"tonos": [[122, 62, 76], [122, 62, 76]], "umbrales": [0.5]}
@@ -93,10 +94,31 @@
       "pos": [0, 5.6, 0.6],
       "relativo": ["hips", "cola"],
       "ancho": 6.0,
-      "lazo": [2.2, 0.8, 1.9],
-      "giro": 15,
-      "nudo": [0.9, 0.8, 0.9],
-      "colas": [1.6, -2.9, [0.6, 0.5, 1.6]]
+      "lazo": [2.1, 0.8, 2.0],
+      "giro": 22,
+      "nudo": [1.0, 0.8, 1.4]
+    },
+    {
+      "tipo": "esfera",
+      "nombre": "mono_nudo",
+      "material": "blanco_nudo",
+      "capa": "ropa",
+      "hueso": "hips",
+      "pos": [0, 6.1, 0.6],
+      "relativo": ["hips", "cola"],
+      "radios": [1.0, 0.6, 1.4]
+    },
+    {
+      "tipo": "esfera",
+      "nombre": "mono_cola",
+      "lados": ["L", "R"],
+      "material": "blanco_lazo",
+      "capa": "ropa",
+      "hueso": "skirt_B",
+      "pos": [2.0, 6.3, -3.2],
+      "relativo": ["hips", "cola"],
+      "radios": [1.0, 0.35, 3.0],
+      "rot": [32, -22, 0]
     },
     {
       "tipo": "esfera",
