@@ -1,1 +1,1 @@
-{"nombre":"reposo","lienzo":64,"cuadros":[{"pose":{"neck":{"inclinar":-10}}}],"duraciones_ms":[100]}
+{"nombre":"reposo","lienzo":64,"cuadros":[{"pose":{"neck":{"inclinar":-10},"fore_L":{"doblar":25},"fore_R":{"doblar":25}}}],"duraciones_ms":[100]}
