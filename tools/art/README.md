@@ -1,0 +1,36 @@
+# tools/art — herramientas de arte
+
+Scripts de Python que arman el arte fuera del motor. Usan Python 3.13 con Pillow y numpy, y Aseprite 1.3.18 en
+modo batch (ruta en la variable `ASEPRITE`; por defecto, la de Steam).
+
+## Entorno (cripta)
+
+- `build_crypt_atlas.py`: arma el atlas de la cripta oscura.
+- `export_room.py`: exporta salas de la vista previa.
+
+## Personajes 2D y gremio
+
+Flujo: fuentes del artista en `art/source/` → herramientas de acá → hojas en `assets/art/characters/` y `.aseprite`
+con capas en `art/source/`.
+
+| Script | Para qué |
+|---|---|
+| `aseprite_io.py` | Exporta las capas de un `.aseprite` a PNG y escribe `.aseprite` con capas y etiquetas. |
+| `outline.py` | Contorno de 1 px en capa propia, con la regla del artista (sin línea entre las piernas). |
+| `guild_mockup.py` | Maquetas del gremio: sala sin luz con piezas sueltas, tablones dibujados, sombras y luz simulada. |
+| `guild_preview_export.py` | Despiece de la maqueta A+ para `scenes/preview/guild_preview.tscn`: fondo sin luz, llamas aparte y piezas en `assets/art/guild_preview/`. |
+
+## Personajes en 3D (rig3d)
+
+Cada personaje tiene un modelo 3D de piezas simples que se anima y se renderiza a 40 px con la cámara del juego.
+Guías: `art/guias/modelado.md` y `art/guias/animacion.md`. Los datos van en `art/source/<personaje>/3d/`
+(`modelo.json`, `ref/`, `anim/`). Usa Blender 5.2 en segundo plano: ruta en la variable `BLENDER`.
+
+| Script | Para qué |
+|---|---|
+| `rig3d.py` | `cuadros` renderiza animaciones y exporta hoja + JSON para `kit_sprite.gd` (sin efectos; la estela del corte va aparte en `_efectos.png`, con las mismas celdas), `.aseprite` con capas (efectos, personaje, contorno), GIF, hoja de revisión y marcadores; `vistas` saca vistas grandes del modelo; `ajuste` lo compara con las referencias; `sondeo` mide hacia dónde mueve cada canal. |
+| `rig3d_blender.py` | Corre dentro de Blender: arma el modelo, la proyección de los píxeles del artista, la cámara y las poses. |
+| `motion.py` | Expande claves a cuadros (lineal, entrada-salida o escalón) y ayuda con el movimiento secundario. |
+| `paquete_modelado.py` | Paquete de apoyo para modelar: `hoja` arma la hoja de giro medida (vistas a la misma escala con líneas de altura) desde `3d/paquete.json`; `guia` renderiza a 0° una malla de referencia (frente, perfil, espalda, arriba). |
+
+Tests: `python -I tools/art/test_tools.py` (salida 0 = pasa). Con `BLENDER` definida corre además el sondeo de signos.

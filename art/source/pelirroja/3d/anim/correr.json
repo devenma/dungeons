@@ -1,0 +1,553 @@
+{
+ "nombre": "correr",
+ "bucle": true,
+ "lienzo": 64,
+ "duraciones_ms": [
+  50,
+  50,
+  50,
+  50,
+  50,
+  50,
+  50,
+  50
+ ],
+ "cuadros": [
+  {
+   "raiz": {
+    "aplastar": 1.0
+   },
+   "cadera": {
+    "subir": -1
+   },
+   "pose": {
+    "thigh_R": {
+     "adelante": 44.9
+    },
+    "shin_R": {
+     "doblar": 17.9
+    },
+    "thigh_L": {
+     "adelante": -52.7
+    },
+    "shin_L": {
+     "doblar": 21.7
+    },
+    "hips": {
+     "girar": 3
+    },
+    "chest": {
+     "inclinar": 25,
+     "girar": -3
+    },
+    "neck": {
+     "inclinar": -14
+    },
+    "hair": {
+     "adelante": -7,
+     "lado": 0
+    },
+    "lock_L": {
+     "adelante": -5,
+     "lado": 0
+    },
+    "lock_R": {
+     "adelante": -5,
+     "lado": 0
+    },
+    "bow_back": {
+     "adelante": -20,
+     "lado": 0
+    },
+    "skirt": {
+     "adelante": -5,
+     "lado": 0
+    },
+    "upper_L": {
+     "adelante": 62,
+     "afuera": 8
+    },
+    "fore_L": {
+     "doblar": 90
+    },
+    "upper_R": {
+     "adelante": -66,
+     "afuera": 22
+    },
+    "fore_R": {
+     "doblar": 50
+    }
+   },
+   "mostrar": []
+  },
+  {
+   "raiz": {
+    "aplastar": 1.0
+   },
+   "cadera": {
+    "subir": 0
+   },
+   "pose": {
+    "thigh_R": {
+     "adelante": 10.5
+    },
+    "shin_R": {
+     "doblar": 8.2
+    },
+    "thigh_L": {
+     "adelante": 6.7
+    },
+    "shin_L": {
+     "doblar": 99.0
+    },
+    "hips": {
+     "girar": 1.5
+    },
+    "chest": {
+     "inclinar": 25,
+     "girar": -1.5
+    },
+    "neck": {
+     "inclinar": -14
+    },
+    "hair": {
+     "adelante": -12,
+     "lado": 6
+    },
+    "lock_L": {
+     "adelante": -10,
+     "lado": 7
+    },
+    "lock_R": {
+     "adelante": -10,
+     "lado": 7
+    },
+    "bow_back": {
+     "adelante": -28,
+     "lado": 14
+    },
+    "skirt": {
+     "adelante": -6,
+     "lado": 6
+    },
+    "upper_L": {
+     "adelante": 36,
+     "afuera": 11
+    },
+    "fore_L": {
+     "doblar": 82
+    },
+    "upper_R": {
+     "adelante": -40,
+     "afuera": 19
+    },
+    "fore_R": {
+     "doblar": 58
+    }
+   },
+   "mostrar": []
+  },
+  {
+   "raiz": {
+    "aplastar": 1.0
+   },
+   "cadera": {
+    "subir": 1
+   },
+   "pose": {
+    "thigh_R": {
+     "adelante": -14.0
+    },
+    "shin_R": {
+     "doblar": 11.4
+    },
+    "thigh_L": {
+     "adelante": 53.3
+    },
+    "shin_L": {
+     "doblar": 84.8
+    },
+    "hips": {
+     "girar": -1.5
+    },
+    "chest": {
+     "inclinar": 25,
+     "girar": 1.5
+    },
+    "neck": {
+     "inclinar": -14
+    },
+    "hair": {
+     "adelante": -18,
+     "lado": 9.0
+    },
+    "lock_L": {
+     "adelante": -16,
+     "lado": 10.5
+    },
+    "lock_R": {
+     "adelante": -16,
+     "lado": 10.5
+    },
+    "bow_back": {
+     "adelante": -40,
+     "lado": 21.0
+    },
+    "skirt": {
+     "adelante": -8,
+     "lado": 9.0
+    },
+    "upper_L": {
+     "adelante": -2,
+     "afuera": 15
+    },
+    "fore_L": {
+     "doblar": 70
+    },
+    "upper_R": {
+     "adelante": -2,
+     "afuera": 15
+    },
+    "fore_R": {
+     "doblar": 70
+    }
+   },
+   "mostrar": []
+  },
+  {
+   "raiz": {
+    "aplastar": 1.0
+   },
+   "cadera": {
+    "subir": 0
+   },
+   "pose": {
+    "thigh_R": {
+     "adelante": -23.1
+    },
+    "shin_R": {
+     "doblar": 52.4
+    },
+    "thigh_L": {
+     "adelante": 57.0
+    },
+    "shin_L": {
+     "doblar": 50.7
+    },
+    "hips": {
+     "girar": -3
+    },
+    "chest": {
+     "inclinar": 25,
+     "girar": 3
+    },
+    "neck": {
+     "inclinar": -14
+    },
+    "hair": {
+     "adelante": -12,
+     "lado": 6
+    },
+    "lock_L": {
+     "adelante": -10,
+     "lado": 7
+    },
+    "lock_R": {
+     "adelante": -10,
+     "lado": 7
+    },
+    "bow_back": {
+     "adelante": -28,
+     "lado": 14
+    },
+    "skirt": {
+     "adelante": -6,
+     "lado": 6
+    },
+    "upper_L": {
+     "adelante": -40,
+     "afuera": 19
+    },
+    "fore_L": {
+     "doblar": 58
+    },
+    "upper_R": {
+     "adelante": 36,
+     "afuera": 11
+    },
+    "fore_R": {
+     "doblar": 82
+    }
+   },
+   "mostrar": []
+  },
+  {
+   "raiz": {
+    "aplastar": 1.0
+   },
+   "cadera": {
+    "subir": -1
+   },
+   "pose": {
+    "thigh_L": {
+     "adelante": 44.9
+    },
+    "shin_L": {
+     "doblar": 17.9
+    },
+    "thigh_R": {
+     "adelante": -52.7
+    },
+    "shin_R": {
+     "doblar": 21.7
+    },
+    "hips": {
+     "girar": -3
+    },
+    "chest": {
+     "inclinar": 25,
+     "girar": 3
+    },
+    "neck": {
+     "inclinar": -14
+    },
+    "hair": {
+     "adelante": -7,
+     "lado": 0
+    },
+    "lock_R": {
+     "adelante": -5,
+     "lado": 0
+    },
+    "lock_L": {
+     "adelante": -5,
+     "lado": 0
+    },
+    "bow_back": {
+     "adelante": -20,
+     "lado": 0
+    },
+    "skirt": {
+     "adelante": -5,
+     "lado": 0
+    },
+    "upper_R": {
+     "adelante": 62,
+     "afuera": 8
+    },
+    "fore_R": {
+     "doblar": 90
+    },
+    "upper_L": {
+     "adelante": -66,
+     "afuera": 22
+    },
+    "fore_L": {
+     "doblar": 50
+    }
+   },
+   "mostrar": []
+  },
+  {
+   "raiz": {
+    "aplastar": 1.0
+   },
+   "cadera": {
+    "subir": 0
+   },
+   "pose": {
+    "thigh_L": {
+     "adelante": 10.5
+    },
+    "shin_L": {
+     "doblar": 8.2
+    },
+    "thigh_R": {
+     "adelante": 6.7
+    },
+    "shin_R": {
+     "doblar": 99.0
+    },
+    "hips": {
+     "girar": -1.5
+    },
+    "chest": {
+     "inclinar": 25,
+     "girar": 1.5
+    },
+    "neck": {
+     "inclinar": -14
+    },
+    "hair": {
+     "adelante": -12,
+     "lado": -6
+    },
+    "lock_R": {
+     "adelante": -10,
+     "lado": -7
+    },
+    "lock_L": {
+     "adelante": -10,
+     "lado": -7
+    },
+    "bow_back": {
+     "adelante": -28,
+     "lado": -14
+    },
+    "skirt": {
+     "adelante": -6,
+     "lado": -6
+    },
+    "upper_R": {
+     "adelante": 36,
+     "afuera": 11
+    },
+    "fore_R": {
+     "doblar": 82
+    },
+    "upper_L": {
+     "adelante": -40,
+     "afuera": 19
+    },
+    "fore_L": {
+     "doblar": 58
+    }
+   },
+   "mostrar": []
+  },
+  {
+   "raiz": {
+    "aplastar": 1.0
+   },
+   "cadera": {
+    "subir": 1
+   },
+   "pose": {
+    "thigh_L": {
+     "adelante": -14.0
+    },
+    "shin_L": {
+     "doblar": 11.4
+    },
+    "thigh_R": {
+     "adelante": 53.3
+    },
+    "shin_R": {
+     "doblar": 84.8
+    },
+    "hips": {
+     "girar": 1.5
+    },
+    "chest": {
+     "inclinar": 25,
+     "girar": -1.5
+    },
+    "neck": {
+     "inclinar": -14
+    },
+    "hair": {
+     "adelante": -18,
+     "lado": -9.0
+    },
+    "lock_R": {
+     "adelante": -16,
+     "lado": -10.5
+    },
+    "lock_L": {
+     "adelante": -16,
+     "lado": -10.5
+    },
+    "bow_back": {
+     "adelante": -40,
+     "lado": -21.0
+    },
+    "skirt": {
+     "adelante": -8,
+     "lado": -9.0
+    },
+    "upper_R": {
+     "adelante": -2,
+     "afuera": 15
+    },
+    "fore_R": {
+     "doblar": 70
+    },
+    "upper_L": {
+     "adelante": -2,
+     "afuera": 15
+    },
+    "fore_L": {
+     "doblar": 70
+    }
+   },
+   "mostrar": []
+  },
+  {
+   "raiz": {
+    "aplastar": 1.0
+   },
+   "cadera": {
+    "subir": 0
+   },
+   "pose": {
+    "thigh_L": {
+     "adelante": -23.1
+    },
+    "shin_L": {
+     "doblar": 52.4
+    },
+    "thigh_R": {
+     "adelante": 57.0
+    },
+    "shin_R": {
+     "doblar": 50.7
+    },
+    "hips": {
+     "girar": 3
+    },
+    "chest": {
+     "inclinar": 25,
+     "girar": -3
+    },
+    "neck": {
+     "inclinar": -14
+    },
+    "hair": {
+     "adelante": -12,
+     "lado": -6
+    },
+    "lock_R": {
+     "adelante": -10,
+     "lado": -7
+    },
+    "lock_L": {
+     "adelante": -10,
+     "lado": -7
+    },
+    "bow_back": {
+     "adelante": -28,
+     "lado": -14
+    },
+    "skirt": {
+     "adelante": -6,
+     "lado": -6
+    },
+    "upper_R": {
+     "adelante": -40,
+     "afuera": 19
+    },
+    "fore_R": {
+     "doblar": 58
+    },
+    "upper_L": {
+     "adelante": 36,
+     "afuera": 11
+    },
+    "fore_L": {
+     "doblar": 82
+    }
+   },
+   "mostrar": []
+  }
+ ]
+}
