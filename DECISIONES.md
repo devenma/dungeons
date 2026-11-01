@@ -9,13 +9,17 @@ propuestas vigentes hasta que el equipo las revise.
 suave") y se crea la biblia de arte (D7).
 **Revisión 5:** 2026-10-25. Se suman las propuestas del slice de San Ulmo: jefe (D21), techo de pisos y
 `DungeonData` (D22), sala de cura con precio (D23) y números de sensación de combate (D24).
+**Revisión 6:** 2026-10-29. Cambia el estilo de personajes al del NPC base del artista y la cámara pasa a
+tomar como referencia *Sea of Stars* (D5). Lo más oscuro queda para la mazmorra; el pueblo y el gremio
+son más cálidos (D15). Se suman propuestas: correr, dash, bloqueo y parry (D26), y una posible segunda
+jugable (D13).
 **Alcance:** define el juego que queremos hacer. Las decisiones cerradas acá mandan sobre `AGENTS.md`,
 `README.md` y `FEATURES.md` en todo lo que contradigan; esos documentos se actualizan **después** de la
 validación, no antes.
 
 ## Cómo leer este documento
 
-Cada decisión tiene un ID (`D1`…`D24`) para poder citarla en la discusión.
+Cada decisión tiene un ID (`D1`…`D26`) para poder citarla en la discusión.
 
 | Marca | Significado |
 |---|---|
@@ -60,7 +64,7 @@ Tres documentos describen hoy un juego distinto del que queremos:
 - `FEATURES.md` — backlog ordenado como roguelite (meta-progresión y hub en P3).
 
 La dirección nueva es **Moonlighter + Stardew Valley** en lo jugable, con exploración tipo Zelda, cámara
-cenital y paleta apagada; la atmósfera es *Fear & Hunger* (D15). Eso empuja hacia un mundo persistente y salas hechas a mano, mientras el código actual es
+aérea como la de *Sea of Stars* y paleta apagada; la mazmorra es lo más oscuro del juego (D15). Eso empuja hacia un mundo persistente y salas hechas a mano, mientras el código actual es
 procedural y borra todo al morir. **D1 a D3 resuelven cuánto de cada lado tomamos.**
 
 Auditoría de Engram (68 sesiones): no hay ninguna traza de esta dirección creativa. Todo lo registrado
@@ -235,6 +239,30 @@ Los números objetivo (plantado, rodada, dispersión, stagger por enemigo) está
 Todo el detalle está en [`BIBLIA_ARTE.md`](BIBLIA_ARTE.md). El estilo puede cambiar más adelante, pero
 mientras tanto todo asset nuevo sale con él.
 
+**Cambio del 2026-10-29 (equipo y artista):** los personajes dejan el estilo "esbelto" y pasan al del **NPC
+base del artista** (`Base_4_Player_V4.aseprite` y `Maid-V1.aseprite`):
+- Lienzo de **64×64**, figura chibi de ~31 px de alto (unas 3 cabezas), pies en x 32 y suelas en y 47.
+- **Cambio del 2026-10-30:** la figura crece a ~40 px (máximo 42 con el pelo; el artista la sigue pensando
+  sobre 32×32) y el contorno pasa a ser **de color** (sel-out). Se probó la pantalla a 640×360 y se descartó: el
+  juego sigue en 480×270 (×4).
+- **Cambio del 2026-11-01:** el máximo de 42 px se mide hasta la tapa del pelo. Los adornos de la cabeza (orejas,
+  cuernos, plumas, sombreros) pueden pasarlo. La maid mide 40-41 px hasta la tapa y 43-44 con las orejas de gato.
+- **Contorno de 1 px en su propia capa**, para poder cambiar el color cuando se quiera. Rodea la
+  silueta por fuera (4 vecinos) y no se dibuja en el hueco entre las piernas, de frente y de espaldas, para
+  que no se vean pegadas.
+- Cada personaje se arma sobre un **maniquí en capas** (femenino del artista y masculino derivado, de pecho
+  triangular y hombros anchos) con su mapa de articulaciones (`Grid_*`: rojo articulación, azul derecha,
+  amarillo izquierda). Ropa, pelo e ítems van en capas que se ponen y se sacan.
+- Todo personaje se exporta a **`.aseprite` con capas** y etiquetas por animación y dirección.
+- El artista hace lo mínimo: da las bases, la guía y las correcciones; lo demás se genera a partir de eso.
+
+**Cámara (2026-10-29):** vista aérea como la de *Sea of Stars*: cenital alta, con el piso visto desde
+arriba, las paredes de frente y los personajes de frente, de espaldas o de perfil. Reemplaza a *Minish Cap* /
+*A Link to the Past* como referencia; la geometría de tiles y paredes no cambia.
+
+**[IMPACTO]** El jugador y los NPCs del código usan hojas de 48×48; pasan a 64×64 cuando entren los
+personajes nuevos. Tiles (32), enemigos grandes (96) y jefes (128+) no cambian.
+
 HD-2D se decide después: en Godot implica sprites 2D con luces y normal maps, es una decisión de renderer y
 es barata de posponer.
 
@@ -256,6 +284,24 @@ Sin eso los assets no van a pegar entre sí. Lo primero que hay que resolver ah�
 
 La biblia ya existe: [`BIBLIA_ARTE.md`](BIBLIA_ARTE.md) (2026-10-24). Cubre escala, cámara, luz, el
 entorno y su paleta; la sección de personajes sigue en prueba.
+
+**Flujo de personajes (2026-10-29, en prueba):** el artista entrega el maniquí en capas y la guía de cada
+personaje. Con PixelLab se generan el maniquí masculino, la caminata (PixMiniMax con paleta fija y poses
+clave), la ropa transferida, el pelo y los ítems como capas; una limpieza automática fija la cabeza, la
+paleta y el contorno. El equipo aprobó el maniquí en capas y la animación de caminar; falta pulir.
+*Reemplazado el 2026-11-01 por el flujo 3D de abajo.*
+
+**Cambio del 2026-11-01 (equipo): personajes en 3D renderizados a pixel art, como *Dead Cells*.** Cada
+personaje es un modelo 3D simple (low-poly, por partes) que se anima y se renderiza directo a 40 px con la
+cámara del juego (ortográfica, 22°), sin suavizado, con rampas de 3 tonos por material, contorno de color y un
+normal map por cuadro para la luz 2D de Godot. Se mantienen el lienzo, el ancla, el contorno de color y las
+reglas del artista (máximo 3 tonos por material, una sola piel, simetría). El dibujo 2D del artista es la guía de
+diseño (hoja de giro aprobada), no la meta píxel a píxel.
+- El modelo es neutro, mirando al frente; la mirada a la cámara va en la pose.
+- Los personajes se arman con **módulos** (cuerpo, cara, peinado, adornos, ropa, calzado, arma) para sacar variantes
+  y, más adelante, dejar que el jugador personalice.
+- Herramientas: `tools/art/rig3d.py` (Blender 5.2 sin interfaz). Proceso y lecciones: `art/guias/modelado.md` y
+  `art/guias/animacion.md`. Primer personaje: la maid (`art/source/maid_gato/`).
 
 ### D8 — ¿Plataformas y control? [PROPUESTA]
 
@@ -305,6 +351,12 @@ reescribir después. Ya propagado a `AGENTS.md` §18–§19 y `FEATURES.md` P2.
 
 Uno solo. Varios protagonistas implican ramas de historia y multiplican el arte.
 
+**Idea del equipo (2026-10-29), sin confirmar:** una chica que fue aventurera de tipo asesina y dejó esa
+vida porque quería algo más tranquilo, personaje importante de una subtrama. Más que un NPC, probablemente
+sea **jugable**. Cada tanto tendría una animación propia: agarra a un NPC borracho tirado en el suelo, lo
+levanta en el aire y lo golpea. Si se confirma como jugable, esta decisión pasa a "varios protagonistas" y
+hay que revisar el costo de arte e historia.
+
 ---
 
 ## HISTORIA Y ALCANCE
@@ -327,6 +379,13 @@ contrastado. Resuelve el tono y la legibilidad del combate al mismo tiempo.
 de juego; la atmósfera y el ambiente son *Fear & Hunger*: tono **lo más oscuro posible**. Se permiten gore y horror corporal. Trasfondo: el mundo se vino abajo por
 algo relacionado con las mazmorras y hay una crisis. El pueblo deja de ser acogedor: es un refugio frágil y
 desesperado. Falta confirmarlo formalmente para pasar a [DECIDIDO].
+
+**Dirección del equipo (2026-10-29), ajusta lo anterior:** lo de antes era demasiado oscuro para todo el
+juego. **Lo más oscuro es la mazmorra**: assets de estilo *Blasphemous* (solo el estilo de los assets, no la
+vista de costado), con gore y horror corporal; *Fear & Hunger* queda como referencia de la mazmorra. **El
+pueblo y el gremio** van más cálidos, como *Sea of Stars* (luz de velas y chimenea, mucho detalle en pisos y
+muebles) y un poco más oscuros, con un toque *Stardew Valley* pero menos colorido. La iluminación y los
+filtros de pantalla llevan buena parte del clima.
 
 ### D16 — ¿Idiomas? [PROPUESTA]
 
@@ -753,6 +812,27 @@ pantalla. El diseño completo está en [`odd/tasks/hondoval-design.md`](odd/task
 Queda para el plan de arte: el suelo con transiciones (prueba con PixelLab), las fachadas, los interiores, los
 aventureros del gremio y las variantes de noche.
 
+### D26 — Correr, dash, bloqueo y parry [PROPUESTA]
+
+**Pedido del equipo (2026-10-29):** el personaje necesita más acciones que caminar, rodar y el combo:
+- **Correr.**
+- **Dash**, que **reemplaza a la voltereta** actual (`roll`).
+- **Bloqueo**, en dos versiones con poses distintas: con escudo y sin escudo.
+- **Parry.**
+- **Ataque normal y ataque fuerte.**
+- **Sentarse**, en las 4 direcciones (pose del pueblo, no de combate).
+
+Prioridad para tener algo jugable: **correr y el ataque con espada** primero; el resto después.
+
+Falta definir antes de implementar:
+- Correr: si es mantener un botón o la velocidad base, y si gasta stamina.
+- Dash: distancia, i-frames y coste; los números de la rodada (D24) son el punto de partida.
+- Bloqueo y parry: qué bloquea cada uno, la ventana del parry y qué pasa con la stamina al bloquear.
+- Ataque fuerte: si es un botón aparte o cargar el ataque, y cómo convive con el combo de 3.
+
+**[IMPACTO]** `RollComponent` y la acción `roll` se reemplazan por el dash. Bloqueo y parry pasan por la
+`Hurtbox`, como ya hace el `Guard` de los enemigos.
+
 ---
 
 ## Si se aprueban D1–D4: orden técnico sugerido
@@ -833,4 +913,5 @@ fueron propagados; los de proceso siguen abiertos.
 
 `README.md`, `AGENTS.md` y `FEATURES.md` quedaron alineados con D1–D20 el 2026-10-24. Si aparece una
 contradicción nueva, gana este documento y se corrige el otro. D21–D24 (2026-10-25) son propuestas y
-todavía no se propagaron.
+todavía no se propagaron. El cambio de estilo de personajes, la cámara y el tono del 2026-10-29 (D5, D15)
+ya están en `BIBLIA_ARTE.md`, `AGENTS.md` §1 y §38.1 y `README.md`; D26 todavía no.
