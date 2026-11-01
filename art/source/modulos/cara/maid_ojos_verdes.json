@@ -1,4 +1,14 @@
 {
+  "cuerpo": {
+    "cabeza": {
+      "radios": [5.6, 7.15, 6.4],
+      "mandibula": 0.15,
+      "menton": 0.3,
+      "cuadrar_abajo": 2.8,
+      "alto_arriba": 5.0,
+      "fondo": 4.9
+    }
+  },
   "ojos": {
     "parte": ["cabeza", "flequillo"],
     "x": 3.4,

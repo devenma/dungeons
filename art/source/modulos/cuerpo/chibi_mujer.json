@@ -22,15 +22,7 @@
     "plano_pierna": 0.8,
     "cuello_r": [1.1, 2.7],
     "cuello_y": -1.2,
-    "cabeza": {
-      "centro": [0, 0.0, 6.2],
-      "radios": [5.6, 7.15, 6.4],
-      "mandibula": 0.15,
-      "menton": 0.3,
-      "cuadrar_abajo": 2.8,
-      "alto_arriba": 5.0,
-      "fondo": 4.9
-    },
+    "cabeza": {"centro": [0, 0.0, 6.2]},
     "torso_perfil": [
       [-0.13, 3.6, 2.6, 1.0],
       [0.0, 4.2, 3.0, 1.1],
@@ -40,8 +32,11 @@
       [0.95, 4.2, 3.2, 0.8],
       [1.0, 2.4, 1.9, 0.9]
     ],
-    "plano_brazo": 0.7
+    "plano_brazo": 0.7,
+    "clavicula": 1.5,
+    "mano_hueso": true
   },
+  "grupos_ocultos": ["mano_perfil_L", "mano_perfil_R"],
   "marcadores": {
     "cuello": ["neck", "cabeza"],
     "cadera": ["hips", "cabeza"],
@@ -61,10 +56,25 @@
       "material": "piel_mano",
       "capa": "cuerpo",
       "linea": "brazo_<lado>",
-      "hueso": "fore_<lado>",
+      "hueso": "hand_<lado>",
+      "ocultar_si": "mano_perfil_<lado>",
       "pos": [0.03, 0.0, -1.602],
       "relativo": ["fore_<lado>", "cola"],
       "radios": [1.4, 1.1, 1.5],
+      "ocultar_lejos": 30
+    },
+    {
+      "tipo": "esfera",
+      "nombre": "mano_perfil",
+      "lados": ["L", "R"],
+      "grupo": "mano_perfil_<lado>",
+      "material": "piel_mano",
+      "capa": "cuerpo",
+      "linea": "brazo_<lado>",
+      "hueso": "hand_<lado>",
+      "pos": [0.03, -0.3, -1.2],
+      "relativo": ["fore_<lado>", "cola"],
+      "radios": [1.4, 0.8, 1.15],
       "ocultar_lejos": 30
     }
   ]

@@ -99,6 +99,9 @@ LARGO = [0.93, 0.93, 1, 1]
 DELANTAL_FIJO = True
 # Reposo del cuello: los ojos ya se redondean en el modelo / neck rest: the model now rounds the eyes
 NECK_INCLINAR = -10
+# La cara mira a la cámara solo de frente: de perfil -10 levantaba el mentón y achicaba la cara; de espaldas, 0
+# (animacion.md §7.12) / the face looks at the camera only from the front: in profile -10 raised the chin
+POR_DIRECCION = {d: {"pose": {"neck": {"inclinar": 0}}} for d in ("east", "west", "north")}
 # Brazos separados del torso (grados): base y cuánto se abre el brazo que va adelante. Va con el vaivén, así c0-c3 y
 # su espejo valen lo mismo. Ronda 4: con el codo doblado la mano de adelante tapaba el hueco de frente (1 fila en
 # c0/c4); 16 + 4k deja 2 filas o más en S y N en todos los cuadros.
@@ -249,7 +252,8 @@ def build():
         motion.resorte(frames, dst, drive, ms=[MS] * n, **SPRING)
     if DELANTAL_FIJO: fijar_delantal(frames)
     for f in frames: del f["pose"]["_vaiven"]
-    return {"nombre": "caminar", "bucle": True, "lienzo": 64, "duraciones_ms": [MS] * n, "cuadros": frames}
+    return {"nombre": "caminar", "bucle": True, "lienzo": 64, "duraciones_ms": [MS] * n, "por_direccion": POR_DIRECCION,
+            "cuadros": frames}
 
 
 def report(anim):

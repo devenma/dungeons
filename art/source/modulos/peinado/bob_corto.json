@@ -8,6 +8,7 @@
       "ambiente": 0.3
     }
   },
+  "gravedad": {"hair": 1.0, "lock_L": 1.0, "lock_R": 1.0},
   "cuerpo": {
     "pelo": [2, 8, 1],
     "mechones": [5.3, 0.3, 4, -4]
@@ -27,14 +28,15 @@
       "arco": 0.0,
       "radios": [6.5, 7.2, 5.8],
       "bajo": 3.0,
-      "bajo_atras": 5.0,
+      "bajo_atras": 4.2,
       "cara": [4.6, 5.0],
       "flequillo": -1.0,
       "cuadrar": 2.4,
       "cortina": 0.5,
       "sien": 3.0,
       "fondo": 5.2,
-      "menton": 4.6
+      "menton": 4.6,
+      "raya": [[-2.3, 2.3], 0.4, 4.0, -1.5]
     },
     {
       "tipo": "tarjeta",
@@ -48,6 +50,8 @@
       "curva": [0.0, -3.0, -5.4, -5.4],
       "grosor": 1.0,
       "nv": 20,
+      "mechas": [-0.4, 0.4],
+      "curvo": 0.1,
       "puntas": [0.3]
     },
     {
@@ -65,7 +69,8 @@
       "curva": 0.0,
       "grosor": 1.0,
       "nv": 6,
-      "puntas": [0.0]
+      "puntas": [0.0],
+      "punta_oscura": 0.85
     },
     {
       "tipo": "tarjeta",
@@ -74,14 +79,16 @@
       "capa": "pelo",
       "linea": "cabeza",
       "hueso": "hair",
-      "camino": [[0, 2.5, 4.5], [0, 3.8, 3.0], [0, 4.7, -1.5], [0, 4.6, -4.8], [0, 3.9, -6.4]],
-      "ancho": [5.0, 7.0, 8.4, 8.2, 7.4],
+      "camino": [[0, 2.5, 4.5], [0, 3.8, 3.0], [0, 4.7, -1.5], [0, 4.6, -4.2], [0, 3.9, -5.4]],
+      "ancho": [5.0, 7.0, 8.4, 7.8, 6.2],
       "curva": [2.9, 3.3, 4.0, 3.4, 2.6],
       "grosor": 1.4,
       "nv": 24,
-      "puntas": [0.0],
+      "puntas": [0.4, 0.2, -0.4, -1.4, -2.0, -1.4, -0.4, 0.2, 0.4],
       "rigido": 0.35,
-      "mechas": [],
+      "mechas": [-0.35, 0.35],
+      "mechas_desde": 0.55,
+      "punta_oscura": 0.93,
       "curvo": 0
     }
   ]

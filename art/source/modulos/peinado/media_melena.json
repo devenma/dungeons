@@ -3,6 +3,7 @@
   "rampas": {
     "pelo": {"tonos": [[84, 34, 30], [134, 58, 42], [178, 92, 62]], "mechas": 0.25, "umbrales": [0.25, 0.85], "ambiente": 0.3}
   },
+  "gravedad": {"hair": 1.0, "lock_L": 1.0, "lock_R": 1.0},
   "cuerpo": {"pelo": [2, 8, -1], "mechones": [5.3, 0.3, 4, -4]},
   "partes": [
     {
@@ -26,7 +27,8 @@
       "cortina": 0.5,
       "sien": 3.0,
       "fondo": 5.2,
-      "menton": 4.6
+      "menton": 4.6,
+      "raya": [[-2.3, 2.3], 0.4, 4.0, -1.5]
     },
     {
       "tipo": "tarjeta",
@@ -97,7 +99,9 @@
       "nv": 24,
       "puntas": [-1.5, -0.5, 1.0, 0.3, -0.6, 0.4, 1.4, 0.4, -0.6, 0.3, 1.0, -0.5, -1.5],
       "rigido": 0.35,
-      "mechas": [],
+      "mechas": [-0.35, 0.35],
+      "mechas_desde": 0.7,
+      "punta_oscura": 0.93,
       "curvo": 0
     }
   ]

@@ -12,6 +12,29 @@
   50,
   50
  ],
+ "por_direccion": {
+  "east": {
+   "pose": {
+    "neck": {
+     "inclinar": 0
+    }
+   }
+  },
+  "west": {
+   "pose": {
+    "neck": {
+     "inclinar": 0
+    }
+   }
+  },
+  "north": {
+   "pose": {
+    "neck": {
+     "inclinar": 0
+    }
+   }
+  }
+ },
  "cuadros": [
   {
    "cadera": {

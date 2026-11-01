@@ -13,7 +13,7 @@
     "../../modulos/peinado/media_melena.json",
     "../../modulos/adorno_cabeza/orejas_gato.json"
   ],
-  "cuerpo": {"cabeza": {"centro": [0, 1.0, 6.0], "alto_arriba": 5.6}},
+  "cuerpo": {"cabeza": {"centro": [0, 0.0, 6.6]}, "caderas": [3.5, 1.2]},
   "partes": [
     {"nombre": "lazo", "pos": [1.6, -3.2, 1.2]},
     {"nombre": "nudo", "pos": [0, -3.7, 0.6]}

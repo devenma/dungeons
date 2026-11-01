@@ -1,1 +1,3 @@
-{"nombre":"reposo","lienzo":64,"cuadros":[{"pose":{"neck":{"inclinar":-10},"fore_L":{"doblar":25},"fore_R":{"doblar":25}}}],"duraciones_ms":[100]}
+{"nombre":"reposo","lienzo":64,
+ "por_direccion":{"east":{"pose":{"neck":{"inclinar":0}}},"west":{"pose":{"neck":{"inclinar":0}}},"north":{"pose":{"neck":{"inclinar":0}}}},
+ "cuadros":[{"pose":{"neck":{"inclinar":-10},"fore_L":{"doblar":25},"fore_R":{"doblar":25}}}],"duraciones_ms":[100]}
