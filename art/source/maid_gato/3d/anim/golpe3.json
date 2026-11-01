@@ -1,0 +1,555 @@
+{
+ "nombre": "golpe_3",
+ "bucle": false,
+ "lienzo": 64,
+ "duraciones_ms": [
+  110,
+  230,
+  120,
+  170,
+  250
+ ],
+ "cuadros": [
+  {
+   "raiz": {
+    "aplastar": 1.03
+   },
+   "cadera": {},
+   "pose": {
+    "chest": {
+     "girar": -10,
+     "inclinar": -6
+    },
+    "upper_R": {
+     "adelante": 98,
+     "afuera": -12,
+     "girar": 6
+    },
+    "fore_R": {
+     "doblar": 86
+    },
+    "weapon_R": {
+     "doblar": 6
+    },
+    "upper_L": {
+     "adelante": -10,
+     "afuera": 45
+    },
+    "fore_L": {
+     "doblar": 40
+    },
+    "neck": {
+     "inclinar": -7.0,
+     "girar": 10
+    },
+    "thigh_L": {
+     "adelante": 9.6
+    },
+    "shin_L": {
+     "doblar": 20.6
+    },
+    "foot_L": {
+     "doblar": 11.0
+    },
+    "thigh_R": {
+     "adelante": 9.6
+    },
+    "shin_R": {
+     "doblar": 20.6
+    },
+    "foot_R": {
+     "doblar": 11.0
+    },
+    "skirt": {
+     "largo": 1.0
+    },
+    "skirt_F": {
+     "adelante": -1.4,
+     "largo": 1.0
+    },
+    "hair": {
+     "adelante": -4.0,
+     "lado": 0.0
+    },
+    "lock_L": {
+     "adelante": -3
+    },
+    "lock_R": {
+     "adelante": -3
+    },
+    "ear_tip_L": {
+     "adelante": 0.0
+    },
+    "ear_tip_R": {
+     "adelante": 0.0
+    },
+    "skirt_B": {
+     "adelante": 0.0
+    }
+   },
+   "mostrar": [
+    "espada"
+   ],
+   "por_direccion": {
+    "east": {
+     "pose": {
+      "neck": {
+       "inclinar": 3.0
+      }
+     }
+    },
+    "west": {
+     "pose": {
+      "neck": {
+       "inclinar": 3.0
+      }
+     }
+    },
+    "north": {
+     "pose": {
+      "neck": {
+       "inclinar": 3.0
+      }
+     }
+    }
+   }
+  },
+  {
+   "raiz": {
+    "aplastar": 1.05
+   },
+   "cadera": {
+    "adelantar": -1
+   },
+   "pose": {
+    "chest": {
+     "girar": -12,
+     "inclinar": -14
+    },
+    "hips": {
+     "inclinar": -4
+    },
+    "upper_R": {
+     "adelante": 124,
+     "afuera": -14,
+     "girar": 1
+    },
+    "fore_R": {
+     "doblar": 30
+    },
+    "weapon_R": {
+     "doblar": 56
+    },
+    "upper_L": {
+     "adelante": -10,
+     "afuera": 85
+    },
+    "fore_L": {
+     "doblar": 45
+    },
+    "neck": {
+     "inclinar": -1.0,
+     "girar": 12
+    },
+    "thigh_L": {
+     "adelante": 23.4
+    },
+    "shin_L": {
+     "doblar": 41.2
+    },
+    "foot_L": {
+     "doblar": 11.0
+    },
+    "thigh_R": {
+     "adelante": 23.4
+    },
+    "shin_R": {
+     "doblar": 41.2
+    },
+    "foot_R": {
+     "doblar": 11.0
+    },
+    "skirt": {
+     "largo": 1.0
+    },
+    "skirt_F": {
+     "adelante": -3.5,
+     "largo": 1.0
+    },
+    "hair": {
+     "adelante": -2.3,
+     "lado": 0.1
+    },
+    "lock_L": {
+     "adelante": -3
+    },
+    "lock_R": {
+     "adelante": -3
+    },
+    "ear_tip_L": {
+     "adelante": 2.6
+    },
+    "ear_tip_R": {
+     "adelante": 2.6
+    },
+    "skirt_B": {
+     "adelante": 0.3
+    }
+   },
+   "mostrar": [
+    "espada"
+   ],
+   "por_direccion": {
+    "east": {
+     "pose": {
+      "neck": {
+       "inclinar": 9.0
+      }
+     }
+    },
+    "west": {
+     "pose": {
+      "neck": {
+       "inclinar": 9.0
+      }
+     }
+    },
+    "north": {
+     "pose": {
+      "neck": {
+       "inclinar": 9.0
+      }
+     }
+    }
+   }
+  },
+  {
+   "raiz": {
+    "aplastar": 0.93
+   },
+   "cadera": {
+    "subir": -2,
+    "adelantar": -4
+   },
+   "pose": {
+    "chest": {
+     "girar": 6,
+     "inclinar": 24
+    },
+    "hips": {
+     "inclinar": 6
+    },
+    "upper_R": {
+     "adelante": 86,
+     "afuera": 27,
+     "girar": 11
+    },
+    "fore_R": {
+     "doblar": 0
+    },
+    "weapon_R": {
+     "doblar": -33
+    },
+    "upper_L": {
+     "adelante": -27,
+     "afuera": 32
+    },
+    "fore_L": {
+     "doblar": 57
+    },
+    "neck": {
+     "inclinar": -25.0,
+     "girar": -6
+    },
+    "thigh_L": {
+     "adelante": -5.9
+    },
+    "shin_L": {
+     "doblar": 53.4
+    },
+    "foot_L": {
+     "doblar": 65.3
+    },
+    "thigh_R": {
+     "adelante": 67.4
+    },
+    "shin_R": {
+     "doblar": 53.4
+    },
+    "foot_R": {
+     "doblar": -8.0
+    },
+    "skirt": {
+     "largo": 0.88
+    },
+    "skirt_F": {
+     "adelante": -10.1,
+     "largo": 1.136
+    },
+    "hair": {
+     "adelante": -18,
+     "lado": -3.7
+    },
+    "lock_L": {
+     "adelante": -3
+    },
+    "lock_R": {
+     "adelante": -3
+    },
+    "ear_tip_L": {
+     "adelante": -28
+    },
+    "ear_tip_R": {
+     "adelante": -28
+    },
+    "skirt_B": {
+     "adelante": -6.4
+    }
+   },
+   "mostrar": [
+    "espada",
+    "estela"
+   ],
+   "por_direccion": {
+    "east": {
+     "pose": {
+      "neck": {
+       "inclinar": -15.0
+      }
+     }
+    },
+    "west": {
+     "pose": {
+      "neck": {
+       "inclinar": -15.0
+      }
+     }
+    },
+    "north": {
+     "pose": {
+      "neck": {
+       "inclinar": -15.0
+      }
+     }
+    }
+   }
+  },
+  {
+   "raiz": {
+    "aplastar": 0.97
+   },
+   "cadera": {
+    "subir": -2,
+    "adelantar": -4
+   },
+   "pose": {
+    "chest": {
+     "girar": 6,
+     "inclinar": 21
+    },
+    "hips": {
+     "inclinar": 6
+    },
+    "upper_R": {
+     "adelante": 86,
+     "afuera": 24,
+     "girar": 11
+    },
+    "fore_R": {
+     "doblar": 0
+    },
+    "weapon_R": {
+     "doblar": -37
+    },
+    "upper_L": {
+     "adelante": -23,
+     "afuera": 33
+    },
+    "fore_L": {
+     "doblar": 60
+    },
+    "neck": {
+     "inclinar": -23.5,
+     "girar": -6
+    },
+    "thigh_L": {
+     "adelante": -5.9
+    },
+    "shin_L": {
+     "doblar": 53.4
+    },
+    "foot_L": {
+     "doblar": 65.3
+    },
+    "thigh_R": {
+     "adelante": 67.4
+    },
+    "shin_R": {
+     "doblar": 53.4
+    },
+    "foot_R": {
+     "doblar": -8.0
+    },
+    "skirt": {
+     "largo": 0.88
+    },
+    "skirt_F": {
+     "adelante": -10.1,
+     "largo": 1.136
+    },
+    "hair": {
+     "adelante": 7.7,
+     "lado": 1.2
+    },
+    "lock_L": {
+     "adelante": -3
+    },
+    "lock_R": {
+     "adelante": -3
+    },
+    "ear_tip_L": {
+     "adelante": 17.5
+    },
+    "ear_tip_R": {
+     "adelante": 17.5
+    },
+    "skirt_B": {
+     "adelante": 2.1
+    }
+   },
+   "mostrar": [
+    "espada"
+   ],
+   "por_direccion": {
+    "east": {
+     "pose": {
+      "neck": {
+       "inclinar": -13.5
+      }
+     }
+    },
+    "west": {
+     "pose": {
+      "neck": {
+       "inclinar": -13.5
+      }
+     }
+    },
+    "north": {
+     "pose": {
+      "neck": {
+       "inclinar": -13.5
+      }
+     }
+    }
+   }
+  },
+  {
+   "raiz": {},
+   "cadera": {
+    "subir": -1,
+    "adelantar": -3
+   },
+   "pose": {
+    "chest": {
+     "inclinar": 10
+    },
+    "hips": {
+     "inclinar": 3
+    },
+    "upper_R": {
+     "adelante": 80,
+     "afuera": 48,
+     "girar": -2
+    },
+    "fore_R": {
+     "doblar": 0
+    },
+    "weapon_R": {
+     "doblar": -10
+    },
+    "upper_L": {
+     "adelante": -22,
+     "afuera": 19
+    },
+    "fore_L": {
+     "doblar": 71
+    },
+    "neck": {
+     "inclinar": -16.5,
+     "girar": 0
+    },
+    "thigh_L": {
+     "adelante": 32.1
+    },
+    "shin_L": {
+     "doblar": 86.5
+    },
+    "foot_L": {
+     "doblar": 57.4
+    },
+    "thigh_R": {
+     "adelante": 46.8
+    },
+    "shin_R": {
+     "doblar": 40.0
+    },
+    "foot_R": {
+     "doblar": -3.8
+    },
+    "skirt": {
+     "largo": 0.94
+    },
+    "skirt_F": {
+     "adelante": -7.0,
+     "largo": 1.064
+    },
+    "hair": {
+     "adelante": 0.7,
+     "lado": 0.5
+    },
+    "lock_L": {
+     "adelante": -3
+    },
+    "lock_R": {
+     "adelante": -3
+    },
+    "ear_tip_L": {
+     "adelante": 7.1
+    },
+    "ear_tip_R": {
+     "adelante": 7.1
+    },
+    "skirt_B": {
+     "adelante": 0.8
+    }
+   },
+   "mostrar": [
+    "espada"
+   ],
+   "por_direccion": {
+    "east": {
+     "pose": {
+      "neck": {
+       "inclinar": -6.5
+      }
+     }
+    },
+    "west": {
+     "pose": {
+      "neck": {
+       "inclinar": -6.5
+      }
+     }
+    },
+    "north": {
+     "pose": {
+      "neck": {
+       "inclinar": -6.5
+      }
+     }
+    }
+   }
+  }
+ ]
+}

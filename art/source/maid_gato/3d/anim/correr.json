@@ -1,0 +1,569 @@
+{
+ "nombre": "correr",
+ "bucle": true,
+ "lienzo": 64,
+ "duraciones_ms": [
+  50,
+  50,
+  50,
+  50,
+  50,
+  50,
+  50,
+  50
+ ],
+ "cuadros": [
+  {
+   "cadera": {
+    "subir": -2
+   },
+   "pies": {
+    "R": [
+     5.0,
+     0.35,
+     18
+    ],
+    "L": [
+     -3.0,
+     2.7,
+     -35
+    ]
+   },
+   "pose": {
+    "chest": {
+     "inclinar": 14
+    },
+    "neck": {
+     "inclinar": -22
+    },
+    "ear_tip_L": {
+     "afuera": 0,
+     "adelante": 0
+    },
+    "ear_tip_R": {
+     "afuera": 0,
+     "adelante": 0
+    },
+    "skirt": {
+     "largo": 0.86,
+     "lado": 0.9
+    },
+    "skirt_F": {
+     "largo": 1.163,
+     "adelante": -0.5
+    },
+    "skirt_B": {
+     "adelante": -4
+    },
+    "upper_L": {
+     "adelante": 8,
+     "afuera": 20
+    },
+    "fore_L": {
+     "doblar": 95
+    },
+    "upper_R": {
+     "adelante": -56,
+     "afuera": 26
+    },
+    "fore_R": {
+     "doblar": 65
+    },
+    "hair": {
+     "adelante": -22.1,
+     "lado": 3.0
+    },
+    "lock_L": {
+     "adelante": -3
+    },
+    "lock_R": {
+     "adelante": -3
+    }
+   },
+   "mostrar": []
+  },
+  {
+   "cadera": {
+    "subir": -2
+   },
+   "pies": {
+    "R": [
+     0.0,
+     0.12,
+     0
+    ],
+    "L": [
+     -0.5,
+     2.6,
+     -20
+    ]
+   },
+   "pose": {
+    "chest": {
+     "inclinar": 14
+    },
+    "neck": {
+     "inclinar": -22
+    },
+    "ear_tip_L": {
+     "afuera": 22,
+     "adelante": 22
+    },
+    "ear_tip_R": {
+     "afuera": 22,
+     "adelante": 22
+    },
+    "skirt": {
+     "largo": 0.86,
+     "lado": 0.8
+    },
+    "skirt_F": {
+     "largo": 1.163,
+     "adelante": 1.2
+    },
+    "skirt_B": {
+     "adelante": -4
+    },
+    "upper_L": {
+     "adelante": -5,
+     "afuera": 18.4
+    },
+    "fore_L": {
+     "doblar": 89
+    },
+    "upper_R": {
+     "adelante": -43,
+     "afuera": 22.0
+    },
+    "fore_R": {
+     "doblar": 71
+    },
+    "hair": {
+     "adelante": -14.0,
+     "lado": 2.6
+    },
+    "lock_L": {
+     "adelante": -3
+    },
+    "lock_R": {
+     "adelante": -3
+    }
+   },
+   "mostrar": []
+  },
+  {
+   "cadera": {
+    "subir": -1
+   },
+   "pies": {
+    "R": [
+     -4.86,
+     1.3,
+     -17.5
+    ],
+    "L": [
+     2.0,
+     2.2,
+     -5
+    ]
+   },
+   "pose": {
+    "chest": {
+     "inclinar": 14
+    },
+    "neck": {
+     "inclinar": -22
+    },
+    "ear_tip_L": {
+     "afuera": 22,
+     "adelante": 22
+    },
+    "ear_tip_R": {
+     "afuera": 22,
+     "adelante": 22
+    },
+    "skirt": {
+     "largo": 0.93,
+     "lado": -1.4
+    },
+    "skirt_F": {
+     "largo": 1.075,
+     "adelante": -2.2
+    },
+    "skirt_B": {
+     "adelante": -4
+    },
+    "upper_L": {
+     "adelante": -24,
+     "afuera": 16
+    },
+    "fore_L": {
+     "doblar": 80
+    },
+    "upper_R": {
+     "adelante": -24,
+     "afuera": 16
+    },
+    "fore_R": {
+     "doblar": 80
+    },
+    "hair": {
+     "adelante": -5.5,
+     "lado": -4.5
+    },
+    "lock_L": {
+     "adelante": -3
+    },
+    "lock_R": {
+     "adelante": -3
+    }
+   },
+   "mostrar": []
+  },
+  {
+   "cadera": {
+    "subir": 0
+   },
+   "pies": {
+    "R": [
+     -4.5,
+     2.7,
+     -40
+    ],
+    "L": [
+     3.8,
+     1.4,
+     8
+    ]
+   },
+   "pose": {
+    "chest": {
+     "inclinar": 14
+    },
+    "neck": {
+     "inclinar": -22
+    },
+    "ear_tip_L": {
+     "afuera": 0,
+     "adelante": 0
+    },
+    "ear_tip_R": {
+     "afuera": 0,
+     "adelante": 0
+    },
+    "skirt": {
+     "largo": 1.0,
+     "lado": -1.4
+    },
+    "skirt_F": {
+     "largo": 1.0,
+     "adelante": 1.4
+    },
+    "skirt_B": {
+     "adelante": -4
+    },
+    "upper_L": {
+     "adelante": -43,
+     "afuera": 22.0
+    },
+    "fore_L": {
+     "doblar": 71
+    },
+    "upper_R": {
+     "adelante": -5,
+     "afuera": 18.4
+    },
+    "fore_R": {
+     "doblar": 89
+    },
+    "hair": {
+     "adelante": -6.4,
+     "lado": -4.7
+    },
+    "lock_L": {
+     "adelante": -3
+    },
+    "lock_R": {
+     "adelante": -3
+    }
+   },
+   "mostrar": []
+  },
+  {
+   "cadera": {
+    "subir": -2
+   },
+   "pies": {
+    "L": [
+     5.0,
+     0.35,
+     18
+    ],
+    "R": [
+     -3.0,
+     2.7,
+     -35
+    ]
+   },
+   "pose": {
+    "chest": {
+     "inclinar": 14
+    },
+    "neck": {
+     "inclinar": -22
+    },
+    "ear_tip_R": {
+     "afuera": 0,
+     "adelante": 0
+    },
+    "ear_tip_L": {
+     "afuera": 0,
+     "adelante": 0
+    },
+    "skirt": {
+     "largo": 0.86,
+     "lado": -0.9
+    },
+    "skirt_F": {
+     "largo": 1.163,
+     "adelante": -0.5
+    },
+    "skirt_B": {
+     "adelante": -4
+    },
+    "upper_R": {
+     "adelante": 8,
+     "afuera": 20
+    },
+    "fore_R": {
+     "doblar": 95
+    },
+    "upper_L": {
+     "adelante": -56,
+     "afuera": 26
+    },
+    "fore_L": {
+     "doblar": 65
+    },
+    "hair": {
+     "adelante": -22.1,
+     "lado": -3.0
+    },
+    "lock_L": {
+     "adelante": -3
+    },
+    "lock_R": {
+     "adelante": -3
+    }
+   },
+   "mostrar": []
+  },
+  {
+   "cadera": {
+    "subir": -2
+   },
+   "pies": {
+    "L": [
+     0.0,
+     0.12,
+     0
+    ],
+    "R": [
+     -0.5,
+     2.6,
+     -20
+    ]
+   },
+   "pose": {
+    "chest": {
+     "inclinar": 14
+    },
+    "neck": {
+     "inclinar": -22
+    },
+    "ear_tip_R": {
+     "afuera": 22,
+     "adelante": 22
+    },
+    "ear_tip_L": {
+     "afuera": 22,
+     "adelante": 22
+    },
+    "skirt": {
+     "largo": 0.86,
+     "lado": -0.8
+    },
+    "skirt_F": {
+     "largo": 1.163,
+     "adelante": 1.2
+    },
+    "skirt_B": {
+     "adelante": -4
+    },
+    "upper_R": {
+     "adelante": -5,
+     "afuera": 18.4
+    },
+    "fore_R": {
+     "doblar": 89
+    },
+    "upper_L": {
+     "adelante": -43,
+     "afuera": 22.0
+    },
+    "fore_L": {
+     "doblar": 71
+    },
+    "hair": {
+     "adelante": -14.0,
+     "lado": -2.6
+    },
+    "lock_L": {
+     "adelante": -3
+    },
+    "lock_R": {
+     "adelante": -3
+    }
+   },
+   "mostrar": []
+  },
+  {
+   "cadera": {
+    "subir": -1
+   },
+   "pies": {
+    "L": [
+     -4.86,
+     1.3,
+     -17.5
+    ],
+    "R": [
+     2.0,
+     2.2,
+     -5
+    ]
+   },
+   "pose": {
+    "chest": {
+     "inclinar": 14
+    },
+    "neck": {
+     "inclinar": -22
+    },
+    "ear_tip_R": {
+     "afuera": 22,
+     "adelante": 22
+    },
+    "ear_tip_L": {
+     "afuera": 22,
+     "adelante": 22
+    },
+    "skirt": {
+     "largo": 0.93,
+     "lado": 1.4
+    },
+    "skirt_F": {
+     "largo": 1.075,
+     "adelante": -2.2
+    },
+    "skirt_B": {
+     "adelante": -4
+    },
+    "upper_R": {
+     "adelante": -24,
+     "afuera": 16
+    },
+    "fore_R": {
+     "doblar": 80
+    },
+    "upper_L": {
+     "adelante": -24,
+     "afuera": 16
+    },
+    "fore_L": {
+     "doblar": 80
+    },
+    "hair": {
+     "adelante": -5.5,
+     "lado": 4.5
+    },
+    "lock_L": {
+     "adelante": -3
+    },
+    "lock_R": {
+     "adelante": -3
+    }
+   },
+   "mostrar": []
+  },
+  {
+   "cadera": {
+    "subir": 0
+   },
+   "pies": {
+    "L": [
+     -4.5,
+     2.7,
+     -40
+    ],
+    "R": [
+     3.8,
+     1.4,
+     8
+    ]
+   },
+   "pose": {
+    "chest": {
+     "inclinar": 14
+    },
+    "neck": {
+     "inclinar": -22
+    },
+    "ear_tip_R": {
+     "afuera": 0,
+     "adelante": 0
+    },
+    "ear_tip_L": {
+     "afuera": 0,
+     "adelante": 0
+    },
+    "skirt": {
+     "largo": 1.0,
+     "lado": 1.4
+    },
+    "skirt_F": {
+     "largo": 1.0,
+     "adelante": 1.4
+    },
+    "skirt_B": {
+     "adelante": -4
+    },
+    "upper_R": {
+     "adelante": -43,
+     "afuera": 22.0
+    },
+    "fore_R": {
+     "doblar": 71
+    },
+    "upper_L": {
+     "adelante": -5,
+     "afuera": 18.4
+    },
+    "fore_L": {
+     "doblar": 89
+    },
+    "hair": {
+     "adelante": -6.4,
+     "lado": 4.7
+    },
+    "lock_L": {
+     "adelante": -3
+    },
+    "lock_R": {
+     "adelante": -3
+    }
+   },
+   "mostrar": []
+  }
+ ]
+}
