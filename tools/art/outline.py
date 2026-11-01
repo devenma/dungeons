@@ -11,24 +11,28 @@ def ring(mask):
     return n & ~mask
 
 
-def leg_gap(mask, from_y, max_gap=3):
+def leg_gap(mask, from_y, max_gap=3, keep=None):
     # Huecos de hasta max_gap px con cuerpo a ambos lados, desde from_y / gaps up to max_gap px with body on both sides
+    # keep: píxeles del cuerpo (medias claras) que conservan su contorno en huecos de 3+ px, que siguen abiertos
+    # keep: body pixels (light stockings) that keep their outline in gaps of 3+ px, which stay open
     gap = np.zeros_like(mask)
     for y in range(int(from_y), mask.shape[0]):
         xs = np.nonzero(mask[y])[0]
         for a, b in zip(xs[:-1], xs[1:]):
-            if 1 < b - a <= max_gap + 1: gap[y, a + 1:b] = True
+            if 1 < b - a <= max_gap + 1:
+                gap[y, a + 1:b] = True
+                if keep is not None and b - a > 3: gap[y, a + 1] &= ~keep[y, a]; gap[y, b - 1] &= ~keep[y, b]
     # El pixel justo debajo de un hueco tampoco lleva contorno / nor the pixel just below a gap
     gap[1:] |= gap[:-1] & ~mask[1:] & ring(mask)[1:]
     return gap
 
 
-def outline(img, from_y=None, max_gap=3):
+def outline(img, from_y=None, max_gap=3, keep=None):
     # from_y: fila de la cadera; solo de frente y de espaldas (de perfil las piernas se cruzan)
     # from_y: hip row; front and back views only (side legs overlap)
     mask = img[..., 3] > 127
     o = ring(mask)
-    if from_y is not None: o &= ~leg_gap(mask, from_y, max_gap)
+    if from_y is not None: o &= ~leg_gap(mask, from_y, max_gap, keep)
     return o
 
 

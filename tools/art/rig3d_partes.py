@@ -61,9 +61,15 @@ def esqueleto(c):
     if c.get("orejas"):
         # Orejas de tela: [x, y, z, largo] de la base relativa al centro de la cabeza; el hueso sube hasta la punta
         # Cloth ears: base [x, y, z, length] relative to the head centre; the bone rises to the tip
-        ex, ey, ez, el = c["orejas"]; hc = add((0, 0, nt), c["cabeza"]["centro"])
+        ex, ey, ez, el = c["orejas"][:4]; hc = add((0, 0, nt), c["cabeza"]["centro"])
+        # 5.º valor opcional: fracción del alto donde nace ear_tip_<lado>, la punta que se dobla sola
+        # Optional 5th value: height fraction where ear_tip_<side> starts, the tip that bends on its own
+        f = c["orejas"][4] if len(c["orejas"]) > 4 else None
         for s, k in SIDE.items():
-            base = add(hc, (k * ex, ey, ez)); bone(f"ear_{s}", base, add(base, (0, 0, el)), "neck", "oreja")
+            base = add(hc, (k * ex, ey, ez)); tip = add(base, (0, 0, el))
+            if f is None: bone(f"ear_{s}", base, tip, "neck", "oreja"); continue
+            mid = add(base, (0, 0, el * f))
+            bone(f"ear_{s}", base, mid, "neck", "oreja"); bone(f"ear_tip_{s}", mid, tip, f"ear_{s}", "oreja")
     for s, k in SIDE.items():
         sh = (k * sx, sy, nb + sz); el = add(sh, (k * math.sin(a) * c["brazo"][0], 0, -math.cos(a) * c["brazo"][0]))
         wr = add(el, (0, 0, -c["brazo"][1]))
@@ -245,6 +251,9 @@ def p_brazo(s, M):
         # Brazo desde una fracción del hueso upper (un anillo bajo el puño): sin piel tapada por la manga
         # Arm from a fraction of the upper bone (one ring under the cuff): no skin hidden by the sleeve
         t = s["desde"]; pts = [lerp(sh, el, t)] + pts[2:]; bones = bones[1:]; rad = [r[0] + (r[1] - r[0]) * t] + rad[2:]
+    # "plano_brazo": fondo/ancho del brazo; < 1 lo afina de perfil sin cambiar el frente / < 1 thins it in profile only
+    f = c.get("plano_brazo", 1.0)
+    if f != 1.0: rad = [(a, a * f) for a in rad]
     rings = cadena(pts, rad, bones, ancho=0.7)
     return tubo(rings, 12, (0.5, 1.0))
 
@@ -508,9 +517,18 @@ def p_oreja(s, M):
     # "hueso": la oreja se mueve con ese hueso desde un tercio de su alto; la base queda en el cuello (pegada al pelo)
     # "hueso": the ear follows that bone from a third of its height up; the base stays on the neck (stuck to the hair)
     hb = s.get("hueso", "neck").replace("<lado>", s["lado"])
-    rings = [((0, dy, alto * t), (ancho * f[0] * a + 0.1, grosor * f[1] * (1 - 0.6 * t)),
-              mezcla(({"neck": 1}, 1 - smooth(t / 0.35)), ({hb: 1}, smooth(t / 0.35))))
-             for t, a in (s.get("perfil", [[0, 1.0], [0.5, 0.85], [0.8, 0.55], [1.0, 0.12]]))]
+    # "punta": [hueso, t]: desde t (fracción del alto de la pieza) la oreja pasa a ese hueso, que dobla la punta
+    # "punta": [bone, t]: from t (fraction of the part's height) the ear moves to that bone, which bends the tip
+    pb, pt = (s["punta"][0].replace("<lado>", s["lado"]), s["punta"][1]) if s.get("punta") else (None, 2.0)
+    def w(t):
+        base = mezcla(({"neck": 1}, 1 - smooth(t / 0.35)), ({hb: 1}, smooth(t / 0.35)))
+        q = smooth((t - pt + 0.1) / 0.2) if pb else 0.0
+        return mezcla((base, 1 - q), ({pb: 1}, q)) if q > 0 else base
+    perfil = s.get("perfil", [[0, 1.0], [0.5, 0.85], [0.8, 0.55], [1.0, 0.12]])
+    if pb:  # más anillos cerca del doblez para que la punta se doble y no se quiebre / more rings near the fold
+        ts = sorted({r[0] for r in perfil} | {round(pt + d, 3) for d in (-0.1, -0.05, 0, 0.05, 0.1) if 0 < pt + d < 1})
+        perfil = [[t, interp([[r[0], r[1]] for r in perfil], t)[0]] for t in ts]
+    rings = [((0, dy, alto * t), (ancho * f[0] * a + 0.1, grosor * f[1] * (1 - 0.6 * t)), w(t)) for t, a in perfil]
     m = tubo([(cc, r, w) for cc, r, w in rings], 12, (0, 0.3))
     rot = (s.get("atras", 0), k * s.get("afuera", 0), k * s.get("giro", 0))
     m["v"] = [add(rotar(v, rot), base) for v in m["v"]]
@@ -650,22 +668,56 @@ def p_parche(s, M):
     nz, nx = max(2, round(abs(z1 - z0) / 0.5)), s.get("nx", 8)
     m = malla(); filas = []
     for i in range(nz + 1):
-        z = z0 + (z1 - z0) * i / nz; rx, ry, cy = f(z); idx = []
-        rx += g; ry += g
-        for j in range(nx + 1):
-            x = x0(z)[0] + (x1(z)[0] - x0(z)[0]) * j / nx
-            if s.get("superelipse"):  # sobre el lofteo con el mismo corte / on a loft with the same section
-                n = s["superelipse"]; q = (1 - min(abs(x / rx) ** n, 0.98)) ** (1 / n)
-            else: q = math.sqrt(1 - min((x / rx) ** 2, 0.98))
-            p = (x, cy + lado * ry * q, z)
-            if s.get("caida_atras"): p = caida_atras(s, f, waist)(p)
-            m["v"].append(p); idx.append(len(m["v"]) - 1)
-            # "hueso": placa rígida a ese hueso (el delantal con skirt_F) / rigid plate on that bone (apron on skirt_F)
-            m["w"].append({s["hueso"]: 1} if s.get("hueso") else
-                          w_pollera(H, p, s.get("muslo", 0)) if s.get("pesos") == "pollera" else w_tronco(H, z))
+        z = z0 + (z1 - z0) * i / nz
+        idx = parche_fila(s, f, z, g, x0(z)[0], x1(z)[0], nx, lado, waist, H, m)
         filas.append(idx[::-1] if lado > 0 else idx)
     m["f"] = grilla(filas, cerrada=False)
+    if s.get("grosor"): parche_cantos(s, f, m, filas, g, lado, waist, H)
     return m
+
+
+def parche_fila(s, f, z, g, xa, xb, nx, lado, waist, H, m, cols=None):
+    # Una fila de vértices del parche a z, inflada g px sobre la superficie; cols: solo esas columnas
+    # One patch row at z, inflated g px over the surface; cols: only those columns
+    rx, ry, cy = f(z); rx += g; ry += g; idx = []
+    for j in cols if cols is not None else range(nx + 1):
+        x = xa + (xb - xa) * j / nx
+        if s.get("superelipse"):  # sobre el lofteo con el mismo corte / on a loft with the same section
+            n = s["superelipse"]; q = (1 - min(abs(x / rx) ** n, 0.98)) ** (1 / n)
+        else: q = math.sqrt(1 - min((x / rx) ** 2, 0.98))
+        p = (x, cy + lado * ry * q, z)
+        if s.get("caida_atras"): p = caida_atras(s, f, waist)(p)
+        m["v"].append(p); idx.append(len(m["v"]) - 1)
+        # "hueso": placa rígida a ese hueso (el delantal con skirt_F) / rigid plate on that bone (apron on skirt_F)
+        m["w"].append({s["hueso"]: 1} if s.get("hueso") else
+                      w_pollera(H, p, s.get("muslo", 0)) if s.get("pesos") == "pollera" else w_tronco(H, z))
+    return idx
+
+
+def parche_cantos(s, f, m, filas, g, lado, waist, H):
+    # "grosor": [[z, px]]: un canto por borde que sale del parche hacia afuera, con la normal del parche: de frente
+    # queda de filo (no cambia nada) y de perfil se ve como una banda del ancho del grosor, como el delantal de la hoja
+    # de giro / one edge strip per side standing out of the patch, with the patch normal: edge-on from the front (no
+    # change) and a band as wide as the thickness in profile, like the turnaround apron
+    gr = perfil([[r[0], r[1], 0, 0] for r in s["grosor"]], waist)
+    x0 = perfil([[r[0], r[1], 0, 0] for r in s["x0"]], waist); x1 = perfil([[r[0], r[1], 0, 0] for r in s["x1"]], waist)
+    nx = s.get("nx", 8); V = m["v"]; nf = len(filas)
+    def normal(i, k):  # normal del parche por diferencias / patch normal by differences
+        row = filas[i]; j = row.index(k)
+        tx = sub(V[row[min(j + 1, len(row) - 1)]], V[row[max(j - 1, 0)]])
+        tz = sub(V[filas[min(i + 1, nf - 1)][j]], V[filas[max(i - 1, 0)][j]])
+        n = unit(cross(tz, tx)); return n if n[1] * lado > 0 else mul(n, -1)
+    norms = {k: normal(i, k) for i in range(nf) for k in filas[i]}
+    for col in (0, nx):
+        tira = []
+        for i in range(nf):
+            z = V[filas[i][0]][2]
+            out = parche_fila(s, f, z, g + gr(z)[0], x0(z)[0], x1(z)[0], nx, lado, waist, H, m, [col])[0]
+            base = parche_fila(s, f, z, g, x0(z)[0], x1(z)[0], nx, lado, waist, H, m, [col])[0]
+            k = filas[i][0] if (col == 0) == (lado < 0) else filas[i][-1]
+            norms[out] = norms[base] = norms[k]; tira.append((base, out))
+        m["f"] += [(a[0], b[0], b[1], a[1]) for a, b in zip(tira, tira[1:])]
+    m["normales"] = [norms[i] for i in range(len(V))]
 
 
 def p_tubo_hueso(s, M):

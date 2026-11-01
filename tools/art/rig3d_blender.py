@@ -30,7 +30,8 @@ CHANNELS = {
     "codo": {"doblar": (0, -1), "afuera": (2, None)},
     "colgante": {"adelante": (0, -1), "lado": (2, -1)},
     # Colgante que apunta hacia arriba (orejas de tela): el eje X local queda invertido / upward hanging bone: local X flips
-    "oreja": {"adelante": (0, 1), "lado": (2, -1)},
+    # "afuera": como "lado" pero en espejo, abre las dos puntas hacia afuera / like "lado" but mirrored: tips go outward
+    "oreja": {"adelante": (0, 1), "lado": (2, -1), "afuera": (2, None)},
     "arma": {"doblar": (0, -1), "girar": (1, 1)},
 }
 

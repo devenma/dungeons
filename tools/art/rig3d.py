@@ -194,12 +194,28 @@ def selout_ramp(dark, o):
     return out
 
 
+def punta_1px(img, part, parts, grupos):
+    # "punta_1px": [[parte, ...], ...]: si la fila de arriba de un grupo (una oreja) tiene 2 px, queda el que está sobre
+    # el centro de la fila de abajo (el de afuera si empatan): la punta siempre de 1 px / if a group's top row has
+    # 2 px, keep the one over the centre of the row below (the outer one on a tie): the tip is always 1 px
+    for g in grupos:
+        m = np.isin(part, [k for k, p in enumerate(parts) if p["nombre"] in g]); ys = np.nonzero(m.any(1))[0]
+        if len(ys) < 2: continue
+        top = np.nonzero(m[ys[0]])[0]
+        if len(top) != 2 or top[1] - top[0] != 1: continue
+        c = np.nonzero(m[ys[0] + 1])[0].mean(); d0, d1 = abs(top[0] - c), abs(top[1] - c)
+        out = top[0] if abs(top[0] - img.shape[1] / 2) > abs(top[1] - img.shape[1] / 2) else top[1]
+        drop = top[1] if d0 < d1 else top[0] if d1 < d0 else (top[0] + top[1] - out)
+        img[ys[0], drop] = 0; part[ys[0], drop] = -1
+
+
 def layers_parts(img, ids, parts, fmeta, model, size, gap, fx=None, pal=None):
     # Receta de malla: una capa por grupo de partes con solo lo que se ve de cada una, las líneas internas, los ojos
     # y el contorno de color, cada uno en su capa / mesh recipe: one layer per part group holding only what shows of
     # each, then the inner lines, the eyes and the colour outline, each on its own layer
     part, depth = decode_ids(ids)
     part[(part < 0) & (img[..., 3] > 127)] = 0  # nunca perder un píxel del render / never drop a rendered pixel
+    if model.get("punta_1px"): img = img.copy(); punta_1px(img, part, parts, model["punta_1px"])
     names = sorted({p["linea"] for p in parts if p.get("linea")})
     grp = np.array([names.index(p["linea"]) if p.get("linea") else -2 for p in parts] + [-1])
     ramp = model.get("contorno") == "rampa"  # líneas y contorno en el tono más oscuro de cada material / darkest ramp tone
@@ -216,7 +232,11 @@ def layers_parts(img, ids, parts, fmeta, model, size, gap, fx=None, pal=None):
         if name in capa[:-1]: out[name.capitalize()] = np.where(m[..., None], img, 0).astype(np.uint8)
     out["Lineas"], out["Ojos"] = lines, eyes
     comp = flatten({k: v for k, v in out.items() if k != "Efectos"})
-    o = outline(comp, size - SOLE_MARGIN - LEG_GAP_ROWS if gap else None)
+    # "contorno_hueco": materiales (medias claras) que conservan el contorno en el hueco entre las piernas
+    # "contorno_hueco": materials (light stockings) that keep their outline in the gap between the legs
+    keep = model.get("contorno_hueco")
+    keep = np.isin(part, [k for k, p in enumerate(parts) if p.get("material") in keep]) if keep else None
+    o = outline(comp, size - SOLE_MARGIN - LEG_GAP_ROWS if gap else None, keep=keep)
     if ramp: out["Contorno"] = selout_ramp(ramp_darkest(comp, part, parts, model), o); return out
     line = selout(comp, o, OUTLINE_SHADE)
     out["Contorno"] = quantize(line, dark) if dark is not None else line
