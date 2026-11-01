@@ -1,0 +1,161 @@
+{
+ "nombre": "quieta_sin_giro",
+ "bucle": true,
+ "lienzo": 64,
+ "duraciones_ms": [
+  260,
+  160,
+  260,
+  160
+ ],
+ "cuadros": [
+  {
+   "cadera": {
+    "subir": 0
+   },
+   "pies": {
+    "L": [
+     0,
+     0,
+     0
+    ],
+    "R": [
+     0,
+     0,
+     0
+    ]
+   },
+   "pose": {
+    "upper_L": {
+     "afuera": 0
+    },
+    "upper_R": {
+     "afuera": 0
+    },
+    "fore_L": {
+     "doblar": 8
+    },
+    "fore_R": {
+     "doblar": 8
+    },
+    "chest": {
+     "inclinar": 0
+    },
+    "neck": {
+     "inclinar": 0
+    }
+   }
+  },
+  {
+   "cadera": {
+    "subir": 0
+   },
+   "pies": {
+    "L": [
+     0,
+     0,
+     0
+    ],
+    "R": [
+     0,
+     0,
+     0
+    ]
+   },
+   "pose": {
+    "upper_L": {
+     "afuera": 0
+    },
+    "upper_R": {
+     "afuera": 0
+    },
+    "fore_L": {
+     "doblar": 8
+    },
+    "fore_R": {
+     "doblar": 8
+    },
+    "chest": {
+     "inclinar": 0
+    },
+    "neck": {
+     "inclinar": 0
+    }
+   }
+  },
+  {
+   "cadera": {
+    "subir": -1
+   },
+   "pies": {
+    "L": [
+     0,
+     0,
+     0
+    ],
+    "R": [
+     0,
+     0,
+     0
+    ]
+   },
+   "pose": {
+    "upper_L": {
+     "afuera": -3
+    },
+    "upper_R": {
+     "afuera": -3
+    },
+    "fore_L": {
+     "doblar": 16
+    },
+    "fore_R": {
+     "doblar": 16
+    },
+    "chest": {
+     "inclinar": 0
+    },
+    "neck": {
+     "inclinar": 0
+    }
+   }
+  },
+  {
+   "cadera": {
+    "subir": -1
+   },
+   "pies": {
+    "L": [
+     0,
+     0,
+     0
+    ],
+    "R": [
+     0,
+     0,
+     0
+    ]
+   },
+   "pose": {
+    "upper_L": {
+     "afuera": -3
+    },
+    "upper_R": {
+     "afuera": -3
+    },
+    "fore_L": {
+     "doblar": 16
+    },
+    "fore_R": {
+     "doblar": 16
+    },
+    "chest": {
+     "inclinar": 0
+    },
+    "neck": {
+     "inclinar": 0
+    }
+   }
+  }
+ ]
+}
