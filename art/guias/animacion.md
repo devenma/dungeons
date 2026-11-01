@@ -97,6 +97,8 @@ Forma por claves: `cantidad` + `claves` (`{"en": cuadro, "raiz": ..., "cadera": 
 | `skirt`, `hair`, `lock_L`, `lock_R`, `bow_back` | `adelante` / `lado` | se balancea adelante / hacia su izquierda |
 | | `largo` | escala el largo del hueso (1,0 = normal); 0,7 dobla la pollera sobre los muslos al sentarse |
 | `weapon_R` | `doblar` / `girar` | inclina y rota la hoja respecto de la mano |
+| `clavicle_L/R` (si el cuerpo trae `cuerpo.clavicula`) | `subir` / `adelantar` / `afuera` (px) | traslada el hombro: sube / adelante / hacia afuera |
+| `hand_L/R` (si el cuerpo trae `cuerpo.mano_hueso`) | `escala` | agranda o achica la mano sola (1,0 = normal) |
 | `cadera` (px enteros) | `subir` / `adelantar` / `lado` | sube / avanza / se corre hacia su izquierda |
 | `raiz` | `giro` | todo el cuerpo gira hacia su izquierda |
 | | `salto` (px) / `aplastar` | sube / 1,0 = nada, 0,9 = 10 % más bajo y más ancho, más de 1 estira |
@@ -180,6 +182,12 @@ cadera) con **1 cuadro de atraso** (2 si los cuadros duran menos de 50 ms).
 
 - Regla: `colgante(n) ≈ -k × (padre(n-1) - padre(n-2))`, con k entre 0,5 y 1. Si el cuerpo arranca hacia adelante,
   el colgante va atrás; si frena, se pasa adelante.
+- **Gravedad** (`"gravedad": {"hair": 1, "lock_L": 1, "lock_R": 1}` en el peinado): el pelo cuelga a plomo. La
+  herramienta suma a su `adelante` y `lado` la inclinación de la columna que tiene encima (`hips` + `chest` +
+  `neck`, canales `inclinar` y `lado`), además de lo que escriba la animación (resortes incluidos). Con la cabeza
+  atrás -10 la melena ya no se mete en la espalda: no hace falta compensarla a mano. Las animaciones escritas antes
+  (correr de la maid: `hair` -22 con pecho 14 y cuello -22) compensaban a mano y ahora suman de más: rehacer esa
+  base.
 - Velocidad sostenida (correr, dash): atrás fijo, como viento: `hair.adelante` -12, `bow_back` -20, `skirt` -6.
 - **Asentarse:** después de que el cuerpo frena, un sobrepaso al otro lado (60-100 % de lo que se había atrasado),
   después un 30 % de vuelta y 0 al tercer cuadro. Una sola oscilación: más parece gelatina.
@@ -320,6 +328,10 @@ lidere al final del arco.
   rebote `cadera.subir` [-1, -1, 0, 0], hombros quietos (balanceo de cadera chico; el pecho y el cuello mantienen la
   cabeza en x 32), `upper.afuera` fijo para que los huecos entre brazo y torso no parpadeen, pelo y orejas con
   `motion.resorte`.
+- **Truco de la mano (pendiente para el animador):** el cuerpo de la maid ya trae la clavícula falsa y la mano por
+  hueso. Valores de la prueba de `art/pruebas/trucos_videos/`: clavícula `subir` 1 y `adelantar` 2 solo con el brazo
+  atrás (con el brazo adelante vuelve a 0: `cl_solo_atras` 0,6), codo -10° respecto de la caminata actual y
+  `mostrar` `mano_perfil_L/R` solo en `east` y `west` (`por_direccion`, §7.12).
 - Antes de animar, `python -I tools/art/rig3d.py estres <receta> --salida <dir>` renderiza poses extremas (brazos
   arriba, paso largo, sentada, dash, golpe 3, giro) y mide piel que asoma, suelas y piernas dentro de la pollera.
 
@@ -419,7 +431,22 @@ sostiene hasta el corte (0,5 s). Cae de rodillas y después de costado hacia su 
 
 ### 7.12. Direcciones
 
-Un mismo JSON sale en las 4 direcciones: lo que no se lee en una se arregla con la pose, no con trucos por dirección.
+Un mismo JSON sale en las 4 direcciones. Lo que no se lee en una se arregla primero con la pose; si la pose que sirve
+de frente estropea otra dirección, se pisa solo ese canal con `por_direccion` (cambio de regla aprobado por el usuario,
+2026-11-01):
+
+```json
+"por_direccion": {"east": {"pose": {"neck": {"inclinar": 0}}}, "west": {"pose": {"neck": {"inclinar": 0}}},
+                  "north": {"pose": {"neck": {"inclinar": 0}}}}
+```
+
+- Va en la animación (todos los cuadros) o en un cuadro (gana el cuadro). Pisa canales de `pose`, `raiz` y
+  `cadera`, y `mostrar`. Lo decide la **dirección base del render**, nunca el giro del cuadro (`raiz.giro`).
+- Los pies (`pies`) se resuelven antes, con el IK: no se pisan por dirección.
+- Mirada a la cámara: `neck.inclinar` -10 solo al sur. De perfil, -10 levantaba el mentón y achicaba la cara; de
+  espaldas no hace falta. Una leve inclinación lateral hacia la cámara de perfil (`neck.lado` ±4 a ±12) no agrandó
+  la cara y ensució el pelo: no se usa.
+- Mano de perfil (truco de la mano): `mostrar` `mano_perfil_L/R` solo en `east` y `west`.
 
 | Dirección | Qué se ve | Qué cuidar |
 |---|---|---|

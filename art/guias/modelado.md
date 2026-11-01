@@ -140,7 +140,9 @@ diferencia entre dos rondas rechazadas y una base aprobable.
   material claro (medias) en huecos de 3 px o más.
 - **Delantal con cuerpo de perfil:** `"grosor"` en un parche crea los cantos.
 - **Poses de estrés:** `rig3d.py estres <receta> --salida <dir>` (poses de `tools/art/estres.json`) antes de animar:
-  piel que asoma, suelas bajo la fila 47 y piernas que atraviesan la pollera, por cuadro.
+  piel que asoma, suelas bajo la fila 47 y piernas que atraviesan la pollera, por cuadro. `bajo_suela_px` cuenta
+  píxeles, no filas. Con la cámara a 22°, un pie a más de ~4 px delante (o detrás, de espaldas) de la cadera cae bajo
+  la fila 47: las poses de estrés usan pies a ±4 por IK (antes había ±5-6 y la sentada sin IK).
 
 ## Personajes por módulos
 
@@ -152,18 +154,31 @@ Un personaje es una receta corta que junta módulos de `art/source/modulos/` con
 - **Reemplazar o quitar:** una parte con el mismo `nombre` en un módulo posterior se mezcla con la anterior;
   `"quitar": true` la borra. Así la ropa le pide al cuerpo `{"nombre": "cuerpo", "tronco": false}` y
   `{"nombre": "brazo", "desde": 0.6}`, y el calzado `{"nombre": "pierna", "pie": false}`.
-- **Contrato del cuerpo:** define las proporciones, el cráneo (`cuerpo.cabeza`) y las rampas `piel_sombra`,
-  `piel_plana`, `piel_mano` y `pierna` (piel por defecto; el calzado la redefine para las medias). No lleva la parte
-  `cabeza`: la pone la cara. Queda neutro (sin saber de la ropa).
+- **Contrato del cuerpo:** define las proporciones, dónde va la cabeza (`cuerpo.cabeza.centro`: cuello y altura) y
+  las rampas `piel_sombra`, `piel_plana`, `piel_mano` y `pierna` (piel por defecto; el calzado la redefine para las
+  medias). Queda neutro (sin saber de la ropa).
+- **La forma de la cabeza va con la cara** (decisión del usuario, 2026-11-01): la cara trae la parte `cabeza` y
+  `cuerpo.cabeza` con `radios`, `mandibula`, `menton`, `cuadrar_abajo`, `alto_arriba` y `fondo`. Así cambiar de
+  cuerpo no deforma la cabeza ni el peinado (con el cráneo de la cara, el peinado no se escala).
 - **Anclas:** las piezas sueltas (cuello, moños, mano, suelas) usan `"relativo": [hueso, "cabeza"|"cola"]` para
   seguir al hueso en cualquier cuerpo.
 - **Cabeza:** peinado, orejas y ojos declaran `"craneo"` (los radios de la cabeza sobre la que se midieron) y se
   escalan solos a otro cráneo.
 - **Animaciones compartidas:** si un personaje no tiene un hueso que la animación pide (por ejemplo, sin orejas), se
   ignora.
-- **Pendiente para que sea "enchufar y listo":** anclar los moños a la superficie del pecho y no al hueso, decidir si
-  la forma de la cabeza es del cuerpo o de la cara, largo de la pollera según el largo de pierna, y un comando que
-  arme las láminas de variantes.
+- **Gravedad del pelo:** el peinado declara `"gravedad": {"hair": 1, "lock_L": 1, "lock_R": 1}` y esos colgantes
+  compensan la inclinación de la columna (ver `animacion.md` §5).
+- **Pelo de espaldas:** la tarjeta de la melena lleva `mechas` (dos líneas), `mechas_desde` (fracción del largo donde
+  empiezan: 0,7 en la melena, 0,55 en el bob) y `punta_oscura` (desde ahí abajo, tono oscuro: 0,93). Las mechas
+  largas titilan al caminar: se dejan cortas, abajo, como la hoja de giro.
+- **Raya de la coronilla:** la tapa lleva `"raya": [[x...], medio ancho, fuerza, desde y]` (líneas de mechón por la
+  mitad de adelante de la tapa; fuerza > 1 oscurece aun la luz plena). En la maid, `[[-2.3, 2.3], 0.4, 4.0, -1.5]`
+  sube las líneas del flequillo hasta y9. La fila de arriba del flequillo (y11) queda sin línea: el flequillo tapa la
+  tapa ahí y su luz es plena.
+- **Cuello del vestido por atrás** (`cuello_atras`): tapa las alas del moño del cuello que asomaban detrás de una
+  nuca corta (bob) en el dash y el golpe 3.
+- **Pendiente para que sea "enchufar y listo":** anclar los moños a la superficie del pecho y no al hueso, largo de la
+  pollera según el largo de pierna, y un comando que arme las láminas de variantes.
 
 ## Cómo medir
 
