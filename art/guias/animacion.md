@@ -445,11 +445,19 @@ Un mismo JSON sale en las 4 direcciones: lo que no se lee en una se arregla con 
   efectos y la telegrafía; la sangre fresca es uno de los pocos acentos.
 - Paleta fija y contorno de color en su capa salen después del render: el movimiento no puede dejar islas de 1 px,
   porque el contorno las vuelve manchas.
-- **Herramientas candidatas para efectos sueltos** (fuego, humo, rayos, explosiones, magia), todavía sin elegir:
-  el plugin pixelbolt (fuentes de fluidos y partículas, local), el banco de efectos de PixelLab (`vfx_workbench`) y
-  el skill [codixel](https://github.com/mankidev/codixel) (MIT; efectos de fuego, humo y rayos dibujados por código
-  con bandas y tramado sobre paleta limitada). Antes de elegir, probar el mismo efecto con las tres y juzgarlo a ×4
-  sobre la cripta oscura.
+- **Herramientas para efectos sueltos** (comparadas el 2026-11-01 con una bola de fuego, en
+  `art/pruebas/fx_comparacion/`):
+  - **Proyectiles y explosiones:** [codixel](https://github.com/mankidev/codixel) (MIT, clonado en `~/tools/codixel`):
+    forma + ruido que se mueve, corte y bandas planas con tramado solo en los bordes. El más controlado (destello,
+    anillo de choque, pico, humo que se va, final vacío).
+  - **Auras, llamas y humo que duran:** el plugin pixelbolt (local, determinista, loops que no saltan).
+  - **Ideas de forma:** PixelLab lite (1 generación por efecto). No se repite igual, ignora el timing pedido y el modo
+    pro usa degradés.
+- **Reglas de efectos:**
+  - Un fuego no termina en bordó: sobre la piedra se lee como sangre.
+  - El humo tiene que ser más claro que el piso, o no se ve.
+  - Timing con aceleración y freno: pico temprano (cuadro 1-2) y final más lento hasta quedar vacío.
+  - El proyectil lleva el núcleo claro del lado hacia donde avanza: a ×1 es lo único que se lee.
 
 ## 9. Revisión
 

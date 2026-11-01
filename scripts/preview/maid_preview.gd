@@ -1,14 +1,19 @@
 extends Node2D
 
 ## Vista previa de la maid 3D en el juego: reposo y caminata en 4 direcciones sobre el piso de la cripta, con una
-## antorcha que gira alrededor. A la izquierda, la luz de hoy (sin normales); a la derecha, con el normal map de
-## rig3d (<hoja>_normales.png, se exporta con --normales) si está junto a la hoja. Las flechas o WASD cambian la
-## dirección e interact (F) alterna reposo y caminata.
+## antorcha que gira alrededor. A la izquierda, la luz de hoy (sin normales); al medio, con el normal map de rig3d
+## (<hoja>_normales.png, se exporta con --normales) si está junto a la hoja; a la derecha, la luz propia
+## (character_light.gdshader con la tabla maid_gato_luz.png). Las flechas o WASD cambian la dirección e interact (F)
+## alterna reposo y caminata.
 ## Preview of the 3D maid in game: idle and walk in 4 directions on the crypt floor, with a torch circling it. Left,
-## today's light (no normals); right, with rig3d's normal map (<sheet>_normales.png, exported with --normales) when it
-## sits next to the sheet. Arrows or WASD change direction and interact (F) toggles idle and walk.
+## today's light (no normals); middle, with rig3d's normal map (<sheet>_normales.png, exported with --normales) when it
+## sits next to the sheet; right, own light (character_light.gdshader with the maid_gato_luz.png table). Arrows or WASD
+## change direction and interact (F) toggles idle and walk.
 
 const GeometryScript: GDScript = preload("res://scripts/dungeon/dungeon_geometry.gd")
+const OWN_LIGHT_SHADER: Shader = preload("res://scripts/visual/character_light.gdshader")
+# Tabla color -> tonos iluminados de su rampa / colour -> lit tones of its ramp table
+const OWN_LIGHT_LUT: Texture2D = preload("res://assets/art/characters/maid_gato/maid_gato_luz.png")
 
 # Prefijo de las hojas de la maid / maid sheet prefix
 const SHEET_PREFIX: String = "res://assets/art/characters/maid_gato/maid_gato_"
@@ -18,7 +23,9 @@ const ROW_FOR_ACTION: Dictionary = {"move_down": "S", "move_right": "E", "move_u
 # Piso de la cripta en tiles: cubre el viewport de 480x270 / crypt floor in tiles: covers the 480x270 viewport
 const FLOOR_TILES: Vector2i = Vector2i(15, 9)
 # Pies de cada maid (px) / each maid's feet (px)
-const FEET_POSITIONS: Array[Vector2] = [Vector2(176, 160), Vector2(304, 160)]
+const FEET_POSITIONS: Array[Vector2] = [Vector2(112, 160), Vector2(240, 160), Vector2(368, 160)]
+const LABELS: PackedStringArray = ["sin normales", "con normales", "luz propia"]
+const OWN_LIGHT_SIDE: int = 2
 # Radios de la órbita de la antorcha, achatada como el piso (px) / torch orbit radii, flattened like the floor (px)
 const ORBIT_RADIUS: Vector2 = Vector2(40, 26)
 # Vuelta completa de la antorcha (s) / full torch turn (s)
@@ -68,12 +75,20 @@ func _ready() -> void:
 		sprite.centered = false
 		sprite.position = FEET_POSITIONS[side]
 		sprite.light_mask = 1 << side
+		if side == OWN_LIGHT_SIDE:
+			var own_light: ShaderMaterial = ShaderMaterial.new()
+			own_light.shader = OWN_LIGHT_SHADER
+			own_light.set_shader_parameter("tone_lut", OWN_LIGHT_LUT)
+			sprite.material = own_light
 		add_child(sprite)
 		_sprites.append(sprite)
 		var torch: PointLight2D = _torch(rings, 1 << side)
+		# La luz propia reemplaza tonos: modo Mix / own light replaces tones: Mix mode
+		if side == OWN_LIGHT_SIDE:
+			torch.blend_mode = Light2D.BLEND_MODE_MIX
 		add_child(torch)
 		_lights.append(torch)
-		add_child(_label(FEET_POSITIONS[side] + Vector2(-40, 14), ["sin normales", "con normales" if has_normals else "falta _normales.png"][side]))
+		add_child(_label(FEET_POSITIONS[side] + Vector2(-40, 14), LABELS[side] if has_normals or side == 0 else "falta _normales.png"))
 	add_child(_label(Vector2(8, 252), "flechas/WASD: dirección   F: reposo/caminar   espacio: cripta oscura"))
 	_ambient.color = DARK_AMBIENT
 	add_child(_ambient)
@@ -111,6 +126,8 @@ func _set_dark(dark: bool) -> void:
 	_ambient.visible = dark
 	for torch: PointLight2D in _lights:
 		torch.energy = DARK_TORCH_ENERGY if dark else TORCH_ENERGY
+	(_sprites[OWN_LIGHT_SIDE].material as ShaderMaterial).set_shader_parameter("ambient_color",
+			_ambient.color if dark else Color.WHITE)
 
 
 func _show() -> void:

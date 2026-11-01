@@ -58,7 +58,7 @@ func _run() -> void:
 	for child: Node in preview.get_children():
 		if child is Sprite2D:
 			sprites.append(child)
-	_check(sprites.size() == 2 and sprites[0].texture != null and sprites[0].hframes == 1,
+	_check(sprites.size() == 3 and sprites[0].texture != null and sprites[0].hframes == 1,
 			"maid preview shows the idle sheet")
 	var walk: InputEventAction = InputEventAction.new()
 	walk.action = "interact"
