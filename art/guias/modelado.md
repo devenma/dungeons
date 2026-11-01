@@ -111,6 +111,28 @@ diferencia entre dos rondas rechazadas y una base aprobable.
 - **Cara con luz plana**: la rampa de la cara con `"plano": true` (siempre el tono claro). La sombra de la geometría
   en la mandíbula se lee como barba. La boca y los ojos van como sellos 2D sobre su línea de la hoja.
 - `"ambiente"` en una rampa le da una luz mínima (el pelo de espaldas, para que no quede un corte duro de boina).
+- Las orejas de tela llevan hueso propio (`cuerpo.orejas` crea `ear_L/R`, tipo `oreja`) para el movimiento
+  secundario. `ojos.redondear` evita que los ojos salten medio píxel cuando la cabeza baja.
+
+## Ropa
+
+- **Pollera por sectores** (`cuerpo.pollera_sectores`): cuatro huesos colgantes alrededor de la cadera
+  (`skirt_F/B/L/R`) con la tela pesada por ángulo, nunca a los muslos. Siguen solos a los muslos
+  (`sectores_pollera`, k 0,15 en la maid: más ensancha el perfil). El delantal va rígido con `skirt_F`.
+- **De perfil la pollera tiene el ancho de la hoja de giro**, con la fila más ancha en el ruedo. Con la cámara a 22°
+  el ruedo es una elipse y sus esquinas suben: se compensa con `superelipse`, `horizontal` y `caida_atras`. Si es más
+  ancha arriba que en el ruedo, se lee como una pelota y el personaje parece sentado.
+- **La pierna tiene que asomar al caminar de perfil:** ruedo en un tono claro (`ruedo`), medias que se separen del
+  zapato y de la pollera, y el ruedo a la altura que deje ver unas filas de pierna.
+- **Cuerpo oculto bajo la ropa:** `cuerpo` con `"tronco": false` y `brazo` con `"desde"` dejan solo un anillo de piel
+  bajo cada borde (escote, puño). La piel tapada no existe y no puede asomar.
+- **Hombro y manga como una sola superficie** (parte `manga`): sale de la sisa del torso, sin esfera en el hombro;
+  `"normales": "capsula"` evita los anillos de bola en la rampa.
+- **Tela con normales del reposo** (`normales_reposo` en la rampa): el tono no salta cuando los sectores giran.
+- **Partes lejanas:** `ocultar_lejos` oculta la mano del lado lejano de perfil (la cámara la dibuja ~6 px más
+  arriba que la cercana). Ojo en los ataques de perfil: esa mano desaparece.
+- **Poses de estrés:** `rig3d.py estres <receta> --salida <dir>` (poses de `tools/art/estres.json`) antes de animar:
+  piel que asoma, suelas bajo la fila 47 y piernas que atraviesan la pollera, por cuadro.
 
 ## Cómo medir
 
@@ -140,6 +162,11 @@ meta: perseguir el puntaje contra las vistas deforma el modelo para imitar una c
 
 Correcciones de Sam, la más nueva arriba: fecha, qué estaba mal y la regla que lo evita.
 
+- 2026-11-01, maid: de perfil, caminando, "una nena sentada en un puff". Regla: pollera con el ancho de perfil de la
+  hoja de giro, más ancha en el ruedo; ruedo claro, medias blancas y ruedo 2 px más corto (decisión del usuario).
+- 2026-11-01, maid: piel que asomaba por la sisa al caminar. Regla: cuerpo oculto bajo la ropa y manga desde la sisa.
+- 2026-11-01, maid: hombros como dos bolas con contorno. Regla: el hombro cae en diagonal como en el diseño v4.
+- 2026-11-01, maid: la pollera arrastrada por los muslos era una bolsa. Regla: pollera por sectores.
 - 2026-11-01, maid: la cara salía con "barba" por la sombra de la mandíbula. Regla: cara con luz plana; boca y
   mentón como sello.
 - 2026-11-01, maid: de perfil las dos orejas se apilaban como un cuerno. Regla: la oreja de atrás se oculta de perfil;

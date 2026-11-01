@@ -10,6 +10,7 @@ import json, math, os, sys
 import bpy
 from bpy_extras.object_utils import world_to_camera_view
 from mathutils import Vector
+from mathutils.bvhtree import BVHTree
 
 JOB = json.load(open(sys.argv[sys.argv.index("--") + 1], encoding="utf-8"))
 MODEL = JOB["modelo"]
@@ -28,6 +29,8 @@ CHANNELS = {
     "rodilla": {"doblar": (0, 1), "afuera": (2, None)},
     "codo": {"doblar": (0, -1), "afuera": (2, None)},
     "colgante": {"adelante": (0, -1), "lado": (2, -1)},
+    # Colgante que apunta hacia arriba (orejas de tela): el eje X local queda invertido / upward hanging bone: local X flips
+    "oreja": {"adelante": (0, 1), "lado": (2, -1)},
     "arma": {"doblar": (0, -1), "girar": (1, 1)},
 }
 
@@ -55,6 +58,15 @@ def ramp_material(name, tones, cuts):
         e = r.elements[i] if i < 2 else r.elements.new(cuts[i - 1])
         e.position = 0.0 if i == 0 else cuts[i - 1]; e.color = (*[lin(c) for c in tone], 1)
     nt.links.new(dif.outputs[0], s2r.inputs[0]); nt.links.new(s2r.outputs[0], ramp.inputs[0])
+    if spec.get("normales_reposo"):
+        # Luz con las normales del reposo (atributo "n_reposo" de mesh_part): la tela que se mueve con los sectores
+        # no cambia de tono entre cuadros / light from the rest normals: cloth moved by the sectors keeps its tones
+        at = nt.nodes.new("ShaderNodeAttribute"); at.attribute_name = "n_reposo"
+        vt = nt.nodes.new("ShaderNodeVectorTransform"); vt.vector_type = "NORMAL"
+        vt.convert_from, vt.convert_to = "OBJECT", "WORLD"
+        nr = nt.nodes.new("ShaderNodeVectorMath"); nr.operation = "NORMALIZE"
+        nt.links.new(at.outputs["Vector"], vt.inputs[0]); nt.links.new(vt.outputs[0], nr.inputs[0])
+        nt.links.new(nr.outputs[0], dif.inputs["Normal"])
     light = s2r.outputs[0]
     if spec.get("ambiente"):
         # Luz mínima del material: lo que no mira al sol queda en el tono medio, no en el oscuro
@@ -193,6 +205,13 @@ def mesh_part(m):
     # rodillas no se afinan) / rig3d_partes mesh: vertex groups per bone and an armature modifier preserving volume
     me = bpy.data.meshes.new(m["nombre"]); me.from_pydata(m["v"], [], m["f"]); me.update()
     for poly in me.polygons: poly.use_smooth = True
+    # Normales propias (de un proxy): se guardan relativas a la cara, así siguen a la deformación
+    # Own normals (from a proxy): stored relative to the face, so they follow the deformation
+    if m.get("normales"): me.normals_split_custom_set_from_vertices(m["normales"])
+    spec = MODEL["rampas"].get(m["material"])
+    if isinstance(spec, dict) and spec.get("normales_reposo"):
+        n = m.get("normales") or [v.vector[:] for v in me.vertex_normals]
+        at = me.attributes.new("n_reposo", "FLOAT_VECTOR", "POINT"); at.data.foreach_set("vector", [c for v in n for c in v])
     o = bpy.data.objects.new(m["nombre"], me); scene.collection.objects.link(o)
     me.materials.append(MATS[m["material"]])
     if m.get("mecha"):
@@ -249,6 +268,14 @@ def pose(frame, base_yaw):
         for bone, chans in MODEL.get("pose_base", {}).items():
             for chan, value in chans.items():
                 chans_all.setdefault(bone, {})[chan] = chans_all.get(bone, {}).get(chan, 0) + value
+    if "skirt_F" in MODEL["huesos"]:
+        # Sectores de la pollera: siguen a los muslos y al canal skirt, sumados a lo que pide la animación
+        # Skirt sectors: follow the thighs and the skirt channel, added to what the animation asks
+        k = MODEL["cuerpo"]["pollera_sectores"].get("k", 0.6)
+        for bone, chans in RP.sectores_pollera(chans_all, k).items():
+            for chan, value in chans.items():
+                own = chans_all.setdefault(bone, {})
+                own[chan] = own.get(chan, REST.get(chan, 0.0)) * value if chan == "largo" else own.get(chan, 0) + value
     for bone, chans in chans_all.items():
         b = MODEL["huesos"][bone]; table = CHANNELS[b["tipo"]]
         rot = [0.0, 0.0, 0.0]
@@ -342,6 +369,25 @@ def skeleton(size):
     for k, w in pts.items():
         v = world_to_camera_view(scene, cam, w)
         out[k] = [round(v.x * size, 2), round((1 - v.y) * size, 2), round(v.z, 2)]
+    return out
+
+
+def legs_in_skirt():
+    # Por pierna: si cadera-rodilla-tobillo o la media a la altura de la rodilla cruzan la tela de la pollera, y la
+    # holgura de la rodilla (px). Malla y huesos en el espacio del esqueleto.
+    # Per leg: whether hip-knee-ankle or the stocking at the knee cross the skirt cloth, and the knee clearance (px).
+    # Mesh and bones in armature space.
+    dg = bpy.context.evaluated_depsgraph_get(); out = {}
+    r = MODEL["cuerpo"].get("grosor_pierna", [2.2, 1.8])[1]
+    for p, o in PARTS:
+        if not p.get("pollera"): continue
+        bvh = BVHTree.FromObject(o, dg)
+        hit = lambda a, b: bvh.ray_cast(a, (b - a).normalized(), (b - a).length)[0] is not None
+        for s in ("L", "R"):
+            hip, knee, ank = PB[f"thigh_{s}"].head, PB[f"thigh_{s}"].tail, PB[f"shin_{s}"].tail
+            near, _, _, gap = bvh.find_nearest(knee)
+            side = knee + (near - knee).normalized() * r  # la media del lado de la tela / the stocking toward the cloth
+            out[s] = {"cruza": hit(hip, knee) or hit(knee, ank) or hit(hip, side), "holgura_rodilla": round(gap, 2)}
     return out
 
 
@@ -478,6 +524,7 @@ else:
                 pts = {name: project(w) for name, w in markers().items()}
                 meta[f"{anim['nombre']}_{d}_{i}"] = {"marcadores": pts, "arco": arc,
                                                      "giro": (YAW[d] + frame.get("raiz", {}).get("giro", 0)) % 360}
+                if any(p.get("pollera") for p, o in PARTS): meta[f"{anim['nombre']}_{d}_{i}"]["pollera"] = legs_in_skirt()
                 if NORMAL_MATS:
                     render_ids(os.path.join(OUT, f"{anim['nombre']}_{d}_{i}_n.png"), NORMAL_MATS)
                 if ID_MATS:

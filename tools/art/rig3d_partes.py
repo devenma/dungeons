@@ -47,11 +47,23 @@ def esqueleto(c):
     bone("chest", (0, 0, waist), (0, 0, nb), "hips", "columna")
     bone("neck", (0, 0, nb), (0, 0, nt), "chest", "columna")
     py, pl = c["pollera"]; bone("skirt", (0, py, waist), (0, py, waist - pl), "hips", "colgante")
+    if "pollera_sectores" in c:
+        # Pollera por sectores: 4 colgantes que pivotan en el centro de la cintura, como skirt (con el pivote sobre la
+        # tela el ruedo baja r·sen(ángulo) más y toca el suelo); skirt queda como canal global
+        # Sector skirt: 4 hanging bones pivoting at the waist centre, like skirt (pivoting on the cloth drops the hem
+        # r·sin(angle) more and it hits the ground); skirt stays as the global channel
+        for s in SECTORES: bone(f"skirt_{s}", (0, py, waist), (0, py, waist - pl), "hips", "colgante")
     hy_, hh, ht = c["pelo"]; bone("hair", (0, hy_, nt + hh), (0, hy_, nt + ht), "neck", "colgante")
     my, mz, ml = c["moño"]; bone("bow_back", (0, my, waist + mz), (0, my, waist + mz - ml), "hips", "colgante")
     lx, ly, lh, lt = c["mechones"]
     for s, k in SIDE.items():
         bone(f"lock_{s}", (k * lx, ly, nt + lh), (k * lx, ly, nt + lt), "neck", "colgante")
+    if c.get("orejas"):
+        # Orejas de tela: [x, y, z, largo] de la base relativa al centro de la cabeza; el hueso sube hasta la punta
+        # Cloth ears: base [x, y, z, length] relative to the head centre; the bone rises to the tip
+        ex, ey, ez, el = c["orejas"]; hc = add((0, 0, nt), c["cabeza"]["centro"])
+        for s, k in SIDE.items():
+            base = add(hc, (k * ex, ey, ez)); bone(f"ear_{s}", base, add(base, (0, 0, el)), "neck", "oreja")
     for s, k in SIDE.items():
         sh = (k * sx, sy, nb + sz); el = add(sh, (k * math.sin(a) * c["brazo"][0], 0, -math.cos(a) * c["brazo"][0]))
         wr = add(el, (0, 0, -c["brazo"][1]))
@@ -91,13 +103,15 @@ def grilla(filas, cerrada=True):
     return faces
 
 
-def tubo(anillos, seg=12, tapas=(1.0, 1.0)):
+def tubo(anillos, seg=12, tapas=(1.0, 1.0), n=2, horizontal=False):
     # anillos: [(centro, (ra, rb), pesos)]; cada anillo es perpendicular al recorrido (marco transportado, sin
-    # torsión). tapas: 0 = plana, 1 = media esfera, None = abierta.
+    # torsión). tapas: 0 = plana, 1 = media esfera, None = abierta. n: exponente de la superelipse (2 = elipse).
+    # horizontal: anillos horizontales aunque el centro se corra (si no, el ruedo se inclina con el recorrido).
     # rings: [(center, (ra, rb), weights)]; each ring is perpendicular to the path (transported frame, no twist).
-    # caps: 0 = flat, 1 = hemisphere, None = open.
+    # caps: 0 = flat, 1 = hemisphere, None = open. n: superellipse exponent (2 = ellipse). horizontal: level rings.
     pts = [a[0] for a in anillos]
     tans = [unit(sub(pts[min(i + 1, len(pts) - 1)], pts[max(i - 1, 0)])) for i in range(len(pts))]
+    if horizontal: tans = [(0, 0, 1 if pts[-1][2] > pts[0][2] else -1)] * len(pts)
     ref = (0, 1, 0) if abs(tans[0][1]) < 0.9 else (0, 0, 1)
     u = unit(cross(ref, tans[0])); frames = []
     for t in tans:
@@ -116,8 +130,9 @@ def tubo(anillos, seg=12, tapas=(1.0, 1.0)):
     for c, ra, rb, u_, v_, w in rows:
         idx = []
         for k in range(seg if ra > 0 else 1):
-            th = 2 * math.pi * k / seg
-            m["v"].append(add(c, add(mul(u_, ra * math.cos(th)), mul(v_, rb * math.sin(th))))); m["w"].append(dict(w))
+            th = 2 * math.pi * k / seg; ct, st = math.cos(th), math.sin(th)
+            if n != 2: ct, st = math.copysign(abs(ct) ** (2 / n), ct), math.copysign(abs(st) ** (2 / n), st)
+            m["v"].append(add(c, add(mul(u_, ra * ct), mul(v_, rb * st)))); m["w"].append(dict(w))
             idx.append(len(m["v"]) - 1)
         filas.append(idx)
     m["f"] = grilla(filas)
@@ -210,6 +225,9 @@ def p_cuerpo(s, M):
     r, cy = c.get("cuello_r", 1.3), c.get("cuello_y", 0.6)
     r = tuple(r) if isinstance(r, list) else (r, r)  # radio o [x, y] / radius or [x, y]
     neck = [((0, cy, z), r, w_tronco(H, z)) for z in (nb - 1.5, nb, nt - 1, nt + 0.5)]
+    # "tronco": false no genera el tronco que la ropa tapa siempre; queda el cuello con su anillo bajo el escote
+    # "tronco": false skips the torso the clothes always cover; the neck stays with its ring under the neckline
+    if s.get("tronco", True) is False: return tubo(neck, 10, (0, 0))
     return unir(tubo(rings, 16, (0.7, 0)), tubo(neck, 10, (0, 0)))
 
 
@@ -222,7 +240,12 @@ def p_brazo(s, M):
     d = unit(sub(wr, el)); mano = c.get("mano", 1.6)
     pts = [add(sh, (-k * 1.6, 0, -1.0)), sh, el, wr, add(wr, mul(d, mano * 0.6)), add(wr, mul(d, mano))]
     bones = ["chest", f"upper_{s['lado']}", f"fore_{s['lado']}", f"fore_{s['lado']}", f"fore_{s['lado']}"]
-    rings = cadena(pts, [r[0] * 0.8, r[0], r[1], r[2], r[3], r[3] * 0.8], bones, ancho=0.7)
+    rad = [r[0] * 0.8, r[0], r[1], r[2], r[3], r[3] * 0.8]
+    if s.get("desde") is not None:
+        # Brazo desde una fracción del hueso upper (un anillo bajo el puño): sin piel tapada por la manga
+        # Arm from a fraction of the upper bone (one ring under the cuff): no skin hidden by the sleeve
+        t = s["desde"]; pts = [lerp(sh, el, t)] + pts[2:]; bones = bones[1:]; rad = [r[0] + (r[1] - r[0]) * t] + rad[2:]
+    rings = cadena(pts, rad, bones, ancho=0.7)
     return tubo(rings, 12, (0.5, 1.0))
 
 
@@ -234,6 +257,8 @@ def p_pierna(s, M):
     bones = ["hips", f"thigh_{s['lado']}", f"shin_{s['lado']}", f"foot_{s['lado']}"]
     f = c.get("plano_pierna", 1.0)  # de perfil la pierna es más fina que de frente / thinner in profile than from the front
     rad = [(a, a * f) for a in (r[0], r[0], r[1], r[2], r[3])]
+    # "pie": false termina la pierna en el tobillo: una media clara no asoma por el zapato / ends at the ankle
+    if s.get("pie") is False: pts, bones, rad = pts[:-1], bones[:-1], rad[:-1]
     return tubo(cadena(pts, rad, bones, ancho=0.7), 12, (0.3, 1.0))
 
 
@@ -480,7 +505,11 @@ def p_oreja(s, M):
     alto, ancho, grosor = s["alto"], s["ancho"], s["grosor"]
     f = s.get("escala", [1, 1, 1]); dy = s.get("adelante", 0.0)
     # Ancho casi parejo hasta arriba y punta roma, como el dibujo / almost even width up to a blunt tip, like the drawing
-    rings = [((0, dy, alto * t), (ancho * f[0] * a + 0.1, grosor * f[1] * (1 - 0.6 * t)), {"neck": 1})
+    # "hueso": la oreja se mueve con ese hueso desde un tercio de su alto; la base queda en el cuello (pegada al pelo)
+    # "hueso": the ear follows that bone from a third of its height up; the base stays on the neck (stuck to the hair)
+    hb = s.get("hueso", "neck").replace("<lado>", s["lado"])
+    rings = [((0, dy, alto * t), (ancho * f[0] * a + 0.1, grosor * f[1] * (1 - 0.6 * t)),
+              mezcla(({"neck": 1}, 1 - smooth(t / 0.35)), ({hb: 1}, smooth(t / 0.35))))
              for t, a in (s.get("perfil", [[0, 1.0], [0.5, 0.85], [0.8, 0.55], [1.0, 0.12]]))]
     m = tubo([(cc, r, w) for cc, r, w in rings], 12, (0, 0.3))
     rot = (s.get("atras", 0), k * s.get("afuera", 0), k * s.get("giro", 0))
@@ -532,12 +561,49 @@ def perfil(tabla, z0):
     t = sorted([[z0 + r[0]] + r[1:] for r in tabla]); return lambda z: interp(t, z)
 
 
+def caida_atras(s, f, z0):
+    # "caida_atras": [px, potencia]: baja la espalda del ruedo (0 arriba, todo en el ruedo); a 22° la esquina de atrás
+    # de perfil queda en la fila del ruedo y no redondeada 0,375·rx filas más arriba. Igual en lofteo y parche.
+    # Lowers the back of the hem (0 at the top, all of it at the hem); at 22° the back corner in profile sits on the
+    # hem row instead of rounding 0.375·rx rows higher. Same for loft and patch.
+    d, k = s["caida_atras"]; zs = [z0 + r[0] for r in s["perfil"]]; top, hem = max(zs), min(zs)
+    def mover(p):
+        rx, ry, cy = f(p[2]); b = max(0.0, (p[1] - cy) / ry)
+        return (p[0], p[1], p[2] - d * b ** k * clamp01((top - p[2]) / (top - hem)) ** 2)
+    return mover
+
+
+SECTORES = {"F": 0, "L": 90, "B": 180, "R": -90}  # ángulo alrededor de la cadera, 0 = frente / angle, 0 = front
+# Bajada (px) desde la cintura hasta donde la tela es rígida con su sector / drop (px) below the waist to rigid cloth
+CAIDA_SECTOR = 2.0
+
+
 def w_pollera(H, p, muslo):
-    # La pollera cuelga del hueso skirt y abajo sigue un poco a los muslos de su lado
-    # The skirt hangs from the skirt bone and lower down follows its side's thigh a little
+    # La pollera cuelga del hueso skirt y abajo sigue un poco a los muslos de su lado; con sectores, cada punto se
+    # reparte por ángulo entre los 2 sectores más cercanos (cos², suma 1) y nunca va a los muslos
+    # The skirt hangs from the skirt bone and lower down follows its side's thigh a little; with sectors, each point
+    # is shared by angle between the 2 nearest sectors (cos², sums to 1) and never goes to the thighs
     x, y, z = p; waist = H["skirt"]["cabeza"][2]
+    if "skirt_F" in H:
+        a = math.atan2(x, -(y - H["skirt"]["cabeza"][1])); h = smooth((waist - z) / CAIDA_SECTOR)
+        return mezcla(({"hips": 1}, 1 - h), *[({f"skirt_{s}": 1}, h * max(0.0, math.cos(a - math.radians(d))) ** 2)
+                                             for s, d in SECTORES.items()])
     h = smooth((waist - 2 - z) / 8) * muslo; l = smooth((x + 1.5) / 3)
     return mezcla(({"skirt": 1}, 1 - h), ({"thigh_L": 1}, h * l), ({"thigh_R": 1}, h * (1 - l)))
+
+
+def sectores_pollera(pose, k):
+    # Canales de los sectores desde los muslos (k ≈ 0,5-0,7) más el canal global skirt; se suman a lo que la
+    # animación ya les pone. pose: {hueso: {canal: valor}} / sector channels from the thighs plus the global skirt
+    # channel, added to what the animation already sets
+    t = lambda s, c: pose.get(f"thigh_{s}", {}).get(c, 0.0)
+    fw = (t("L", "adelante"), t("R", "adelante"))
+    out = {"skirt_F": {"adelante": k * max(*fw, 0)}, "skirt_B": {"adelante": k * min(*fw, 0)},
+           "skirt_L": {"lado": k * max(t("L", "afuera"), 0)}, "skirt_R": {"lado": -k * max(t("R", "afuera"), 0)}}
+    for chans in out.values():
+        for c, v in pose.get("skirt", {}).items():
+            chans[c] = v if c == "largo" else chans.get(c, 0.0) + v
+    return out
 
 
 def p_lofteo(s, M):
@@ -558,7 +624,13 @@ def p_lofteo(s, M):
     for i in range(n + 1):
         z = z0 + (z1 - z0) * i / n; rx, ry, cy = f(z)
         rings.append(((0, cy, z), (rx + g, ry + g), None))
-    m = tubo([(c, r, {}) for c, r, _ in rings], s.get("seg", 24), tuple(s.get("tapas", [None, None])))
+    # "superelipse": n del corte |x/rx|^n + |y/ry|^n = 1; con n > 2 el ruedo visto a 22° es plano abajo, no una bola.
+    # "horizontal": anillos a nivel aunque cy cambie (sin eso el ruedo de atrás sube y el de adelante baja)
+    # "superelipse": section exponent; with n > 2 the hem seen at 22° is flat at the bottom, not a ball.
+    # "horizontal": level rings even when cy changes (otherwise the back of the hem rises and the front drops)
+    m = tubo([(c, r, {}) for c, r, _ in rings], s.get("seg", 24), tuple(s.get("tapas", [None, None])),
+             s.get("superelipse", 2), s.get("horizontal", False))
+    if s.get("caida_atras"): m["v"] = list(map(caida_atras(s, f, H["skirt"]["cabeza"][2]), m["v"]))
     m["w"] = [w(v) for v in m["v"]]
     return m
 
@@ -581,10 +653,16 @@ def p_parche(s, M):
         z = z0 + (z1 - z0) * i / nz; rx, ry, cy = f(z); idx = []
         rx += g; ry += g
         for j in range(nx + 1):
-            x = x0(z)[0] + (x1(z)[0] - x0(z)[0]) * j / nx; q = 1 - min((x / rx) ** 2, 0.98)
-            p = (x, cy + lado * ry * math.sqrt(q), z)
+            x = x0(z)[0] + (x1(z)[0] - x0(z)[0]) * j / nx
+            if s.get("superelipse"):  # sobre el lofteo con el mismo corte / on a loft with the same section
+                n = s["superelipse"]; q = (1 - min(abs(x / rx) ** n, 0.98)) ** (1 / n)
+            else: q = math.sqrt(1 - min((x / rx) ** 2, 0.98))
+            p = (x, cy + lado * ry * q, z)
+            if s.get("caida_atras"): p = caida_atras(s, f, waist)(p)
             m["v"].append(p); idx.append(len(m["v"]) - 1)
-            m["w"].append(w_pollera(H, p, s.get("muslo", 0)) if s.get("pesos") == "pollera" else w_tronco(H, z))
+            # "hueso": placa rígida a ese hueso (el delantal con skirt_F) / rigid plate on that bone (apron on skirt_F)
+            m["w"].append({s["hueso"]: 1} if s.get("hueso") else
+                          w_pollera(H, p, s.get("muslo", 0)) if s.get("pesos") == "pollera" else w_tronco(H, z))
         filas.append(idx[::-1] if lado > 0 else idx)
     m["f"] = grilla(filas, cerrada=False)
     return m
@@ -608,6 +686,27 @@ def p_tubo_hueso(s, M):
     return tubo(rings, s.get("seg", 12), tuple(s.get("tapas", [1.0, 1.0])))
 
 
+def p_manga(s, M):
+    # Manga que nace de la sisa: el primer anillo está dentro del torso con pesos del pecho y sigue el hueso upper,
+    # sin esfera en el hombro. "sisa": [x, z, alto, fondo] del anillo (x desde el centro, z bajo la base del cuello);
+    # "radios": [[t, ancho, fondo]] sobre upper; "mezcla": t donde termina el paso del pecho al brazo;
+    # "normales": "capsula" toma las normales de una cápsula de la sisa a la punta: las bandas de luz corren a lo largo
+    # Sleeve born at the armhole: the first ring sits inside the torso with chest weights and then follows the upper
+    # bone, no shoulder sphere. "normales": "capsula" takes a capsule's normals: light bands run lengthwise
+    H, lado = M["huesos"], s["lado"]; k = SIDE[lado]; bone = f"upper_{lado}"
+    a, e = H[bone]["cabeza"], H[bone]["cola"]; nb = H["neck"]["cabeza"][2]
+    sx, sz, alto, fondo = s["sisa"]; A = (k * sx, a[1], nb + sz); tm = s.get("mezcla", 0.3)
+    rings = [(A, (alto, fondo), w_tronco(H, A[2]))]
+    for t, ra, rb in s["radios"]:
+        q = smooth(t / tm)
+        rings.append((lerp(a, e, t), (ra, rb), mezcla((w_tronco(H, lerp(a, e, t)[2]), 1 - q), ({bone: 1}, q))))
+    m = tubo(rings, s.get("seg", 16), tuple(s.get("tapas", [0, 0])))
+    if s.get("normales") == "capsula":
+        B = rings[-1][0]; d = sub(B, A); L2 = max(dot(d, d), 1e-9)
+        m["normales"] = [unit(sub(v, add(A, mul(d, clamp01(dot(sub(v, A), d) / L2))))) for v in m["v"]]
+    return m
+
+
 def p_lazo(s, M):
     # Moño: dos lazos aplanados y un nudo, rígido a un hueso / bow: two flattened loops and a knot, rigid to a bone
     out = []
@@ -627,7 +726,7 @@ def p_lazo(s, M):
 PARTES = {"cuerpo": p_cuerpo, "brazo": p_brazo, "pierna": p_pierna, "cabeza": p_cabeza, "pelo": p_pelo,
           "mechon": p_mechon, "esfera": p_esfera, "toro": p_toro, "lofteo": p_lofteo, "parche": p_parche,
           "tubo": p_tubo_hueso, "lazo": p_lazo, "importada": p_importada,
-          "tarjeta": p_tarjeta, "oreja": p_oreja}
+          "tarjeta": p_tarjeta, "oreja": p_oreja, "manga": p_manga}
 # Grupo de línea interna por tipo; brazos y piernas llevan el lado / inner-line group per type; limbs carry the side
 LINEA = {"brazo": "brazo", "pierna": "pierna"}
 
@@ -643,6 +742,8 @@ def construir(s, M):
              capa=s.get("capa", "ropa"), linea=linea, grupo=s.get("grupo"))
     if s.get("ocultar_lejos"):  # [lado, grados]: se oculta si ese costado mira lejos de la cámara / hidden facing away
         m["ocultar_lejos"] = [SIDE.get(lado, 1), s["ocultar_lejos"]]
+    if s["tipo"] == "lofteo" and s.get("pesos") == "pollera":
+        m["pollera"] = True  # la usa el control de piernas dentro de la pollera / used by the legs-inside-skirt check
     return m
 
 

@@ -6,6 +6,7 @@
 #   python -I tools/art/rig3d.py vistas  <modelo.json> --salida DIR
 #   python -I tools/art/rig3d.py ajuste  <modelo.json> --refs DIR --salida DIR
 #   python -I tools/art/rig3d.py sondeo  <modelo.json>
+#   python -I tools/art/rig3d.py estres  <modelo.json> --salida DIR  (poses fijas de tools/art/estres.json, con controles)
 # El modelo puede ser de piezas proyectadas (modelo.json) o una receta de malla con "cuerpo" y "partes" (malla.json).
 # The model can be projected pieces (modelo.json) or a mesh recipe with "cuerpo" and "partes" (malla.json).
 # Blender sale de la variable BLENDER o del PATH / Blender comes from the BLENDER variable or PATH.
@@ -156,7 +157,12 @@ def stamp_eyes(eyes, spec, mask):
     for eye, name, flip in picks:
         st = spec["sellos"][name]; rows = [r[::-1] for r in st["px"]] if flip else st["px"]
         ax = len(rows[0]) - 1 - st["ancla"][0] if flip else st["ancla"][0]
-        x0, y0 = int(eyes[eye][0]) - ax, int(eyes[eye][1]) - st["ancla"][1]
+        # "redondear": la fila sale redondeada (no salta si la cabeza queda en el borde de un píxel); la columna sigue
+        # truncada porque redondear rompería el espejo E/W y la simetría del frente (x y 64 - x)
+        # "redondear": the row is rounded (no jump when the head sits on a pixel edge); the column stays truncated
+        # because rounding would break the E/W mirror and the front symmetry (x and 64 - x)
+        y = round(eyes[eye][1]) if spec.get("redondear") else int(eyes[eye][1])
+        x0, y0 = int(eyes[eye][0]) - ax, y - st["ancla"][1]
         for j, row in enumerate(rows):
             for i, ch in enumerate(row):
                 x, y = x0 + i, y0 + j
@@ -281,7 +287,8 @@ def export(anim, frames, out, prefix):
         for i in range(n):
             im = Image.fromarray(flatten(frames[d][i], d != "north")).resize((size * s, size * s), Image.NEAREST)
             review.paste(im, (i * size * s, y + 14), im)
-            draw.text((i * size * s + 3, y + 1), f"{d} {i} ({ms[i]} ms)", fill=(230, 220, 200))
+            label = anim["etiquetas"][i] if "etiquetas" in anim else f"{i} ({ms[i]} ms)"  # nombre de la pose / pose name
+            draw.text((i * size * s + 3, y + 1), f"{d} {label}", fill=(230, 220, 200))
     review.save(base + "_revision.png")
     return base
 
@@ -367,6 +374,7 @@ def cmd_frames(args):
     meta = json.load(open(os.path.join(raw, "meta.json")))
     prefix = args.prefijo or model["nombre"]
     parts = meta.get("partes")
+    done = {}
     for anim in anims:
         size = anim["lienzo"]
         frames = {d: [] for d in DIRS}
@@ -389,6 +397,8 @@ def cmd_frames(args):
         if args.esqueleto: export_skeleton(anim, frames, meta, args.esqueleto)
         if args.normales: normal_sheet(anim, frames, raw, base, dirs)
         print("ok", base)
+        done[anim["nombre"]] = (anim, frames, base)
+    return done, meta, raw
 
 
 def ramp_palette(model, pal):
@@ -447,6 +457,48 @@ def cmd_fit(args):
     print("hoja / sheet:", os.path.join(args.salida, "ajuste.png"), "(referencia | render | rojo falta, azul sobra)")
 
 
+def skin_counts(ids, parts, neck_y=None):
+    # Píxeles visibles de cada parte de piel (material "piel*"); "tronco" = los de la parte cuerpo más de 2 filas bajo
+    # la base del cuello (el frente del cuello ya baja ~1,5 filas con la cámara): piel que asoma bajo la ropa
+    # Visible pixels of each skin part; "tronco" = body part pixels more than 2 rows below the neck base (the neck
+    # front already drops ~1.5 rows with the camera): skin showing under the clothes
+    part, _ = decode_ids(ids); out = {}
+    for k, p in enumerate(parts):
+        if not str(p.get("material")).startswith("piel"): continue
+        m = part == k
+        if m.any(): out[p["nombre"]] = int(m.sum())
+        if p["nombre"] == "cuerpo" and neck_y is not None: out["tronco"] = int(m[int(neck_y) + 3:].sum())
+    return out
+
+
+STRESS = os.path.join(HERE, "estres.json")
+
+
+def cmd_stress(args):
+    # Poses de estrés fijas (las mismas para todos) en 4 direcciones, con controles por cuadro: píxeles bajo las suelas,
+    # piel visible y piernas dentro de la pollera / fixed stress poses (shared) in 4 directions, with per-frame checks
+    ns = argparse.Namespace(modelo=args.modelo, anims=[STRESS], salida=args.salida, dirs=None, prefijo=None,
+                            esqueleto=None, normales=False)
+    done, meta, raw = cmd_frames(ns)
+    anim, frames, base = done["estres"]
+    sole, parts, report = anim["lienzo"] - SOLE_MARGIN, meta.get("partes"), {}
+    for d in DIRS:
+        for i, name in enumerate(anim["etiquetas"]):
+            fm = meta[f"estres_{d}_{i}"]
+            flat = flatten({k: v for k, v in frames[d][i].items() if k != "Efectos"})
+            r = {"bajo_suela_px": int((flat[sole + 1:, :, 3] > 0).sum())}
+            if parts:
+                ids = np.array(Image.open(os.path.join(raw, f"estres_{d}_{i}_id.png")).convert("RGBA"))
+                r["piel"] = skin_counts(ids, parts, fm["marcadores"].get("cuello", [0, None])[1])
+            if "pollera" in fm: r["pollera"] = fm["pollera"]
+            report[f"{d}_{name}"] = r
+    json.dump(report, open(base + "_controles.json", "w"), indent=1)
+    for k, r in report.items():
+        cruza = [s for s, v in r.get("pollera", {}).items() if v["cruza"]]
+        print(f"{k:22} bajo_suela={r['bajo_suela_px']:3} piel={r.get('piel', {})} cruza={cruza}")
+    print("controles / checks:", base + "_controles.json")
+
+
 def probe(model_path):
     out = tempfile.mkdtemp()
     run_blender({"modelo": load_model(model_path), "salida": out, "modo": "sondeo"})
@@ -465,8 +517,13 @@ def main():
     a = sub.add_parser("ajuste"); a.add_argument("modelo"); a.add_argument("--refs", required=True)
     a.add_argument("--salida", required=True)
     s = sub.add_parser("sondeo"); s.add_argument("modelo")
+    e = sub.add_parser("estres"); e.add_argument("modelo"); e.add_argument("--salida", required=True)
     args = ap.parse_args()
+    # Blender corre en otra carpeta: con una ruta relativa solo escribía meta.json / Blender runs elsewhere: a relative
+    # path only got meta.json written
+    if getattr(args, "salida", None): args.salida = os.path.abspath(args.salida)
     if args.cmd == "cuadros": cmd_frames(args)
+    elif args.cmd == "estres": cmd_stress(args)
     elif args.cmd == "vistas": cmd_views(args)
     elif args.cmd == "ajuste": cmd_fit(args)
     else: print(json.dumps(probe(args.modelo), indent=1))

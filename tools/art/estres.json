@@ -1,0 +1,30 @@
+{
+ "nombre": "estres",
+ "lienzo": 64,
+ "etiquetas": ["brazos_arriba", "paso_largo", "sentada", "dash_agachado", "golpe3", "giro_cintura"],
+ "duraciones_ms": [400, 400, 400, 400, 400, 400],
+ "cuadros": [
+  {"pose": {"neck": {"inclinar": -10},
+            "upper_L": {"adelante": 160, "afuera": 10}, "upper_R": {"adelante": 160, "afuera": 10},
+            "fore_L": {"doblar": 10}, "fore_R": {"doblar": 10}}},
+  {"cadera": {"subir": -2}, "pies": {"L": [5, 0, 10], "R": [-5, 1.2, null]},
+   "pose": {"neck": {"inclinar": -10}, "upper_L": {"adelante": -30}, "upper_R": {"adelante": 30},
+            "fore_R": {"doblar": 20}}},
+  {"cadera": {"subir": -4},
+   "pose": {"neck": {"inclinar": -10}, "thigh_L": {"adelante": 90}, "thigh_R": {"adelante": 90},
+            "shin_L": {"doblar": 90}, "shin_R": {"doblar": 90}, "skirt": {"largo": 0.7},
+            "upper_L": {"adelante": 30}, "upper_R": {"adelante": 30}, "fore_L": {"doblar": 50}, "fore_R": {"doblar": 50}}},
+  {"cadera": {"subir": -3, "adelantar": -2}, "pies": {"L": [5, 0, 0], "R": [-6, 2, null]},
+   "pose": {"hips": {"inclinar": 10}, "chest": {"inclinar": 25}, "neck": {"inclinar": -25},
+            "upper_L": {"adelante": -45, "afuera": 10}, "upper_R": {"adelante": -45, "afuera": 10},
+            "fore_L": {"doblar": 15}, "fore_R": {"doblar": 15}, "skirt": {"adelante": -15}, "hair": {"adelante": -12}}},
+  {"raiz": {"aplastar": 0.93}, "cadera": {"subir": -3, "adelantar": -3}, "pies": {"L": [5, 0, 0], "R": [-4, 1, null]},
+   "pose": {"chest": {"girar": -8, "inclinar": 20}, "hips": {"inclinar": 5}, "neck": {"inclinar": -8, "girar": 6},
+            "upper_R": {"adelante": 70, "afuera": 71}, "fore_R": {"doblar": 46}, "weapon_R": {"doblar": -58},
+            "upper_L": {"adelante": 114, "afuera": 43}, "fore_L": {"doblar": 11},
+            "hair": {"adelante": -14}, "skirt": {"adelante": -8}},
+   "mostrar": ["espada"]},
+  {"pose": {"chest": {"girar": 30}, "neck": {"inclinar": -10, "girar": -10},
+            "upper_L": {"adelante": 20}, "upper_R": {"adelante": -20}}}
+ ]
+}

@@ -91,6 +91,37 @@ def superponer(frames, origen, destino, retraso=1, ganancia=1.0, base=0.0, bucle
     return frames
 
 
+def resorte(frames, destino, impulsado_por, rigidez=900.0, amortiguacion=0.45, ms=DEFAULT_MS, vueltas=3, pasos=20,
+            bucle=True):
+    """Resorte amortiguado: el colgante se atrasa cuando el cuerpo arranca y se pasa cuando frena, y se suma a lo que
+    ya tiene el canal. impulsado_por = {canal: ganancia} (grados del destino por unidad del canal, con signo).
+    Damped spring: the hanging part lags when the body starts and overshoots when it stops, added on top of the
+    channel's value. impulsado_por = {channel: gain} (target degrees per channel unit, signed).
+    rigidez en 1/s² (900 ≈ 4,8 Hz) / stiffness; amortiguacion: 0 oscila siempre, 1 no se pasa / damping ratio.
+    En bucle simula `vueltas` vueltas y se queda con la última, así empalma / loops: keeps the last of `vueltas` laps."""
+    n = len(frames)
+    dur = [d / 1000 for d in (ms if isinstance(ms, list) else [ms] * n)]
+    x = [sum(g * get(f, c) for c, g in impulsado_por.items()) for f in frames]
+    # La amortiguación es contra el aire, no contra el cuerpo: así se atrasa en proporción a la velocidad (guía §5)
+    # Damping is against the air, not the body: so it lags in proportion to speed (guide §5)
+    c = 2 * amortiguacion * math.sqrt(rigidez)
+    # phi es el ángulo "absoluto" del colgante; el canal es phi - x (relativo al cuerpo) / phi is the hanging part's
+    # absolute angle; the channel is phi - x (relative to the body)
+    phi, v = x[0], 0.0
+    out = [0.0] * n
+    for lap in range(vueltas if bucle else 1):
+        for i in range(n):
+            out[i] = phi - x[i]
+            nxt = x[(i + 1) % n] if bucle or i + 1 < n else x[i]
+            dt = dur[i] / pasos; xv = (nxt - x[i]) / dur[i]
+            for k in range(pasos):
+                xt = x[i] + xv * k * dt
+                v += (rigidez * (xt - phi) - c * v) * dt
+                phi += v * dt
+    for f, rel in zip(frames, out): put(f, destino, round(get(f, destino) + rel, 1))
+    return frames
+
+
 def exagerar(frames, factor, canales):
     # Amplía cada canal alrededor de su media / widens each channel around its mean
     for name in canales:
