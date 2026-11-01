@@ -1,0 +1,64 @@
+{
+  "rampas": {
+    "zapatos": {"tonos": [[30, 26, 28], [53, 48, 50]], "umbrales": [0.65]},
+    "zapatos_luz": {"tonos": [[30, 26, 28], [53, 48, 50]], "umbrales": [0.2]},
+    "zapatos_sombra": {"tonos": [[30, 26, 28], [53, 48, 50]], "umbrales": [0.8]},
+    "pierna": {"tonos": [[184, 178, 168], [224, 219, 210], [242, 238, 230]], "umbrales": [0.05, 0.45]}
+  },
+  "partes": [
+    {
+      "tipo": "tubo",
+      "nombre": "zapato",
+      "lados": ["L", "R"],
+      "hueso": "foot_<lado>",
+      "material": "zapatos",
+      "capa": "ropa",
+      "linea": "",
+      "radios": [[-0.2, 2.3, 1.2], [0.3, 2.4, 1.2], [0.7, 2.2, 1.0], [0.9, 1.8, 0.8]],
+      "desplazar": [0, 0, -0.1]
+    }
+  ],
+  "piezas": [
+    {
+      "nombre": "suela_L",
+      "forma": "caja",
+      "material": "zapatos_luz",
+      "capa": "ropa",
+      "linea": "",
+      "hueso": "foot_L",
+      "pos": [4.5, 0.1, 0.2],
+      "escala": [1.0, 6.7, 0.4]
+    },
+    {
+      "nombre": "suela_dentro_L",
+      "forma": "caja",
+      "material": "zapatos_sombra",
+      "capa": "ropa",
+      "linea": "",
+      "hueso": "foot_L",
+      "pos": [2.5, 0.1, 0.2],
+      "escala": [3.0, 6.7, 0.4]
+    },
+    {
+      "nombre": "suela_R",
+      "forma": "caja",
+      "material": "zapatos_luz",
+      "capa": "ropa",
+      "linea": "",
+      "hueso": "foot_R",
+      "pos": [-4.5, 0.1, 0.2],
+      "escala": [1.0, 6.7, 0.4]
+    },
+    {
+      "nombre": "suela_dentro_R",
+      "forma": "caja",
+      "material": "zapatos_sombra",
+      "capa": "ropa",
+      "linea": "",
+      "hueso": "foot_R",
+      "pos": [-2.5, 0.1, 0.2],
+      "escala": [3.0, 6.7, 0.4]
+    }
+  ],
+  "contorno_hueco": ["pierna"]
+}

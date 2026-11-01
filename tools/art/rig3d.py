@@ -48,12 +48,35 @@ def blender():
     return path
 
 
-def load_model(path):
+def merge_recipe(a, b, top=True):
+    # b sobre a: diccionarios en profundidad, listas de primer nivel concatenadas (partes, piezas...), el resto lo pisa b
+    # b over a: dicts deep-merged, top-level lists concatenated (parts, pieces...), anything else replaced by b
+    out = dict(a)
+    for k, v in b.items():
+        if isinstance(v, dict) and isinstance(out.get(k), dict): out[k] = merge_recipe(out[k], v, False)
+        elif top and isinstance(v, list) and isinstance(out.get(k), list): out[k] = out[k] + v
+        else: out[k] = v
+    return out
+
+
+def read_recipe(path):
+    # Receta con "incluir": [rutas relativas]: los fragmentos se mezclan en orden y la receta pisa a sus incluidos;
+    # las rutas de cada fragmento quedan absolutas / recipe with "incluir": fragments merge in order and the recipe
+    # overrides them; each fragment's paths become absolute
     model = json.load(open(path, encoding="utf-8"))
     base = os.path.dirname(os.path.abspath(path))
     for spec in model.get("proyecciones", {}).values():
         spec["sprites"] = {d: os.path.abspath(os.path.join(base, p)) for d, p in spec["sprites"].items()}
-    model["_dir"] = base  # para partes que leen archivos / for parts that read files
+    for s in model.get("partes", []):
+        if "archivo" in s: s["archivo"] = os.path.abspath(os.path.join(base, s["archivo"]))
+    out = {}
+    for inc in model.pop("incluir", []): out = merge_recipe(out, read_recipe(os.path.join(base, inc)))
+    return merge_recipe(out, model)
+
+
+def load_model(path):
+    model = read_recipe(path)
+    model["_dir"] = os.path.dirname(os.path.abspath(path))  # para partes que leen archivos / for parts that read files
     if "cuerpo" in model:  # receta: el esqueleto sale de las proporciones / recipe: the skeleton comes from the proportions
         import rig3d_partes
         model["huesos"] = {**rig3d_partes.esqueleto(model["cuerpo"]), **model.get("huesos", {})}

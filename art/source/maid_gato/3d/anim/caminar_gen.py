@@ -22,9 +22,10 @@ import copy, json, math, os, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", "..", "..", "..", ".."))
 sys.path.insert(0, os.path.join(ROOT, "tools", "art"))
-import motion
+import motion, rig3d
 
-CUERPO = json.load(open(os.path.join(HERE, "..", "malla.json"), encoding="utf-8"))["cuerpo"]
+# La receta junta sus módulos con "incluir" / the recipe merges its modules with "incluir"
+CUERPO = rig3d.load_model(os.path.join(HERE, "..", "malla.json"))["cuerpo"]
 T, (L1, L2) = CUERPO["tobillo"], CUERPO["pierna"]
 HX = CUERPO["caderas"][0]
 FL = CUERPO["pie"][0]

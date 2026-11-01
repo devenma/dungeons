@@ -1,0 +1,50 @@
+{
+  "rampas": {
+    "oreja": {"tonos": [[50, 48, 56], [74, 72, 80]], "umbrales": [0.0], "plano": true},
+    "oreja_dentro": {"tonos": [[50, 48, 56], [122, 62, 76]], "umbrales": [0.01], "plano": true}
+  },
+  "cuerpo": {"orejas": [3.4, -3.0, 2.6, 6.6, 0.55]},
+  "partes": [
+    {
+      "tipo": "oreja",
+      "nombre": "oreja",
+      "lados": ["L", "R"],
+      "material": "oreja",
+      "capa": "pelo",
+      "linea": "",
+      "pos": [3.4, -3.0, 2.6],
+      "alto": 6.6,
+      "ancho": 2.6,
+      "grosor": 1.0,
+      "afuera": 0,
+      "atras": 0,
+      "giro": 45,
+      "perfil": [[0, 1.0], [0.5, 0.9], [0.85, 0.65], [1.0, 0.35]],
+      "hueso": "ear_<lado>",
+      "ocultar_lejos": 30,
+      "punta": ["ear_tip_<lado>", 0.55]
+    },
+    {
+      "tipo": "oreja",
+      "nombre": "oreja_dentro",
+      "lados": ["L", "R"],
+      "material": "oreja_dentro",
+      "capa": "pelo",
+      "linea": "",
+      "pos": [3.4, -3.0, 2.6],
+      "alto": 5.0,
+      "ancho": 2.6,
+      "grosor": 1.0,
+      "afuera": 0,
+      "atras": 0,
+      "giro": 45,
+      "perfil": [[0, 1.0], [0.5, 0.9], [0.85, 0.65], [1.0, 0.35]],
+      "hueso": "ear_<lado>",
+      "escala": [0.55, 0.5],
+      "adelante": -0.6,
+      "ocultar_lejos": 30,
+      "punta": ["ear_tip_<lado>", 0.726]
+    }
+  ],
+  "punta_1px": [["oreja_L", "oreja_dentro_L"], ["oreja_R", "oreja_dentro_R"]]
+}

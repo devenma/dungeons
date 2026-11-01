@@ -1,0 +1,17 @@
+{
+  "ojos": {
+    "parte": ["cabeza", "flequillo"],
+    "x": 3.4,
+    "z": -2.6,
+    "hundir": 0.3,
+    "colores": {"l": [58, 30, 34], "w": [202, 201, 201], "g": [70, 104, 84], "p": [184, 95, 114], "k": [122, 88, 76]},
+    "sellos": {
+      "frente_R": {"px": ["llll..", ".wgg..", "..gg..", "..p...", ".....k"], "ancla": [2, 2]},
+      "frente_L": {"px": ["..llll", "..ggw.", "..gg..", "...p..", "k....."], "ancla": [3, 2]},
+      "perfil": {"px": [".ll", ".wg", "..g", "pp."], "ancla": [2, 3]},
+      "perfil_izq": {"px": ["ll.", "gw.", "g..", ".pp"], "ancla": [0, 3]}
+    },
+    "redondear": true
+  },
+  "partes": [{"tipo": "cabeza", "nombre": "cabeza", "material": "piel_plana", "capa": "cuerpo", "linea": ""}]
+}

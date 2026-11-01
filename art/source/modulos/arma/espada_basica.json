@@ -1,0 +1,67 @@
+{
+  "rampas": {
+    "mango": {"tonos": [[20, 18, 24], [36, 32, 40], [58, 53, 66]], "umbrales": [0.05, 0.3]},
+    "oro": [[120, 84, 40], [176, 132, 62], [220, 182, 96]],
+    "acero": [[70, 74, 88], [132, 138, 152], [214, 218, 226]],
+    "corte": [[196, 232, 255], [196, 232, 255], [240, 250, 255]]
+  },
+  "grupos_ocultos": ["espada", "arco_corte", "onda"],
+  "marcadores": {"punta_espada": ["weapon_R", "cola"]},
+  "partes": [
+    {
+      "tipo": "tubo",
+      "nombre": "mango",
+      "hueso": "weapon_R",
+      "material": "mango",
+      "capa": "arma",
+      "grupo": "espada",
+      "linea": "",
+      "radios": [[-0.17, 0.6], [0.04, 0.6]],
+      "tapas": [0, 0]
+    },
+    {
+      "tipo": "tubo",
+      "nombre": "guarda",
+      "hueso": "weapon_R",
+      "material": "oro",
+      "capa": "arma",
+      "grupo": "espada",
+      "linea": "",
+      "radios": [[0.03, 2.0, 0.6], [0.075, 2.0, 0.6]],
+      "tapas": [0, 0]
+    },
+    {
+      "tipo": "tubo",
+      "nombre": "hoja",
+      "hueso": "weapon_R",
+      "material": "acero",
+      "capa": "arma",
+      "grupo": "espada",
+      "linea": "",
+      "radios": [[0.07, 0.9, 0.4], [0.93, 0.9, 0.4], [1.0, 0.25, 0.3]],
+      "tapas": [0, 0]
+    }
+  ],
+  "piezas": [
+    {
+      "nombre": "arco",
+      "forma": "toro",
+      "material": "corte",
+      "pos": [0, 0, 13],
+      "escala": [1, 1, 0.35],
+      "R": 15,
+      "r": 1.1,
+      "grupo": "arco_corte"
+    },
+    {
+      "nombre": "onda",
+      "forma": "toro",
+      "material": "corte",
+      "pos": [0, 0, 0.4],
+      "escala": [1, 1, 0.3],
+      "R": 8,
+      "r": 0.8,
+      "grupo": "onda"
+    }
+  ]
+}
