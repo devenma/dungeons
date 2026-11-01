@@ -48,13 +48,34 @@ def blender():
     return path
 
 
+def part_key(s):
+    # Nombre de una parte o pieza para mezclar: "nombre" o, si no tiene, su tipo / part name for merging
+    return s.get("nombre") or s.get("tipo")
+
+
+def merge_list(a, b):
+    # Lista de partes de b sobre la de a: una con el mismo nombre que una de a se mezcla con ella en su lugar
+    # ("quitar": true la quita); un parche sin "tipo" ni "forma" que no encuentra su parte se descarta; el resto se suma
+    # b's part list over a's: one named like an a part merges into it in place ("quitar": true removes it); a patch
+    # without "tipo" or "forma" that finds no part is dropped; the rest is appended
+    out, n = list(a), len(a)  # solo se buscan las de a / only a's parts are matched
+    for s in b:
+        d = isinstance(s, dict)
+        i = next((j for j in range(n) if isinstance(out[j], dict) and part_key(out[j]) == part_key(s)), None) if d else None
+        if i is None:
+            if not d or (not s.get("quitar") and ("tipo" in s or "forma" in s)): out.append(s)
+        elif s.get("quitar"): out[i] = None
+        else: out[i] = {**out[i], **s}
+    return [p for p in out if p is not None]
+
+
 def merge_recipe(a, b, top=True):
-    # b sobre a: diccionarios en profundidad, listas de primer nivel concatenadas (partes, piezas...), el resto lo pisa b
-    # b over a: dicts deep-merged, top-level lists concatenated (parts, pieces...), anything else replaced by b
+    # b sobre a: diccionarios en profundidad, listas de primer nivel unidas por nombre (partes, piezas...), el resto
+    # lo pisa b / b over a: dicts deep-merged, top-level lists merged by name (parts, pieces...), the rest replaced by b
     out = dict(a)
     for k, v in b.items():
         if isinstance(v, dict) and isinstance(out.get(k), dict): out[k] = merge_recipe(out[k], v, False)
-        elif top and isinstance(v, list) and isinstance(out.get(k), list): out[k] = out[k] + v
+        elif top and isinstance(v, list) and isinstance(out.get(k), list): out[k] = merge_list(out[k], v)
         else: out[k] = v
     return out
 
@@ -69,6 +90,13 @@ def read_recipe(path):
         spec["sprites"] = {d: os.path.abspath(os.path.join(base, p)) for d, p in spec["sprites"].items()}
     for s in model.get("partes", []):
         if "archivo" in s: s["archivo"] = os.path.abspath(os.path.join(base, s["archivo"]))
+    # "craneo": radios [x, frente, atrás, arriba, abajo] de la cabeza sobre la que se midió el fragmento (peinado,
+    # orejas); sus partes y sus huesos de orejas se adaptan a la cabeza del cuerpo (rig3d_partes.craneo); la cara lo
+    # lleva en "ojos" / skull radii the fragment was measured on; its parts and ear bones adapt to the body's head
+    ref = model.pop("craneo", None)
+    if ref:
+        for s in model.get("partes", []): s.setdefault("craneo", ref)
+        if "orejas" in model.get("cuerpo", {}): model["cuerpo"].setdefault("orejas_craneo", ref)
     out = {}
     for inc in model.pop("incluir", []): out = merge_recipe(out, read_recipe(os.path.join(base, inc)))
     return merge_recipe(out, model)
@@ -80,6 +108,11 @@ def load_model(path):
     if "cuerpo" in model:  # receta: el esqueleto sale de las proporciones / recipe: the skeleton comes from the proportions
         import rig3d_partes
         model["huesos"] = {**rig3d_partes.esqueleto(model["cuerpo"]), **model.get("huesos", {})}
+    for p in model.get("piezas", []):
+        # "relativo": [hueso, "cabeza"|"cola"]: pos medida desde ese extremo del hueso (sigue al cuerpo)
+        # pos measured from that bone end (follows the body)
+        if isinstance(p.get("relativo"), list):
+            b, end = p.pop("relativo"); p["pos"] = [q + o for q, o in zip(model["huesos"][b][end], p["pos"])]
     return model
 
 

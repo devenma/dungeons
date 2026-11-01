@@ -1,0 +1,21 @@
+{
+  "nombre": "maniqui_maid",
+  "inclinacion_camara": 22,
+  "contorno": "rampa",
+  "umbrales": [0.12, 0.66],
+  "luz": {"rot": [25, 0, 0], "energia": 3.2, "sombras": false, "sigue": true},
+  "incluir": [
+    "../../modulos/cuerpo/chibi_neutro.json",
+    "../../modulos/cara/maid_ojos_verdes.json",
+    "../../modulos/ropa/maid_vestido.json",
+    "../../modulos/calzado/zapatos_medias.json",
+    "../../modulos/arma/espada_basica.json",
+    "../../modulos/peinado/media_melena.json",
+    "../../modulos/adorno_cabeza/orejas_gato.json"
+  ],
+  "cuerpo": {"cabeza": {"centro": [0, 1.0, 6.0], "alto_arriba": 5.6}},
+  "partes": [
+    {"nombre": "lazo", "pos": [1.6, -3.2, 1.2]},
+    {"nombre": "nudo", "pos": [0, -3.7, 0.6]}
+  ]
+}

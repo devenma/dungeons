@@ -11,7 +11,8 @@
       "perfil": {"px": [".ll", ".wg", "..g", "pp."], "ancla": [2, 3]},
       "perfil_izq": {"px": ["ll.", "gw.", "g..", ".pp"], "ancla": [0, 3]}
     },
-    "redondear": true
+    "redondear": true,
+    "craneo": [5.6, 7.15, 4.9, 5.0, 6.4]
   },
   "partes": [{"tipo": "cabeza", "nombre": "cabeza", "material": "piel_plana", "capa": "cuerpo", "linea": ""}]
 }

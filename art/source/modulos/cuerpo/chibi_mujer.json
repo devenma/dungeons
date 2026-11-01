@@ -51,9 +51,9 @@
     "mano_L": ["fore_L", "cola"]
   },
   "partes": [
-    {"tipo": "cuerpo", "material": "piel_sombra", "capa": "cuerpo", "tronco": false},
-    {"tipo": "brazo", "lados": ["L", "R"], "material": "piel_plana", "capa": "cuerpo", "desde": 0.6},
-    {"tipo": "pierna", "lados": ["L", "R"], "material": "pierna", "capa": "cuerpo", "linea": "", "pie": false},
+    {"tipo": "cuerpo", "material": "piel_sombra", "capa": "cuerpo"},
+    {"tipo": "brazo", "lados": ["L", "R"], "material": "piel_plana", "capa": "cuerpo"},
+    {"tipo": "pierna", "lados": ["L", "R"], "material": "pierna", "capa": "cuerpo", "linea": ""},
     {
       "tipo": "esfera",
       "nombre": "mano",
@@ -62,7 +62,8 @@
       "capa": "cuerpo",
       "linea": "brazo_<lado>",
       "hueso": "fore_<lado>",
-      "pos": [8.3, 0.2, 11.21],
+      "pos": [0.03, 0.0, -1.602],
+      "relativo": ["fore_<lado>", "cola"],
       "radios": [1.4, 1.1, 1.5],
       "ocultar_lejos": 30
     }

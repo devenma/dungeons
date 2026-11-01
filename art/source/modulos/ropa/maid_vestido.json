@@ -14,6 +14,8 @@
   },
   "cuerpo": {"pollera": [1.2, 9], "pollera_sectores": {"k": 0.15}, "moño": [5.8, 0.4, 3]},
   "partes": [
+    {"nombre": "cuerpo", "tronco": false},
+    {"nombre": "brazo", "desde": 0.6},
     {
       "tipo": "lofteo",
       "nombre": "corpino",
@@ -56,7 +58,8 @@
       "material": "blanco_sombra",
       "capa": "ropa",
       "hueso": "chest",
-      "pos": [3.0, -0.8, 21.0],
+      "pos": [3.0, -0.8, -0.5],
+      "relativo": ["neck", "cabeza"],
       "radios": [1.1, 0.6, 1.6]
     },
     {
@@ -65,7 +68,8 @@
       "material": "rosa_oscuro",
       "capa": "ropa",
       "hueso": "chest",
-      "pos": [0, -1.2, 21.2],
+      "pos": [0, -1.2, -0.3],
+      "relativo": ["neck", "cabeza"],
       "R": 1.25,
       "r": 0.35,
       "rot": [65, 0, 0]
@@ -76,7 +80,8 @@
       "material": "blanco_lazo",
       "capa": "ropa",
       "hueso": "hips",
-      "pos": [0, 5.6, 14.6],
+      "pos": [0, 5.6, 0.6],
+      "relativo": ["hips", "cola"],
       "ancho": 6.0,
       "lazo": [2.2, 0.8, 1.9],
       "giro": 15,
@@ -90,7 +95,8 @@
       "material": "rosa",
       "capa": "ropa",
       "hueso": "chest",
-      "pos": [1.6, -4.7, 22.7],
+      "pos": [1.6, -4.7, 1.2],
+      "relativo": ["neck", "cabeza"],
       "radios": [2.0, 0.8, 0.95],
       "rot": [0, 10, 0],
       "ocultar_lejos": 30
@@ -101,7 +107,8 @@
       "material": "rosa_oscuro",
       "capa": "ropa",
       "hueso": "chest",
-      "pos": [0, -5.2, 22.1],
+      "pos": [0, -5.2, 0.6],
+      "relativo": ["neck", "cabeza"],
       "radios": [0.95, 0.5, 0.5]
     },
     {

@@ -1,0 +1,67 @@
+{
+  "rampas": {
+    "piel_sombra": {"tonos": [[122, 88, 76], [160, 122, 106], [196, 160, 144]], "umbrales": [0.05, 0.5]},
+    "piel_plana": {"tonos": [[122, 88, 76], [160, 122, 106], [196, 160, 144]], "umbrales": [0.0, 0.05], "plano": true},
+    "piel_mano": {"tonos": [[122, 88, 76], [160, 122, 106], [196, 160, 144]], "umbrales": [0.05, 0.75]},
+    "pierna": {"tonos": [[122, 88, 76], [160, 122, 106], [196, 160, 144]], "umbrales": [0.05, 0.5]}
+  },
+  "cuerpo": {
+    "tobillo": 1,
+    "pierna": [5.0, 4.2],
+    "cintura": 5.5,
+    "pecho": 7.0,
+    "cuello": 2.5,
+    "brazo": [4.8, 4.6],
+    "grosor_brazo": [1.2, 1.2, 1.0, 1.4],
+    "mano": 1.7,
+    "grosor_pierna": [2.1, 1.8, 1.6, 1.3],
+    "cuello_r": 1.25,
+    "cuello_y": 0.8,
+    "cabeza": {
+      "centro": [0, 1.0, 4.6],
+      "radios": [6.4, 6.0, 7.0],
+      "mandibula": 0.3,
+      "menton": 0.5
+    },
+    "torso_perfil": [
+      [-0.13, 3.6, 2.4, 0.8],
+      [0.0, 4.2, 2.8, 1.0],
+      [0.3, 3.8, 2.6, 1.0],
+      [0.6, 4.2, 2.7, 1.1],
+      [0.85, 4.9, 2.8, 1.2],
+      [0.95, 4.5, 2.5, 1.1],
+      [1.0, 2.5, 1.9, 0.9]
+    ],
+    "hombros": [6.9, 1, -2.5],
+    "caderas": [3.0, 1.2],
+    "plano_pierna": 0.78
+  },
+  "marcadores": {
+    "cadera": ["hips", "cabeza"],
+    "pie_L": ["shin_L", "cola"],
+    "pie_R": ["shin_R", "cola"],
+    "mano_R": ["fore_R", "cola"],
+    "mano_L": ["fore_L", "cola"],
+    "cuello": ["neck", "cabeza"]
+  },
+  "partes": [
+    {
+      "tipo": "cuerpo",
+      "material": "piel_sombra",
+      "capa": "cuerpo"
+    },
+    {
+      "tipo": "brazo",
+      "lados": ["L", "R"],
+      "material": "piel_plana",
+      "capa": "cuerpo"
+    },
+    {
+      "tipo": "pierna",
+      "lados": ["L", "R"],
+      "material": "pierna",
+      "capa": "cuerpo",
+      "linea": ""
+    }
+  ]
+}

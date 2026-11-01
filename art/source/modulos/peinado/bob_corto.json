@@ -1,0 +1,88 @@
+{
+  "craneo": [5.6, 7.15, 4.9, 5.0, 6.4],
+  "rampas": {
+    "pelo": {
+      "tonos": [[84, 34, 30], [134, 58, 42], [178, 92, 62]],
+      "mechas": 0.25,
+      "umbrales": [0.25, 0.85],
+      "ambiente": 0.3
+    }
+  },
+  "cuerpo": {
+    "pelo": [2, 8, 1],
+    "mechones": [5.3, 0.3, 4, -4]
+  },
+  "partes": [
+    {
+      "tipo": "pelo",
+      "nombre": "tapa",
+      "material": "pelo",
+      "capa": "pelo",
+      "linea": "cabeza",
+      "compensar": false,
+      "campana": 0.0,
+      "cierre": 0.0,
+      "abierto": 20,
+      "mechas": 0,
+      "arco": 0.0,
+      "radios": [6.5, 7.2, 5.8],
+      "bajo": 3.0,
+      "bajo_atras": 5.0,
+      "cara": [4.6, 5.0],
+      "flequillo": -1.0,
+      "cuadrar": 2.4,
+      "cortina": 0.5,
+      "sien": 3.0,
+      "fondo": 5.2,
+      "menton": 4.6
+    },
+    {
+      "tipo": "tarjeta",
+      "nombre": "flequillo",
+      "material": "pelo",
+      "capa": "pelo",
+      "linea": "cabeza",
+      "hueso": "neck",
+      "camino": [[0, -5.0, 4.0], [0, -7.7, 3.0], [0, -7.9, 1.2], [0, -7.7, -0.2]],
+      "ancho": [5.0, 5.8, 5.8, 5.6],
+      "curva": [0.0, -3.0, -5.4, -5.4],
+      "grosor": 1.0,
+      "nv": 20,
+      "puntas": [0.3]
+    },
+    {
+      "tipo": "tarjeta",
+      "nombre": "cortina",
+      "lados": ["L", "R"],
+      "material": "pelo",
+      "capa": "pelo",
+      "linea": "cabeza",
+      "hueso": "lock_<lado>",
+      "rigido": 0.25,
+      "camino": [[6.0, -1.8, 3.2], [6.2, 0.2, -1.0], [6.2, 0.0, -4.2], [5.6, -0.8, -6.0]],
+      "ancho": [2.6, 2.6, 2.4, 2.0],
+      "lado_eje": [0.25, 1, 0],
+      "curva": 0.0,
+      "grosor": 1.0,
+      "nv": 6,
+      "puntas": [0.0]
+    },
+    {
+      "tipo": "tarjeta",
+      "nombre": "melena",
+      "material": "pelo",
+      "capa": "pelo",
+      "linea": "cabeza",
+      "hueso": "hair",
+      "camino": [[0, 2.5, 4.5], [0, 3.8, 3.0], [0, 4.7, -1.5], [0, 4.6, -4.8], [0, 3.9, -6.4]],
+      "ancho": [5.0, 7.0, 8.4, 8.2, 7.4],
+      "curva": [2.9, 3.3, 4.0, 3.4, 2.6],
+      "grosor": 1.4,
+      "nv": 24,
+      "puntas": [0.0],
+      "rigido": 0.35,
+      "mechas": [],
+      "curvo": 0
+    }
+  ]
+}

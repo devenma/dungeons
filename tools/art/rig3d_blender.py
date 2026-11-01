@@ -278,6 +278,9 @@ def pose(frame, base_yaw):
                 own = chans_all.setdefault(bone, {})
                 own[chan] = own.get(chan, REST.get(chan, 0.0)) * value if chan == "largo" else own.get(chan, 0) + value
     for bone, chans in chans_all.items():
+        # Las animaciones son compartidas: un hueso que este personaje no tiene (orejas) se ignora
+        # Animations are shared: a bone this character lacks (ears) is skipped
+        if bone not in MODEL["huesos"]: continue
         b = MODEL["huesos"][bone]; table = CHANNELS[b["tipo"]]
         rot = [0.0, 0.0, 0.0]
         for chan, value in chans.items():

@@ -65,8 +65,9 @@ def esqueleto(c):
         # 5.º valor opcional: fracción del alto donde nace ear_tip_<lado>, la punta que se dobla sola
         # Optional 5th value: height fraction where ear_tip_<side> starts, the tip that bends on its own
         f = c["orejas"][4] if len(c["orejas"]) > 4 else None
+        fc = craneo(c.get("orejas_craneo"), c)  # la base sigue al cráneo; el largo no / the base follows the skull
         for s, k in SIDE.items():
-            base = add(hc, (k * ex, ey, ez)); tip = add(base, (0, 0, el))
+            base = add(hc, escalar(fc, (k * ex, ey, ez))); tip = add(base, (0, 0, el))
             if f is None: bone(f"ear_{s}", base, tip, "neck", "oreja"); continue
             mid = add(base, (0, 0, el * f))
             bone(f"ear_{s}", base, mid, "neck", "oreja"); bone(f"ear_tip_{s}", mid, tip, f"ear_{s}", "oreja")
@@ -280,6 +281,31 @@ def cabeza_punto(M, x, z, hundir=0.0):
 
 def cabeza_centro(M):
     nt = M["huesos"]["neck"]["cola"]; return tuple(add(nt, M["cuerpo"]["cabeza"]["centro"]))
+
+
+def craneo(ref, c):
+    # Factores [x, frente, atrás, arriba, abajo] de la cabeza del cuerpo c sobre la de referencia; None sin referencia
+    # Factors of body c's head over the reference head; None without a reference
+    if not ref: return None
+    h = c["cabeza"]; rx, ry, rz = h["radios"]
+    return [a / b for a, b in zip((rx, ry, h.get("fondo") or ry, h.get("alto_arriba") or rz, rz), ref)]
+
+
+def escalar(f, p):
+    # Punto relativo al centro de la cabeza llevado a la otra cabeza, por mitades (como achicar) / point relative to the
+    # head centre carried to the other head, half by half (like achicar)
+    if not f: return tuple(p)
+    x, y, z = p
+    return (x * f[0], y * (f[1] if y < 0 else f[2]), z * (f[3] if z > 0 else f[4]))
+
+
+def anclar(s, M, pos):
+    # "relativo": "cabeza" (centro de la cabeza) o [hueso, "cabeza"|"cola"]: pos medida desde ahí; si no, absoluta
+    # "relativo": head centre or [bone, end]: pos measured from there; otherwise absolute
+    r = s.get("relativo")
+    if r == "cabeza": return add(pos, cabeza_centro(M))
+    if isinstance(r, list): return add(pos, tuple(M["huesos"][r[0].replace("<lado>", s.get("lado") or "")][r[1]]))
+    return pos
 
 
 def p_cabeza(s, M):
@@ -537,8 +563,7 @@ def p_oreja(s, M):
 
 def p_esfera(s, M):
     # Esfera rígida a un hueso, con posición en espejo por lado / sphere rigid to a bone, mirrored per side
-    k = SIDE.get(s.get("lado"), 1); p = s["pos"]; pos = (k * p[0], p[1], p[2])
-    if s.get("relativo") == "cabeza": pos = add(pos, cabeza_centro(M))
+    k = SIDE.get(s.get("lado"), 1); p = s["pos"]; pos = anclar(s, M, (k * p[0], p[1], p[2]))
     bone = s["hueso"].replace("<lado>", s.get("lado", ""))
     rot = s.get("rot", [0, 0, 0])
     m = elipsoide((0, 0, 0), s["radios"], s.get("seg", 12), s.get("anillos", 8), pesos=lambda p: {bone: 1})
@@ -558,8 +583,7 @@ def rotar(v, deg):
 
 def p_toro(s, M):
     # Toro rígido a un hueso (cintas, puños, cuellos) / torus rigid to a bone (ribbons, cuffs, collars)
-    k = SIDE.get(s.get("lado"), 1); p = s["pos"]; pos = (k * p[0], p[1], p[2])
-    if s.get("relativo") == "cabeza": pos = add(pos, cabeza_centro(M))
+    k = SIDE.get(s.get("lado"), 1); p = s["pos"]; pos = anclar(s, M, (k * p[0], p[1], p[2]))
     w = s.get("pesos") or {s["hueso"].replace("<lado>", s.get("lado", "")): 1}
     R, r = s["R"], s["r"]; rot = s.get("rot", [0, 0, 0]); sc = s.get("escala", [1, 1, 1])
     m = malla(); filas = []; n, segs = s.get("seg", 16), 6
@@ -762,7 +786,7 @@ def p_manga(s, M):
 def p_lazo(s, M):
     # Moño: dos lazos aplanados y un nudo, rígido a un hueso / bow: two flattened loops and a knot, rigid to a bone
     out = []
-    pos, bone = s["pos"], s["hueso"]
+    pos, bone = anclar(s, M, tuple(s["pos"])), s["hueso"]
     for k in (1, -1):
         out.append(p_esfera({"pos": [pos[0] + k * s["ancho"] / 2, pos[1], pos[2]], "radios": s["lazo"], "hueso": bone,
                              "rot": [0, k * s.get("giro", 0), 0]}, M))
@@ -786,6 +810,15 @@ LINEA = {"brazo": "brazo", "pierna": "pierna"}
 def construir(s, M):
     # Una parte de la receta -> malla con nombre, material, capa y grupo de línea / one recipe part -> named mesh
     m = PARTES[s["tipo"]](s, M); m.pop("lalo", None)
+    f = craneo(s.get("craneo"), M["cuerpo"])
+    if f:
+        # Parte medida sobre otra cabeza: se lleva a esta por mitades; la oreja solo se mueve con su base (no cambia de
+        # tamaño) / part measured on another head: carried to this one; the ear only moves with its base (same size)
+        c = cabeza_centro(M)
+        if s["tipo"] == "oreja":
+            p = s["pos"]; k = SIDE[s["lado"]]; d = sub(escalar(f, (k * p[0], p[1], p[2])), (k * p[0], p[1], p[2]))
+            m["v"] = [add(v, d) for v in m["v"]]
+        else: m["v"] = [add(c, escalar(f, sub(v, c))) for v in m["v"]]
     lado = s.get("lado", "")
     # "linea": "" deja la parte sin líneas internas (la espada) / "linea": "" leaves the part without inner lines
     linea = s["linea"] if "linea" in s else (f"{LINEA[s['tipo']]}_{lado}" if s["tipo"] in LINEA else "tronco")
@@ -811,6 +844,6 @@ def expandir(partes):
 def ojos(M):
     # Puntos de los ojos sobre la cara (en reposo) y centro de la cabeza, para estampar ojos 2D por cuadro
     # Eye points on the face (at rest) and the head centre, to stamp 2D eyes per frame
-    e = M["ojos"]; c = cabeza_centro(M)
-    return {"puntos": {s: list(cabeza_punto(M, k * e["x"], c[2] + e["z"], e.get("hundir", 0))) for s, k in SIDE.items()},
+    e = M["ojos"]; c = cabeza_centro(M); x, _, z = escalar(craneo(e.get("craneo"), M["cuerpo"]), (e["x"], 0, e["z"]))
+    return {"puntos": {s: list(cabeza_punto(M, k * x, c[2] + z, e.get("hundir", 0))) for s, k in SIDE.items()},
             "centro": list(c)}

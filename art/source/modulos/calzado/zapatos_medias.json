@@ -6,6 +6,7 @@
     "pierna": {"tonos": [[184, 178, 168], [224, 219, 210], [242, 238, 230]], "umbrales": [0.05, 0.45]}
   },
   "partes": [
+    {"nombre": "pierna", "pie": false},
     {
       "tipo": "tubo",
       "nombre": "zapato",
@@ -26,7 +27,8 @@
       "capa": "ropa",
       "linea": "",
       "hueso": "foot_L",
-      "pos": [4.5, 0.1, 0.2],
+      "pos": [1.0, -0.9, -0.8],
+      "relativo": ["foot_L", "cabeza"],
       "escala": [1.0, 6.7, 0.4]
     },
     {
@@ -36,7 +38,8 @@
       "capa": "ropa",
       "linea": "",
       "hueso": "foot_L",
-      "pos": [2.5, 0.1, 0.2],
+      "pos": [-1.0, -0.9, -0.8],
+      "relativo": ["foot_L", "cabeza"],
       "escala": [3.0, 6.7, 0.4]
     },
     {
@@ -46,7 +49,8 @@
       "capa": "ropa",
       "linea": "",
       "hueso": "foot_R",
-      "pos": [-4.5, 0.1, 0.2],
+      "pos": [-1.0, -0.9, -0.8],
+      "relativo": ["foot_R", "cabeza"],
       "escala": [1.0, 6.7, 0.4]
     },
     {
@@ -56,7 +60,8 @@
       "capa": "ropa",
       "linea": "",
       "hueso": "foot_R",
-      "pos": [-2.5, 0.1, 0.2],
+      "pos": [1.0, -0.9, -0.8],
+      "relativo": ["foot_R", "cabeza"],
       "escala": [3.0, 6.7, 0.4]
     }
   ],

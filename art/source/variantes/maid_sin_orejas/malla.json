@@ -1,0 +1,15 @@
+{
+  "nombre": "maid_sin_orejas",
+  "inclinacion_camara": 22,
+  "contorno": "rampa",
+  "umbrales": [0.12, 0.66],
+  "luz": {"rot": [25, 0, 0], "energia": 3.2, "sombras": false, "sigue": true},
+  "incluir": [
+    "../../modulos/cuerpo/chibi_mujer.json",
+    "../../modulos/cara/maid_ojos_verdes.json",
+    "../../modulos/ropa/maid_vestido.json",
+    "../../modulos/calzado/zapatos_medias.json",
+    "../../modulos/arma/espada_basica.json",
+    "../../modulos/peinado/media_melena.json"
+  ]
+}
