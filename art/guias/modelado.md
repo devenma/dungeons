@@ -128,7 +128,14 @@ diferencia entre dos rondas rechazadas y una base aprobable.
   bajo cada borde (escote, puño). La piel tapada no existe y no puede asomar.
 - **Hombro y manga como una sola superficie** (parte `manga`): sale de la sisa del torso, sin esfera en el hombro;
   `"normales": "capsula"` evita los anillos de bola en la rampa.
-- **Tela con normales del reposo** (`normales_reposo` en la rampa): el tono no salta cuando los sectores giran.
+- **Tela con normales del reposo** (`normales_reposo` en la rampa): el tono no salta cuando los sectores giran. La
+  pasada `--normales` usa las mismas normales: en la caminata de la maid la tela salta 37 % menos de banda bajo una
+  antorcha donde el color no cambia.
+- **Sombra pintada** (`"sesgo_sombra"` en una parte, GGXrd): un número (toda la parte) o zonas
+  `[{"valor", "centro", "radios", "relativo"}]` que suman su valor a la luz antes de la rampa: −0,3 baja una banda y
+  +0,3 la sube. Para sombras que decide el artista y no la luz. En una rampa `plano` la luz vale 1: −0,98 da el tono
+  medio de `piel_plana`. En la maid, la piel entre las puntas del flequillo pasa al tono medio (zona en z 31 ± 1). No
+  sirve para estabilizar la pollera: baja el titileo pero aplana la tela.
 - **Pieza por dirección:** `"solo_en": ["north", "south"]` en una parte (o pieza) la dibuja solo en esas direcciones
   base del render, nunca según el giro del cuadro (como `por_direccion`). Las colas del moño de la maid van así: de
   perfil dibujaban una tira blanca de 1-2 px detrás de la pollera que se leía como otro delantal. `vistas` las muestra
@@ -137,6 +144,18 @@ diferencia entre dos rondas rechazadas y una base aprobable.
   que tienen fuera de ella el vecino de arriba o el de la izquierda (el lado de la luz). La hoja de 1 px queda entera
   en ese tono y la de 2 filas, con la de arriba clara y la de abajo oscura: se lee sobre el delantal y sobre la
   pollera negra. `#8b7d72` es el paso siguiente de la rampa Hierro (+38, +34, +29 por canal, cálido, no azulado).
+- **Filo de un lado** (`"un_lado": true` en `filo`): la hoja se corta por columnas si es más horizontal o por filas
+  si es más vertical, y solo el píxel del extremo de cada corte del lado de la luz (arriba y un poco a la izquierda)
+  toma el color del filo. Con `"nucleo": color`, el resto de la hoja toma ese color (sin él, las caras en sombra salen
+  en el tono del contorno y la hoja se lee punteada). Una hoja de 1 px queda entera en el filo; una de 2 px, un lado
+  claro y el otro en el núcleo. En la maid: `#b8b2a8` y `#655b55`.
+- **Contorno del lado de la sombra** (`"contorno_lado_sombra": true` en una parte): el contorno exterior de 1 px se
+  dibuja solo del lado opuesto a la luz; del lado de la luz, el filo toca el fondo. Donde el contorno toca otra parte
+  (guarda, mano), se conserva.
+- **Línea contra otra parte** (`"contorno_contra"` en una parte): 1 px de línea de un color sobre los materiales que
+  la tocan (la guarda contra la piel de la mano, que no tiene grupo de línea). Con `"fondo": true`, el contorno
+  exterior junto a esa parte toma el mismo color: sin eso la guarda iba rodeada de su tono de oro más oscuro y se leía
+  como un bloque marrón. Cuesta oro: donde la guarda se ve de canto queda en 1-2 px.
 - **Achicar por prioridad** (Pixelat3D, apagado por defecto): con `"prioridad": {"mano_R": 9, "espada": 8, ...}`
   (nombre de parte o grupo) y `"min_sub": 4`, el color y los IDs se renderizan a ×4 y cada bloque 4×4 lo gana la
   parte de mayor prioridad que cubra 4 sub-píxeles o más; si no hay, la que más cubre (el vacío gana los empates). El
@@ -148,6 +167,10 @@ diferencia entre dos rondas rechazadas y una base aprobable.
   arriba que la cercana). Ojo en los ataques de perfil: esa mano desaparece.
 - **Brazos de perfil:** con la cámara a 22°, la mano del lado cercano se dibuja unas 3 filas más abajo que de frente
   (está a ~8 px del centro). `cuerpo.plano_brazo` afina el brazo de perfil; el puño va por encima de la cinturilla.
+- **Mano de mitón de perfil** (módulo `cuerpo/mano_miton.json`, parte `miton`, se incluye después del cuerpo y
+  reemplaza a `mano_perfil`): caja redondeada aplanada y pulgar corto, sin línea interna y con `sesgo_sombra` +0,6
+  salvo abajo. A 40 px da un puño claro de 3-4 px sobre una muñeca de 2, con la sombra abajo, apoyado sobre el delantal
+  en lugar de quedar detrás. El pulgar no se lee como pulgar: es el píxel medio del puño.
   Si la mano baja hasta la pollera y pivota a la altura de la cadera, se lee como un muslo.
 - **Orejas de tela:** el 5.º valor de `cuerpo.orejas` crea `ear_tip_L/R` (dobla solo la punta); `punta_1px` deja la
   punta siempre de 1 px.
@@ -222,6 +245,42 @@ meta: perseguir el puntaje contra las vistas deforma el modelo para imitar una c
 ## Lecciones
 
 Correcciones de Sam, la más nueva arriba: fecha, qué estaba mal y la regla que lo evita.
+
+- 2026-11-01, pelirroja con más detalle (prueba de 68 px proyectando una referencia de PixelLab,
+  `art/pruebas/pelirroja_detalle/`; las opciones de proyección sobre malla y `contorno_suave` están solo en la copia de
+  la herramienta de esa prueba). Orden que ahorra rondas:
+  1. Alinear antes de juzgar formas: `suelo_y` de la proyección = `lienzo - margen_suela - 2` (con 2 filas de error
+     todo parece un problema de forma).
+  2. Alturas internas antes que la silueta (ojos, mentón, cuello, cintura, ruedo): la proyección pinta por fila y unos
+     ojos 3 filas abajo terminan en el flequillo.
+  3. Una pieza por par de vistas (`solo_en`) cuando la cámara de 22° no puede dar lo que dibujó el artista (pollera
+     S/N y E/W, delantal que envuelve de perfil).
+  4. Preparar la textura, no la referencia: sacar el contorno exterior, extender el borde 4 px, borrar los brazos (si
+     no, queda una mano pintada en la tela) y suavizar con moda 3×3 la tela que se mueve.
+  5. Color completo de la referencia; el modo "detalle" (gris sumado a la luz) agrega ruido sin traer las formas.
+  6. Medir el titileo por zona en cada caminata, no solo mirar el GIF: la proyección mejora la forma y sube el
+     titileo del pelo y del delantal de frente.
+  7. Con proyección, `"pixel_pantalla": true` primero: el pelo de frente pasó de 18,6 % a 0,4 % de titileo sin tocar
+     la animación (el rebote caía en 1,58 px).
+  8. Proyectar desde la misma pose en la que se renderiza: un cuello inclinado -6° en el reposo corría la cara 1 px.
+  9. Proyectar la cara de la referencia en vez de sellar los ojos, y usar dos texturas: la de color y una del pelo con
+     la cara y el cuello rellenados de pelo (si no, un desfase pinta un ojo en el flequillo de perfil).
+  10. Una pieza por par de vistas también en el pelo y la cabeza (flequillo, melena y cortinas de perfil más atrás).
+  11. Donde la forma no coincide con la referencia (pollera de perfil), no proyectar: color base y luz, más el volado
+      como banda geométrica. Una proyección sobre la forma equivocada deja manchas.
+  12. La luz es fija al mundo: E y W no se iluminan igual. Una tela que tiene que leerse igual en los dos perfiles va
+      con rampa plana más `sesgo_sombra`; de perfil, la sombra pintada va por profundidad (columnas), no por lado.
+      Es por vértice: un detalle de 1-2 px (dientes de un volado) pide muchas columnas de vértices.
+  13. Cada borde de tono pintado suma titileo (dos escalones de banda: 2,6 % → 4,9 %). La tela que titila va mejor con
+      una pieza por vista que proyectada desde una sola vista (ruedo de frente: 25,8 % → 6,4 %).
+  14. Antes de cambiar una rampa, mirar qué pieza da ese color: la "mano clara" era el anillo de la muñeca.
+  Resultado en 4 rondas (~6 h de agente): silueta S 0,91 / E 0,91 / N 0,89 / W 0,90 de IoU contra la referencia;
+  VirtualSam lo estima en S 80 %, N 75 %, E 65 %, W 60 % y caminata 55 % de parecido. Lo que queda son tics de render:
+  contorno doble (2-3 veces más que la referencia), silueta lisa (18-21 % menos borde), bandas mecánicas y nada de
+  aire entre brazos y cintura. Límites de la técnica que no vale la pena perseguir: las muescas de rulos y volados en
+  la geometría (titilan), más de ~65 % de color exacto con luz y rampas, el último píxel de un borde. Medir siempre la
+  fila de las suelas en la caminata: con el rebote del cuerpo entero los pies flotaban 2 px y nadie lo midió en 3
+  rondas.
 
 - 2026-11-01, maid: de perfil, caminando, "una nena sentada en un puff". Regla: pollera con el ancho de perfil de la
   hoja de giro, más ancha en el ruedo; ruedo claro, medias blancas y ruedo 2 px más corto (decisión del usuario).

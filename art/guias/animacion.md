@@ -13,11 +13,11 @@ render y con Sam.
 | Qué | Valor | Fuente |
 |---|---|---|
 | Pantalla | 480×270 a ×4, tiles de 32 px; el juego corre a 60 fps (16,7 ms por refresco) | BIBLIA §1 |
-| Lienzo | 64×64, pies en x 32, suelas en la fila 47; saltos y acciones grandes en 96×96 (pies en x 48, suelas en 79) | BIBLIA §1, `tools/art/rig3d.py` (`SOLE_MARGIN`) |
+| Lienzo | 64×64, pies en x 32, suelas en la fila 47; saltos y acciones grandes en 96×96 (pies en x 48, suelas en 79). Otra fila de suelas: `"margen_suela"` en la animación (filas entre las suelas y el borde de abajo, 17 por defecto) | BIBLIA §1, `tools/art/rig3d.py` (`SOLE_MARGIN`) |
 | Figura | ~40 px; cadera a 10 px del piso; muslo 5, canilla 4, brazo 4,6, antebrazo 4,5, pecho 10, espada 15,4 | `art/source/pelirroja/3d/modelo.json` |
 | Cámara del render | ortográfica, inclinada 22°: lo que va hacia la cámara baja 0,37 filas por px | `art/guias/modelado.md` |
 | Caminar | 60 px/s | `scripts/player/player.gd` (`speed`) |
-| Correr | no existe todavía (D26); partida: 100 px/s | — |
+| Correr | no existe todavía en el juego (D26); la maid corre a 100 px/s, 8 × 40 ms | `art/source/maid_gato/3d/anim/correr_gen.py` |
 | Rodada (base del dash, D26) | 0,4 s, 64 px (160 px/s), invulnerable los primeros 0,3 s | `scripts/player/roll_component.gd`, D24 |
 | Combo de espada | ver §7.2; el jugador queda plantado y solo avanza `step_distance` en el activo | `resources/weapons/sword_basic.tres`, D24 |
 | Hit-stop | el juego entero se congela (escala de tiempo 0,05) 60/70/110 ms en los golpes 1/2/3 | `scripts/combat/hit_stop.gd` |
@@ -166,7 +166,7 @@ Un píxel es el 2,5 % de la figura. Una rotación que no mueve al menos 1 px no 
 |---|---|---|---|---|---|
 | Idle | `idle` | 4 | 450, 220, 450, 220 | sí | `assets/art/characters/adventurer_idle.json` |
 | Caminar | `caminar` | 8 | 60 cada uno (ciclo de 480) | sí | sale de 60 px/s (§6) |
-| **Correr** | `correr` | 8 | 50 cada uno (ciclo de 400) | sí | sale de 100 px/s (partida) |
+| **Correr** | `correr` | 8 | 40 cada uno (ciclo de 320) | sí | 100 px/s y 4 px por cuadro; 25 % más rápida que la caminata |
 | **Golpe 1 / 2 / 3** | `golpe_1`... | 5 | §7.2 | no | `sword_basic.tres` |
 | Ataque fuerte | `golpe_fuerte` | 7 | 100, 150, 250, 140, 150, 200, 250 | no | partida |
 | Dash | `dash` | 5 | 50, 120, 110, 60, 60 (400) | no | `roll_component.gd` |
@@ -222,7 +222,8 @@ el juego mueve el lienzo.
   a **50 ms** (12 px de barrido, 5 pasos por segundo). Medir la pierna de cada personaje antes de elegir la duración.
 - El pie de apoyo toca la fila 47 en todos los cuadros del apoyo: el talón despega recién en la subida. Si de frente
   ningún pie toca el piso, el personaje flota.
-- Correr a 100 px/s y 50 ms: 5 px por cuadro, apoyo en 2 intervalos (contacto, bajada, impulso): barrido de 10 px.
+- Correr a 100 px/s y 40 ms: 4 px por cuadro, apoyo en 2 intervalos (contacto, bajada, impulso): barrido de 8 px.
+  Con 50 ms la carrera duraba lo mismo que la caminata y no se leía como carrera (VirtualSam, 2026-11-01).
 - Fórmula para otra velocidad: `ms por cuadro = 1000 × barrido / (velocidad × intervalos de apoyo)`. Si da menos
   de 50 ms en una caminata, las piernas parecen frenéticas: se acepta hasta 1 px de patinado y se avisa.
 - Poses de caminar: **contacto** (talón adelante, piernas abiertas, cadera baja), **bajada** (el peso cae, la rodilla
@@ -243,17 +244,18 @@ partida. Lo marcado **prioridad** va primero (D26: correr y el ataque con espada
 ### 7.1. Correr — prioridad
 
 En todos los cuadros: `chest.inclinar` 12, `neck.inclinar` -6 (la cara sigue al frente), `skirt.adelante` -6.
-- `c0 (50)` contacto D: `cadera.subir` -2 · `thigh_R` 40, `shin_R` 10 · `thigh_L` -20, `shin_L` 90 · `hips.girar` 6,
+- `c0 (40)` contacto D: `cadera.subir` -2 · `thigh_R` 40, `shin_R` 10 · `thigh_L` -20, `shin_L` 90 · `hips.girar` 6,
   `chest.girar` -8 · `upper_L` 35, `fore_L` 80 · `upper_R` -30, `fore_R` 60 · `hair` -10, `bow_back` -16.
-- `c1 (50)` bajada: `cadera.subir` -2 · `thigh_R` 34, `shin_R` 78 · `thigh_L` 10, `shin_L` 110 · `hips.girar` 3,
+- `c1 (40)` bajada: `cadera.subir` -2 · `thigh_R` 34, `shin_R` 78 · `thigh_L` 10, `shin_L` 110 · `hips.girar` 3,
   `chest.girar` -4 · `upper_L` 15, `upper_R` -10 · `hair` -9, `bow_back` -14.
-- `c2 (50)` impulso: `cadera.subir` -1 · `thigh_R` -30, `shin_R` 20 · `thigh_L` 45, `shin_L` 70 · `hips.girar` -2,
+- `c2 (40)` impulso: `cadera.subir` -1 · `thigh_R` -30, `shin_R` 20 · `thigh_L` 45, `shin_L` 70 · `hips.girar` -2,
   `chest.girar` 4 · `upper_L` -15, `upper_R` 20 · `hair` -12, `bow_back` -20.
-- `c3 (50)` vuelo: `cadera.subir` 0 · `thigh_R` -30, `shin_R` 80 · `thigh_L` 40, `shin_L` 20 · `hips.girar` -5,
+- `c3 (40)` vuelo: `cadera.subir` 0 · `thigh_R` -30, `shin_R` 80 · `thigh_L` 40, `shin_L` 20 · `hips.girar` -5,
   `chest.girar` 7 · `upper_L` -30, `upper_R` 35 · `hair` -15, `bow_back` -26.
 - `c4-c7`: espejo. `skirt.lado` ±4 y `lock_L/R.lado` ±5, cambian de signo un cuadro después de cada contacto.
 - Con espada en la mano, el brazo derecho se balancea la mitad. Pisadas en `c0` y `c4`.
-- Pie de apoyo en el lienzo: +5, 0, -5 px (§6).
+- Pie de apoyo en el lienzo: +4, 0, -4 px (§6). Los cuadros duran 40 ms (§4).
+- Las dos zancadas vuelan: de perfil, el cuadro de vuelo de la pierna cercana espeja al de la lejana.
 
 ### 7.2. Combo de espada — prioridad
 
@@ -499,7 +501,7 @@ del lienzo). Cada punto se contesta sí o no:
 2. **Ancla:** ¿los pies quedan en x 32 y la fila 47 (48 y 79 en 96) y el ancla no salta más de 2 px entre cuadros?
 3. **Contacto:** ¿en los contactos el pie apoyado toca la fila del piso, sin hundirse ni flotar?
 4. **Patinado** (este y oeste, con `pie_L` / `pie_R`): ¿el pie apoyado retrocede lo que pide §6 (3-4 px por cuadro
-   al caminar, ~5 al correr), con menos de 1 px de diferencia, y nunca avanza?
+   al caminar, ~4 al correr), con menos de 1 px de diferencia, y nunca avanza?
 5. **Arcos:** ¿la mano, la punta de la espada y la cabeza siguen curvas, sin quiebres ni un paso que duplique al
    anterior?
 6. **Anticipación:** ¿está, va al revés del golpe y, en el golpe 3 y el fuerte, es el cuadro más largo?
@@ -535,6 +537,21 @@ una sección de esta guía, se corrige la sección en el mismo cambio y la lecci
 ```text
 - AAAA-MM-DD, <acción> <dirección>: <qué estaba mal>. Regla: <la regla que lo evita>.
 ```
+
+- 2026-11-01, combo (ronda 5): entre el golpe 2 c4 y el golpe 3 la punta salta ~34 px en 140 ms. Regla: un salto de
+  punta grande en una recuperación lleva estela; `"estela_ancho"` (0-1) en el cuadro limita qué parte de la hoja barre
+  desde la punta (0,3 en el golpe 2 c4: con la hoja entera la estela tapaba la cabeza).
+- 2026-11-01, combo oeste (ronda 3): con escala 0 la carga quedaba sin espada 180-340 ms y la hoja aparecía de la
+  nada. Regla corregida: la hoja nunca sale de la cabeza ni de la cara; **de atrás del torso, sí**. Las cargas de los
+  dos perfiles son espejo: mano al hombro y hoja colgando detrás de la espalda. Escala 0 solo en un cuadro suelto, nunca
+  en una anticipación. La hoja se estira como mucho a 1,1 (15,4 px de base); el resto lo da la estela.
+- 2026-11-01, combo este/oeste: la hoja cruzaba la cabeza, salía de la boca o flotaba sin mano. Regla: de perfil la
+  hoja nunca se dibuja sobre la cabeza ni sin su mano. La carga de perfil va al hombro con la hoja colgando detrás de
+  la espalda.
+- 2026-11-01, correr este/oeste: volaba solo una zancada y galopaba. Regla: el vuelo de la pierna cercana espeja al de
+  la lejana; medir el fondo de los 8 cuadros de perfil.
+- 2026-11-01, correr: con la misma duración que la caminata no se leía como carrera. Regla: la carrera tiene su propio
+  ritmo (8 × 40 ms); el juego acelera la hoja según `velocidad_px_s`, no cambia el ritmo.
 
 - 2026-11-01, caminar este/oeste: la mano se leía como muslo. Regla: el brazo pasa hacia adelante (vaivén de -28 a
   +4 aprox.) y la mano cae sobre el delantal claro, no sobre la pollera oscura; el codo dobla más cuando el brazo va
