@@ -6,6 +6,7 @@
   "luz": {"rot": [25, 0, 0], "energia": 3.2, "sombras": false, "sigue": true},
   "incluir": [
     "../../modulos/cuerpo/chibi_mujer.json",
+    "../../modulos/cuerpo/mano_miton.json",
     "../../modulos/cara/maid_ojos_verdes.json",
     "../../modulos/ropa/maid_vestido.json",
     "../../modulos/calzado/zapatos_medias.json",

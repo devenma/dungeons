@@ -12,20 +12,29 @@
   50,
   50
  ],
+ "velocidad_px_s": 60,
  "por_direccion": {
   "east": {
    "pose": {
     "neck": {
      "inclinar": 0
     }
-   }
+   },
+   "mostrar": [
+    "mano_perfil_L",
+    "mano_perfil_R"
+   ]
   },
   "west": {
    "pose": {
     "neck": {
      "inclinar": 0
     }
-   }
+   },
+   "mostrar": [
+    "mano_perfil_L",
+    "mano_perfil_R"
+   ]
   },
   "north": {
    "pose": {
@@ -73,18 +82,26 @@
      "adelante": -1.2
     },
     "upper_L": {
-     "adelante": 4,
+     "adelante": 10,
      "afuera": 24
     },
     "fore_L": {
-     "doblar": 37
+     "doblar": 27
     },
     "upper_R": {
-     "adelante": -28,
+     "adelante": -24,
      "afuera": 26
     },
     "fore_R": {
-     "doblar": 53
+     "doblar": 43
+    },
+    "clavicle_L": {
+     "subir": 1,
+     "adelantar": 1.2
+    },
+    "clavicle_R": {
+     "subir": 1,
+     "adelantar": 1.2
     },
     "hair": {
      "adelante": -9.8,
@@ -97,7 +114,29 @@
      "adelante": -3
     }
    },
-   "mostrar": []
+   "mostrar": [],
+   "por_direccion": {
+    "east": {
+     "pose": {
+      "upper_L": {
+       "adelante": -12
+      },
+      "clavicle_L": {
+       "adelantar": 0
+      }
+     }
+    },
+    "west": {
+     "pose": {
+      "upper_R": {
+       "adelante": -24
+      },
+      "clavicle_R": {
+       "adelantar": 0
+      }
+     }
+    }
+   }
   },
   {
    "cadera": {
@@ -136,18 +175,26 @@
      "adelante": -0.2
     },
     "upper_L": {
-     "adelante": -2,
+     "adelante": 3,
      "afuera": 20.8
     },
     "fore_L": {
-     "doblar": 40
+     "doblar": 30
     },
     "upper_R": {
-     "adelante": -22,
+     "adelante": -17,
      "afuera": 22.0
     },
     "fore_R": {
-     "doblar": 50
+     "doblar": 40
+    },
+    "clavicle_L": {
+     "subir": 1,
+     "adelantar": 1.2
+    },
+    "clavicle_R": {
+     "subir": 1,
+     "adelantar": 1.2
     },
     "hair": {
      "adelante": -4.6,
@@ -160,7 +207,29 @@
      "adelante": -3
     }
    },
-   "mostrar": []
+   "mostrar": [],
+   "por_direccion": {
+    "east": {
+     "pose": {
+      "upper_L": {
+       "adelante": -12
+      },
+      "clavicle_L": {
+       "adelantar": 0
+      }
+     }
+    },
+    "west": {
+     "pose": {
+      "upper_R": {
+       "adelante": -17
+      },
+      "clavicle_R": {
+       "adelantar": 0
+      }
+     }
+    }
+   }
   },
   {
    "cadera": {
@@ -199,18 +268,26 @@
      "adelante": -0.6
     },
     "upper_L": {
-     "adelante": -12,
+     "adelante": -7,
      "afuera": 16
     },
     "fore_L": {
-     "doblar": 45
+     "doblar": 35
     },
     "upper_R": {
-     "adelante": -12,
+     "adelante": -7,
      "afuera": 16
     },
     "fore_R": {
-     "doblar": 45
+     "doblar": 35
+    },
+    "clavicle_L": {
+     "subir": 1,
+     "adelantar": 1.2
+    },
+    "clavicle_R": {
+     "subir": 1,
+     "adelantar": 1.2
     },
     "hair": {
      "adelante": 1.8,
@@ -223,7 +300,29 @@
      "adelante": -3
     }
    },
-   "mostrar": []
+   "mostrar": [],
+   "por_direccion": {
+    "east": {
+     "pose": {
+      "upper_L": {
+       "adelante": -12
+      },
+      "clavicle_L": {
+       "adelantar": 0
+      }
+     }
+    },
+    "west": {
+     "pose": {
+      "upper_R": {
+       "adelante": -12
+      },
+      "clavicle_R": {
+       "adelantar": 0
+      }
+     }
+    }
+   }
   },
   {
    "cadera": {
@@ -262,18 +361,26 @@
      "adelante": 2.0
     },
     "upper_L": {
-     "adelante": -22,
+     "adelante": -17,
      "afuera": 22.0
     },
     "fore_L": {
-     "doblar": 50
+     "doblar": 40
     },
     "upper_R": {
-     "adelante": -2,
+     "adelante": 3,
      "afuera": 20.8
     },
     "fore_R": {
-     "doblar": 40
+     "doblar": 30
+    },
+    "clavicle_L": {
+     "subir": 1,
+     "adelantar": 1.2
+    },
+    "clavicle_R": {
+     "subir": 1,
+     "adelantar": 1.2
     },
     "hair": {
      "adelante": -3.4,
@@ -286,7 +393,29 @@
      "adelante": -3
     }
    },
-   "mostrar": []
+   "mostrar": [],
+   "por_direccion": {
+    "east": {
+     "pose": {
+      "upper_L": {
+       "adelante": -17
+      },
+      "clavicle_L": {
+       "adelantar": 0
+      }
+     }
+    },
+    "west": {
+     "pose": {
+      "upper_R": {
+       "adelante": -12
+      },
+      "clavicle_R": {
+       "adelantar": 0
+      }
+     }
+    }
+   }
   },
   {
    "cadera": {
@@ -325,18 +454,26 @@
      "adelante": -1.2
     },
     "upper_R": {
-     "adelante": 4,
+     "adelante": 10,
      "afuera": 24
     },
     "fore_R": {
-     "doblar": 37
+     "doblar": 27
     },
     "upper_L": {
-     "adelante": -28,
+     "adelante": -24,
      "afuera": 26
     },
     "fore_L": {
-     "doblar": 53
+     "doblar": 43
+    },
+    "clavicle_R": {
+     "subir": 1,
+     "adelantar": 1.2
+    },
+    "clavicle_L": {
+     "subir": 1,
+     "adelantar": 1.2
     },
     "hair": {
      "adelante": -9.8,
@@ -349,7 +486,29 @@
      "adelante": -3
     }
    },
-   "mostrar": []
+   "mostrar": [],
+   "por_direccion": {
+    "east": {
+     "pose": {
+      "upper_L": {
+       "adelante": -24
+      },
+      "clavicle_L": {
+       "adelantar": 0
+      }
+     }
+    },
+    "west": {
+     "pose": {
+      "upper_R": {
+       "adelante": -12
+      },
+      "clavicle_R": {
+       "adelantar": 0
+      }
+     }
+    }
+   }
   },
   {
    "cadera": {
@@ -388,18 +547,26 @@
      "adelante": -0.2
     },
     "upper_R": {
-     "adelante": -2,
+     "adelante": 3,
      "afuera": 20.8
     },
     "fore_R": {
-     "doblar": 40
+     "doblar": 30
     },
     "upper_L": {
-     "adelante": -22,
+     "adelante": -17,
      "afuera": 22.0
     },
     "fore_L": {
-     "doblar": 50
+     "doblar": 40
+    },
+    "clavicle_R": {
+     "subir": 1,
+     "adelantar": 1.2
+    },
+    "clavicle_L": {
+     "subir": 1,
+     "adelantar": 1.2
     },
     "hair": {
      "adelante": -4.6,
@@ -412,7 +579,29 @@
      "adelante": -3
     }
    },
-   "mostrar": []
+   "mostrar": [],
+   "por_direccion": {
+    "east": {
+     "pose": {
+      "upper_L": {
+       "adelante": -17
+      },
+      "clavicle_L": {
+       "adelantar": 0
+      }
+     }
+    },
+    "west": {
+     "pose": {
+      "upper_R": {
+       "adelante": -12
+      },
+      "clavicle_R": {
+       "adelantar": 0
+      }
+     }
+    }
+   }
   },
   {
    "cadera": {
@@ -451,18 +640,26 @@
      "adelante": -0.6
     },
     "upper_R": {
-     "adelante": -12,
+     "adelante": -7,
      "afuera": 16
     },
     "fore_R": {
-     "doblar": 45
+     "doblar": 35
     },
     "upper_L": {
-     "adelante": -12,
+     "adelante": -7,
      "afuera": 16
     },
     "fore_L": {
-     "doblar": 45
+     "doblar": 35
+    },
+    "clavicle_R": {
+     "subir": 1,
+     "adelantar": 1.2
+    },
+    "clavicle_L": {
+     "subir": 1,
+     "adelantar": 1.2
     },
     "hair": {
      "adelante": 1.8,
@@ -475,7 +672,29 @@
      "adelante": -3
     }
    },
-   "mostrar": []
+   "mostrar": [],
+   "por_direccion": {
+    "east": {
+     "pose": {
+      "upper_L": {
+       "adelante": -12
+      },
+      "clavicle_L": {
+       "adelantar": 0
+      }
+     }
+    },
+    "west": {
+     "pose": {
+      "upper_R": {
+       "adelante": -12
+      },
+      "clavicle_R": {
+       "adelantar": 0
+      }
+     }
+    }
+   }
   },
   {
    "cadera": {
@@ -514,18 +733,26 @@
      "adelante": 2.0
     },
     "upper_R": {
-     "adelante": -22,
+     "adelante": -17,
      "afuera": 22.0
     },
     "fore_R": {
-     "doblar": 50
+     "doblar": 40
     },
     "upper_L": {
-     "adelante": -2,
+     "adelante": 3,
      "afuera": 20.8
     },
     "fore_L": {
-     "doblar": 40
+     "doblar": 30
+    },
+    "clavicle_R": {
+     "subir": 1,
+     "adelantar": 1.2
+    },
+    "clavicle_L": {
+     "subir": 1,
+     "adelantar": 1.2
     },
     "hair": {
      "adelante": -3.4,
@@ -538,7 +765,29 @@
      "adelante": -3
     }
    },
-   "mostrar": []
+   "mostrar": [],
+   "por_direccion": {
+    "east": {
+     "pose": {
+      "upper_L": {
+       "adelante": -12
+      },
+      "clavicle_L": {
+       "adelantar": 0
+      }
+     }
+    },
+    "west": {
+     "pose": {
+      "upper_R": {
+       "adelante": -17
+      },
+      "clavicle_R": {
+       "adelantar": 0
+      }
+     }
+    }
+   }
   }
  ]
 }

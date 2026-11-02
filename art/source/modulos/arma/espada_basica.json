@@ -1,13 +1,133 @@
 {
   "rampas": {
-    "mango": {"tonos": [[20, 18, 24], [36, 32, 40], [58, 53, 66]], "umbrales": [0.05, 0.3]},
-    "oro": [[90, 61, 36], [134, 102, 58], [224, 176, 74]],
-    "acero": [[47, 42, 44], [71, 64, 62], [101, 91, 85]],
-    "corte": [[196, 232, 255], [196, 232, 255], [240, 250, 255]]
+    "mango": {
+      "tonos": [
+        [
+          20,
+          18,
+          24
+        ],
+        [
+          36,
+          32,
+          40
+        ],
+        [
+          58,
+          53,
+          66
+        ]
+      ],
+      "umbrales": [
+        0.05,
+        0.3
+      ]
+    },
+    "oro": {
+      "tonos": [
+        [
+          90,
+          61,
+          36
+        ],
+        [
+          134,
+          102,
+          58
+        ],
+        [
+          224,
+          176,
+          74
+        ]
+      ],
+      "umbrales": [
+        0.01,
+        0.4
+      ]
+    },
+    "acero": {
+      "tonos": [
+        [
+          47,
+          42,
+          44
+        ],
+        [
+          101,
+          91,
+          85
+        ],
+        [
+          101,
+          91,
+          85
+        ]
+      ],
+      "umbrales": [
+        0.01,
+        0.99
+      ]
+    },
+    "corte": [
+      [
+        196,
+        232,
+        255
+      ],
+      [
+        196,
+        232,
+        255
+      ],
+      [
+        240,
+        250,
+        255
+      ]
+    ],
+    "filo": [
+      [
+        154,
+        149,
+        144
+      ],
+      [
+        154,
+        149,
+        144
+      ],
+      [
+        154,
+        149,
+        144
+      ]
+    ]
   },
-  "filo": {"hoja": [139, 125, 114]},
-  "grupos_ocultos": ["espada", "arco_corte", "onda"],
-  "marcadores": {"punta_espada": ["weapon_R", "cola"]},
+  "filo": {
+    "hoja": [
+      154,
+      149,
+      144
+    ],
+    "un_lado": true,
+    "nucleo": [
+      101,
+      91,
+      85
+    ]
+  },
+  "grupos_ocultos": [
+    "espada",
+    "arco_corte",
+    "onda"
+  ],
+  "marcadores": {
+    "punta_espada": [
+      "weapon_R",
+      "cola"
+    ]
+  },
   "partes": [
     {
       "tipo": "tubo",
@@ -16,31 +136,88 @@
       "material": "mango",
       "capa": "arma",
       "grupo": "espada",
-      "linea": "",
-      "radios": [[-0.17, 0.6], [0.04, 0.6]],
-      "tapas": [0, 0]
+      "linea": "espada",
+      "radios": [
+        [
+          -0.17,
+          0.6
+        ],
+        [
+          0.13,
+          0.6
+        ]
+      ],
+      "tapas": [
+        0,
+        0
+      ]
     },
     {
       "tipo": "tubo",
       "nombre": "guarda",
+      "contorno_contra": {
+        "materiales": [
+          "piel_mano"
+        ],
+        "color": [
+          47,
+          42,
+          44
+        ],
+        "fondo": true
+      },
       "hueso": "weapon_R",
       "material": "oro",
       "capa": "arma",
       "grupo": "espada",
-      "linea": "",
-      "radios": [[0.03, 2.0, 0.6], [0.075, 2.0, 0.6]],
-      "tapas": [0, 0]
+      "linea": "espada",
+      "radios": [
+        [
+          0.12,
+          1.7,
+          0.9
+        ],
+        [
+          0.19,
+          1.7,
+          0.9
+        ]
+      ],
+      "tapas": [
+        0,
+        0
+      ]
     },
     {
       "tipo": "tubo",
       "nombre": "hoja",
+      "contorno_lado_sombra": true,
       "hueso": "weapon_R",
       "material": "acero",
       "capa": "arma",
       "grupo": "espada",
       "linea": "",
-      "radios": [[0.07, 0.9, 0.4], [0.93, 0.9, 0.4], [1.0, 0.25, 0.3]],
-      "tapas": [0, 0]
+      "radios": [
+        [
+          0.18,
+          0.9,
+          0.4
+        ],
+        [
+          0.93,
+          0.9,
+          0.4
+        ],
+        [
+          1.0,
+          0.25,
+          0.3
+        ]
+      ],
+      "tapas": [
+        0,
+        0
+      ]
     }
   ],
   "piezas": [
@@ -48,8 +225,16 @@
       "nombre": "arco",
       "forma": "toro",
       "material": "corte",
-      "pos": [0, 0, 13],
-      "escala": [1, 1, 0.35],
+      "pos": [
+        0,
+        0,
+        13
+      ],
+      "escala": [
+        1,
+        1,
+        0.35
+      ],
       "R": 15,
       "r": 1.1,
       "grupo": "arco_corte"
@@ -58,8 +243,16 @@
       "nombre": "onda",
       "forma": "toro",
       "material": "corte",
-      "pos": [0, 0, 0.4],
-      "escala": [1, 1, 0.3],
+      "pos": [
+        0,
+        0,
+        0.4
+      ],
+      "escala": [
+        1,
+        1,
+        0.3
+      ],
       "R": 8,
       "r": 0.8,
       "grupo": "onda"

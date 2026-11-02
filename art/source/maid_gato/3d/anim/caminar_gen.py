@@ -102,6 +102,10 @@ NECK_INCLINAR = -10
 # La cara mira a la cámara solo de frente: de perfil -10 levantaba el mentón y achicaba la cara; de espaldas, 0
 # (animacion.md §7.12) / the face looks at the camera only from the front: in profile -10 raised the chin
 POR_DIRECCION = {d: {"pose": {"neck": {"inclinar": 0}}} for d in ("east", "west", "north")}
+# Ronda 6, truco de la mano: de perfil la mano es la pieza mano_perfil (pulgar arriba), solo en este y oeste
+# Round 6, hand trick: in profile the hand is the mano_perfil piece (thumb up), only in east and west
+MANO_PERFIL = ["mano_perfil_L", "mano_perfil_R"]
+for d in ("east", "west"): POR_DIRECCION[d]["mostrar"] = MANO_PERFIL
 # Brazos separados del torso (grados): base y cuánto se abre el brazo que va adelante. Va con el vaivén, así c0-c3 y
 # su espejo valen lo mismo. Ronda 4: con el codo doblado la mano de adelante tapaba el hueco de frente (1 fila en
 # c0/c4); 16 + 4k deja 2 filas o más en S y N en todos los cuadros.
@@ -144,7 +148,25 @@ BASE = {"pose.hair.adelante": -4, "pose.lock_L.adelante": -3, "pose.lock_R.adela
 # el delantal. Con +8 asomaba el brazo lejano en oeste; con el codo a 60 adelante, de espaldas quedaba un muñón.
 # Round 5: -28 to +4 from the shoulder and elbow 37-53 (more bent going back): the skin ends at y37-38 and the hand
 # lands on the apron. With +8 the far arm showed in west; with a 60 elbow forward it was a stump from behind.
-BRAZO_ADELANTE, BRAZO_VAIVEN, CODO, CODO_VAIVEN = -12, 16, 45, -8
+# Ronda 6: codo 10° menos (35 en vez de 45), de art/pruebas/trucos_videos / round 6: elbow 10° less
+# Ronda 7 (r3 del animador): -24 a +10, la mano viaja 3 px de perfil y sigue sobre el delantal; el brazo lejano lo topa TOPE_LEJANO
+# Round 7: -24 to +10, the hand travels 3 px in profile, still over the apron; the far arm is capped by TOPE_LEJANO
+BRAZO_ADELANTE, BRAZO_VAIVEN, CODO, CODO_VAIVEN = -7, 17, 35, -8
+# Brazo lejano de perfil (upper.adelante, grados) y su clavícula quieta: con +8 asomaba en el oeste
+# Far arm in profile (upper.adelante, degrees) with a still clavicle: at +8 it showed in west
+TOPE_LEJANO = -12
+# Clavícula falsa (px): el hombro sube y va adelante; con el brazo adelante el adelantar baja (CL_SOLO_ATRAS × k), así
+# el brazo lejano no asoma en el oeste. Valores de la prueba de trucos (caminar_prueba.json).
+# Fake clavicle (px): the shoulder rises and moves forward; with the arm forward the shift shrinks (CL_SOLO_ATRAS × k)
+# so the far arm stays hidden in west. Values from the tricks test.
+# Ronda 7: adelantar fijo 1,2 (con 2 × (1 - 0,6k) el hombro iba al revés que la mano y comía el recorrido)
+# Round 7: a fixed 1.2 shift (2 × (1 - 0.6k) moved the shoulder against the hand and ate the travel)
+CL_SUBIR, CL_ADELANTAR, CL_SOLO_ATRAS = 1, 1.2, 0
+
+
+def clavicula(k):
+    # Canales de la clavícula para un vaivén k (-1..1, + = brazo adelante) / clavicle channels for swing k
+    return {"subir": CL_SUBIR, "adelantar": round(CL_ADELANTAR * (1 - CL_SOLO_ATRAS * max(k, 0)), 2)}
 
 
 def brazo(i):
@@ -209,6 +231,7 @@ def half():
                 "skirt_F": {"largo": round(1 / LARGO[i], 3)},
                 "upper_L": {"adelante": al[0], "afuera": al[2]}, "fore_L": {"doblar": al[1]},
                 "upper_R": {"adelante": fl_[0], "afuera": fl_[2]}, "fore_R": {"doblar": fl_[1]},
+                "clavicle_L": clavicula(VAIVEN[i]), "clavicle_R": clavicula(VAIVEN[(i + 4) % 8]),
             },
             "mostrar": [],
         })
@@ -251,8 +274,14 @@ def build():
     for dst, drive in RESORTES:
         motion.resorte(frames, dst, drive, ms=[MS] * n, **SPRING)
     if DELANTAL_FIJO: fijar_delantal(frames)
+    # Después del espejo: brazo lejano topado por dirección (este = L, oeste = R) / after the mirror: far arm cap
+    for f in frames:
+        for d, s in (("east", "L"), ("west", "R")):
+            ad = min(f["pose"][f"upper_{s}"]["adelante"], TOPE_LEJANO)
+            f.setdefault("por_direccion", {})[d] = {"pose": {f"upper_{s}": {"adelante": ad},
+                                                             f"clavicle_{s}": {"adelantar": 0}}}
     for f in frames: del f["pose"]["_vaiven"]
-    return {"nombre": "caminar", "bucle": True, "lienzo": 64, "duraciones_ms": [MS] * n, "por_direccion": POR_DIRECCION,
+    return {"nombre": "caminar", "bucle": True, "lienzo": 64, "duraciones_ms": [MS] * n, "velocidad_px_s": SPEED, "por_direccion": POR_DIRECCION,
             "cuadros": frames}
 
 
