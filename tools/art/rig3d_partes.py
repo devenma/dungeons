@@ -594,6 +594,22 @@ def p_esfera(s, M):
     return m
 
 
+def p_miton(s, M):
+    # Mano de mitón: caja redondeada aplanada (superelipsoide, "cuadrar" > 2) y un pulgar corto, sin dedos, rígida al
+    # hueso; "pulgar": {"pos", "radios", "rot"} relativo al centro / mitten hand: flattened rounded box and a short
+    # thumb, no fingers, rigid to the bone; the thumb is relative to the centre
+    k = SIDE.get(s.get("lado"), 1); p = s["pos"]; pos = anclar(s, M, (k * p[0], p[1], p[2]))
+    bone = s["hueso"].replace("<lado>", s.get("lado") or ""); r = s["radios"]; n = s.get("cuadrar", 4)
+    f = lambda c: math.copysign(abs(c) ** (2 / n), c)
+    m = elipsoide((0, 0, 0), (1, 1, 1), 16, 10, deformar=lambda q, la, lo: (r[0] * f(q[0]), r[1] * f(q[1]), r[2] * f(q[2])),
+                  pesos=lambda q: {bone: 1})
+    if s.get("pulgar"):
+        m = unir(m, p_esfera({**s["pulgar"], "hueso": bone, "lado": s.get("lado")}, M))
+    rot = s.get("rot", [0, 0, 0])
+    m["v"] = [add(rotar(v, (rot[0], k * rot[1], k * rot[2])), pos) for v in m["v"]]
+    return m
+
+
 def rotar(v, deg):
     # Rotación XYZ en grados / XYZ rotation in degrees
     x, y, z = v
@@ -828,7 +844,7 @@ def p_lazo(s, M):
 PARTES = {"cuerpo": p_cuerpo, "brazo": p_brazo, "pierna": p_pierna, "cabeza": p_cabeza, "pelo": p_pelo,
           "mechon": p_mechon, "esfera": p_esfera, "toro": p_toro, "lofteo": p_lofteo, "parche": p_parche,
           "tubo": p_tubo_hueso, "lazo": p_lazo, "importada": p_importada,
-          "tarjeta": p_tarjeta, "oreja": p_oreja, "manga": p_manga}
+          "tarjeta": p_tarjeta, "oreja": p_oreja, "manga": p_manga, "miton": p_miton}
 # Grupo de línea interna por tipo; brazos y piernas llevan el lado / inner-line group per type; limbs carry the side
 LINEA = {"brazo": "brazo", "pierna": "pierna"}
 
@@ -856,9 +872,25 @@ def construir(s, M):
     if s.get("ocultar_lejos"):  # [lado, grados]: se oculta si ese costado mira lejos de la cámara / hidden facing away
         m["ocultar_lejos"] = [SIDE.get(lado, 1), s["ocultar_lejos"]]
     if s.get("solo_en"): m["solo_en"] = s["solo_en"]  # direcciones base donde se dibuja / base directions where it renders
+    if s.get("sesgo_sombra"): m["sesgo"] = sesgo_sombra(s, M, m["v"])
     if s["tipo"] == "lofteo" and s.get("pesos") == "pollera":
         m["pollera"] = True  # la usa el control de piernas dentro de la pollera / used by the legs-inside-skirt check
     return m
+
+
+def sesgo_sombra(s, M, vs):
+    # "sesgo_sombra": número (toda la parte) o zonas [{"valor", "centro", "radios", "relativo"}]: elipsoides en reposo
+    # (centro en espejo por lado, anclado como la parte) que suman su valor a la luz antes de la rampa; -0,3 baja una
+    # banda, +0,3 la sube. Sombra fija decidida a mano (GGXrd) / number (whole part) or rest-pose ellipsoid zones that
+    # add their value to the light before the ramp: a hand-placed fixed shadow
+    v = s["sesgo_sombra"]
+    if not isinstance(v, list): return [float(v)] * len(vs)
+    k = SIDE.get(s.get("lado"), 1); out = [0.0] * len(vs)
+    for z in v:
+        c = anclar({**z, "lado": s.get("lado")}, M, (k * z["centro"][0], z["centro"][1], z["centro"][2])); r = z["radios"]
+        for i, p in enumerate(vs):
+            if sum(((p[a] - c[a]) / r[a]) ** 2 for a in range(3)) <= 1: out[i] += z["valor"]
+    return out
 
 
 def expandir(partes):

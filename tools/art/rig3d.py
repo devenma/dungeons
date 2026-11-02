@@ -18,7 +18,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import aseprite_io
 import motion
-from outline import outline, selout
+from outline import outline, ring, selout
 
 SCRIPT = os.path.join(HERE, "rig3d_blender.py")
 DIRS = ["south", "east", "north", "west"]
@@ -37,6 +37,9 @@ TRAIL = [(196, 232, 255), (240, 250, 255)]
 ID_DEPTH = 128
 # Cuánto más cerca (px) tiene que estar la otra parte para que lleve línea interna / how much nearer (px) for an inner line
 LINE_GAP = 0.75
+# Lado de la luz en pantalla para el filo de un lado y el contorno de la sombra (x, y; y hacia abajo): arriba y un poco a
+# la izquierda / on-screen light side for the one-sided edge and the shadow-side outline (x, y; y down): up, slightly left
+FILO_LUZ = np.array([-0.3, -1.0])
 # Capas de las partes, de abajo hacia arriba; "efectos3d" son los arcos modelados, aparte de la estela 2D (Efectos)
 # Part layers, bottom to top; "efectos3d" are the modelled arcs, apart from the 2D trail (Efectos)
 PART_LAYERS = ["cuerpo", "ropa", "pelo", "arma", "efectos3d"]
@@ -151,10 +154,10 @@ def quantize(img, pal):
     return out
 
 
-def layers(img, size, gap, fx=None, pal=None):
+def layers(img, size, gap, fx=None, pal=None, margin=SOLE_MARGIN):
     # Efectos, personaje y contorno de color en capas separadas; con paleta, el contorno usa solo sus tonos oscurecidos
     # Effects, character and colour outline as layers; given a palette, the outline only uses its darkened tones
-    o = outline(img, size - SOLE_MARGIN - LEG_GAP_ROWS if gap else None)
+    o = outline(img, size - margin - LEG_GAP_ROWS if gap else None)
     line = selout(img, o, OUTLINE_SHADE)
     if pal is not None: line = quantize(line, np.unique(np.round(pal * OUTLINE_SHADE), axis=0))
     out = {"Personaje": img, "Contorno": line}
@@ -303,19 +306,79 @@ def punta_1px(img, part, parts, grupos):
         img[ys[0], drop] = 0; part[ys[0], drop] = -1
 
 
+def lado_luz(m):
+    # Hoja (máscara) cortada por columnas si es más horizontal o por filas si es más vertical: devuelve el píxel del
+    # extremo del lado de la luz en cada corte y lo que queda más allá de él (fuera de la hoja). El lado de la luz es la
+    # normal al eje principal que más mira a FILO_LUZ / blade (mask) sliced by columns if flatter or rows if steeper:
+    # returns each slice's extreme pixel on the lit side and what lies beyond it (outside the blade)
+    ys, xs = np.nonzero(m)
+    d = np.linalg.eigh(np.cov(np.vstack([xs, ys])))[1][:, 1] if len(xs) > 1 else np.array([1.0, 0.0])
+    n = np.array([-d[1], d[0]]); n = n if n @ FILO_LUZ >= 0 else -n
+    flat = abs(d[0]) >= abs(d[1])
+    a, up = (m, n[1] < 0) if flat else (m.T, n[0] < 0)
+    has = a.any(0); idx = np.argmax(a, 0) if up else a.shape[0] - 1 - np.argmax(a[::-1], 0)
+    r = np.arange(a.shape[0])[:, None]
+    edge = has & (r == idx); beyond = has & ((r < idx) if up else (r > idx))
+    return (edge, beyond) if flat else (edge.T, beyond.T)
+
+
 def filo(img, part, parts, spec):
     # "filo": {parte: color}: los píxeles de la parte con el vecino de arriba o de la izquierda fuera de ella (el lado de
-    # la luz) toman ese color: brillo de 1 px en el borde de la hoja / "filo": pixels of the part whose upper or left
-    # neighbour is outside it (the lit side) take that colour: a 1 px edge highlight on the blade
+    # la luz) toman ese color: brillo de 1 px en el borde de la hoja. Con "un_lado": true, solo el borde del lado de la
+    # luz según la orientación de la hoja (lado_luz), y "nucleo": color pinta el resto de la parte (si no, las caras en
+    # sombra salen en el tono del contorno) / "filo": pixels of the part whose upper or left neighbour is outside it
+    # (the lit side) take that colour. With "un_lado": true, only the lit edge given the blade's orientation, and
+    # "nucleo": colour paints the rest of the part (otherwise its shadowed faces come out in the outline tone)
     img = img.copy()
     for k, p in enumerate(parts):
         if p["nombre"] not in spec: continue
-        m = part == k; P = np.pad(m, ((1, 0), (1, 0)))
+        m = part == k
+        if not m.any(): continue
+        if spec.get("un_lado"):
+            if spec.get("nucleo"): img[m, :3] = spec["nucleo"]
+            img[lado_luz(m)[0], :3] = spec[p["nombre"]]; continue
+        P = np.pad(m, ((1, 0), (1, 0)))
         img[m & (~P[:-1, 1:] | ~P[1:, :-1]), :3] = spec[p["nombre"]]
     return img
 
 
-def layers_parts(img, ids, parts, fmeta, model, size, gap, fx=None, pal=None):
+def contorno_sombra(o, part, parts, names):
+    # "contorno_lado_sombra" en una parte: quita el contorno exterior que solo toca esa parte del lado de la luz
+    # (lado_luz); del lado de la luz el filo toca el fondo / drops the outer outline touching only that part on its lit side
+    k_on = [k for k, p in enumerate(parts) if p["nombre"] in names or p["nombre"][:-2] in names]
+    for k in k_on:
+        m = part == k
+        if not m.any(): continue
+        o = o & ~(lado_luz(m)[1] & ring(m) & ~ring((part >= 0) & ~m))
+    return o
+
+
+def contorno_contra(lines, part, parts, model):
+    # "contorno_contra": {"materiales": [...], "color": [r, g, b]} en una parte: 1 px de línea sobre esos materiales
+    # donde tocan la parte, sin importar grupo ni profundidad (la guarda contra la piel de la mano)
+    # 1 px line on those materials wherever they touch the part, regardless of group or depth (guard against hand skin)
+    specs = {s["nombre"]: s["contorno_contra"] for s in model.get("partes", []) if s.get("contorno_contra")}
+    for k, p in enumerate(parts):
+        c = specs.get(p["nombre"]) or specs.get(p["nombre"][:-2])
+        if not c: continue
+        t = np.isin(part, [j for j, q in enumerate(parts) if q.get("material") in c["materiales"]]) & ring(part == k)
+        if t.any(): lines = lines.copy(); lines[t] = (*c["color"], 255)
+    return lines
+
+
+def contorno_contra_fondo(line, part, parts, model):
+    # Con "fondo": true en "contorno_contra", el contorno exterior que toca la parte también toma ese color (la guarda
+    # no se rodea de su propio tono más oscuro) / with "fondo": true, the outer outline touching the part takes it too
+    specs = {s["nombre"]: s["contorno_contra"] for s in model.get("partes", []) if s.get("contorno_contra", {}).get("fondo")}
+    for k, p in enumerate(parts):
+        c = specs.get(p["nombre"]) or specs.get(p["nombre"][:-2])
+        if not c: continue
+        t = (line[..., 3] > 0) & ring(part == k)
+        if t.any(): line = line.copy(); line[t] = (*c["color"], 255)
+    return line
+
+
+def layers_parts(img, ids, parts, fmeta, model, size, gap, fx=None, pal=None, margin=SOLE_MARGIN):
     # Receta de malla: una capa por grupo de partes con solo lo que se ve de cada una, las líneas internas, los ojos
     # y el contorno de color, cada uno en su capa / mesh recipe: one layer per part group holding only what shows of
     # each, then the inner lines, the eyes and the colour outline, each on its own layer
@@ -329,6 +392,7 @@ def layers_parts(img, ids, parts, fmeta, model, size, gap, fx=None, pal=None):
     lines = inner_lines(ramp_darkest(img, part, parts, model), grp[part], depth, 1.0) if ramp else inner_lines(img, grp[part], depth)
     dark = None if pal is None else np.unique(np.round(pal * OUTLINE_SHADE), axis=0)
     if dark is not None and not ramp: lines = quantize(lines, dark)
+    lines = contorno_contra(lines, part, parts, model)
     names = model.get("ojos", {}).get("parte", "cabeza")  # una parte o lista: la pestaña puede pisar el flequillo / one part or a list
     face = np.isin(part, [k for k, p in enumerate(parts) if p["nombre"] in ([names] if isinstance(names, str) else names)])
     eyes = stamp_eyes(fmeta.get("ojos"), model.get("ojos"), face)
@@ -343,14 +407,16 @@ def layers_parts(img, ids, parts, fmeta, model, size, gap, fx=None, pal=None):
     # "contorno_hueco": materials (light stockings) that keep their outline in the gap between the legs
     keep = model.get("contorno_hueco")
     keep = np.isin(part, [k for k, p in enumerate(parts) if p.get("material") in keep]) if keep else None
-    o = outline(comp, size - SOLE_MARGIN - LEG_GAP_ROWS if gap else None, keep=keep)
-    if ramp: out["Contorno"] = selout_ramp(ramp_darkest(comp, part, parts, model), o); return out
+    o = outline(comp, size - margin - LEG_GAP_ROWS if gap else None, keep=keep)
+    sombra = {s.get("nombre", s.get("tipo")) for s in model.get("partes", []) if s.get("contorno_lado_sombra")}
+    if sombra: o = contorno_sombra(o, part, parts, sombra)
+    if ramp: out["Contorno"] = contorno_contra_fondo(selout_ramp(ramp_darkest(comp, part, parts, model), o), part, parts, model); return out
     line = selout(comp, o, OUTLINE_SHADE)
-    out["Contorno"] = quantize(line, dark) if dark is not None else line
+    out["Contorno"] = contorno_contra_fondo(quantize(line, dark) if dark is not None else line, part, parts, model)
     return out
 
 
-def trail(size, arc):
+def trail(size, arc, ancho=1.0):
     # Estela del corte: lo que barre la hoja a lo largo de su recorrido [(mano, punta), ...], más clara hacia la punta
     # (VFX saturado, D5). Se pinta por tramos para que un giro grande dé una medialuna y no una línea.
     # Slash trail: what the blade sweeps along its path [(hand, tip), ...], lighter toward the tip (saturated VFX, D5).
@@ -361,8 +427,10 @@ def trail(size, arc):
     d = ImageDraw.Draw(img)
     lerp = lambda a, b, t: (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)
     n = len(arc) - 1
-    inner = [lerp(t, h, k / n) for k, (h, t) in enumerate(arc)]
-    core = [lerp(t, h, k / n / 2) for k, (h, t) in enumerate(arc)]
+    # "estela_ancho" (0-1) en el cuadro: parte de la hoja que barre la estela desde la punta (1 = hasta la mano)
+    # "estela_ancho" (0-1) on the frame: share of the blade the trail sweeps from the tip (1 = down to the hand)
+    inner = [lerp(t, h, k / n * ancho) for k, (h, t) in enumerate(arc)]
+    core = [lerp(t, h, k / n / 2 * ancho) for k, (h, t) in enumerate(arc)]
     for k in range(n):
         d.polygon([inner[k], tuple(arc[k][1]), tuple(arc[k + 1][1]), inner[k + 1]], fill=TRAIL[0] + (255,))
     for k in range(n):
@@ -389,7 +457,7 @@ def export(anim, frames, out, prefix):
     sheet.save(base + ".png")
     if has_fx: fx_sheet.save(base + "_efectos.png")
     meta = {"cell": [size, size], "rows": [ROW[d] for d in DIRS], "frames": n, "durations_ms": ms,
-            "anchor": {"feet_x": size // 2, "sole_y": size - SOLE_MARGIN}}
+            "anchor": {"feet_x": size // 2, "sole_y": size - anim.get("margen_suela", SOLE_MARGIN)}}
     # Ciclos: px/s a los que el pie de apoyo no patina con la hoja a 1x; el juego acelera en proporción
     # Cycles: px/s at which the planted foot does not slide at 1x; the game scales playback to match
     if "velocidad_px_s" in anim: meta["move_speed"] = anim["velocidad_px_s"]
@@ -446,7 +514,7 @@ def export_skeleton(anim, frames, meta, out, soles=(53,)):
     s = 4; sheet = Image.new("RGB", (n * size * s, len(DIRS) * (size * s + 14)), BG); draw = ImageDraw.Draw(sheet)
     for r, d in enumerate(DIRS):
         sk = [meta[f"{name}_{d}_{i}"]["esqueleto"] for i in anim.get("_origen", range(n))]
-        for dy, tag in [(0, "")] + [(row - (size - SOLE_MARGIN), f"_suelas{row}") for row in soles]:
+        for dy, tag in [(0, "")] + [(row - (size - anim.get("margen_suela", SOLE_MARGIN)), f"_suelas{row}") for row in soles]:
             data = [[{"x": round(f[k][0] / size, 4), "y": round((f[k][1] + dy) / size, 4), "label": k} for k in POSE_LABELS]
                     for f in sk]
             json.dump(data, open(os.path.join(out, f"{name}_{d}{tag}.json"), "w"), indent=1)
@@ -524,6 +592,8 @@ def cmd_frames(args):
     done = {}
     for anim in anims:
         size = anim["lienzo"]
+        # "margen_suela": filas entre las suelas y el borde de abajo (17 en 64: suelas en 47) / rows from soles to bottom
+        margin = anim.get("margen_suela", SOLE_MARGIN)
         frames = {d: [] for d in DIRS}
         n = len(anim["cuadros"])
         for d in DIRS:
@@ -531,13 +601,14 @@ def cmd_frames(args):
                 p = os.path.join(raw, f"{anim['nombre']}_{d}_{i}.png")
                 img = quantize(np.array(Image.open(p).convert("RGBA")), ramp_palette(model, pal)) if d in dirs else np.zeros((size, size, 4), np.uint8)
                 fm = meta.get(f"{anim['nombre']}_{d}_{i}", {}) if d in dirs else {}
-                fx = trail(size, fm["arco"]) if fm.get("arco") else None
+                cu = anim["cuadros"][i]; ancho = cu.get("por_direccion", {}).get(d, {}).get("estela_ancho", cu.get("estela_ancho", 1.0))
+                fx = trail(size, fm["arco"], ancho) if fm.get("arco") else None
                 if parts:
                     ids = np.array(Image.open(p[:-4] + "_id.png").convert("RGBA")) if d in dirs else np.zeros((size, size, 4), np.uint8)
                     if img.shape[0] != size: img, ids = reduce_frame(img, ids, parts, model, size, p, args.normales)
-                    frames[d].append(layers_parts(img, ids, parts, fm, model, size, d in ("south", "north"), fx, pal))
+                    frames[d].append(layers_parts(img, ids, parts, fm, model, size, d in ("south", "north"), fx, pal, margin))
                 else:
-                    frames[d].append(layers(img, size, d in ("south", "north"), fx, pal))
+                    frames[d].append(layers(img, size, d in ("south", "north"), fx, pal, margin))
         if anim.get("fundir") or getattr(args, "fundir", False): fundir(anim, frames, dirs)
         base = export(anim, frames, args.salida, prefix)
         report = {k: v for k, v in meta.items() if k.startswith(anim["nombre"] + "_")}
@@ -632,7 +703,7 @@ def cmd_stress(args):
                             esqueleto=None, normales=False)
     done, meta, raw = cmd_frames(ns)
     anim, frames, base = done["estres"]
-    sole, parts, report = anim["lienzo"] - SOLE_MARGIN, meta.get("partes"), {}
+    sole, parts, report = anim["lienzo"] - anim.get("margen_suela", SOLE_MARGIN), meta.get("partes"), {}
     for d in DIRS:
         for i, name in enumerate(anim["etiquetas"]):
             fm = meta[f"estres_{d}_{i}"]

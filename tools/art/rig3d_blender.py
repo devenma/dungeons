@@ -54,8 +54,11 @@ def lin(c):
     return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
 
 
-def ramp_material(name, tones, cuts):
+def ramp_material(name, tones, cuts, sesgo=False):
     # Difuso -> RGB -> rampa constante de 3 tonos -> emisión / diffuse -> RGB -> 3-step constant ramp -> emission
+    # sesgo: suma el atributo "sesgo" de la malla a la luz antes de la rampa (sombra pintada, GGXrd); en una rampa
+    # plana la luz vale 1 y el sesgo la baja / adds the mesh "sesgo" attribute to the light before the ramp (painted
+    # shadow); on a flat ramp the light is 1 and the bias lowers it
     m = bpy.data.materials.new(name); m.use_nodes = True
     nt = m.node_tree; nt.nodes.clear()
     dif = nt.nodes.new("ShaderNodeBsdfDiffuse"); s2r = nt.nodes.new("ShaderNodeShaderToRGB")
@@ -64,7 +67,7 @@ def ramp_material(name, tones, cuts):
     r = ramp.color_ramp; r.interpolation = "CONSTANT"
     spec = tones if isinstance(tones, dict) else {}
     if spec: tones, cuts = spec["tonos"], spec.get("umbrales", cuts)  # rampa con umbrales propios / own cuts
-    if spec.get("plano"): tones = [tones[-1]] * len(tones)  # luz plana: siempre el tono claro / flat light: always the light tone
+    if spec.get("plano") and not sesgo: tones = [tones[-1]] * len(tones)  # luz plana: siempre el tono claro / flat light: always the light tone
     for i, tone in enumerate(tones):
         e = r.elements[i] if i < 2 else r.elements.new(cuts[i - 1])
         e.position = 0.0 if i == 0 else cuts[i - 1]; e.color = (*[lin(c) for c in tone], 1)
@@ -92,7 +95,13 @@ def ramp_material(name, tones, cuts):
         nt.links.new(at.outputs["Fac"], k.inputs[0])
         mul = nt.nodes.new("ShaderNodeMath"); mul.operation = "MULTIPLY"
         nt.links.new(light, mul.inputs[0]); nt.links.new(k.outputs[0], mul.inputs[1])
-        nt.links.new(mul.outputs[0], ramp.inputs[0])
+        nt.links.new(mul.outputs[0], ramp.inputs[0]); light = mul.outputs[0]
+    if sesgo:
+        at = nt.nodes.new("ShaderNodeAttribute"); at.attribute_name = "sesgo"
+        add = nt.nodes.new("ShaderNodeMath"); add.operation = "ADD"
+        if spec.get("plano"): add.inputs[0].default_value = 1.0
+        else: nt.links.new(light, add.inputs[0])
+        nt.links.new(at.outputs["Fac"], add.inputs[1]); nt.links.new(add.outputs[0], ramp.inputs[0])
     nt.links.new(ramp.outputs[0], em.inputs[0]); nt.links.new(em.outputs[0], out.inputs[0])
     return m, nt, ramp
 
@@ -224,7 +233,10 @@ def mesh_part(m):
         n = m.get("normales") or [v.vector[:] for v in me.vertex_normals]
         at = me.attributes.new("n_reposo", "FLOAT_VECTOR", "POINT"); at.data.foreach_set("vector", [c for v in n for c in v])
     o = bpy.data.objects.new(m["nombre"], me); scene.collection.objects.link(o)
-    me.materials.append(MATS[m["material"]])
+    if m.get("sesgo"):  # material propio con el sesgo de sombra por vértice / own material with the per-vertex shadow bias
+        at = me.attributes.new("sesgo", "FLOAT", "POINT"); at.data.foreach_set("value", m["sesgo"])
+        me.materials.append(ramp_material(f"{m['material']}_{m['nombre']}", MODEL["rampas"][m["material"]], cuts, True)[0])
+    else: me.materials.append(MATS[m["material"]])
     if m.get("mecha"):
         at = me.attributes.new("mecha", "FLOAT", "POINT"); at.data.foreach_set("value", m["mecha"])
     groups = {}
@@ -252,10 +264,11 @@ R = scene.render; R.engine = "BLENDER_EEVEE"; R.film_transparent = True
 scene.view_settings.view_transform = "Standard"
 
 
-def canvas(size, zoom=1.0):
-    # Suelo a 17 px del borde inferior, como el ancla de las hojas / ground 17 px above the bottom, like the sheet anchor
+def canvas(size, zoom=1.0, margin=17):
+    # Suelo a "margen_suela" px del borde inferior (17 por defecto), como el ancla de las hojas / ground "margen_suela"
+    # px above the bottom (17 by default), like the sheet anchor
     # zoom: px por unidad del modelo (1 = la figura mide lo que dice la receta) / px per model unit
-    ground = size - 19  # el último píxel del pie, contorno incluido, cae en la fila del ancla (64 - 17 = 47)
+    ground = size - margin - 2  # el último píxel del pie, contorno incluido, cae en la fila del ancla (64 - 17 = 47)
     R.resolution_x = R.resolution_y = size; cam.data.ortho_scale = size / zoom
     below = (ground + 0.5 - size / 2) / zoom
     cam.location = Vector((0, -200 * math.cos(TILT), below / math.cos(TILT) + 200 * math.sin(TILT)))
@@ -549,19 +562,37 @@ else:
     # Pasada de normales: normal en espacio de cámara (x derecha, y arriba, z hacia la cámara) codificada n * 0.5 + 0.5,
     # como espera un normal map 2D de Godot / normals pass: camera-space normal encoded n * 0.5 + 0.5, as Godot 2D expects
     NORMAL_MATS = {}
-    if JOB.get("normales"):
-        m = bpy.data.materials.new("normales"); m.use_nodes = True; nt = m.node_tree; nt.nodes.clear()
+
+    def normal_material(rest):
+        # rest: la normal sale de "n_reposo" (la misma que usa la rampa con normales_reposo), así el normal map no salta
+        # de banda donde el color no cambia / rest: the normal comes from "n_reposo", the one the ramp uses
+        m = bpy.data.materials.new("normales_reposo" if rest else "normales"); m.use_nodes = True
+        nt = m.node_tree; nt.nodes.clear()
         geo = nt.nodes.new("ShaderNodeNewGeometry"); comb = nt.nodes.new("ShaderNodeCombineXYZ")
+        normal = geo.outputs["Normal"]
+        if rest:
+            at = nt.nodes.new("ShaderNodeAttribute"); at.attribute_name = "n_reposo"
+            vt = nt.nodes.new("ShaderNodeVectorTransform"); vt.vector_type = "NORMAL"
+            vt.convert_from, vt.convert_to = "OBJECT", "WORLD"
+            nr = nt.nodes.new("ShaderNodeVectorMath"); nr.operation = "NORMALIZE"
+            nt.links.new(at.outputs["Vector"], vt.inputs[0]); nt.links.new(vt.outputs[0], nr.inputs[0]); normal = nr.outputs[0]
         axes = [(1, 0, 0), (0, math.sin(TILT), math.cos(TILT)), (0, -math.cos(TILT), math.sin(TILT))]
         for k, axis in enumerate(axes):
             dp = nt.nodes.new("ShaderNodeVectorMath"); dp.operation = "DOT_PRODUCT"; dp.inputs[1].default_value = axis
-            nt.links.new(geo.outputs["Normal"], dp.inputs[0])
+            nt.links.new(normal, dp.inputs[0])
             enc = nt.nodes.new("ShaderNodeMath"); enc.operation = "MULTIPLY_ADD"
             enc.inputs[1].default_value = 0.5; enc.inputs[2].default_value = 0.5
             nt.links.new(dp.outputs["Value"], enc.inputs[0]); nt.links.new(enc.outputs[0], comb.inputs[k])
         em = nt.nodes.new("ShaderNodeEmission"); out = nt.nodes.new("ShaderNodeOutputMaterial")
         nt.links.new(comb.outputs[0], em.inputs[0]); nt.links.new(em.outputs[0], out.inputs[0])
-        NORMAL_MATS = {o.name: m for p, o in PARTS}
+        return m
+
+    if JOB.get("normales"):
+        mats = [normal_material(False), None]
+        for p, o in PARTS:
+            rest = o.type == "MESH" and "n_reposo" in o.data.attributes
+            if rest and mats[1] is None: mats[1] = normal_material(True)
+            NORMAL_MATS[o.name] = mats[rest]
 
     def render_ids(path, mats=ID_MATS):
         saved = {o.name: [sl.material for sl in o.material_slots] for p, o in PARTS}
@@ -574,7 +605,7 @@ else:
             for sl, mat in zip(o.material_slots, saved[o.name]): sl.material = mat
 
     for anim in JOB["anims"]:
-        size = anim.get("lienzo", 64); canvas(size, anim.get("zoom", 1.0))
+        size = anim.get("lienzo", 64); canvas(size, anim.get("zoom", 1.0), anim.get("margen_suela", 17))
         frames = anim["cuadros"]
         project = lambda w: [round(c, 2) for c in (world_to_camera_view(scene, cam, w).x * size,
                                                   (1 - world_to_camera_view(scene, cam, w).y) * size)]

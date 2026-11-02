@@ -122,6 +122,9 @@ def test_rig3d_trail_under_character():
     import math
     arc = [((8, 8), (8 + 6 * math.cos(a), 8 + 6 * math.sin(a))) for a in (math.pi * k / 8 for k in range(9))]
     assert (rig3d.trail(16, arc)[..., 3] > 0).sum() > 40
+    # Con ancho 0,3 la estela queda junto al recorrido de la punta: no llega a la mano / with 0.3 it stays by the tip path
+    fino = rig3d.trail(16, [((4, 4), (12, 4)), ((4, 12), (12, 12))], 0.3)
+    assert fino[11, 6, 3] == 0 and fino[11, 11, 3] > 0
     body = np.zeros((16, 16, 4), np.uint8); body[6:10, 6:10] = (20, 18, 24, 255)
     flat = rig3d.flatten(rig3d.layers(body, 16, False, fx))
     assert tuple(flat[8, 8]) == (20, 18, 24, 255)  # el personaje tapa la estela / the character covers the trail
@@ -255,6 +258,47 @@ def test_filo():
     assert out[4, 2] == 1 and (out[4, 3:6] == 255).all(), out
 
 
+def test_filo_un_lado():
+    # Hoja "\" de 2 px: con un_lado queda un lado claro (arriba) y el otro con núcleo; la de 1 px, entera clara; el
+    # contorno de la sombra quita el de arriba y deja el de abajo / 2 px "\" blade: one lit side, the other core
+    import rig3d
+    from outline import ring
+    img = np.full((8, 9, 4), 255, np.uint8); part = np.full((8, 9), -1)
+    for y in range(1, 7): part[y, y:y + 2] = 0
+    spec = {"hoja": [1, 2, 3], "un_lado": True}
+    out = rig3d.filo(img, part, [{"nombre": "hoja"}], spec)[..., 0]
+    assert all(out[y, y + 1] == 1 and out[y, y] == 255 for y in range(2, 7)), out
+    assert (rig3d.filo(img, part, [{"nombre": "hoja"}], {"hoja": [1, 2, 3]})[..., 0][part == 0] == 1).all()  # sin la opción, como antes
+    out = rig3d.filo(img, part, [{"nombre": "hoja"}], {**spec, "nucleo": [7, 8, 9]})[..., 0]
+    assert all(out[y, y + 1] == 1 and out[y, y] == 7 for y in range(2, 7)) and out[0, 0] == 255, out
+    one = np.full((8, 9), -1); one[np.arange(1, 7), np.arange(1, 7)] = 0
+    assert (rig3d.filo(img, one, [{"nombre": "hoja"}], spec)[..., 0][one == 0] == 1).all()
+    o = rig3d.contorno_sombra(ring(part == 0), part, [{"nombre": "hoja"}], {"hoja"})
+    assert not o[2, 4] and not o[1, 3] and o[5, 4], o.astype(int)  # arriba a la derecha sin contorno, abajo con
+    part[0, 3] = 1  # otra parte junto a la hoja conserva su contorno / another part keeps its outline
+    o = rig3d.contorno_sombra(ring(part >= 0), part, [{"nombre": "hoja"}, {"nombre": "mano"}], {"hoja"})
+    assert o[1, 3] and not o[2, 4] and o[5, 4], o.astype(int)
+
+
+def test_contorno_contra():
+    # La guarda pinta 1 px de línea sobre la piel que la toca, no sobre otras partes; sin la clave no cambia nada
+    # The guard paints a 1 px line on the skin touching it, not on other parts; without the key nothing changes
+    import rig3d
+    part = np.array([[0, 1, 1, 2]]); lines = np.zeros((1, 4, 4), np.uint8)
+    parts = [{"nombre": "guarda", "material": "oro"}, {"nombre": "mano_R", "material": "piel_mano"},
+             {"nombre": "manga", "material": "tela"}]
+    model = {"partes": [{"nombre": "guarda", "contorno_contra": {"materiales": ["piel_mano"], "color": [47, 42, 44]}}]}
+    out = rig3d.contorno_contra(lines, part, parts, model)
+    assert out[0, 1].tolist() == [47, 42, 44, 255] and not out[0, 2].any() and not out[0, 0].any(), out
+    assert rig3d.contorno_contra(lines, part, parts, {"partes": []}) is lines
+    # Con "fondo", el contorno exterior junto a la guarda toma el color; sin la clave queda igual
+    # With "fondo", the outer outline next to the guard takes the colour; without it nothing changes
+    part = np.array([[-1, 0, 1]]); line = np.zeros((1, 3, 4), np.uint8); line[0, 0] = (90, 61, 36, 255)
+    assert rig3d.contorno_contra_fondo(line, part, parts, model) is line
+    model["partes"][0]["contorno_contra"]["fondo"] = True
+    assert rig3d.contorno_contra_fondo(line, part, parts, model)[0, 0].tolist() == [47, 42, 44, 255]
+
+
 def test_achicar_prioridad():
     # Bloque 4×4: la mano con 4 sub-píxeles le gana a la pollera con 12; sin prioridad gana la que más cubre, y el vacío
     # gana los empates / 4×4 block: the hand with 4 sub-pixels beats the skirt with 12; without priority the larger
@@ -291,6 +335,27 @@ def test_superelipse():
     lo = RP.p_lofteo({**base, "caida_atras": [2.0, 2]}, M)["v"]; z1 = min(v[2] for v in RP.p_lofteo(base, M)["v"])
     back = [v for v in lo if v[1] > f(v[2])[2] + 6.5]; front = [v for v in lo if v[1] < f(v[2])[2] - 6.5]
     assert abs(min(v[2] for v in back) - (z1 - 2.0)) < 0.05 and abs(min(v[2] for v in front) - z1) < 1e-6
+
+
+def test_sesgo_y_miton():
+    # "sesgo_sombra": número = toda la parte; zonas = solo los vértices dentro del elipsoide, en espejo por lado. El
+    # mitón queda centrado en su pos, espejado por lado y pesado a su hueso / bias per part or per mirrored zone;
+    # the mitten sits on its pos, mirrored per side and weighted to its bone
+    import rig3d_partes as RP
+    M = {"huesos": RP.esqueleto({"mano_hueso": True}), "cuerpo": {}}
+    s = {"tipo": "miton", "nombre": "m", "material": "piel", "hueso": "hand_<lado>", "pos": [1.0, 0, 0],
+         "relativo": ["fore_<lado>", "cola"], "radios": [0.5, 1.0, 1.0], "pulgar": {"pos": [0, -1, 0.5], "radios": [0.3] * 3}}
+    for lado, k in (("L", 1), ("R", -1)):
+        m = RP.construir({**s, "lado": lado, "sesgo_sombra": [{"valor": 0.5, "centro": [1.0, 0, 1.0], "radios": [3, 3, 1.0],
+                                                                "relativo": ["fore_<lado>", "cola"]}]}, M)
+        wr = M["huesos"][f"fore_{lado}"]["cola"]
+        xs = [v[0] - wr[0] for v in m["v"]]
+        assert abs(max(xs) + min(xs) - 2 * k) < 0.05 and all(w == {f"hand_{lado}": 1} for w in m["w"])
+        top = [b for v, b in zip(m["v"], m["sesgo"]) if v[2] - wr[2] > 0.2]
+        low = [b for v, b in zip(m["v"], m["sesgo"]) if v[2] - wr[2] < -0.2]
+        assert top and low and all(b == 0.5 for b in top) and all(b == 0.0 for b in low)
+    m = RP.construir({**s, "lado": "L", "sesgo_sombra": -0.3}, M)
+    assert m["sesgo"] == [-0.3] * len(m["v"]) and "sesgo" not in RP.construir({**s, "lado": "L"}, M)
 
 
 def test_skin_counts():
