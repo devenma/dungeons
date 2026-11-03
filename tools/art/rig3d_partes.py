@@ -729,8 +729,27 @@ def p_lofteo(s, M):
     m = tubo([(c, r, {}) for c, r, _ in rings], s.get("seg", 24), tuple(s.get("tapas", [None, None])),
              s.get("superelipse", 2), s.get("horizontal", False))
     if s.get("caida_atras"): m["v"] = list(map(caida_atras(s, f, H["skirt"]["cabeza"][2]), m["v"]))
+    if s.get("sobre_partes"):  # tela que cae del busto (corpiño, cinturilla) / cloth hanging from the bust
+        es, k = apoyo(s, M), s.get("caida", 1.0)
+        m["v"] = [carpa(es, v, g, k) if v[1] < f(v[2])[2] else v for v in m["v"]]
     m["w"] = [w(v) for v in m["v"]]
     return m
+
+
+def carpa(esferas, p, g, caida):
+    # Lofteo con "sobre_partes": debajo del centro de cada esfera la tela del frente cubre su mitad de abajo y cae en
+    # línea recta desde el punto más saliente hasta caida·radio z más abajo de su base, donde vuelve al cuerpo; arriba
+    # del centro no cambia (ahí se ve la esfera) / below each sphere centre the front cloth covers its lower half and
+    # hangs straight from the most protruding point to caida·radius z below its bottom, back onto the body
+    for c, r in esferas:
+        r = [a + g for a in r]; dx = (p[0] - c[0]) / r[0]
+        if abs(dx) >= 1 or p[2] >= c[2]: continue
+        ya = c[1] - r[1] * math.sqrt(1 - dx * dx); zb = c[2] - r[2] * (1 + caida); y = p[1]
+        q = 1 - dx * dx - ((p[2] - c[2]) / r[2]) ** 2
+        if q > 0: y = min(y, c[1] - r[1] * math.sqrt(q))
+        if p[2] > zb: y = min(y, ya + (p[1] - ya) * (c[2] - p[2]) / (c[2] - zb))
+        p = (p[0], y, p[2])
+    return p
 
 
 def p_parche(s, M):
@@ -743,6 +762,7 @@ def p_parche(s, M):
     else:
         f = perfil(s["perfil"], waist)
     lado = 1 if s.get("lado_y") == "atras" else -1; g = s.get("sobre", 0.4)
+    if s.get("sobre_partes"): s = {**s, "_apoyo": apoyo(s, M)}
     z0, z1 = sorted((waist + s["desde"], waist + s["hasta"]))  # de abajo hacia arriba: normales afuera / normals out
     x0 = perfil([[r[0], r[1], 0, 0] for r in s["x0"]], waist); x1 = perfil([[r[0], r[1], 0, 0] for r in s["x1"]], waist)
     nz, nx = max(2, round(abs(z1 - z0) / 0.5)), s.get("nx", 8)
@@ -751,9 +771,43 @@ def p_parche(s, M):
         z = z0 + (z1 - z0) * i / nz
         idx = parche_fila(s, f, z, g, x0(z)[0], x1(z)[0], nx, lado, waist, H, m)
         filas.append(idx[::-1] if lado > 0 else idx)
+    if s.get("_apoyo"): colgar(m, filas, lado)
     m["f"] = grilla(filas, cerrada=False)
     if s.get("grosor"): parche_cantos(s, f, m, filas, g, lado, waist, H)
     return m
+
+
+def colgar(m, filas, lado):
+    # Debajo del punto más saliente de cada columna el parche cae recto hasta la fila de abajo (el tirante no se mete
+    # bajo el busto) / below each column's most protruding point the patch hangs straight to the bottom row
+    V = m["v"]
+    for j in range(len(filas[0])):
+        col = [fila[j] for fila in filas]; ia = max(range(len(col)), key=lambda i: V[col[i]][1] * lado)
+        a, b = V[col[0]], V[col[ia]]
+        for i in range(1, ia):
+            p = V[col[i]]; t = (p[2] - a[2]) / (b[2] - a[2]); y = a[1] + (b[1] - a[1]) * t
+            if (y - p[1]) * lado > 0: V[col[i]] = (p[0], y, p[2])
+
+
+def apoyo(s, M):
+    # "sobre_partes": [nombres de esferas] (apagado por defecto): centros y radios en reposo de esas esferas, para que
+    # el parche pase por delante (o por detrás) de ellas; así el tirante pasa por encima del busto de cualquier talla
+    # "sobre_partes": rest centres and radii of those spheres, so the patch goes in front of (or behind) them: the strap
+    # goes over a bust of any size
+    out = []
+    for e in expandir([q for q in M.get("partes", []) if q.get("nombre") in s["sobre_partes"] and q.get("tipo") == "esfera"]):
+        k = SIDE.get(e.get("lado"), 1); out.append((anclar(e, M, (k * e["pos"][0], e["pos"][1], e["pos"][2])), e["radios"]))
+    return out
+
+
+def apoyar(esferas, p, g, lado):
+    # El vértice sale g px sobre la superficie de las esferas que tiene detrás / the vertex sits g px over the spheres
+    for c, r in esferas:
+        r = [a + g for a in r]; q = 1 - ((p[0] - c[0]) / r[0]) ** 2 - ((p[2] - c[2]) / r[2]) ** 2
+        if q <= 0: continue
+        y = c[1] + lado * r[1] * math.sqrt(q)
+        if (y - p[1]) * lado > 0: p = (p[0], y, p[2])
+    return p
 
 
 def parche_fila(s, f, z, g, xa, xb, nx, lado, waist, H, m, cols=None):
@@ -767,6 +821,7 @@ def parche_fila(s, f, z, g, xa, xb, nx, lado, waist, H, m, cols=None):
         else: q = math.sqrt(1 - min((x / rx) ** 2, 0.98))
         p = (x, cy + lado * ry * q, z)
         if s.get("caida_atras"): p = caida_atras(s, f, waist)(p)
+        if s.get("_apoyo"): p = apoyar(s["_apoyo"], p, g, lado)
         m["v"].append(p); idx.append(len(m["v"]) - 1)
         # "hueso": placa rígida a ese hueso (el delantal con skirt_F) / rigid plate on that bone (apron on skirt_F)
         m["w"].append({s["hueso"]: 1} if s.get("hueso") else
@@ -890,7 +945,7 @@ def construir(s, M):
         m["ocultar_lejos"] = [SIDE.get(lado, 1), s["ocultar_lejos"]]
     if s.get("solo_en"): m["solo_en"] = s["solo_en"]  # direcciones base donde se dibuja / base directions where it renders
     if s.get("sesgo_sombra"):
-        m["sesgo"] = sesgo_sombra(s, M, m["v"]); f = sesgo_fijo(s, M, m["v"])
+        m["sesgo"] = sesgo_sombra(s, M, m["v"], m["f"]); f = sesgo_fijo(s, M, m["v"], m["f"])
         if f: m["fijo"] = f
     if s["tipo"] == "lofteo" and s.get("pesos") == "pollera":
         m["pollera"] = True  # la usa el control de piernas dentro de la pollera / used by the legs-inside-skirt check
@@ -904,35 +959,56 @@ def dentro(p, c, r, z):
     return sum(((p[a] - c[a]) / r[a]) ** 2 for a in range(3)) <= 1
 
 
-def sesgo_sombra(s, M, vs):
+def normales_vertice(vs, fs):
+    # Normal por vértice en reposo: promedio de las normales de sus caras / rest vertex normal: mean of its face normals
+    n = [(0.0, 0.0, 0.0)] * len(vs)
+    for f in fs:
+        c = cross(sub(vs[f[1]], vs[f[0]]), sub(vs[f[-1]], vs[f[0]]))
+        for i in f: n[i] = add(n[i], c)
+    return [unit(v) for v in n]
+
+
+def zona(z, s, M, vs, fs):
+    # Vértices dentro de una zona de sesgo_sombra. Con "normal": [x, y, z] (en espejo por lado) la zona sale de la
+    # forma: los vértices cuya normal de reposo forma con esa dirección un coseno de "desde" o más (brillo arriba y
+    # sombra abajo de un busto que crece con la talla); si no, el elipsoide "centro"/"radios"
+    # Vertices inside a sesgo_sombra zone. With "normal" the zone comes from the shape: vertices whose rest normal has a
+    # cosine of "desde" or more with that direction; otherwise the "centro"/"radios" ellipsoid
+    k = SIDE.get(s.get("lado"), 1)
+    if "normal" in z:
+        d = unit((k * z["normal"][0], z["normal"][1], z["normal"][2])); ns = normales_vertice(vs, fs)
+        return [dot(n, d) >= z.get("desde", 0.5) for n in ns]
+    c = anclar({**z, "lado": s.get("lado")}, M, (k * z["centro"][0], z["centro"][1], z["centro"][2])); r = z["radios"]
+    return [dentro(p, c, r, z) for p in vs]
+
+
+def sesgo_sombra(s, M, vs, fs=()):
     # "sesgo_sombra": número (toda la parte) o zonas [{"valor", "centro", "radios", "relativo"}]: elipsoides en reposo
     # (centro en espejo por lado, anclado como la parte) que suman su valor a la luz antes de la rampa; -0,3 baja una
     # banda, +0,3 la sube. Sombra fija decidida a mano (GGXrd) / number (whole part) or rest-pose ellipsoid zones that
     # add their value to the light before the ramp: a hand-placed fixed shadow
     v = s["sesgo_sombra"]
     if not isinstance(v, list): return [float(v)] * len(vs)
-    k = SIDE.get(s.get("lado"), 1); out = [0.0] * len(vs)
+    out = [0.0] * len(vs)
     for z in v:
         if "fijar" in z: continue  # zona de tono fijo: va en sesgo_fijo / fixed-tone zone: see sesgo_fijo
-        c = anclar({**z, "lado": s.get("lado")}, M, (k * z["centro"][0], z["centro"][1], z["centro"][2])); r = z["radios"]
-        for i, p in enumerate(vs):
-            if dentro(p, c, r, z): out[i] += z["valor"]
+        for i, e in enumerate(zona(z, s, M, vs, fs)):
+            if e: out[i] += z["valor"]
     return out
 
 
-def sesgo_fijo(s, M, vs):
+def sesgo_fijo(s, M, vs, fs=()):
     # Zonas de "sesgo_sombra" con "fijar": v en vez de "valor": dentro del elipsoide la luz pasa a valer v (un tono
     # fijo que no depende de la malla ni de la pose; el borde cruza un solo escalón). Devuelve [peso, peso·v] por vértice
     # Zones with "fijar": v instead of "valor": inside, the light becomes v (a fixed tone, independent of the mesh and
     # the pose; the edge crosses a single step). Returns [weight, weight·v] per vertex
     v = s.get("sesgo_sombra")
     if not isinstance(v, list) or not any("fijar" in z for z in v): return None
-    k = SIDE.get(s.get("lado"), 1); out = [[0.0, 0.0] for _ in vs]
+    out = [[0.0, 0.0] for _ in vs]
     for z in v:
         if "fijar" not in z: continue
-        c = anclar({**z, "lado": s.get("lado")}, M, (k * z["centro"][0], z["centro"][1], z["centro"][2])); r = z["radios"]
-        for i, p in enumerate(vs):
-            if dentro(p, c, r, z): out[i] = [1.0, float(z["fijar"])]
+        for i, e in enumerate(zona(z, s, M, vs, fs)):
+            if e: out[i] = [1.0, float(z["fijar"])]
     return out
 
 
