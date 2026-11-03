@@ -1,14 +1,14 @@
 {
   "pieza": {"id": "op15_ojos_celestes", "tipo": "personalizacion", "ocupa": ["ojos"], "tags": ["op15"]},
-  "cuerpo": {"cabeza": {"alto_arriba": 5.0, "fondo": 8.0, "mandibula": 0.55, "menton": 2.5}},
+  "cuerpo": {"cabeza": {"centro": [0, 1.5, 10.0], "alto_arriba": 5.0, "fondo": 7.2, "mandibula": 0.55, "menton": 2.5}},
   "proyecciones": {"cara": {"sprites": {"south": "op15_ojos_celestes/south.png"}}},
   "ojos": {
-    "parte": ["cabeza", "cabeza_sn", "nariz"],
-    "colores": {"k": [27, 22, 42], "g": [142, 145, 181], "s": [198, 201, 223], "w": [242, 223, 220], "c": [83, 131, 157], "v": [84, 99, 157], "p": [233, 141, 117], "m": [216, 118, 95], "r": [244, 122, 120], "o": [66, 31, 29]},
+    "parte": ["cabeza", "cabeza_sn", "nariz", "cortina_L", "cortina_R"],
+    "colores": {"a": [27, 22, 42], "b": [252, 196, 157], "c": [142, 145, 181], "d": [198, 201, 223], "e": [133, 78, 65], "f": [242, 223, 220], "g": [83, 131, 157], "h": [84, 99, 157], "i": [233, 141, 117], "j": [244, 122, 120], "k": [66, 31, 29], "l": [216, 118, 95]},
     "sellos": {
-      "frente_R": {"px": ["kkkk....", "kgsk....", ".wcvw...", ".pr.....", "........", "..o..mmm", "..o....."], "ancla": [2, 2]},
-      "frente_L": {"px": [".kkkk", ".ksgk", "wvcw.", "..rp.", ".....", "..o..", "..o.."], "ancla": [3, 2]},
-      "perfil": {"px": [".kk..", "pgvw.", ".wc.."], "ancla": [3, 0]}
+      "frente_R": {"px": [".aaaab...", ".acdae...", "..fghf...", "e.ij.....", "..k......", "...k..lll", "...kk...."], "ancla": [3, 2]},
+      "frente_L": {"px": ["baaaa.", "eadca.", "fhgf..", "..ji.e", "...k..", "..k...", ".kk..."], "ancla": [3, 2]},
+      "perfil": {"px": [".aaal", "aaabi", "ichf.", "lfh.."], "ancla": [3, 1]}
     }
   },
   "partes": [{"nombre": "oreja", "quitar": true}, {"nombre": "cabeza_sn", "cuadrar_arriba": 3.0}],

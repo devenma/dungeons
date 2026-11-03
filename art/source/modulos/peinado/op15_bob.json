@@ -70,24 +70,24 @@
       "capa": "pelo",
       "linea": "cabeza",
       "compensar": false,
-      "campana": 0.15,
-      "cierre": 0.0,
+      "campana": 0.0,
+      "cierre": 0.45,
       "abierto": 20,
       "mechas": 0,
       "radios": [
-        9.0,
-        9.0,
+        9.6,
+        8.8,
         6.4
       ],
-      "fondo": 9.2,
+      "fondo": 10.0,
       "bajo": 5.0,
-      "bajo_atras": 7.0,
+      "bajo_atras": 9.5,
       "cara": [
         5.6,
         5.5
       ],
       "flequillo": -1.7,
-      "cuadrar": 2.3,
+      "cuadrar": 2.0,
       "cortina": 0.6,
       "sien": 2.0,
       "menton": 4.0,
@@ -153,18 +153,18 @@
       "camino": [
         [
           0,
-          -5.9,
-          4.8
+          -5.4,
+          4.6
         ],
         [
           0,
-          -9.15,
-          3.6
+          -8.6,
+          3.2
         ],
         [
           0,
-          -9.4,
-          1.4
+          -9.2,
+          1.2
         ],
         [
           0,
@@ -264,24 +264,24 @@
       "rigido": 0.25,
       "camino": [
         [
-          7.0,
+          7.2,
           -3.0,
           0.5
         ],
         [
-          7.4,
+          7.8,
           -2.2,
           -3.5
         ],
         [
-          8.2,
+          7.8,
           -1.6,
           -7.0
         ],
         [
-          9.6,
+          7.4,
           -1.4,
-          -9.8
+          -9.6
         ]
       ],
       "ancho": [
@@ -299,9 +299,9 @@
       "grosor": 1.2,
       "nv": 6,
       "puntas": [
-        1.2,
+        0.6,
         -0.4,
-        1.4
+        0.8
       ],
       "sesgo_sombra": [
         {
@@ -476,36 +476,36 @@
       "camino": [
         [
           0,
-          6.2,
-          3.4
+          5.4,
+          3.0
         ],
         [
           0,
-          8.0,
-          1.4
+          7.0,
+          1.0
         ],
         [
           0,
-          9.4,
+          8.8,
           -2.5
         ],
         [
           0,
-          9.8,
-          -6.0
+          10.6,
+          -6.5
         ],
         [
           0,
-          8.2,
-          -8.4
+          10.2,
+          -9.6
         ]
       ],
       "ancho": [
-        7.0,
-        8.2,
-        8.6,
-        9.2,
-        7.8
+        6.4,
+        7.6,
+        8.0,
+        8.8,
+        7.6
       ],
       "curva": [
         5.0,
@@ -580,6 +580,111 @@
         }
       ],
       "tono_linea": 1
+    }
+  ],
+  "retoques": [
+    {
+      "tipo": "retoque",
+      "nombre": "flequillo_frente",
+      "vistas": [
+        "south"
+      ],
+      "ancla": "ojo_R",
+      "origen": [
+        5,
+        9
+      ],
+      "solo_relleno": true,
+      "colores": {
+        "a": [
+          116,
+          26,
+          55
+        ],
+        "b": [
+          212,
+          84,
+          67
+        ],
+        "c": [
+          176,
+          56,
+          69
+        ],
+        "d": [
+          66,
+          31,
+          29
+        ],
+        "e": [
+          252,
+          196,
+          157
+        ],
+        "f": [
+          213,
+          141,
+          109
+        ]
+      },
+      "px": [
+        "a.abbccbbbbbccbba.a",
+        "a.cbbbcbbbbbcbbbc.a",
+        "aabbbbabbbbbabbbbaa",
+        "aabcbcdccbccdcbcbaa",
+        "acbabdedcccdedbabca",
+        "acbadeeedcdeeedabca",
+        "acbaeefeedeefeeabca"
+      ]
+    },
+    {
+      "tipo": "retoque",
+      "nombre": "mechon_perfil",
+      "vistas": [
+        "east"
+      ],
+      "ancla": "ojo_R",
+      "origen": [
+        9,
+        6
+      ],
+      "solo_relleno": true,
+      "colores": {
+        "a": [
+          176,
+          56,
+          69
+        ],
+        "b": [
+          116,
+          26,
+          55
+        ],
+        "c": [
+          212,
+          84,
+          67
+        ],
+        "d": [
+          66,
+          31,
+          29
+        ]
+      },
+      "px": [
+        "ab.b.bccccbcc",
+        "cbb.bacaccbcc",
+        "cb.bbcbacbbaa",
+        "cbbbbcbaadbaa",
+        "cbacbabbd.dbb",
+        "bcccbbbbbd.db",
+        "bcccbbdb...db",
+        "bacccd.....db",
+        "bbaccd......d",
+        "bbbaaad.....d",
+        "bbbbbbaad..db",
+        "bbbbbbbb..dbb"
+      ]
     }
   ]
 }

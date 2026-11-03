@@ -690,13 +690,15 @@ def w_pollera(H, p, muslo):
     return mezcla(({"skirt": 1}, 1 - h), ({"thigh_L": 1}, h * l), ({"thigh_R": 1}, h * (1 - l)))
 
 
-def sectores_pollera(pose, k):
+def sectores_pollera(pose, k, umbral=None):
     # Canales de los sectores desde los muslos (k ≈ 0,5-0,7) más el canal global skirt; se suman a lo que la
-    # animación ya les pone. pose: {hueso: {canal: valor}} / sector channels from the thighs plus the global skirt
-    # channel, added to what the animation already sets
+    # animación ya les pone. pose: {hueso: {canal: valor}}. "umbral": [grados, k2] (apagado por defecto): el frente
+    # sigue k2 más al muslo que pasa esos grados adelante (estocada) sin cambiar la caminata
+    # Sector channels from the thighs plus the global skirt channel, added to what the animation already sets.
+    # "umbral": the front follows k2 more past those degrees forward (lunge) without changing the walk
     t = lambda s, c: pose.get(f"thigh_{s}", {}).get(c, 0.0)
-    fw = (t("L", "adelante"), t("R", "adelante"))
-    out = {"skirt_F": {"adelante": k * max(*fw, 0)}, "skirt_B": {"adelante": k * min(*fw, 0)},
+    fw = (t("L", "adelante"), t("R", "adelante")); extra = umbral[1] * max(max(fw) - umbral[0], 0) if umbral else 0.0
+    out = {"skirt_F": {"adelante": k * max(*fw, 0) + extra}, "skirt_B": {"adelante": k * min(*fw, 0)},
            "skirt_L": {"lado": k * max(t("L", "afuera"), 0)}, "skirt_R": {"lado": -k * max(t("R", "afuera"), 0)}}
     for chans in out.values():
         for c, v in pose.get("skirt", {}).items():
@@ -728,6 +730,13 @@ def p_lofteo(s, M):
     # "horizontal": level rings even when cy changes (otherwise the back of the hem rises and the front drops)
     m = tubo([(c, r, {}) for c, r, _ in rings], s.get("seg", 24), tuple(s.get("tapas", [None, None])),
              s.get("superelipse", 2), s.get("horizontal", False))
+    if s.get("ondas") and s.get("tapas", [None, None])[1] is None:
+        # "ondas": [n, px] (apagado por defecto): el borde de abajo abierto sube y baja n veces alrededor (volado de
+        # enagua) / the open bottom edge waves n times around (petticoat frill)
+        nw, amp, seg = s["ondas"][0], s["ondas"][1], s.get("seg", 24)
+        for k in range(seg):
+            i = len(m["v"]) - seg + k; v = m["v"][i]
+            m["v"][i] = (v[0], v[1], v[2] + amp * math.cos(2 * math.pi * nw * k / seg))
     if s.get("caida_atras"): m["v"] = list(map(caida_atras(s, f, H["skirt"]["cabeza"][2]), m["v"]))
     if s.get("sobre_partes"):  # tela que cae del busto (corpiño, cinturilla) / cloth hanging from the bust
         es, k = apoyo(s, M), s.get("caida", 1.0)
@@ -771,7 +780,7 @@ def p_parche(s, M):
         z = z0 + (z1 - z0) * i / nz
         idx = parche_fila(s, f, z, g, x0(z)[0], x1(z)[0], nx, lado, waist, H, m)
         filas.append(idx[::-1] if lado > 0 else idx)
-    if s.get("_apoyo"): colgar(m, filas, lado)
+    if s.get("_apoyo") and s.get("colgar", True): colgar(m, filas, lado)  # "colgar": false lo deja pegado / stays on the sphere
     m["f"] = grilla(filas, cerrada=False)
     if s.get("grosor"): parche_cantos(s, f, m, filas, g, lado, waist, H)
     return m

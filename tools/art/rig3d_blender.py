@@ -340,8 +340,8 @@ def pose(frame, base_yaw):
     if "skirt_F" in MODEL["huesos"]:
         # Sectores de la pollera: siguen a los muslos y al canal skirt, sumados a lo que pide la animación
         # Skirt sectors: follow the thighs and the skirt channel, added to what the animation asks
-        k = MODEL["cuerpo"]["pollera_sectores"].get("k", 0.6)
-        for bone, chans in RP.sectores_pollera(chans_all, k).items():
+        cfg = MODEL["cuerpo"]["pollera_sectores"]; k = cfg.get("k", 0.6)
+        for bone, chans in RP.sectores_pollera(chans_all, k, cfg.get("umbral")).items():
             for chan, value in chans.items():
                 own = chans_all.setdefault(bone, {})
                 own[chan] = own.get(chan, REST.get(chan, 0.0)) * value if chan == "largo" else own.get(chan, 0) + value
