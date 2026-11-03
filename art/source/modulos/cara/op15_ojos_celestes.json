@@ -1,0 +1,21 @@
+{
+  "pieza": {"id": "op15_ojos_celestes", "tipo": "personalizacion", "ocupa": ["ojos"], "tags": ["op15"]},
+  "cuerpo": {"cabeza": {"alto_arriba": 5.0, "fondo": 8.0, "mandibula": 0.55, "menton": 2.5}},
+  "proyecciones": {"cara": {"sprites": {"south": "op15_ojos_celestes/south.png"}}},
+  "ojos": {
+    "parte": ["cabeza", "cabeza_sn", "nariz"],
+    "colores": {"k": [27, 22, 42], "g": [142, 145, 181], "s": [198, 201, 223], "w": [242, 223, 220], "c": [83, 131, 157], "v": [84, 99, 157], "p": [233, 141, 117], "m": [216, 118, 95], "r": [244, 122, 120], "o": [66, 31, 29]},
+    "sellos": {
+      "frente_R": {"px": ["kkkk....", "kgsk....", ".wcvw...", ".pr.....", "........", "..o..mmm", "..o....."], "ancla": [2, 2]},
+      "frente_L": {"px": [".kkkk", ".ksgk", "wvcw.", "..rp.", ".....", "..o..", "..o.."], "ancla": [3, 2]},
+      "perfil": {"px": [".kk..", "pgvw.", ".wc.."], "ancla": [3, 0]}
+    }
+  },
+  "partes": [{"nombre": "oreja", "quitar": true}, {"nombre": "cabeza_sn", "cuadrar_arriba": 3.0}],
+  "retoques": [
+    {"nombre": "borde_cara_perfil", "colores": {"o": [66, 31, 29], "A": [252, 196, 157], "m": [213, 141, 109], "h": [116, 26, 55], "b": [216, 118, 95]},
+     "px": ["...........o_", "...AA......o_", "...........o_", "...........Ao", "..........bAo", ".........AAo_", "...hhhAAAAo_.", "_ooooooooo_.."]},
+    {"nombre": "borde_cara_perfil_mov", "colores": {"o": [66, 31, 29], "A": [252, 196, 157], "m": [213, 141, 109], "h": [116, 26, 55], "b": [216, 118, 95]},
+     "px": ["...........o_", "...AA......o_", "...........o_", "...........Ao", "..........bAo", ".........AAo_", "...hhhAAAAo_.", ".ooooooooo_.."]}
+  ]
+}

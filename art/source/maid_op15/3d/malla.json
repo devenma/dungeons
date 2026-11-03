@@ -1,0 +1,13 @@
+{
+  "incluir": [
+    "../../maniqui_op15/3d/malla.json",
+    "../../modulos/busto/busto_xl.json",
+    "../../modulos/cara/op15_ojos_celestes.json",
+    "../../modulos/peinado/op15_bob.json",
+    "../../modulos/adorno_cabeza/op15_orejas_gato.json",
+    "../../modulos/sombrero/op15_cofia.json",
+    "../../modulos/ropa/op15_vestido.json",
+    "../../modulos/calzado/op15_zapatos_medias.json",
+    "../../modulos/cola/op15_cola_gato.json"
+  ]
+}

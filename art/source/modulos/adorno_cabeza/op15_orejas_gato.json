@@ -1,0 +1,302 @@
+{
+ "pieza": {
+  "id": "op15_orejas_gato",
+  "tipo": "cosmetico",
+  "ocupa": [
+   "orejas"
+  ],
+  "tags": [
+   "gato",
+   "op15"
+  ]
+ },
+ "craneo": [
+  8.5,
+  8.5,
+  9.0,
+  6.0,
+  10.8
+ ],
+ "rampas": {
+  "oreja_gato": {
+   "tonos": [
+    [
+     38,
+     38,
+     60
+    ],
+    [
+     66,
+     65,
+     88
+    ],
+    [
+     107,
+     108,
+     133
+    ]
+   ],
+   "umbrales": [
+    0.0001,
+    0.12
+   ]
+  },
+  "oreja_gato_dentro": {
+   "tonos": [
+    [
+     96,
+     44,
+     66
+    ],
+    [
+     217,
+     110,
+     138
+    ]
+   ],
+   "umbrales": [
+    0.0001
+   ],
+   "plano": true
+  }
+ },
+ "cuerpo": {
+  "orejas": [
+   8.2,
+   0.5,
+   3.2,
+   6.6,
+   0.6
+  ]
+ },
+ "partes": [
+  {
+   "tipo": "oreja",
+   "lados": [
+    "L",
+    "R"
+   ],
+   "capa": "pelo",
+   "linea": "",
+   "pos": [
+    8.2,
+    0.5,
+    3.2
+   ],
+   "alto": 6.6,
+   "ancho": 2.8,
+   "grosor": 1.5,
+   "afuera": 20,
+   "atras": -4,
+   "giro": 15,
+   "perfil": [
+    [
+     0,
+     1.0
+    ],
+    [
+     0.5,
+     0.75
+    ],
+    [
+     0.85,
+     0.35
+    ],
+    [
+     1.0,
+     0.08
+    ]
+   ],
+   "hueso": "ear_<lado>",
+   "ocultar_lejos": 30,
+   "punta": [
+    "ear_tip_<lado>",
+    0.6
+   ],
+   "solo_en": [
+    "south",
+    "north"
+   ],
+   "nombre": "oreja_gato",
+   "material": "oreja_gato"
+  },
+  {
+   "tipo": "oreja",
+   "lados": [
+    "L",
+    "R"
+   ],
+   "capa": "pelo",
+   "linea": "",
+   "pos": [
+    8.2,
+    0.5,
+    3.2
+   ],
+   "alto": 4.752,
+   "ancho": 2.8,
+   "grosor": 1.5,
+   "afuera": 20,
+   "atras": -4,
+   "giro": 15,
+   "perfil": [
+    [
+     0,
+     1.0
+    ],
+    [
+     0.5,
+     0.75
+    ],
+    [
+     0.85,
+     0.35
+    ],
+    [
+     1.0,
+     0.08
+    ]
+   ],
+   "hueso": "ear_<lado>",
+   "ocultar_lejos": 30,
+   "punta": [
+    "ear_tip_<lado>",
+    0.83
+   ],
+   "solo_en": [
+    "south",
+    "north"
+   ],
+   "material": "oreja_gato_dentro",
+   "escala": [
+    0.6,
+    0.5
+   ],
+   "adelante": -0.8,
+   "nombre": "oreja_gato_dentro"
+  },
+  {
+   "tipo": "oreja",
+   "lados": [
+    "L",
+    "R"
+   ],
+   "capa": "pelo",
+   "linea": "",
+   "pos": [
+    5.4,
+    0.6,
+    5.6
+   ],
+   "alto": 6.6,
+   "ancho": 2.8,
+   "grosor": 1.5,
+   "afuera": 20,
+   "atras": -4,
+   "giro": 55,
+   "perfil": [
+    [
+     0,
+     1.0
+    ],
+    [
+     0.5,
+     0.75
+    ],
+    [
+     0.85,
+     0.35
+    ],
+    [
+     1.0,
+     0.08
+    ]
+   ],
+   "hueso": "ear_<lado>",
+   "ocultar_lejos": 30,
+   "punta": [
+    "ear_tip_<lado>",
+    0.6
+   ],
+   "solo_en": [
+    "east",
+    "west"
+   ],
+   "nombre": "oreja_gato_perfil",
+   "material": "oreja_gato"
+  },
+  {
+   "tipo": "oreja",
+   "lados": [
+    "L",
+    "R"
+   ],
+   "capa": "pelo",
+   "linea": "",
+   "pos": [
+    5.4,
+    0.6,
+    5.6
+   ],
+   "alto": 4.752,
+   "ancho": 2.8,
+   "grosor": 1.5,
+   "afuera": 20,
+   "atras": -4,
+   "giro": 55,
+   "perfil": [
+    [
+     0,
+     1.0
+    ],
+    [
+     0.5,
+     0.75
+    ],
+    [
+     0.85,
+     0.35
+    ],
+    [
+     1.0,
+     0.08
+    ]
+   ],
+   "hueso": "ear_<lado>",
+   "ocultar_lejos": 30,
+   "punta": [
+    "ear_tip_<lado>",
+    0.83
+   ],
+   "solo_en": [
+    "east",
+    "west"
+   ],
+   "material": "oreja_gato_dentro",
+   "escala": [
+    0.6,
+    0.5
+   ],
+   "adelante": -0.8,
+   "nombre": "oreja_gato_dentro_perfil"
+  }
+ ],
+ "punta_1px": [
+  [
+   "oreja_gato_L",
+   "oreja_gato_dentro_L"
+  ],
+  [
+   "oreja_gato_R",
+   "oreja_gato_dentro_R"
+  ],
+  [
+   "oreja_gato_perfil_L",
+   "oreja_gato_dentro_perfil_L"
+  ],
+  [
+   "oreja_gato_perfil_R",
+   "oreja_gato_dentro_perfil_R"
+  ]
+ ]
+}
