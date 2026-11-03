@@ -333,6 +333,16 @@ lidere al final del arco.
   rebote `cadera.subir` [-1, -1, 0, 0], hombros quietos (balanceo de cadera chico; el pecho y el cuello mantienen la
   cabeza en x 32), `upper.afuera` fijo para que los huecos entre brazo y torso no parpadeen, pelo y orejas con
   `motion.resorte`.
+- Caminata por mocap aprobada (maniquí 15, `art/pruebas/maniqui_op15/3d/caminata_mocap/r15/p4b`, generador
+  `caminar_mocap_gen.py`): Walk_Loop de Quaternius UAL medido **contra el torso de la fuente**, no contra el mundo
+  (si se endereza el torso y se mide en el mundo, el braceo se corre hacia atrás). Ajustes por dirección:
+  - todas: torso 7° adelante con el cuello devolviéndolo (la cara al frente), clavícula 0,6 px adelante; 50 ms por
+    cuadro.
+  - S/N: brazo casi quieto y vertical (vaivén al 40 %, hombro 12°, antebrazo 15°), hombros quietos, la mano por fuera
+    de la cadera (corrección de antebrazo por cuadro medida con `manos.py`), el pie libre sube 3 px.
+  - E/O: abducción de hombro y antebrazo 0-3° (el brazo va en el plano del cuerpo), clavícula 1,5 px más adelante,
+    pecho contrarrotando contra la cadera (60 % de la fuente), braceo sólo hacia adelante (atrás ≤ 5°, adelante ~24°
+    con el codo a ~40°), línea interior del torso en tono de sombra (`"tono_linea": 2` en la parte `cuerpo`).
 - **Truco de la mano (pendiente para el animador):** el cuerpo de la maid ya trae la clavícula falsa y la mano por
   hueso. Valores de la prueba de `art/pruebas/trucos_videos/`: clavícula `subir` 1 y `adelantar` 2 solo con el brazo
   atrás (con el brazo adelante vuelve a 0: `cl_solo_atras` 0,6), codo -10° respecto de la caminata actual y
@@ -538,6 +548,20 @@ una sección de esta guía, se corrige la sección en el mismo cambio y la lecci
 - AAAA-MM-DD, <acción> <dirección>: <qué estaba mal>. Regla: <la regla que lo evita>.
 ```
 
+- 2026-11-03, caminar este/oeste (maniquí 15): los brazos flotaban separados del cuerpo ("titán anormal") y el
+  braceo se iba hacia atrás. Causa: la abducción del reposo y de S/N (hombro 13°) seguía en el perfil, y el hombro de
+  perfil queda ~3 px detrás de la cadera. Regla: de perfil, abducción 0-3°, clavícula adelantada, braceo sesgado
+  hacia adelante (atrás casi nada) y pecho contrarrotando contra la cadera; la abducción de S/N no pasa al perfil.
+- 2026-11-03, caminar este/oeste: el brazo de atrás dejaba una raya negra sobre el torso (piel sobre piel). Regla:
+  la línea interior entre brazo y torso va en tono de sombra, no en el color del contorno.
+- 2026-11-03, caminar sur/norte: con brazos abiertos (~32°) no se leía como caminata normal; con 12° la mano se
+  escondía detrás de la cadera ancha. Regla: brazo casi vertical y casi quieto de frente (el braceo va hacia la
+  cámara, no hacia los lados), antebrazo apenas afuera (ángulo de carga) para que la mano quede fuera de la cadera.
+  Si la cadera es mucho más ancha que los hombros, el brazo no puede colgar vertical: es un tema de proporción.
+- 2026-11-03, caminar: torso derecho como poste = "hombros echados atrás"; torso inclinado 12° = encorvado. Regla:
+  ~7° adelante con hombros caídos y el cuello devolviendo la inclinación.
+- 2026-11-01, caminar sur (aclaración 2026-11-03): "hombros quietos" vale de frente y de espaldas; de perfil el pecho
+  sí contrarrota (lección de arriba).
 - 2026-11-01, combo (ronda 5): entre el golpe 2 c4 y el golpe 3 la punta salta ~34 px en 140 ms. Regla: un salto de
   punta grande en una recuperación lleva estela; `"estela_ancho"` (0-1) en el cuadro limita qué parte de la hoja barre
   desde la punta (0,3 en el golpe 2 c4: con la hoja entera la estela tapaba la cabeza).
