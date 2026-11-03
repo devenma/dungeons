@@ -11,6 +11,7 @@
 # The model can be projected pieces (modelo.json) or a mesh recipe with "cuerpo" and "partes" (malla.json).
 # Blender sale de la variable BLENDER o del PATH / Blender comes from the BLENDER variable or PATH.
 import argparse, json, os, shutil, subprocess, sys, tempfile
+from collections import Counter
 import numpy as np
 from PIL import Image, ImageDraw
 
@@ -43,6 +44,11 @@ FILO_LUZ = np.array([-0.3, -1.0])
 # Capas de las partes, de abajo hacia arriba; "efectos3d" son los arcos modelados, aparte de la estela 2D (Efectos)
 # Part layers, bottom to top; "efectos3d" are the modelled arcs, apart from the 2D trail (Efectos)
 PART_LAYERS = ["cuerpo", "ropa", "pelo", "arma", "efectos3d"]
+# Inclinación máxima de la cabeza (grados entre su coronilla y el arriba de la cámara) con la que se estampan ojos:
+# pasado 90 la cara queda cabeza abajo en pantalla (tendida con la cabeza hacia la cámara) y los sellos derechos no
+# sirven / max head tilt (deg between crown and camera up) that still gets eye stamps: past 90 the face is upside
+# down on screen (lying head toward the camera) and the upright stamps are wrong
+EYES_TILT_MAX = 90
 
 
 def blender():
@@ -246,7 +252,7 @@ def stamp_eyes(eyes, spec, mask):
     # 2D eyes drawn by the artist, stamped where each eye lands and only on the visible face (mask): both from the
     # front, the camera-side one in profile (the "perfil" stamp faces right; facing left it is mirrored)
     out = np.zeros(mask.shape + (4,), np.uint8)
-    if not eyes: return out
+    if not eyes or eyes.get("inclinacion", 0) > EYES_TILT_MAX: return out
     a = eyes["giro"]; front = spec.get("frente_max", 35)
     picks = ([("R", "frente_R", False), ("L", "frente_L", False)] if abs(a) <= front else
              [("R", "perfil", False)] if front < a < 180 - front else
@@ -702,6 +708,129 @@ def normal_sheet(anim, frames, raw, base, dirs):
     sheet.save(base + "_normales.png")
 
 
+# Vecindades de 4 y 8 de las pasadas de limpieza / 4- and 8-neighbourhoods of the cleanup passes
+N4 = ((-1, 0), (1, 0), (0, -1), (0, 1))
+N8 = N4 + ((-1, -1), (-1, 1), (1, -1), (1, 1))
+# Vueltas de "islas": la primera puede dejar una isla nueva / "islas" rounds: the first can leave a new island
+ISLAS_VUELTAS = 2
+# Filas sobre las suelas desde las que "colgados" borra (los pies) / rows above the soles where "colgados" erases
+COLGADOS_FILAS = 7
+
+
+def _col(c, y, x): return tuple(int(v) for v in c[y, x, :3])
+
+
+def _opaco(c, y, x): return 0 <= y < c.shape[0] and 0 <= x < c.shape[1] and c[y, x, 3] > 0
+
+
+def tope(c): return int(np.nonzero(c[..., 3].any(1))[0].min())
+
+
+def hilos(c, o, **_):
+    # Piel de 1 px entre dos contornos, uno de ellos exterior: el contorno interior toma el color del hilo
+    # 1 px of skin between two outline pixels, one of them outer: the inner outline takes the thread's colour
+    h, w = c.shape[:2]
+    for y in range(h):
+        for x in range(1, w - 1):
+            if not _opaco(c, y, x) or _col(c, y, x) == o: continue
+            if _col(c, y, x - 1) == o and _col(c, y, x + 1) == o and _opaco(c, y, x - 1) and _opaco(c, y, x + 1):
+                ext_izq, ext_der = not _opaco(c, y, x - 2), not _opaco(c, y, x + 2)
+                if ext_der and not ext_izq: c[y, x - 1] = c[y, x]
+                elif ext_izq and not ext_der: c[y, x + 1] = c[y, x]
+
+
+def sueltos(c, o, **_):
+    # Contorno sin vecino de contorno (4-vecindad), rodeado de opaco: toma el tono vecino más común (el punto de la
+    # nuca, la mano contra la cadera) / outline pixel with no outline neighbour, surrounded by opaque: takes the most
+    # common neighbouring tone (the nape dot, the hand against the hip)
+    h, w = c.shape[:2]
+    for y in range(1, h - 1):
+        for x in range(1, w - 1):
+            if _col(c, y, x) != o or not _opaco(c, y, x): continue
+            v = [(y + dy, x + dx) for dy, dx in N4]
+            if all(_opaco(c, *p) for p in v) and not any(_col(c, *p) == o for p in v):
+                c[y, x, :3] = Counter(_col(c, *p) for p in v).most_common(1)[0][0]
+
+
+def colgados(c, pies, **_):
+    # Desde la fila "pies", un píxel opaco cuyo único vecino opaco está arriba se borra / from row "pies", an opaque
+    # pixel whose only opaque neighbour is above is erased
+    h, w = c.shape[:2]
+    for y in range(pies, h):
+        for x in range(w):
+            if _opaco(c, y, x) and [_opaco(c, y + dy, x + dx) for dy, dx in N4] == [True, False, False, False]: c[y, x] = 0
+
+
+def islas(c, cuello, sombras, o, **_):
+    # Bajo la fila "cuello", un tono de sombra de 1 px que no se repite en ninguno de sus 4 vecinos toma el tono de piel
+    # vecino más común (sin contar el contorno; si solo lo rodea contorno, el de la 8-vecindad)
+    # Below row "cuello", a 1 px shade tone that repeats in none of its 4 neighbours takes the most common neighbouring
+    # skin tone (outline excluded; if only outline surrounds it, from the 8-neighbourhood)
+    h, w = c.shape[:2]
+    for _ in range(ISLAS_VUELTAS):
+        for y in range(cuello, h - 1):
+            for x in range(1, w - 1):
+                k = _col(c, y, x)
+                if k not in sombras or not _opaco(c, y, x): continue
+                v = [(y + dy, x + dx) for dy, dx in N4]
+                if all(_opaco(c, *p) for p in v) and not any(_col(c, *p) == k for p in v):
+                    otros = Counter(_col(c, *p) for p in v if _col(c, *p) != o) or Counter(
+                        _col(c, y + dy, x + dx) for dy, dx in N8 if _opaco(c, y + dy, x + dx) and _col(c, y + dy, x + dx) not in (o, k))
+                    if otros: c[y, x, :3] = otros.most_common(1)[0][0]
+
+
+PASADAS = {"hilos": hilos, "sueltos": sueltos, "colgados": colgados, "islas": islas}
+
+
+def limpiar_compuesto(lay, fn):
+    # fn edita en el lugar el cuadro compuesto (sin efectos); cada píxel cambiado vuelve a la capa que se ve en él
+    # (borrado: a todas; nuevo: a la de abajo), así hoja, .aseprite y espejo salen del mismo cuadro limpio
+    # fn edits the composed frame (no effects) in place; each changed pixel goes back to the layer showing there
+    # (erased: all layers; new: the bottom one), so sheet, .aseprite and mirror share the clean frame
+    names = [k for k in lay if k != "Efectos"]
+    comp = flatten({k: lay[k] for k in names}); new = comp.copy(); fn(new)
+    cambio = np.any(new != comp, -1)
+    if not cambio.any(): return lay
+    out = dict(lay); borrar = cambio & (new[..., 3] == 0); pintar = cambio & ~borrar
+    for k in reversed(names):
+        a = lay[k][..., 3] > 0; m = a & (borrar | pintar)
+        if m.any(): out[k] = lay[k].copy(); out[k][m] = new[m]
+        pintar &= ~a
+    if pintar.any():
+        if out[names[0]] is lay[names[0]]: out[names[0]] = lay[names[0]].copy()
+        out[names[0]][pintar] = new[pintar]
+    return out
+
+
+def limpiar(anim, frames, meta, model, size, dirs, margin):
+    # Limpieza 2D del cuadro compuesto, antes del espejado (la simetría sale exacta) y de exportar.
+    # "cabeza_fija": [direcciones] en la animación: la cabeza del cuadro 0 (del tope hasta 2 filas sobre el marcador
+    # "cuello") se pega en cada cuadro, corrida por el rebote: la cabeza de perfil no tiembla.
+    # "limpieza" en la receta: {"pasadas": [...], "contorno": tono del contorno de la piel, "sombras": tonos de sombra
+    # de la piel}; las pasadas van en ese orden: "hilos", "sueltos", "colgados" (desde COLGADOS_FILAS sobre las
+    # suelas) e "islas" (desde 2 filas bajo el marcador "cuello").
+    # 2D cleanup of the composed frame, before mirroring (exact symmetry) and export. "cabeza_fija": [directions] on
+    # the animation: frame 0's head (top to 2 rows above the "cuello" marker) pasted into every frame, shifted by the
+    # bounce. "limpieza" on the recipe: {"pasadas", "contorno": skin outline tone, "sombras": skin shade tones}; the
+    # passes run in that order, "colgados" from COLGADOS_FILAS above the soles, "islas" from 2 rows below "cuello".
+    n, name = len(anim["cuadros"]), anim["nombre"]
+    cuello = lambda d, i: int(meta[f"{name}_{d}_{i}"]["marcadores"]["cuello"][1])
+    comp = lambda lay: flatten({k: v for k, v in lay.items() if k != "Efectos"})
+    for d in anim.get("cabeza_fija", []):
+        c0 = comp(frames[d][0]); t0 = tope(c0); filas = cuello(d, 0) - 2 - t0
+        for i in range(1, n):
+            dy = tope(comp(frames[d][i])) - t0
+            def pegar(c): c[t0 + dy:t0 + dy + filas] = c0[t0:t0 + filas]
+            frames[d][i] = limpiar_compuesto(frames[d][i], pegar)
+    spec = model.get("limpieza")
+    if not spec: return
+    o, sombras = tuple(spec["contorno"]), {tuple(t) for t in spec["sombras"]}
+    for d in dirs:
+        for i in range(n):
+            args = {"o": o, "sombras": sombras, "pies": size - margin - COLGADOS_FILAS, "cuello": cuello(d, i) + 2}
+            frames[d][i] = limpiar_compuesto(frames[d][i], lambda c: [PASADAS[p](c, **args) for p in spec["pasadas"]])
+
+
 def eje_espejo(model, size):
     # Columna doble del eje de simetría: con "desfase_x" -0,5 el eje es el centro de la columna 31 (x -> 62 - x)
     # Doubled symmetry axis column: with "desfase_x" -0.5 the axis is column 31's centre (x -> 62 - x)
@@ -805,6 +934,7 @@ def cmd_frames(args):
                     frames[d].append(lay)
                 else:
                     frames[d].append(layers(img, size, d in ("south", "north"), fx, pal, margin))
+        if model.get("limpieza") or anim.get("cabeza_fija"): limpiar(anim, frames, meta, model, size, dirs, margin)
         if anim.get("espejar_oeste") or anim.get("espejar_ciclo") or anim.get("simetrico"): espejar(anim, frames, meta, model, size)
         if anim.get("fundir") or getattr(args, "fundir", False): fundir(anim, frames, dirs)
         base = export(anim, frames, args.salida, prefix)

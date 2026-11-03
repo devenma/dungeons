@@ -999,5 +999,10 @@
   }
  ],
  "limpiar_huerfanos": true,
- "rellenar_huecos": 3
+ "rellenar_huecos": 3,
+ "limpieza": {
+  "pasadas": ["hilos", "sueltos", "colgados", "islas"],
+  "contorno": [66, 31, 29],
+  "sombras": [[183, 119, 96], [213, 141, 109]]
+ }
 }

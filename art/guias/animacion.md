@@ -70,6 +70,14 @@ Forma por claves: `cantidad` + `claves` (`{"en": cuadro, "raiz": ..., "cadera": 
 `move_speed` y el juego acelera la animación en proporción a la velocidad real (`kit_sprite.gd`), así ninguna
 criatura patina aunque cambie su velocidad en `EnemyData` o por un buff.
 
+Espejo y limpieza (en `rig3d.py`, antes de exportar): `espejar_oeste` (oeste = este espejado), `espejar_ciclo` (de
+frente y de espaldas el cuadro c + n/2 es el c espejado) y `simetrico` (de frente y de espaldas la mitad derecha es la
+izquierda espejada) se aplican **después** de la limpieza 2D, así la simetría sale exacta: `"limpieza"` en la receta
+(pasadas `hilos`, `sueltos`, `colgados`, `islas` sobre el cuadro compuesto, que vuelven a sus capas) y
+`"cabeza_fija": ["east"]` en la animación (la cabeza del cuadro 0 pegada en todos, corrida por el rebote: la cabeza
+de perfil no tiembla). Los ojos 2D no se estampan con la cara cabeza abajo en pantalla (tendida con la cabeza hacia
+la cámara, muerte de espaldas): `EYES_TILT_MAX` en `rig3d.py`.
+
 ```json
 {
   "nombre": "sentarse", "bucle": false, "lienzo": 64, "cantidad": 4,
@@ -343,6 +351,8 @@ lidere al final del arco.
   - E/O: abducción de hombro y antebrazo 0-3° (el brazo va en el plano del cuerpo), clavícula 1,5 px más adelante,
     pecho contrarrotando contra la cadera (60 % de la fuente), braceo sólo hacia adelante (atrás ≤ 5°, adelante ~24°
     con el codo a ~40°), línea interior del torso en tono de sombra (`"tono_linea": 2` en la parte `cuerpo`).
+  - Limpieza: `"limpieza"` de `malla.json` y `"cabeza_fija": ["east"]` de `caminar.json` (§2); la hoja sale limpia
+    del render, sin script aparte.
 - **Truco de la mano (pendiente para el animador):** el cuerpo de la maid ya trae la clavícula falsa y la mano por
   hueso. Valores de la prueba de `art/pruebas/trucos_videos/`: clavícula `subir` 1 y `adelantar` 2 solo con el brazo
   atrás (con el brazo adelante vuelve a 0: `cl_solo_atras` 0,6), codo -10° respecto de la caminata actual y

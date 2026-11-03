@@ -471,6 +471,11 @@ def eyes(project):
     out = {k: project(attached("neck", p)) for k, p in e["puntos"].items()}
     c = attached("neck", e["centro"]); f = attached("neck", [e["centro"][0], e["centro"][1] - 1, e["centro"][2]]) - c
     out["giro"] = round(math.degrees(math.atan2(f.x, -f.y)), 1)
+    # "inclinacion": grados entre la coronilla y el arriba de la cámara (parada ~22, tendida con la cabeza hacia la
+    # cámara > 90: rig3d.EYES_TILT_MAX) / degrees between the crown and camera up (standing ~22, lying head toward
+    # the camera > 90)
+    up = attached("neck", [e["centro"][0], e["centro"][1], e["centro"][2] + 1]) - c
+    out["inclinacion"] = round(math.degrees(up.angle(cam.rotation_euler.to_matrix() @ Vector((0, 1, 0)))), 1)
     return out
 
 

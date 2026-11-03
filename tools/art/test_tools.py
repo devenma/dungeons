@@ -456,6 +456,85 @@ def test_rellenar_huecos():
     assert rig3d.rellenar_huecos(line, comp, 4)[5, 6, 3] == 255
 
 
+O, P, S = (66, 31, 29), (252, 196, 157), (183, 119, 96)  # contorno, piel clara, sombra / outline, light skin, shade
+
+
+def _piel(h=12, w=12, y0=2, y1=10, x0=2, x1=10):
+    c = np.zeros((h, w, 4), np.uint8); c[y0:y1, x0:x1] = (*P, 255); return c
+
+
+def test_limpieza_hilos():
+    # Piel de 1 px entre dos contornos con uno exterior: el interior toma la piel / inner outline takes the thread's skin
+    import rig3d
+    c = _piel(); c[5, 2] = (*O, 255); c[5, 4] = (*O, 255)  # hilo en x 3, exterior a la izquierda / thread at x 3, outer left
+    rig3d.hilos(c, O)
+    assert tuple(c[5, 4, :3]) == P and tuple(c[5, 2, :3]) == O
+    c = _piel(); c[5, 4] = (*O, 255); c[5, 6] = (*O, 255)  # entre dos interiores no / between two inner ones, untouched
+    rig3d.hilos(c, O); assert tuple(c[5, 4, :3]) == O and tuple(c[5, 6, :3]) == O
+
+
+def test_limpieza_sueltos():
+    # Contorno sin vecino de contorno dentro del cuerpo toma el tono vecino; con un vecino de contorno queda
+    # Outline pixel inside the body with no outline neighbour takes the neighbouring tone; with one, it stays
+    import rig3d
+    c = _piel(); c[5, 5] = (*O, 255); c[8, 5] = (*O, 255); c[8, 6] = (*O, 255)
+    rig3d.sueltos(c, O)
+    assert tuple(c[5, 5, :3]) == P and tuple(c[8, 5, :3]) == O
+
+
+def test_limpieza_colgados():
+    # Bajo la fila "pies", un píxel cuyo único vecino opaco está arriba se borra; más arriba no
+    # Below row "pies", a pixel whose only opaque neighbour is above is erased; higher up it stays
+    import rig3d
+    c = _piel(); c[10, 5] = (*P, 255); c[2, 12 - 1] = 0; c[1, 5] = (*P, 255)
+    rig3d.colgados(c, 8)
+    assert c[10, 5, 3] == 0 and c[1, 5, 3] == 255 and c[9, 5, 3] == 255
+
+
+def test_limpieza_islas():
+    # Tono de sombra de 1 px bajo el cuello sin vecino igual toma el tono vecino más común; sobre el cuello no
+    # 1 px shade tone below the neck with no equal neighbour takes the most common tone; above the neck it stays
+    import rig3d
+    c = _piel(); c[6, 5] = (*S, 255); c[3, 5] = (*S, 255)
+    rig3d.islas(c, 4, {S}, O)
+    assert tuple(c[6, 5, :3]) == P and tuple(c[3, 5, :3]) == S
+    c = _piel(); c[6, 5] = (*S, 255); c[6, 6] = (*S, 255)  # dos juntas no son isla / two together are no island
+    rig3d.islas(c, 4, {S}, O); assert tuple(c[6, 5, :3]) == S
+
+
+def test_limpieza_cabeza_fija_y_capas():
+    # "cabeza_fija": la cabeza de c0 (hasta 2 filas sobre "cuello") va en c1 corrida por el rebote; después corren las
+    # pasadas. Los cambios vuelven a la capa visible, un borrado a todas y un píxel nuevo a la de abajo
+    # c0's head (to 2 rows above "cuello") pasted into c1 shifted by the bounce, then the passes run. Changes go back
+    # to the visible layer, an erase to every layer and a new pixel to the bottom one
+    import rig3d
+    def cuadro(dy, extra):
+        cu = np.zeros((16, 16, 4), np.uint8); co = np.zeros_like(cu)
+        cu[2 + dy:12 + dy, 4:10] = (*P, 255); co[2 + dy, 4:10] = (*O, 255); co[5 + dy, 6] = (*O, 255)  # contorno suelto / lone outline
+        for y, x in extra: cu[y, x] = (*P, 255)
+        return {"Cuerpo": cu, "Contorno": co}
+    # c1: rebote de 1 fila; un px de más en la cabeza (4, 11), uno colgado bajo el cuerpo (13, 7) y uno aislado (12, 12)
+    fr = {d: [cuadro(0, [(4, 11)]), cuadro(1, [(4, 11), (13, 7), (12, 12)])] for d in rig3d.DIRS}
+    meta = {f"c_{d}_{i}": {"marcadores": {"cuello": [7.0, 8.0 + i]}} for d in rig3d.DIRS for i in range(2)}
+    model = {"limpieza": {"pasadas": ["sueltos", "colgados"], "contorno": O, "sombras": [S]}}
+    rig3d.limpiar({"nombre": "c", "cuadros": [{}, {}], "cabeza_fija": ["east"]}, fr, meta, model, 16, ["east"], 2)
+    e0, e1 = fr["east"]
+    assert np.array_equal(rig3d.flatten(e1)[3:9], rig3d.flatten(e0)[2:8])  # cabeza de c0 corrida 1 fila / c0 head shifted
+    assert e1["Cuerpo"][4, 11, 3] == 0 and e1["Cuerpo"][5, 11, 3] == 255  # borrado y nuevo, en Cuerpo / erased and new
+    assert e1["Cuerpo"][13, 7, 3] == 0 and e1["Cuerpo"][12, 12, 3] == 255  # colgado borrado, aislado no / dangling erased
+    assert tuple(e1["Contorno"][6, 6]) == (*P, 255)  # el suelto cambia en su capa / lone outline fixed in its layer
+    assert tuple(fr["south"][1]["Contorno"][6, 6, :3]) == O  # solo east / east only
+
+
+def test_ojos_inclinacion():
+    # Con la coronilla más de 90° del arriba de la cámara (cara al revés) no se estampan ojos / upside-down face: no eyes
+    import rig3d
+    spec = {"sellos": {"frente_R": {"px": ["a"], "ancla": [0, 0]}, "frente_L": {"px": ["a"], "ancla": [0, 0]}}, "colores": {"a": [1, 2, 3]}}
+    m = np.ones((8, 8), bool); ojos = {"R": [2.0, 3.0], "L": [5.0, 3.0], "giro": 0.0}
+    assert rig3d.stamp_eyes({**ojos, "inclinacion": 68.0}, spec, m)[3, 2, 3] == 255
+    assert not rig3d.stamp_eyes({**ojos, "inclinacion": 112.0}, spec, m).any()
+
+
 def test_skin_counts():
     import rig3d
     ids = np.zeros((10, 4, 4), np.uint8); ids[..., 3] = 255

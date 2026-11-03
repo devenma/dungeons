@@ -1,10 +1,10 @@
 # Caminata del maniquí op15 desde mocap: Walk_Loop de Quaternius UAL (CC0), volcado por extraer.py a fuente_walk.json.
 # Op15 mannequin walk from mocap: Quaternius UAL Walk_Loop (CC0), dumped by extraer.py into fuente_walk.json.
-# Regenerar (generador -> render -> limpieza), desde la raíz del repo / regenerate from the repo root:
+# Regenerar (generador -> render con limpieza), desde la raíz del repo / regenerate from the repo root:
 #   python -I art/source/maniqui_op15/3d/anim/caminar_mocap_gen.py            # -> art/pruebas/maniqui_op15/anim/caminar.json
 #   python -I tools/art/rig3d.py cuadros art/source/maniqui_op15/3d/malla.json art/pruebas/maniqui_op15/anim/caminar.json --salida art/pruebas/maniqui_op15/anim/render
-#   python -I art/source/maniqui_op15/3d/anim/limpiar.py art/pruebas/maniqui_op15/anim/render/maniqui_op15_caminar.png art/pruebas/maniqui_op15/anim/render/maniqui_op15_caminar_marcadores.json assets/art/characters/maniqui_op15/maniqui_op15_walk.png art/source/maniqui_op15/maniqui_op15_caminar.aseprite
-#   (el .json de la hoja sale del render: copiar render/maniqui_op15_caminar.json a assets/art/characters/maniqui_op15/maniqui_op15_walk.json)
+#   La hoja sale limpia ("limpieza" de malla.json y "cabeza_fija" de la animación): copiar render/maniqui_op15_caminar.png
+#   y .json a assets/art/characters/maniqui_op15/maniqui_op15_walk.png/.json, y el .aseprite a art/source/maniqui_op15/.
 # Se toman 4 cuadros de la fuente (1 de cada 4, a 24 fps) con el pie izquierdo de apoyo y se espejan. De la fuente
 # salen: trayectoria del pie libre (adelante, alto, punta), rebote de la cadera, vaivén y codo de los brazos y giro del
 # pecho. El pie de apoyo se traba en el piso y retrocede velocidad × cuadro (lo único que no se copia).
@@ -271,6 +271,7 @@ def build():
     for f in frames: f.pop("_apoyo"); f.pop("_i")
     return {"nombre": "caminar", "bucle": True, "lienzo": 64, "margen_suela": 2, "pixel_pantalla": True,
             "duraciones_ms": [MS] * len(frames), "velocidad_px_s": SPEED, "espejar_oeste": True, "espejar_ciclo": True,
+            "cabeza_fija": ["east"],  # la cabeza de perfil no tiembla (limpieza de rig3d) / steady profile head
             "cuadros": frames,
             "_fuente": f"Quaternius UAL Standard (CC0), Walk_Loop, cuadros {PICK} a 24 fps + espejo; escala {S:.1f} px/m"}
 

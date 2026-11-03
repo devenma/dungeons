@@ -17,6 +17,9 @@
  "velocidad_px_s": 60,
  "espejar_oeste": true,
  "espejar_ciclo": true,
+ "cabeza_fija": [
+  "east"
+ ],
  "cuadros": [
   {
    "cadera": {
