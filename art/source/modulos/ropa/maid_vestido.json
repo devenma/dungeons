@@ -13,7 +13,8 @@
     "rosa": {"tonos": [[122, 62, 76], [184, 95, 114]], "umbrales": [0.2], "plano": true},
     "rosa_oscuro": {"tonos": [[122, 62, 76], [122, 62, 76]], "umbrales": [0.5]}
   },
-  "cuerpo": {"pollera": [1.2, 9], "pollera_sectores": {"k": 0.15}, "moño": [5.8, 0.4, 3]},
+  "cuerpo": {"pollera": [1.2, 9], "pollera_sectores": {"k": 0.15}, "moño": [5.8, 0.4, 3],
+             "hombros": [8.0, 0.2, -1.8], "apertura_brazo": 5, "apertura_antebrazo": 0, "grosor_brazo": [1.0, 1.7, 1.45, 1.4]},
   "partes": [
     {"nombre": "cuerpo", "tronco": false},
     {"nombre": "brazo", "desde": 0.6},

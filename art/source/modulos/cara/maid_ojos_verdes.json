@@ -24,5 +24,11 @@
     "redondear": true,
     "craneo": [5.6, 7.15, 4.9, 5.0, 6.4]
   },
-  "partes": [{"tipo": "cabeza", "nombre": "cabeza", "material": "piel_plana", "capa": "cuerpo", "linea": ""}]
+  "partes": [
+    {"tipo": "cabeza", "nombre": "cabeza", "material": "piel_plana", "capa": "cuerpo", "linea": ""},
+    {"tipo": "esfera", "nombre": "menton_perfil", "material": "piel_plana", "capa": "cuerpo", "linea": "", "hueso": "neck",
+     "relativo": "cabeza", "pos": [0, -5.3, -4.7], "radios": [2.0, 1.8, 1.6], "solo_en": ["east", "west"]},
+    {"tipo": "esfera", "nombre": "nariz", "material": "piel_plana", "capa": "cuerpo", "linea": "", "hueso": "neck",
+     "relativo": "cabeza", "pos": [0, -6.9, -3.8], "radios": [0.6, 0.9, 0.6], "solo_en": ["east", "west"], "sin_contorno": true}
+  ]
 }
