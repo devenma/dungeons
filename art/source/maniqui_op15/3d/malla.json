@@ -1,0 +1,1003 @@
+{
+ "nombre": "maniqui_op15",
+ "inclinacion_camara": 22,
+ "contorno": "rampa",
+ "desfase_x": -0.5,
+ "vistas": {
+  "zoom": 1.0,
+  "margen_suela": 2
+ },
+ "luz": {
+  "rot": [
+   58,
+   0,
+   0
+  ],
+  "energia": 3.2,
+  "sombras": false,
+  "sigue": false
+ },
+ "rampas": {
+  "piel": {
+   "tonos": [
+    [
+     66,
+     31,
+     29
+    ],
+    [
+     133,
+     78,
+     65
+    ],
+    [
+     183,
+     119,
+     96
+    ],
+    [
+     213,
+     141,
+     109
+    ],
+    [
+     252,
+     196,
+     157
+    ]
+   ],
+   "umbrales": [
+    0.0001,
+    0.0002,
+    0.22,
+    0.42
+   ],
+   "ambiente": 0.03
+  },
+  "piel_pierna": {
+   "tonos": [
+    [
+     66,
+     31,
+     29
+    ],
+    [
+     133,
+     78,
+     65
+    ],
+    [
+     183,
+     119,
+     96
+    ],
+    [
+     213,
+     141,
+     109
+    ],
+    [
+     252,
+     196,
+     157
+    ]
+   ],
+   "umbrales": [
+    0.0001,
+    0.0002,
+    0.22,
+    0.42
+   ],
+   "ambiente": 0.03
+  }
+ },
+ "proyecciones": {
+  "cara": {
+   "sprites": {
+    "south": "tex/south.png",
+    "east": "tex/east.png",
+    "north": "tex/north.png",
+    "west": "tex/west.png"
+   },
+   "lienzo": 64,
+   "suelo_y": 60,
+   "base": "piel",
+   "afilado": 30,
+   "piso": 1e-30
+  }
+ },
+ "contorno_hueco": [
+  "piel_pierna"
+ ],
+ "cuerpo": {
+  "tobillo": 2.5,
+  "pierna": [
+   10.0,
+   8.0
+  ],
+  "caderas": [
+   5.0,
+   -1.0
+  ],
+  "cintura": 7.5,
+  "pecho": 8.5,
+  "cuello": 3,
+  "hombros": [
+   7.0,
+   0.8,
+   -3.0
+  ],
+  "brazo": [
+   6.5,
+   6.5
+  ],
+  "apertura_brazo": 26,
+  "apertura_antebrazo": 34,
+  "pie": [
+   4.0,
+   -0.3
+  ],
+  "grosor_brazo": [
+   1.8,
+   1.7,
+   1.4,
+   2.0
+  ],
+  "mano": 2.5,
+  "grosor_pierna": [
+   3.6,
+   2.1,
+   1.1,
+   1.1
+  ],
+  "plano_pierna": 1.4,
+  "cuello_r": [
+   3.05,
+   2.0
+  ],
+  "cuello_y": -1.0,
+  "cabeza": {
+   "centro": [
+    0,
+    0.0,
+    10.0
+   ],
+   "radios": [
+    8.5,
+    8.5,
+    10.8
+   ],
+   "alto_arriba": 6.0,
+   "fondo": 9.0,
+   "mandibula": 0.35,
+   "menton": 4.0,
+   "cuadrar_abajo": 2.6,
+   "cuadrar_arriba": 2.9
+  },
+  "torso_perfil": [
+   [
+    -0.02,
+    5.5,
+    3.75,
+    0.25
+   ],
+   [
+    -0.01,
+    6.781,
+    4.944,
+    -0.013
+   ],
+   [
+    0.0,
+    8.05,
+    6.05,
+    -0.35
+   ],
+   [
+    0.075,
+    8.031,
+    5.844,
+    -0.681
+   ],
+   [
+    0.15,
+    7.5,
+    5.3,
+    -0.9
+   ],
+   [
+    0.225,
+    6.531,
+    5.094,
+    -0.806
+   ],
+   [
+    0.3,
+    5.5,
+    4.85,
+    -0.55
+   ],
+   [
+    0.375,
+    4.812,
+    4.562,
+    -0.406
+   ],
+   [
+    0.45,
+    4.5,
+    4.25,
+    -0.25
+   ],
+   [
+    0.535,
+    4.844,
+    4.281,
+    -0.381
+   ],
+   [
+    0.62,
+    5.5,
+    4.5,
+    -0.7
+   ],
+   [
+    0.71,
+    6.344,
+    4.7,
+    -1.031
+   ],
+   [
+    0.8,
+    7.05,
+    4.5,
+    -1.0
+   ],
+   [
+    0.86,
+    6.969,
+    4.044,
+    -0.75
+   ],
+   [
+    0.92,
+    6.5,
+    3.5,
+    -0.5
+   ],
+   [
+    0.96,
+    5.469,
+    2.938,
+    -0.469
+   ],
+   [
+    1.0,
+    4.5,
+    2.5,
+    -0.5
+   ]
+  ],
+  "clavicula": 1.5,
+  "mano_hueso": true,
+  "piernas_al_suelo": true
+ },
+ "marcadores": {
+  "cuello": [
+   "neck",
+   "cabeza"
+  ],
+  "cadera": [
+   "hips",
+   "cabeza"
+  ],
+  "pie_L": [
+   "shin_L",
+   "cola"
+  ],
+  "pie_R": [
+   "shin_R",
+   "cola"
+  ],
+  "mano_R": [
+   "fore_R",
+   "cola"
+  ],
+  "mano_L": [
+   "fore_L",
+   "cola"
+  ]
+ },
+ "partes": [
+  {
+   "tipo": "cuerpo",
+   "material": "piel",
+   "capa": "cuerpo",
+   "hombro": {
+    "sisa": [
+     4.5,
+     -2.5,
+     2.5,
+     2.2
+    ],
+    "radios": [
+     [
+      0.0,
+      2.2,
+      2.0
+     ],
+     [
+      0.3,
+      2.0,
+      1.9
+     ],
+     [
+      0.6,
+      1.8,
+      1.7
+     ]
+    ],
+    "mezcla": 0.3,
+    "tapas": [
+     0,
+     0
+    ]
+   },
+   "sesgo_sombra": [
+    {
+     "fijar": 0.3,
+     "centro": [
+      0,
+      -0.5,
+      37.05
+     ],
+     "radios": [
+      3.5,
+      4.5,
+      2.1
+     ],
+     "nota": "cuello adelante",
+     "caja": true
+    },
+    {
+     "fijar": 0.3,
+     "centro": [
+      0,
+      -6.5,
+      29.4
+     ],
+     "radios": [
+      4.6,
+      2.2,
+      1.0
+     ]
+    },
+    {
+     "valor": -0.6,
+     "centro": [
+      0,
+      -4.5,
+      17.0
+     ],
+     "radios": [
+      1.1,
+      3.0,
+      2.2
+     ]
+    },
+    {
+     "fijar": 0.3,
+     "centro": [
+      0,
+      1.5,
+      38.5
+     ],
+     "radios": [
+      4.5,
+      3.0,
+      1.8
+     ],
+     "nota": "nuca"
+    },
+    {
+     "nota": "espalda: bloque",
+     "fijar": 0.3,
+     "caja": true,
+     "centro": [
+      0,
+      10.0,
+      29.4
+     ],
+     "radios": [
+      5.5,
+      9.0,
+      2.6
+     ]
+    },
+    {
+     "nota": "espalda: escapula L",
+     "fijar": 0.3,
+     "centro": [
+      3.0,
+      10.0,
+      32.2
+     ],
+     "radios": [
+      2.2,
+      9.0,
+      0.9
+     ]
+    },
+    {
+     "nota": "espalda: escapula R",
+     "fijar": 0.3,
+     "centro": [
+      -3.0,
+      10.0,
+      32.2
+     ],
+     "radios": [
+      2.2,
+      9.0,
+      0.9
+     ]
+    },
+    {
+     "nota": "espalda: punta a la cola",
+     "fijar": 0.3,
+     "centro": [
+      0,
+      10.0,
+      26.4
+     ],
+     "radios": [
+      5.4,
+      9.0,
+      3.1
+     ]
+    },
+    {
+     "nota": "hombro abajo (S: sin banda en y30)",
+     "valor": 0.4,
+     "centro": [
+      7.8,
+      -1.0,
+      31.0
+     ],
+     "radios": [
+      1.4,
+      2.5,
+      1.0
+     ]
+    },
+    {
+     "nota": "hombro abajo (S: sin banda en y30)",
+     "valor": 0.4,
+     "centro": [
+      -7.8,
+      -1.0,
+      31.0
+     ],
+     "radios": [
+      1.4,
+      2.5,
+      1.0
+     ]
+    }
+   ],
+   "segmentos": 32,
+   "tono_linea": 2
+  },
+  {
+   "tipo": "brazo",
+   "lados": [
+    "L",
+    "R"
+   ],
+   "material": "piel",
+   "capa": "cuerpo",
+   "desde": 0.3,
+   "ocultar_lejos": 30,
+   "tono_linea": 2
+  },
+  {
+   "tipo": "pierna",
+   "lados": [
+    "L",
+    "R"
+   ],
+   "material": "piel_pierna",
+   "capa": "cuerpo",
+   "pie": false
+  },
+  {
+   "tipo": "tubo",
+   "nombre": "muslo",
+   "lados": [
+    "L",
+    "R"
+   ],
+   "material": "piel_pierna",
+   "capa": "cuerpo",
+   "linea": "pierna_<lado>",
+   "hueso": "thigh_<lado>",
+   "radios": [
+    [
+     0.1,
+     3.5,
+     3.4
+    ],
+    [
+     0.5,
+     3.4,
+     3.3
+    ],
+    [
+     0.78,
+     2.9,
+     2.9
+    ],
+    [
+     1.0,
+     2.1,
+     2.3
+    ]
+   ],
+   "tapas": [
+    1.0,
+    0.6
+   ]
+  },
+  {
+   "tipo": "esfera",
+   "nombre": "pecho",
+   "lados": [
+    "L",
+    "R"
+   ],
+   "material": "piel",
+   "capa": "cuerpo",
+   "linea": "tronco",
+   "hueso": "chest",
+   "pos": [
+    2.4,
+    -5.2,
+    31.0
+   ],
+   "radios": [
+    2.6,
+    2.2,
+    1.6
+   ],
+   "sesgo_sombra": [
+    {
+     "fijar": 0.3,
+     "centro": [
+      2.4,
+      -5.2,
+      29.4
+     ],
+     "radios": [
+      4.0,
+      4.0,
+      1.2
+     ]
+    }
+   ]
+  },
+  {
+   "tipo": "cabeza",
+   "nombre": "cabeza",
+   "material": "proy:cara",
+   "capa": "cuerpo",
+   "linea": "",
+   "solo_en": [
+    "east",
+    "west"
+   ]
+  },
+  {
+   "tipo": "cabeza",
+   "nombre": "cabeza_sn",
+   "material": "proy:cara",
+   "capa": "cuerpo",
+   "linea": "",
+   "solo_en": [
+    "south",
+    "north"
+   ],
+   "cuadrar_arriba": 6.5
+  },
+  {
+   "tipo": "esfera",
+   "nombre": "oreja",
+   "lados": [
+    "L",
+    "R"
+   ],
+   "material": "proy:cara",
+   "capa": "cuerpo",
+   "linea": "",
+   "hueso": "neck",
+   "relativo": "cabeza",
+   "pos": [
+    8.3,
+    -0.5,
+    -4.7
+   ],
+   "radios": [
+    1.2,
+    1.0,
+    1.7
+   ]
+  },
+  {
+   "tipo": "esfera",
+   "nombre": "nariz",
+   "material": "proy:cara",
+   "capa": "cuerpo",
+   "linea": "",
+   "hueso": "neck",
+   "relativo": "cabeza",
+   "pos": [
+    0,
+    -8.0,
+    -6.0
+   ],
+   "radios": [
+    0.7,
+    1.0,
+    0.8
+   ],
+   "solo_en": [
+    "east",
+    "west"
+   ]
+  },
+  {
+   "tipo": "miton",
+   "lados": [
+    "L",
+    "R"
+   ],
+   "material": "piel_pierna",
+   "capa": "cuerpo",
+   "linea": "pierna_<lado>",
+   "hueso": "foot_<lado>",
+   "relativo": [
+    "shin_<lado>",
+    "cola"
+   ],
+   "nombre": "pie_largo",
+   "pos": [
+    0,
+    -1.0,
+    0.2
+   ],
+   "radios": [
+    1.4,
+    2.5,
+    1.2
+   ],
+   "solo_en": [
+    "east",
+    "west"
+   ],
+   "cuadrar": 4
+  },
+  {
+   "tipo": "miton",
+   "lados": [
+    "L",
+    "R"
+   ],
+   "material": "piel_pierna",
+   "capa": "cuerpo",
+   "linea": "pierna_<lado>",
+   "hueso": "foot_<lado>",
+   "relativo": [
+    "shin_<lado>",
+    "cola"
+   ],
+   "nombre": "pie_corto",
+   "pos": [
+    0,
+    -0.6,
+    -0.9
+   ],
+   "radios": [
+    1.5,
+    1.8,
+    1.2
+   ],
+   "solo_en": [
+    "south",
+    "north"
+   ],
+   "cuadrar": 4
+  },
+  {
+   "tipo": "miton",
+   "nombre": "talon",
+   "lados": [
+    "L",
+    "R"
+   ],
+   "material": "piel_pierna",
+   "capa": "cuerpo",
+   "linea": "pierna_<lado>",
+   "hueso": "foot_<lado>",
+   "relativo": [
+    "shin_<lado>",
+    "cola"
+   ],
+   "pos": [
+    0,
+    0.6,
+    -1.6
+   ],
+   "radios": [
+    1.5,
+    1.2,
+    1.2
+   ],
+   "solo_en": [
+    "north"
+   ],
+   "cuadrar": 4
+  }
+ ],
+ "pose_base": {
+  "thigh_L": {
+   "afuera": -3
+  },
+  "thigh_R": {
+   "afuera": -3
+  }
+ },
+ "ojos": {
+  "parte": [
+   "cabeza",
+   "cabeza_sn"
+  ],
+  "x": 4.5,
+  "z": -4.0,
+  "hundir": 0.0,
+  "redondear": true,
+  "colores": {
+   "h": [
+    133,
+    78,
+    65
+   ],
+   "b": [
+    213,
+    141,
+    109
+   ],
+   "a": [
+    36,
+    16,
+    16
+   ],
+   "e": [
+    183,
+    119,
+    96
+   ],
+   "i": [
+    110,
+    58,
+    48
+   ],
+   "w": [
+    250,
+    250,
+    250
+   ]
+  },
+  "sellos": {
+   "frente_R": {
+    "px": [
+     ".hhhh.",
+     "bbbbbh",
+     "baaaa.",
+     "eiwaah",
+     "ebwhh."
+    ],
+    "ancla": [
+     3,
+     3
+    ]
+   },
+   "frente_L": {
+    "px": [
+     ".hhhh.",
+     "hbbbbb",
+     ".aaaab",
+     "haawie",
+     ".hhwbe"
+    ],
+    "ancla": [
+     3,
+     3
+    ]
+   },
+   "perfil": {
+    "px": [
+     ".hhhh",
+     "....e",
+     ".aaaa",
+     "hawa.",
+     "..wa."
+    ],
+    "ancla": [
+     4,
+     3
+    ]
+   }
+  }
+ },
+ "lineas_excluir": [
+  [
+   "tronco",
+   "pierna"
+  ]
+ ],
+ "retoques": [
+  {
+   "nombre": "borde_cara_perfil",
+   "vistas": [
+    "east"
+   ],
+   "ancla": "ojo_R",
+   "origen": [
+    9,
+    1
+   ],
+   "colores": {
+    "o": [
+     66,
+     31,
+     29
+    ],
+    "A": [
+     252,
+     196,
+     157
+    ],
+    "m": [
+     213,
+     141,
+     109
+    ]
+   },
+   "px": [
+    "...........o_",
+    "...AA......o_",
+    "...........o_",
+    "...........Ao",
+    "...........Ao",
+    ".........AAo_",
+    "...mmmAAAAo_.",
+    "_o...ooooo_.."
+   ],
+   "anims": [
+    "reposo",
+    "reposo8"
+   ]
+  },
+  {
+   "nombre": "espalda_y_gluteos",
+   "vistas": [
+    "north"
+   ],
+   "ancla": "cadera",
+   "origen": [
+    5,
+    6
+   ],
+   "solo_relleno": true,
+   "colores": {
+    "m": [
+     213,
+     141,
+     109
+    ],
+    "L": [
+     252,
+     196,
+     157
+    ],
+    "s": [
+     183,
+     119,
+     96
+    ]
+   },
+   "px": [
+    ".mmmmmmmmm.",
+    "..mmmmmmm..",
+    "..LmmmmmL..",
+    "...LLmLL...",
+    "...........",
+    "...........",
+    "...........",
+    ".....m.....",
+    "...LLmLL...",
+    "...LLmLL...",
+    "...........",
+    "ssss...ssss"
+   ]
+  },
+  {
+   "nombre": "mano_plana_reposo",
+   "vistas": [
+    "south"
+   ],
+   "anims": [
+    "reposo",
+    "reposo8"
+   ],
+   "ancla": "mano_R",
+   "origen": [
+    2,
+    -3
+   ],
+   "colores": {
+    "o": [
+     66,
+     31,
+     29
+    ]
+   },
+   "px": [
+    "o",
+    "_"
+   ]
+  },
+  {
+   "nombre": "borde_cara_perfil_mov",
+   "vistas": [
+    "east"
+   ],
+   "ancla": "ojo_R",
+   "origen": [
+    9,
+    1
+   ],
+   "colores": {
+    "o": [
+     66,
+     31,
+     29
+    ],
+    "A": [
+     252,
+     196,
+     157
+    ],
+    "m": [
+     213,
+     141,
+     109
+    ]
+   },
+   "px": [
+    "...........o_",
+    "...AA......o_",
+    "...........o_",
+    "...........Ao",
+    "...........Ao",
+    ".........AAo_",
+    "...mmmAAAAo_.",
+    ".o...ooooo_.."
+   ],
+   "anims": [
+    "caminar"
+   ]
+  }
+ ],
+ "limpiar_huerfanos": true,
+ "rellenar_huecos": 3
+}
