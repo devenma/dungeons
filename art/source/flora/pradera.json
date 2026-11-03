@@ -1,0 +1,198 @@
+{
+ "nombre": "pradera",
+ "tile": 32,
+ "semilla": 11,
+ "perspectiva": {
+  "aplaste_suelo": 0.6,
+  "luz": [-1, -1]
+ },
+ "escala": {
+  "piedra_ancho_px": [2, 5]
+ },
+ "rampas": {
+  "pasto": ["#3e4a2e", "#55623b", "#6a7546", "#878f52"],
+  "tierra": ["#4d382b", "#664a36", "#7d5f46", "#977a5a"],
+  "piedra": ["#544c49", "#766c64", "#998f81", "#b9af9c"],
+  "trebol": ["#3c4f34", "#526841", "#6c8350"],
+  "flor_blanca": ["#aea692", "#ddd6c4"],
+  "flor_amarilla": ["#a6823a", "#d0ad55"],
+  "flor_lila": ["#6d5c7c", "#9a86a6"],
+  "flor_roja": ["#843e31", "#ae5d47"],
+  "flor_centro": ["#6b4a2e", "#c39a42"],
+  "hoja_pasto": ["#3a472c", "#4f5c36", "#7d8a4c", "#a2a862"],
+  "pasto_seco": ["#6d6a3e", "#8f8a4e", "#b1a666"],
+  "hoja_junco": ["#33412e", "#4a5a3b", "#6e7e4c", "#929a5e"],
+  "espiga": ["#4e3426", "#6e4a32", "#8e6644"],
+  "hoja_arbusto": ["#2f3a28", "#485632", "#68733e", "#969654"],
+  "trebol_3d": ["#334630", "#4b6340", "#6a8452", "#8ba268"]
+ },
+ "flores": [
+  {
+   "petalos": "flor_blanca",
+   "centro": ["flor_centro", 1],
+   "peso": 4
+  },
+  {
+   "petalos": "flor_amarilla",
+   "centro": ["flor_centro", 0],
+   "peso": 2
+  },
+  {
+   "petalos": "flor_lila",
+   "centro": ["flor_centro", 1],
+   "peso": 2
+  },
+  {
+   "petalos": "flor_roja",
+   "centro": ["flor_centro", 1],
+   "peso": 1
+  }
+ ],
+ "biblioteca": {
+  "flores": 12,
+  "treboles": 6,
+  "piedras": 10,
+  "motas": 8
+ },
+ "densidad": {
+  "flores": 0.7,
+  "treboles": 0.5,
+  "piedras": 0.2,
+  "manchas": 0.5,
+  "motas": 5.0,
+  "piedras_tierra": 0.8,
+  "briznas": 5,
+  "borde_briznas": 1
+ },
+ "borde": {
+  "ruido": 0.32,
+  "ondas": 3
+ },
+ "variantes": {
+  "pasto": 8,
+  "tierra": 4
+ },
+ "sombra_contacto": "#46502f",
+ "render_3d": {
+  "luz": {
+   "rot": [20, -30, 0],
+   "energia": 3.2
+  },
+  "margen_px": 4,
+  "contorno": 0.6,
+  "contorno_lado": "sombra",
+  "viento_ms": [420, 240, 300, 240],
+  "viento": "2d"
+ },
+ "especies": {
+  "pasto_corto": {
+   "forma": "mechon",
+   "variantes": 8,
+   "lienzo": 16,
+   "alto_px": [9, 12],
+   "hojas": [6, 9],
+   "abertura": [20, 70],
+   "fondo": 0.4,
+   "grosor_px": 1.6,
+   "lamina": 0.3,
+   "radio_base_px": 1.8,
+   "rampa": "hoja_pasto",
+   "rampa_puntas": "pasto_seco",
+   "puntas_prob": 0.2,
+   "umbrales": [0.04, 0.2, 0.48],
+   "sombra": false,
+   "contorno_lado": "no",
+   "viento": [[0, 0], [0, 1], [0, 1], [0, 0]],
+   "distancia_px": 7
+  },
+  "pasto_medio": {
+   "forma": "mechon",
+   "variantes": 6,
+   "lienzo": 32,
+   "alto_px": [12, 15],
+   "hojas": [7, 10],
+   "abertura": [20, 70],
+   "fondo": 0.4,
+   "grosor_px": 1.8,
+   "lamina": 0.3,
+   "radio_base_px": 2.2,
+   "rampa": "hoja_pasto",
+   "rampa_puntas": "pasto_seco",
+   "puntas_prob": 0.2,
+   "umbrales": [0.04, 0.2, 0.48],
+   "sombra": false,
+   "contorno_lado": "no",
+   "viento": [[0, 0], [0, 1], [1, 1], [0, 1]],
+   "distancia_px": 10
+  },
+  "pasto_alto": {
+   "forma": "mechon",
+   "variantes": 6,
+   "lienzo": 32,
+   "alto_px": [16, 21],
+   "hojas": [8, 10],
+   "abertura": [20, 70],
+   "fondo": 0.5,
+   "grosor_px": 2.0,
+   "lamina": 0.3,
+   "radio_base_px": 1.5,
+   "rampa": "hoja_pasto",
+   "rampa_puntas": "pasto_seco",
+   "puntas_prob": 0.25,
+   "umbrales": [0.12, 0.34, 0.62],
+   "contorno_lado": "abajo",
+   "distancia_px": 13
+  },
+  "junco": {
+   "forma": "mechon",
+   "variantes": 3,
+   "lienzo": 48,
+   "alto_px": [22, 28],
+   "hojas": [7, 9],
+   "abertura": [4, 30],
+   "fondo": 0.5,
+   "grosor_px": 2.0,
+   "lamina": 0.3,
+   "radio_base_px": 1.5,
+   "rampa": "hoja_junco",
+   "rampa_puntas": "hoja_junco",
+   "espigas": 2,
+   "espiga_px": [2.0, 5.0],
+   "rampa_espiga": "espiga",
+   "umbrales": [0.12, 0.34, 0.62],
+   "contorno_lado": "abajo",
+   "distancia_px": 13
+  },
+  "arbusto": {
+   "forma": "arbusto",
+   "variantes": 3,
+   "lienzo": 32,
+   "alto_px": [11, 14],
+   "ancho_px": [16, 21],
+   "masas": [3, 5],
+   "bultos": 6,
+   "rampa": "hoja_arbusto",
+   "distancia_px": 20
+  },
+  "trebol": {
+   "forma": "trebol",
+   "variantes": 3,
+   "lienzo": 32,
+   "alto_px": [3, 6],
+   "tallos": [3, 5],
+   "radio_base_px": 3.5,
+   "radio_hoja_px": 2.0,
+   "rampa": "trebol_3d",
+   "umbrales": [0.1, 0.3, 0.55],
+   "distancia_px": 11
+  }
+ },
+ "densidad_matas": {
+  "pasto_corto": 10,
+  "pasto_medio": 1.6,
+  "pasto_alto": 0.35,
+  "trebol": 0.15,
+  "arbusto": 0.05,
+  "junco": 0.04
+ }
+}

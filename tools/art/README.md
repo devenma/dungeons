@@ -8,6 +8,17 @@ modo batch (ruta en la variable `ASEPRITE`; por defecto, la de Steam).
 - `build_crypt_atlas.py`: arma el atlas de la cripta oscura.
 - `export_room.py`: exporta salas de la vista previa.
 
+## Flora (suelo y matas)
+
+`flora.py`: generador procedural genérico, configurado por un preset JSON (el de este juego,
+`art/source/flora/pradera.json`). `suelo` arma el piso plano en 2D (tiles de pasto sin costura y tileset Wang
+pasto/tierra con el formato de `ground_cozy.json`, hoja de flores, tréboles y piedritas, muestra `.aseprite` con
+capas); `matas` modela las matas en 3D y las renderiza con `rig3d.py` (necesita `BLENDER`) como sprites con pivote,
+sombra de contacto, viento de 4 cuadros y normales, y un atlas común (`flora_atlas.png`, una fila por especie y
+variante) para dibujarlas todas con un MultiMesh; `lamina` las reparte con disco de Poisson (`blue_noise`) y arma la
+revisión ×4 y el GIF del viento. Opcional: las especies con `"hornear": true` van dentro de los tiles de pasto
+(`suelo --matas DIR`, 4 cuadros por tile animados por el TileSet).
+
 ## Personajes 2D y gremio
 
 Flujo: fuentes del artista en `art/source/` → herramientas de acá → hojas en `assets/art/characters/` y `.aseprite`
