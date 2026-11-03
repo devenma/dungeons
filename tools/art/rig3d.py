@@ -222,7 +222,7 @@ def reduce_frame(img, ids, parts, model, size, path=None, normals=False):
     return img, ids
 
 
-def inner_lines(img, group, depth, shade=OUTLINE_SHADE, gap=LINE_GAP):
+def inner_lines(img, group, depth, shade=OUTLINE_SHADE, gap=LINE_GAP, allow=None):
     # Línea de 1 px sobre la parte de atrás donde una parte de otro grupo queda delante, con el color de la de
     # adelante oscurecido, como el sel-out (el brazo sobre el torso). group: -1 vacío, -2 sin líneas.
     # 1 px line on the back part wherever a part of another group is in front, in the front part's colour
@@ -234,6 +234,7 @@ def inner_lines(img, group, depth, shade=OUTLINE_SHADE, gap=LINE_GAP):
     for dy, dx in ((-1, 0), (1, 0), (0, -1), (0, 1)):
         qg, qd, qc = (a[1 + dy:h + 1 + dy, 1 + dx:w + 1 + dx] for a in (G, D, C))
         m = (group >= 0) & (qg >= 0) & (qg != group) & (qd < depth - gap) & (qd < best)
+        if allow is not None: m &= allow[np.maximum(group, 0), np.maximum(qg, 0)]
         out[m] = qc[m]; best[m] = qd[m]
     out[..., :3] = (out[..., :3] * shade).astype(np.uint8); out[..., 3] = np.where(best < np.inf, 255, 0)
     return out
@@ -273,7 +274,8 @@ def ramp_darkest(img, part, parts, model):
     # porque dos materiales pueden compartir un tono / each pixel takes its part's material darkest tone, by part and
     # not by colour, since two materials can share a tone
     dark = {k: tones(r)[0] for k, r in model["rampas"].items()}
-    lut = np.array([dark.get(p.get("material"), (0, 0, 0)) for p in parts] + [(0, 0, 0)], np.uint8)
+    dark.update({f"proy:{k}": dark[v["base"]] for k, v in model.get("proyecciones", {}).items()})  # la de su base / its base's
+    lut =np.array([dark.get(p.get("material"), (0, 0, 0)) for p in parts] + [(0, 0, 0)], np.uint8)
     out = np.zeros_like(img); out[..., :3] = lut[part]; out[..., 3] = img[..., 3]
     return out
 
@@ -353,6 +355,31 @@ def contorno_sombra(o, part, parts, names):
     return o
 
 
+def sin_contorno(o, part, parts, model):
+    # "sin_contorno" en una parte: quita el contorno exterior que solo toca esa parte; la nariz de 1 px de perfil queda
+    # en piel donde iba el contorno / drops the outer outline touching only that part (the 1 px profile nose)
+    names = {s.get("nombre") for s in model.get("partes", []) if s.get("sin_contorno")}
+    for k in [k for k, p in enumerate(parts) if p["nombre"] in names]:
+        m = part == k; o = o & ~(ring(m) & ~ring((part >= 0) & ~m))
+    return o
+
+
+def tono_linea(lines, part, parts, model):
+    # "tono_linea": k en una parte: sus líneas internas (donde otra parte le queda delante) van en el tono k de su
+    # rampa; el brazo que pasa detrás del torso queda con una sombra y no con un corte / "tono_linea": k on a part: its
+    # inner lines (where another part is in front) use its ramp tone k: an arm behind the torso gets a shadow, not a cut
+    spec = {s.get("nombre", s["tipo"]): s["tono_linea"] for s in model.get("partes", []) if "tono_linea" in s}
+    if not spec: return lines
+    lines = lines.copy(); proy = model.get("proyecciones", {})
+    for k, p in enumerate(parts):
+        t = spec.get(p["nombre"], spec.get(p["nombre"].rsplit("_", 1)[0]))
+        if t is None: continue
+        mat = p.get("material") or ""; mat = proy[mat[5:]]["base"] if mat.startswith("proy:") else mat
+        tt = tones(model["rampas"][mat]); m = (part == k) & (lines[..., 3] > 0)
+        lines[m, :3] = tt[min(t, len(tt) - 1)]
+    return lines
+
+
 def contorno_contra(lines, part, parts, model):
     # "contorno_contra": {"materiales": [...], "color": [r, g, b]} en una parte: 1 px de línea sobre esos materiales
     # donde tocan la parte, sin importar grupo ni profundidad (la guarda contra la piel de la mano)
@@ -389,9 +416,20 @@ def layers_parts(img, ids, parts, fmeta, model, size, gap, fx=None, pal=None, ma
     names = sorted({p["linea"] for p in parts if p.get("linea")})
     grp = np.array([names.index(p["linea"]) if p.get("linea") else -2 for p in parts] + [-1])
     ramp = model.get("contorno") == "rampa"  # líneas y contorno en el tono más oscuro de cada material / darkest ramp tone
-    lines = inner_lines(ramp_darkest(img, part, parts, model), grp[part], depth, 1.0) if ramp else inner_lines(img, grp[part], depth)
+    # "lineas_excluir": [[prefijo, prefijo], ...] pares de grupos sin línea entre sí (tronco y piernas, que se separan
+    # entre ellas) / pairs of line groups with no line between them (torso and legs, legs still split from each other)
+    allow = None
+    if model.get("lineas_excluir"):
+        allow = np.ones((len(names), len(names)), bool)
+        for a, b in model["lineas_excluir"]:
+            for i, ni in enumerate(names):
+                for j, nj in enumerate(names):
+                    if (ni.startswith(a) and nj.startswith(b)) or (ni.startswith(b) and nj.startswith(a)): allow[i, j] = False
+    lines = (inner_lines(ramp_darkest(img, part, parts, model), grp[part], depth, 1.0, allow=allow)
+             if ramp else inner_lines(img, grp[part], depth, allow=allow))
     dark = None if pal is None else np.unique(np.round(pal * OUTLINE_SHADE), axis=0)
     if dark is not None and not ramp: lines = quantize(lines, dark)
+    lines = tono_linea(lines, part, parts, model) if ramp else lines
     lines = contorno_contra(lines, part, parts, model)
     names = model.get("ojos", {}).get("parte", "cabeza")  # una parte o lista: la pestaña puede pisar el flequillo / one part or a list
     face = np.isin(part, [k for k, p in enumerate(parts) if p["nombre"] in ([names] if isinstance(names, str) else names)])
@@ -410,9 +448,111 @@ def layers_parts(img, ids, parts, fmeta, model, size, gap, fx=None, pal=None, ma
     o = outline(comp, size - margin - LEG_GAP_ROWS if gap else None, keep=keep)
     sombra = {s.get("nombre", s.get("tipo")) for s in model.get("partes", []) if s.get("contorno_lado_sombra")}
     if sombra: o = contorno_sombra(o, part, parts, sombra)
-    if ramp: out["Contorno"] = contorno_contra_fondo(selout_ramp(ramp_darkest(comp, part, parts, model), o), part, parts, model); return out
-    line = selout(comp, o, OUTLINE_SHADE)
-    out["Contorno"] = contorno_contra_fondo(quantize(line, dark) if dark is not None else line, part, parts, model)
+    o = sin_contorno(o, part, parts, model)
+    if ramp: out["Contorno"] = contorno_contra_fondo(selout_ramp(ramp_darkest(comp, part, parts, model), o), part, parts, model)
+    else:
+        line = selout(comp, o, OUTLINE_SHADE)
+        out["Contorno"] = contorno_contra_fondo(quantize(line, dark) if dark is not None else line, part, parts, model)
+    if model.get("rellenar_huecos"): out["Contorno"] = rellenar_huecos(out["Contorno"], comp, model["rellenar_huecos"])
+    return out
+
+
+def rellenar_huecos(line, comp, max_px):
+    # "rellenar_huecos": N en la receta; los huecos transparentes encerrados de hasta N px (la ventanita de 1 px entre
+    # el brazo y la cadera) toman el color del contorno vecino: el brazo toca o se separa hasta abajo
+    # "rellenar_huecos": enclosed transparent holes up to N px (the 1 px window between arm and hip) take the
+    # neighbouring outline colour: the arm either touches or stays apart all the way down
+    solid = (comp[..., 3] > 127) | (line[..., 3] > 0); h, w = solid.shape
+    seen = np.zeros_like(solid); out = line.copy()
+    for y0, x0 in zip(*np.nonzero(~solid)):
+        if seen[y0, x0]: continue
+        comp_px, stack, border = [], [(y0, x0)], False
+        seen[y0, x0] = True
+        while stack:
+            y, x = stack.pop(); comp_px.append((y, x)); border |= y in (0, h - 1) or x in (0, w - 1)
+            for yy, xx in ((y - 1, x), (y + 1, x), (y, x - 1), (y, x + 1)):
+                if 0 <= yy < h and 0 <= xx < w and not solid[yy, xx] and not seen[yy, xx]: seen[yy, xx] = True; stack.append((yy, xx))
+        if border or len(comp_px) > max_px: continue
+        todo = set(comp_px)
+        while todo:  # de afuera hacia adentro / outside in
+            for y, x in list(todo):
+                c = next((out[yy, xx] for yy, xx in ((y - 1, x), (y + 1, x), (y, x - 1), (y, x + 1))
+                          if 0 <= yy < h and 0 <= xx < w and out[yy, xx, 3] > 0 and (yy, xx) not in todo), None)
+                if c is not None: out[y, x] = c; todo.discard((y, x))
+    return out
+
+
+def limpiar_huerfanos(lay):
+    # "limpiar_huerfanos": true; un píxel de relleno (capas de partes) cuyos vecinos de relleno (3 o 4) tienen todos
+    # el mismo color, distinto del suyo, y el vecino que falta es contorno, línea o vacío, toma ese color: saca los
+    # puntos sueltos de la rampa sin tocar ojos, líneas ni contorno / a fill pixel whose fill neighbours (3 or 4) all
+    # share one colour other than its own, the missing one being outline, line or empty, takes that colour
+    partes = [k for k in lay if k not in ("Efectos", "Lineas", "Ojos", "Contorno", "Retoques")]
+    comp = flatten({k: v for k, v in lay.items() if k != "Efectos"})
+    over = np.zeros(comp.shape[:2], bool)  # lo que tapa al relleno / what covers the fill
+    for k in ("Lineas", "Ojos", "Contorno", "Retoques"):
+        if k in lay and lay[k] is not None: over |= lay[k][..., 3] > 0
+    fill = (comp[..., 3] > 0) & ~over
+    key = (comp[..., 0].astype(np.int64) << 16) | (comp[..., 1].astype(np.int64) << 8) | comp[..., 2]
+    h, w = fill.shape
+    F, K = np.pad(fill, 1), np.pad(key, 1, constant_values=-1)
+    nb = [(F[1 + dy:h + 1 + dy, 1 + dx:w + 1 + dx], K[1 + dy:h + 1 + dy, 1 + dx:w + 1 + dx]) for dy, dx in ((-1, 0), (1, 0), (0, -1), (0, 1))]
+    n_fill = sum(f.astype(int) for f, _ in nb)
+    ref = np.max([np.where(f, k, -1) for f, k in nb], 0)  # un color de vecino de relleno / one fill neighbour colour
+    same = np.all([~f | (k == ref) for f, k in nb], 0)
+    m = fill & (n_fill >= 3) & same & (ref != key)
+    if not m.any(): return lay
+    col = np.stack([(ref >> 16) & 255, (ref >> 8) & 255, ref & 255], -1).astype(np.uint8)
+    out = dict(lay)
+    for k in partes:
+        if lay[k] is None: continue
+        mk = m & (lay[k][..., 3] > 0)
+        if mk.any(): out[k] = lay[k].copy(); out[k][mk, :3] = col[mk]
+    return out
+
+
+# Ángulo de cada dirección base (el "giro" de los metadatos del cuadro) / base direction angle (frame meta "giro")
+DIR_GIRO = {"south": 0, "east": 90, "north": 180, "west": -90}
+
+
+def retocar(lay, fm, d, model, anim=None):
+    # "retoques": [{"vistas", "ancla", "origen", "px", "colores", "tolerancia"}]: sellos 2D por dirección base sobre el
+    # cuadro terminado (borde de la cara de perfil). "ancla": "ojo_R"/"ojo_L" o un marcador; "origen": [col, fila] del
+    # sello que cae en el ancla; en "px", "." no toca, "_" borra y cada letra pinta su color de "colores" en la capa
+    # Retoques (arriba de todo). Solo si el giro del cuadro está a "tolerancia" grados (10) de la vista
+    # 2D stamps per base direction on the finished frame (profile face edge). "ancla": an eye or a marker; "origen":
+    # the stamp's [col, row] on the anchor; "." leaves, "_" erases, letters paint on the top Retoques layer. Only when
+    # the frame's turn is within "tolerancia" degrees (10) of the view. "anims": [nombres] lo limita a esas animaciones
+    # / limits it to those animations
+    out = {k: (v.copy() if v is not None else None) for k, v in lay.items()}
+    size = next(v for v in lay.values() if v is not None).shape[0]
+    for st in model.get("retoques", []):
+        if d not in st["vistas"] or not fm or ("anims" in st and anim not in st["anims"]): continue
+        a = st["ancla"]
+        # Anclado a un ojo, cuenta hacia dónde mira la cabeza (no solo el cuadro): el sello sale si la cara mira a la
+        # cámara / anchored to an eye, the head's facing counts too: the stamp shows only when the face looks this way
+        giros = [fm.get("giro", DIR_GIRO[d])] + ([fm["ojos"]["giro"]] if a.startswith("ojo_") and "giro" in fm.get("ojos", {}) else [])
+        if any(abs((g - DIR_GIRO[d] + 180) % 360 - 180) > st.get("tolerancia", 10) for g in giros): continue
+        p = fm.get("ojos", {}).get(a[4:]) if a.startswith("ojo_") else fm.get("marcadores", {}).get(a)
+        if not p: continue
+        x0, y0 = int(p[0]) - st["origen"][0], round(p[1]) - st["origen"][1]  # como los ojos / like the eyes
+        top = out.get("Retoques"); top = np.zeros((size, size, 4), np.uint8) if top is None else top
+        # "solo_relleno": true pinta solo sobre relleno (no contorno, líneas, ojos ni vacío): sirve en cuadros con
+        # las piernas en otra pose / paints only over fill, so it is safe on frames with the legs elsewhere
+        relleno = None
+        if st.get("solo_relleno"):
+            capas = [(k, v[..., 3] > 0) for k, v in out.items() if v is not None and k != "Efectos"]
+            tapa = ("Lineas", "Ojos", "Contorno", "Retoques")
+            relleno = np.any([a for k, a in capas if k not in tapa], 0) & ~np.any([a for k, a in capas if k in tapa] or [np.zeros((size, size), bool)], 0)
+        for j, row in enumerate(st["px"]):
+            for i, ch in enumerate(row):
+                x, y = x0 + i, y0 + j
+                if ch == "." or not (0 <= x < size and 0 <= y < size): continue
+                if relleno is not None and not relleno[y, x]: continue
+                for k, v in out.items():
+                    if v is not None and k != "Efectos": v[y, x] = 0
+                top[y, x] = 0 if ch == "_" else (*st["colores"][ch], 255)
+        out.pop("Retoques", None); out["Retoques"] = top  # siempre arriba / always on top
     return out
 
 
@@ -562,6 +702,59 @@ def normal_sheet(anim, frames, raw, base, dirs):
     sheet.save(base + "_normales.png")
 
 
+def eje_espejo(model, size):
+    # Columna doble del eje de simetría: con "desfase_x" -0,5 el eje es el centro de la columna 31 (x -> 62 - x)
+    # Doubled symmetry axis column: with "desfase_x" -0.5 the axis is column 31's centre (x -> 62 - x)
+    return int(round(size + 2 * model.get("desfase_x", 0))) - 1
+
+
+def espejo_capa(a, k):
+    # Espeja una capa sobre el eje (x -> k - x) / mirrors a layer about the axis
+    out = np.zeros_like(a); w = a.shape[1]
+    for x in range(w):
+        if 0 <= k - x < w: out[:, k - x] = a[:, x]
+    return out
+
+
+def espejar(anim, frames, meta, model, size):
+    # "espejar_oeste": el oeste es el este espejado; "espejar_ciclo": de frente y de espaldas el cuadro c + n/2 es el c
+    # espejado (la pose inversa, regla de Sam); "simetrico": de frente y de espaldas la mitad derecha es la izquierda
+    # espejada. Los marcadores se espejan igual. Evita los empates de rasterizado y de luz que dejan 1 px de un lado
+    # "espejar_oeste": west is the mirrored east; "espejar_ciclo": south/north frame c + n/2 is frame c mirrored (Sam's
+    # inverse pose rule); "simetrico": south/north right half is the mirrored left half. Markers are mirrored too
+    k = eje_espejo(model, size); n = len(frames["south"]); pares = []
+    # Los cuadros girados (raiz.giro) no se espejan: su espejo es otra dirección / turned frames are left alone
+    cu = anim.get("cuadros", []); giro = lambda i: i < len(cu) and cu[i].get("raiz", {}).get("giro", 0)
+    flip = lambda lay: {name: espejo_capa(v, k) if v is not None else None for name, v in lay.items()}
+    if anim.get("espejar_oeste"): pares += [("east", i, "west", i) for i in range(n) if not giro(i)]
+    if anim.get("espejar_ciclo"):
+        pares += [(d, i, d, i + n // 2) for d in ("south", "north") for i in range(n // 2) if not giro(i) and not giro(i + n // 2)]
+    for d0, i, d1, j in pares:
+        frames[d1][j] = flip(frames[d0][i])
+        a, b = meta.get(f"{anim['nombre']}_{d0}_{i}"), f"{anim['nombre']}_{d1}_{j}"
+        if a and a.get("marcadores"):
+            meta[b] = {**meta.get(b, {}), "marcadores": {m: [round((k + 1) - p[0], 2), p[1]] for m, p in a["marcadores"].items()}}
+    if anim.get("simetrico"):
+        izq = np.arange(size) <= k // 2  # la columna del eje queda / the axis column stays
+        for d in ("south", "north"):
+            for i in (i for i in range(n) if not giro(i)):
+                frames[d][i] = {name: (np.where(izq[None, :, None], v, espejo_capa(v, k)) if v is not None else None)
+                                for name, v in frames[d][i].items()}
+    anim["_espejos"] = pares
+
+
+def espejar_normales(path, anim, size, model):
+    # Las celdas espejadas de la hoja de normales: misma copia y el canal X (rojo) invertido / mirrored normal cells
+    sheet = np.array(Image.open(path).convert("RGBA")); k = eje_espejo(model, size)
+    if anim.get("_origen") and anim["_origen"] != list(range(len(anim["_origen"]))): return  # fundida: no se toca
+    for d0, i, d1, j in anim["_espejos"]:
+        r0, r1 = DIRS.index(d0), DIRS.index(d1)
+        c = espejo_capa(sheet[r0 * size:(r0 + 1) * size, i * size:(i + 1) * size], k)
+        c[..., 0] = np.where(c[..., 3] > 0, 255 - c[..., 0], 0)
+        sheet[r1 * size:(r1 + 1) * size, j * size:(j + 1) * size] = c
+    Image.fromarray(sheet).save(path)
+
+
 def fundir(anim, frames, dirs):
     # Cuadros seguidos con los mismos píxeles en todas las direcciones se funden y suman su duración (la hoja comparte
     # duraciones entre filas); anim["_origen"] guarda qué cuadro renderizado quedó / consecutive frames with the same
@@ -606,16 +799,22 @@ def cmd_frames(args):
                 if parts:
                     ids = np.array(Image.open(p[:-4] + "_id.png").convert("RGBA")) if d in dirs else np.zeros((size, size, 4), np.uint8)
                     if img.shape[0] != size: img, ids = reduce_frame(img, ids, parts, model, size, p, args.normales)
-                    frames[d].append(layers_parts(img, ids, parts, fm, model, size, d in ("south", "north"), fx, pal, margin))
+                    lay = layers_parts(img, ids, parts, fm, model, size, d in ("south", "north"), fx, pal, margin)
+                    if model.get("limpiar_huerfanos"): lay = limpiar_huerfanos(lay)
+                    if model.get("retoques"): lay = retocar(lay, fm, d, model, anim["nombre"])
+                    frames[d].append(lay)
                 else:
                     frames[d].append(layers(img, size, d in ("south", "north"), fx, pal, margin))
+        if anim.get("espejar_oeste") or anim.get("espejar_ciclo") or anim.get("simetrico"): espejar(anim, frames, meta, model, size)
         if anim.get("fundir") or getattr(args, "fundir", False): fundir(anim, frames, dirs)
         base = export(anim, frames, args.salida, prefix)
         report = {k: v for k, v in meta.items() if k.startswith(anim["nombre"] + "_")}
         if parts: report["partes"] = parts
         json.dump(report, open(base + "_marcadores.json", "w"), indent=0)
         if args.esqueleto: export_skeleton(anim, frames, meta, args.esqueleto)
-        if args.normales: normal_sheet(anim, frames, raw, base, dirs)
+        if args.normales:
+            normal_sheet(anim, frames, raw, base, dirs)
+            if anim.get("_espejos"): espejar_normales(base + "_normales.png", anim, size, model)
         print("ok", base)
         done[anim["nombre"]] = (anim, frames, base)
     return done, meta, raw

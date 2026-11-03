@@ -19,6 +19,8 @@ os.makedirs(OUT, exist_ok=True)
 TILT = math.radians(MODEL.get("inclinacion_camara", 22))
 YAW = {"south": 0, "east": 90, "north": 180, "west": -90}
 DIR_OF = {v: k for k, v in YAW.items()}
+# Sprites que acepta una proyección: las 4 direcciones y las diagonales / sprites a projection accepts: 4 dirs and diagonals
+PROY_YAW = {**YAW, "south-east": 45, "north-east": 135, "north-west": -135, "south-west": -45}
 mode = JOB.get("modo", "cuadros")
 # "prioridad": color e IDs a ×SUPER y rig3d.py achica por bloques (solo con partes, en "prioridad_en" o en todas)
 # "prioridad": colour and IDs at ×SUPER, rig3d.py reduces them by blocks (parts only, in "prioridad_en" or all)
@@ -54,7 +56,7 @@ def lin(c):
     return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
 
 
-def ramp_material(name, tones, cuts, sesgo=False):
+def ramp_material(name, tones, cuts, sesgo=False, fijo=False):
     # Difuso -> RGB -> rampa constante de 3 tonos -> emisión / diffuse -> RGB -> 3-step constant ramp -> emission
     # sesgo: suma el atributo "sesgo" de la malla a la luz antes de la rampa (sombra pintada, GGXrd); en una rampa
     # plana la luz vale 1 y el sesgo la baja / adds the mesh "sesgo" attribute to the light before the ramp (painted
@@ -96,6 +98,15 @@ def ramp_material(name, tones, cuts, sesgo=False):
         mul = nt.nodes.new("ShaderNodeMath"); mul.operation = "MULTIPLY"
         nt.links.new(light, mul.inputs[0]); nt.links.new(k.outputs[0], mul.inputs[1])
         nt.links.new(mul.outputs[0], ramp.inputs[0]); light = mul.outputs[0]
+    if fijo:
+        # Zonas de tono fijo (sesgo_sombra con "fijar"): luz · (1 - peso) + peso · v / fixed-tone zones
+        am = nt.nodes.new("ShaderNodeAttribute"); am.attribute_name = "fijo_m"
+        av = nt.nodes.new("ShaderNodeAttribute"); av.attribute_name = "fijo_v"
+        inv = nt.nodes.new("ShaderNodeMath"); inv.operation = "SUBTRACT"; inv.inputs[0].default_value = 1.0
+        nt.links.new(am.outputs["Fac"], inv.inputs[1])
+        mix = nt.nodes.new("ShaderNodeMath"); mix.operation = "MULTIPLY_ADD"
+        nt.links.new(light, mix.inputs[0]); nt.links.new(inv.outputs[0], mix.inputs[1]); nt.links.new(av.outputs["Fac"], mix.inputs[2])
+        light = mix.outputs[0]; nt.links.new(light, ramp.inputs[0])
     if sesgo:
         at = nt.nodes.new("ShaderNodeAttribute"); at.attribute_name = "sesgo"
         add = nt.nodes.new("ShaderNodeMath"); add.operation = "ADD"
@@ -106,30 +117,38 @@ def ramp_material(name, tones, cuts, sesgo=False):
     return m, nt, ramp
 
 
-def projected_material(name, spec, tones, cuts):
+def projected_material(name, spec, tones, cuts, reposo=False):
     # Las coordenadas de objeto ya son las del modelo en reposo: add_part aplica también la posición
     # Object coordinates already are rest-model coordinates: add_part also applies the location
     # Pinta los píxeles de los sprites de referencia sobre la pieza, cada uno desde su dirección de cámara;
     # donde el sprite es transparente queda el material con rampa. / Paints the reference sprites' pixels onto
     # the part, each from its camera direction; where the sprite is transparent the ramp material stays.
+    # reposo (partes de malla): posición y normal del reposo ("p_reposo"/"n_reposo"), así el dibujo sigue a la malla
+    # deformada; "zoom": px por unidad, como el de la animación / mesh parts use the rest position and normal
     m, nt, ramp = ramp_material(name, tones, cuts)
     em = next(n for n in nt.nodes if n.type == "EMISSION")
     tc = nt.nodes.new("ShaderNodeTexCoord")
-    size, ground = spec["lienzo"], spec["suelo_y"]
+    coord, normal = tc.outputs["Object"], tc.outputs["Normal"]
+    if reposo:
+        ap = nt.nodes.new("ShaderNodeAttribute"); ap.attribute_name = "p_reposo"
+        an = nt.nodes.new("ShaderNodeAttribute"); an.attribute_name = "n_reposo"
+        nn = nt.nodes.new("ShaderNodeVectorMath"); nn.operation = "NORMALIZE"; nt.links.new(an.outputs["Vector"], nn.inputs[0])
+        coord, normal = ap.outputs["Vector"], nn.outputs[0]
+    size, ground, zoom = spec["lienzo"], spec["suelo_y"], spec.get("zoom", 1.0)
     colour = alpha = weight = None
     for d, path in spec["sprites"].items():
-        y = math.radians(YAW[d])
+        y = math.radians(PROY_YAW[d])
         img = bpy.data.images.load(path, check_existing=True)
         tex = nt.nodes.new("ShaderNodeTexImage"); tex.image = img
         tex.interpolation = "Closest"; tex.extension = "CLIP"
-        au = Vector((math.cos(y), -math.sin(y), 0)) / size
-        av = Vector((math.sin(TILT) * math.sin(y), math.sin(TILT) * math.cos(y), 1)) / size
-        bu = 0.5
+        au = Vector((math.cos(y), -math.sin(y), 0)) * zoom / size
+        av = Vector((math.sin(TILT) * math.sin(y), math.sin(TILT) * math.cos(y), 1)) * zoom / size
+        bu = 0.5 + MODEL.get("desfase_x", 0) / size  # el sprite se corre con la figura / the sprite shifts with the figure
         bv = 1 - (ground + 0.5) / size
         uv = []
         for a, b in ((au, bu), (av, bv)):
             dot = nt.nodes.new("ShaderNodeVectorMath"); dot.operation = "DOT_PRODUCT"
-            dot.inputs[1].default_value = a; nt.links.new(tc.outputs["Object"], dot.inputs[0])
+            dot.inputs[1].default_value = a; nt.links.new(coord, dot.inputs[0])
             add = nt.nodes.new("ShaderNodeMath"); add.operation = "ADD"; add.inputs[1].default_value = b
             nt.links.new(dot.outputs["Value"], add.inputs[0]); uv.append(add)
         comb = nt.nodes.new("ShaderNodeCombineXYZ")
@@ -138,10 +157,12 @@ def projected_material(name, spec, tones, cuts):
         # Peso: cuánto mira la superficie a este proyector, afilado / weight: how much the surface faces it, sharpened
         view = Vector((math.sin(y) * math.cos(TILT), math.cos(y) * math.cos(TILT), -math.sin(TILT) * math.cos(TILT)))
         face = nt.nodes.new("ShaderNodeVectorMath"); face.operation = "DOT_PRODUCT"
-        face.inputs[1].default_value = -view; nt.links.new(tc.outputs["Normal"], face.inputs[0])
+        face.inputs[1].default_value = -view; nt.links.new(normal, face.inputs[0])
         pos = nt.nodes.new("ShaderNodeMath"); pos.operation = "MAXIMUM"; pos.inputs[1].default_value = 0.0
         nt.links.new(face.outputs["Value"], pos.inputs[0])
-        w = nt.nodes.new("ShaderNodeMath"); w.operation = "POWER"; w.inputs[1].default_value = 8.0
+        # "afilado": potencia del peso (8); más alto, cada punto toma casi solo el sprite que más lo mira
+        # weight power (8); higher, each point takes almost only its most facing sprite
+        w = nt.nodes.new("ShaderNodeMath"); w.operation = "POWER"; w.inputs[1].default_value = spec.get("afilado", 8.0)
         nt.links.new(pos.outputs[0], w.inputs[0])
         wc = nt.nodes.new("ShaderNodeVectorMath"); wc.operation = "SCALE"
         nt.links.new(tex.outputs["Color"], wc.inputs[0]); nt.links.new(w.outputs[0], wc.inputs["Scale"])
@@ -156,7 +177,9 @@ def projected_material(name, spec, tones, cuts):
             nt.links.new(alpha, s2.inputs[0]); nt.links.new(wa.outputs[0], s2.inputs[1]); alpha = s2.outputs[0]
             s3 = nt.nodes.new("ShaderNodeMath"); s3.operation = "ADD"
             nt.links.new(weight, s3.inputs[0]); nt.links.new(w.outputs[0], s3.inputs[1]); weight = s3.outputs[0]
-    safe = nt.nodes.new("ShaderNodeMath"); safe.operation = "MAXIMUM"; safe.inputs[1].default_value = 1e-6
+    # "piso": peso total mínimo; con "afilado" alto hay que bajarlo (1e-30) o lo que mira de costado pierde el dibujo
+    # minimum total weight; with a high "afilado" lower it, or grazing faces lose the drawing
+    safe = nt.nodes.new("ShaderNodeMath"); safe.operation = "MAXIMUM"; safe.inputs[1].default_value = spec.get("piso", 1e-6)
     nt.links.new(weight, safe.inputs[0])
     inv = nt.nodes.new("ShaderNodeMath"); inv.operation = "DIVIDE"; inv.inputs[0].default_value = 1.0
     nt.links.new(safe.outputs[0], inv.inputs[1])
@@ -228,14 +251,21 @@ def mesh_part(m):
     # Normales propias (de un proxy): se guardan relativas a la cara, así siguen a la deformación
     # Own normals (from a proxy): stored relative to the face, so they follow the deformation
     if m.get("normales"): me.normals_split_custom_set_from_vertices(m["normales"])
-    spec = MODEL["rampas"].get(m["material"])
-    if isinstance(spec, dict) and spec.get("normales_reposo"):
+    # "proy:<clave>" en una parte: los sprites de "proyecciones" pintados desde el reposo / reference sprites from rest
+    proy = MODEL["proyecciones"][m["material"][5:]] if m["material"].startswith("proy:") else None
+    spec = MODEL["rampas"].get(proy["base"] if proy else m["material"])
+    if proy:
+        at = me.attributes.new("p_reposo", "FLOAT_VECTOR", "POINT"); at.data.foreach_set("vector", [c for v in m["v"] for c in v])
+    if proy or (isinstance(spec, dict) and spec.get("normales_reposo")):
         n = m.get("normales") or [v.vector[:] for v in me.vertex_normals]
         at = me.attributes.new("n_reposo", "FLOAT_VECTOR", "POINT"); at.data.foreach_set("vector", [c for v in n for c in v])
     o = bpy.data.objects.new(m["nombre"], me); scene.collection.objects.link(o)
-    if m.get("sesgo"):  # material propio con el sesgo de sombra por vértice / own material with the per-vertex shadow bias
+    if m.get("sesgo") and not proy:  # material propio con el sesgo de sombra por vértice / own material with the per-vertex shadow bias
         at = me.attributes.new("sesgo", "FLOAT", "POINT"); at.data.foreach_set("value", m["sesgo"])
-        me.materials.append(ramp_material(f"{m['material']}_{m['nombre']}", MODEL["rampas"][m["material"]], cuts, True)[0])
+        for k, name in enumerate(("fijo_m", "fijo_v")):
+            if m.get("fijo"): me.attributes.new(name, "FLOAT", "POINT").data.foreach_set("value", [f[k] for f in m["fijo"]])
+        me.materials.append(ramp_material(f"{m['material']}_{m['nombre']}", MODEL["rampas"][m["material"]], cuts, True, bool(m.get("fijo")))[0])
+    elif proy: me.materials.append(projected_material(f"{m['material'][5:]}_{m['nombre']}", proy, spec, cuts, True))
     else: me.materials.append(MATS[m["material"]])
     if m.get("mecha"):
         at = me.attributes.new("mecha", "FLOAT", "POINT"); at.data.foreach_set("value", m["mecha"])
@@ -271,7 +301,9 @@ def canvas(size, zoom=1.0, margin=17):
     ground = size - margin - 2  # el último píxel del pie, contorno incluido, cae en la fila del ancla (64 - 17 = 47)
     R.resolution_x = R.resolution_y = size; cam.data.ortho_scale = size / zoom
     below = (ground + 0.5 - size / 2) / zoom
-    cam.location = Vector((0, -200 * math.cos(TILT), below / math.cos(TILT) + 200 * math.sin(TILT)))
+    # "desfase_x" (receta): px de pantalla que se corre la figura (-0,5: simétrica sobre la columna 31, como un sprite de
+    # ancho impar) / screen px the figure shifts (-0.5: symmetric about column 31, like an odd-width sprite)
+    cam.location = Vector((-MODEL.get("desfase_x", 0) / zoom, -200 * math.cos(TILT), below / math.cos(TILT) + 200 * math.sin(TILT)))
     return ground
 
 
@@ -331,6 +363,14 @@ def pose(frame, base_yaw):
             rot[axis] += math.radians(sign * value)
         PB[bone].rotation_euler = rot; PB[bone].scale = sc
         if b["tipo"] == "clavicula": PB[bone].location = loc
+    if MODEL.get("cuerpo", {}).get("piernas_al_suelo"):
+        # "piernas_al_suelo" (en cuerpo): baja cada pierna lo que la cámara la sube por estar más lejos que la otra
+        # (sen 22° filas por px de profundidad, medido en la raíz del muslo): de perfil las dos suelas pisan la misma
+        # fila y el cuadro c + n/2 es el c con la otra pierna / lowers each leg as much as the camera raises it for
+        # being farther than the other (measured at the thigh root): in profile both soles share the ground row
+        bpy.context.view_layer.update()
+        far = {b: (rig.matrix_world @ PB[b].head).y for b in ("thigh_L", "thigh_R") if b in PB}
+        for b, y in far.items(): PB[b].location = (0, (y - min(far.values())) * math.sin(TILT), 0)
     shown = set(frame.get("mostrar", []))
     # "mostrar_lejos": partes o grupos que se dibujan aunque tengan ocultar_lejos (la mano de la espada en el oeste)
     # "mostrar_lejos": parts or groups drawn even with ocultar_lejos (the sword hand in the west)
@@ -524,8 +564,12 @@ elif mode == "vistas":
             bpy.context.view_layer.update(); world = o.matrix_world.copy()
             o.parent = rig; o.parent_type = "BONE"; o.parent_bone = "neck"
             bpy.context.view_layer.update(); o.matrix_world = world  # conserva el lugar / keep its place
-    R.resolution_x = R.resolution_y = 512; cam.data.ortho_scale = 64
-    below = 47.5 - 32; cam.location = Vector((0, -200 * math.cos(TILT), below / math.cos(TILT) + 200 * math.sin(TILT)))
+    if "vistas" in MODEL:  # {"zoom", "margen_suela"}: encuadre de una figura que no mide 40 / framing for a figure not 40 tall
+        canvas(64, MODEL["vistas"].get("zoom", 1.0), MODEL["vistas"].get("margen_suela", 17))
+    else:
+        cam.data.ortho_scale = 64
+        below = 47.5 - 32; cam.location = Vector((0, -200 * math.cos(TILT), below / math.cos(TILT) + 200 * math.sin(TILT)))
+    R.resolution_x = R.resolution_y = 512
     R.filter_size = 1.5; scene.eevee.taa_render_samples = 16
     for name, yaw in (("frente", 0), ("tres_cuartos", 35), ("perfil", 90), ("espalda", 180)):
         pose({"raiz": {"giro": yaw}}, 0)
@@ -604,6 +648,9 @@ else:
         for p, o in PARTS:
             for sl, mat in zip(o.material_slots, saved[o.name]): sl.material = mat
 
+    # RIG3D_BLEND=<ruta>: guarda la escena armada (malla, huesos, cámara) para abrirla en Blender
+    # RIG3D_BLEND=<path>: saves the built scene (meshes, bones, camera) to open it in Blender
+    if os.environ.get("RIG3D_BLEND"): bpy.ops.wm.save_as_mainfile(filepath=os.environ["RIG3D_BLEND"])
     for anim in JOB["anims"]:
         size = anim.get("lienzo", 64); canvas(size, anim.get("zoom", 1.0), anim.get("margen_suela", 17))
         frames = anim["cuadros"]

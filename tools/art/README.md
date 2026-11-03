@@ -39,7 +39,7 @@ Guías: `art/guias/modelado.md` y `art/guias/animacion.md`. Los datos van en `ar
 
 | Script | Para qué |
 |---|---|
-| `rig3d.py` | `cuadros` renderiza animaciones y exporta hoja + JSON para `kit_sprite.gd` (sin efectos; la estela del corte va aparte en `_efectos.png`, con las mismas celdas), `.aseprite` con capas (efectos, personaje, contorno), GIF, hoja de revisión y marcadores; `vistas` saca vistas grandes del modelo; `ajuste` lo compara con las referencias; `sondeo` mide hacia dónde mueve cada canal. |
+| `rig3d.py` | `cuadros` renderiza animaciones y exporta hoja + JSON para `kit_sprite.gd` (sin efectos; la estela del corte va aparte en `_efectos.png`, con las mismas celdas), `.aseprite` con capas (efectos, personaje, contorno), GIF, hoja de revisión y marcadores; `vistas` saca vistas grandes del modelo; `ajuste` lo compara con las referencias; `sondeo` mide hacia dónde mueve cada canal. El `anchor` del JSON es una esquina de píxel, como lo lee `kit_sprite.gd` (`offset = -Vector2(feet_x, sole_y)`): `sole_y` es el borde de abajo de la fila de las suelas (62 con `margen_suela` 2) y `feet_x` la mitad del lienzo (32); con `desfase_x` -0,5 el eje de la figura queda medio píxel a la izquierda (columna 31), que no se arregla con offsets enteros. |
 | `rig3d_blender.py` | Corre dentro de Blender: arma el modelo, la proyección de los píxeles del artista, la cámara y las poses. |
 | `motion.py` | Expande claves a cuadros (lineal, entrada-salida o escalón) y ayuda con el movimiento secundario. |
 | `paquete_modelado.py` | Paquete de apoyo para modelar: `hoja` arma la hoja de giro medida (vistas a la misma escala con líneas de altura) desde `3d/paquete.json`; `guia` renderiza a 0° una malla de referencia (frente, perfil, espalda, arriba). |

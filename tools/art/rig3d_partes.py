@@ -73,7 +73,10 @@ def esqueleto(c):
             bone(f"ear_{s}", base, mid, "neck", "oreja"); bone(f"ear_tip_{s}", mid, tip, f"ear_{s}", "oreja")
     for s, k in SIDE.items():
         sh = (k * sx, sy, nb + sz); el = add(sh, (k * math.sin(a) * c["brazo"][0], 0, -math.cos(a) * c["brazo"][0]))
-        wr = add(el, (0, 0, -c["brazo"][1]))
+        # "apertura_antebrazo": grados del antebrazo hacia afuera en reposo (0 = vertical): la mano cuelga fuera de la
+        # cadera / forearm outward degrees at rest (0 = vertical): the hand hangs outside the hip
+        b = math.radians(c.get("apertura_antebrazo", 0))
+        wr = add(el, (k * math.sin(b) * c["brazo"][1], 0, -math.cos(b) * c["brazo"][1]))
         padre = "chest"
         if c.get("clavicula"):
             # Clavícula falsa (truco del doble codo): pivote vertical de "clavicula" px que termina en el hombro y solo
@@ -244,7 +247,14 @@ def p_cuerpo(s, M):
     # "tronco": false no genera el tronco que la ropa tapa siempre; queda el cuello con su anillo bajo el escote
     # "tronco": false skips the torso the clothes always cover; the neck stays with its ring under the neckline
     if s.get("tronco", True) is False: return tubo(neck, 10, (0, 0))
-    return unir(tubo(rings, 16, (0.7, 0)), tubo(neck, 10, (0, 0)))
+    # "hombro": hombro de piel que nace de la sisa, con las claves de la parte manga (sin "normales"); va en la malla
+    # del tronco, así no hay línea entre torso y brazo. Sin tronco (ropa encima) no se genera
+    # "hombro": skin shoulder born at the armhole, with the manga part keys (no "normales"); it lives in the torso mesh,
+    # so there is no line between torso and arm. Without the torso (clothes on top) it is skipped
+    hombros = [p_manga({**s["hombro"], "lado": l, "normales": None}, M) for l in SIDE] if s.get("hombro") else []
+    # "segmentos": lados del tronco (16 por defecto); más lados = menos facetas sueltas en la rampa
+    # "segmentos": torso sides (16 by default); more sides = fewer stray facets in the ramp
+    return unir(tubo(rings, s.get("segmentos", 16), (0.7, 0)), tubo(neck, 10, (0, 0)), *hombros)
 
 
 def p_brazo(s, M):
@@ -323,8 +333,15 @@ def p_cabeza(s, M):
     # Cráneo grande y mandíbula que se angosta hacia el mentón / big skull and a jaw that narrows to the chin
     h = M["cuerpo"]["cabeza"]; c = cabeza_centro(M); r = h["radios"]; jaw = h.get("mandibula", 0.4)
     n = h.get("cuadrar_abajo", 2.0)  # superelipse de la mitad de abajo: más de 2 da mejillas llenas / fuller cheeks above 2
+    # "cuadrar_arriba": superelipse solo a lo ancho (x) de la mitad de arriba: más de 2 da una tapa ancha de frente y
+    # redonda de perfil / superellipse across (x) only on the top half: a broad top from the front, round in profile
+    # En la parte pisa al del cuerpo: una cabeza por par de vistas (con "solo_en") / on the part it overrides the
+    # body's: one head per pair of views (with "solo_en")
+    na = s.get("cuadrar_arriba", h.get("cuadrar_arriba", 2.0))
     def deform(p, la, lo):
-        if la >= 0: return p
+        if la >= 0:
+            if na == 2: return p
+            return (c[0] + r[0] * math.cos(math.radians(la)) ** (2 / na) * math.cos(math.radians(lo)), p[1], p[2])
         if n != 2:
             cl, sl = math.cos(math.radians(la)) ** (2 / n), -(-math.sin(math.radians(la))) ** (2 / n)
             p = (c[0] + r[0] * cl * math.cos(math.radians(lo)), c[1] + r[1] * cl * math.sin(math.radians(lo)), c[2] + r[2] * sl)
@@ -872,10 +889,19 @@ def construir(s, M):
     if s.get("ocultar_lejos"):  # [lado, grados]: se oculta si ese costado mira lejos de la cámara / hidden facing away
         m["ocultar_lejos"] = [SIDE.get(lado, 1), s["ocultar_lejos"]]
     if s.get("solo_en"): m["solo_en"] = s["solo_en"]  # direcciones base donde se dibuja / base directions where it renders
-    if s.get("sesgo_sombra"): m["sesgo"] = sesgo_sombra(s, M, m["v"])
+    if s.get("sesgo_sombra"):
+        m["sesgo"] = sesgo_sombra(s, M, m["v"]); f = sesgo_fijo(s, M, m["v"])
+        if f: m["fijo"] = f
     if s["tipo"] == "lofteo" and s.get("pesos") == "pollera":
         m["pollera"] = True  # la usa el control de piernas dentro de la pollera / used by the legs-inside-skirt check
     return m
+
+
+def dentro(p, c, r, z):
+    # Punto dentro de la zona: elipsoide, o caja con "caja": true (bordes rectos, sin escalones entre anillos)
+    # Point inside the zone: ellipsoid, or a box with "caja": true (straight edges, no steps between rings)
+    if z.get("caja"): return all(abs(p[a] - c[a]) <= r[a] for a in range(3))
+    return sum(((p[a] - c[a]) / r[a]) ** 2 for a in range(3)) <= 1
 
 
 def sesgo_sombra(s, M, vs):
@@ -887,9 +913,26 @@ def sesgo_sombra(s, M, vs):
     if not isinstance(v, list): return [float(v)] * len(vs)
     k = SIDE.get(s.get("lado"), 1); out = [0.0] * len(vs)
     for z in v:
+        if "fijar" in z: continue  # zona de tono fijo: va en sesgo_fijo / fixed-tone zone: see sesgo_fijo
         c = anclar({**z, "lado": s.get("lado")}, M, (k * z["centro"][0], z["centro"][1], z["centro"][2])); r = z["radios"]
         for i, p in enumerate(vs):
-            if sum(((p[a] - c[a]) / r[a]) ** 2 for a in range(3)) <= 1: out[i] += z["valor"]
+            if dentro(p, c, r, z): out[i] += z["valor"]
+    return out
+
+
+def sesgo_fijo(s, M, vs):
+    # Zonas de "sesgo_sombra" con "fijar": v en vez de "valor": dentro del elipsoide la luz pasa a valer v (un tono
+    # fijo que no depende de la malla ni de la pose; el borde cruza un solo escalón). Devuelve [peso, peso·v] por vértice
+    # Zones with "fijar": v instead of "valor": inside, the light becomes v (a fixed tone, independent of the mesh and
+    # the pose; the edge crosses a single step). Returns [weight, weight·v] per vertex
+    v = s.get("sesgo_sombra")
+    if not isinstance(v, list) or not any("fijar" in z for z in v): return None
+    k = SIDE.get(s.get("lado"), 1); out = [[0.0, 0.0] for _ in vs]
+    for z in v:
+        if "fijar" not in z: continue
+        c = anclar({**z, "lado": s.get("lado")}, M, (k * z["centro"][0], z["centro"][1], z["centro"][2])); r = z["radios"]
+        for i, p in enumerate(vs):
+            if dentro(p, c, r, z): out[i] = [1.0, float(z["fijar"])]
     return out
 
 

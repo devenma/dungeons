@@ -299,6 +299,17 @@ def test_contorno_contra():
     assert rig3d.contorno_contra_fondo(line, part, parts, model)[0, 0].tolist() == [47, 42, 44, 255]
 
 
+def test_sin_contorno():
+    # La nariz (parte 1) pierde el contorno que solo la toca a ella; el que también toca la cara queda
+    # The nose (part 1) loses the outline touching only it; the one also touching the face stays
+    import rig3d
+    part = np.array([[0, -1, -1], [0, 1, -1], [0, -1, -1]]); o = part < 0
+    parts = [{"nombre": "cabeza"}, {"nombre": "nariz"}]
+    out = rig3d.sin_contorno(o, part, parts, {"partes": [{"nombre": "nariz", "sin_contorno": True}]})
+    assert not out[1, 2] and out[0, 1] and out[2, 1], out
+    assert (rig3d.sin_contorno(o, part, parts, {"partes": []}) == o).all()
+
+
 def test_achicar_prioridad():
     # Bloque 4×4: la mano con 4 sub-píxeles le gana a la pollera con 12; sin prioridad gana la que más cubre, y el vacío
     # gana los empates / 4×4 block: the hand with 4 sub-pixels beats the skirt with 12; without priority the larger
@@ -358,6 +369,93 @@ def test_sesgo_y_miton():
     assert m["sesgo"] == [-0.3] * len(m["v"]) and "sesgo" not in RP.construir({**s, "lado": "L"}, M)
 
 
+def test_sesgo_fijar_y_espejar():
+    # Zona "fijar": [peso, peso·v] dentro y [0, 0] fuera, sin sumar al sesgo. Espejo: x -> 62 - x con desfase -0,5; el
+    # oeste y el cuadro c + n/2 salen espejados con sus marcadores / "fijar" zone weights; mirror about column 31
+    import rig3d, rig3d_partes as RP
+    M = {"huesos": RP.esqueleto({"mano_hueso": True}), "cuerpo": {}}
+    s = {"tipo": "miton", "nombre": "m", "material": "piel", "hueso": "hand_L", "pos": [1.0, 0, 0], "lado": "L",
+         "relativo": ["fore_<lado>", "cola"], "radios": [0.5, 1.0, 1.0],
+         "sesgo_sombra": [{"fijar": 0.3, "centro": [1.0, 0, 1.0], "radios": [3, 3, 1.0], "relativo": ["fore_<lado>", "cola"]}]}
+    m = RP.construir(s, M); wr = M["huesos"]["fore_L"]["cola"]
+    assert all(b == 0.0 for b in m["sesgo"])
+    assert all(f == ([1.0, 0.3] if v[2] - wr[2] > 0.2 else [0.0, 0.0]) for v, f in zip(m["v"], m["fijo"]) if abs(v[2] - wr[2]) > 0.2)
+    assert rig3d.eje_espejo({"desfase_x": -0.5}, 64) == 62 and rig3d.eje_espejo({}, 64) == 63
+    a = np.zeros((64, 64, 4), np.uint8); a[5, 20] = 255
+    fr = {d: [{"Cuerpo": a.copy()}, {"Cuerpo": a.copy()}] for d in rig3d.DIRS}
+    meta = {"c_east_0": {"marcadores": {"pie": [20.5, 5.0]}}}
+    rig3d.espejar({"nombre": "c", "espejar_oeste": True, "espejar_ciclo": True}, fr, meta, {"desfase_x": -0.5}, 64)
+    assert fr["west"][0]["Cuerpo"][5, 42, 3] == 255 and fr["south"][1]["Cuerpo"][5, 42, 3] == 255
+    assert meta["c_west_0"]["marcadores"]["pie"] == [42.5, 5.0]
+
+
+def test_huerfanos_y_retoques():
+    # Huérfano: un píxel de relleno rodeado de un solo color toma ese color (ojos y contorno no se tocan). Retoque: sello
+    # sobre el ojo de perfil; "_" borra en todas las capas, "solo_relleno" no pinta sobre contorno, "anims" filtra
+    # Orphan fill pixel takes its neighbours' colour; stamp on the profile eye erases, paints fill only, filters anims
+    import rig3d
+    a = np.zeros((64, 64, 4), np.uint8); a[10:15, 10:15] = (200, 100, 50, 255); a[12, 12] = (90, 40, 20, 255)
+    o = np.zeros_like(a); o[12, 9] = (60, 30, 20, 255)
+    out = rig3d.limpiar_huerfanos({"Cuerpo": a, "Contorno": o})
+    assert tuple(out["Cuerpo"][12, 12]) == (200, 100, 50, 255) and tuple(out["Contorno"][12, 9]) == (60, 30, 20, 255)
+    assert rig3d.limpiar_huerfanos({"Cuerpo": a, "Ojos": np.where((np.arange(64) == 12)[:, None, None] & (np.arange(64) == 12)[None, :, None], a, 0).astype(np.uint8)})["Cuerpo"][12, 12, 0] == 90
+    model = {"retoques": [{"vistas": ["east"], "ancla": "ojo_R", "origen": [1, 0], "colores": {"o": [1, 2, 3]}, "px": ["_o"]},
+                          {"vistas": ["east"], "ancla": "cadera", "origen": [0, 0], "solo_relleno": True, "anims": ["reposo"],
+                           "colores": {"m": [9, 9, 9]}, "px": ["mm"]}]}
+    fm = {"giro": 90, "ojos": {"R": [12.9, 11.6]}, "marcadores": {"cadera": [13.2, 12.0]}}
+    lay = {"Cuerpo": a.copy(), "Contorno": np.zeros_like(a)}; lay["Contorno"][12, 14] = (60, 30, 20, 255)
+    out = rig3d.retocar(lay, fm, "east", model, "reposo")
+    assert out["Cuerpo"][12, 11, 3] == 0 and out["Retoques"][12, 11, 3] == 0 and tuple(out["Retoques"][12, 12, :3]) == (1, 2, 3)
+    assert tuple(out["Retoques"][12, 13, :3]) == (9, 9, 9) and out["Retoques"][12, 14, 3] == 0  # no pinta el contorno
+    assert list(rig3d.flatten(out)[12, 12, :3]) == [1, 2, 3] and "Retoques" == list(out)[-1]
+    assert rig3d.retocar(lay, fm, "east", model, "caminar")["Retoques"][12, 13, 3] == 0  # "anims" / filtered
+    assert "Retoques" not in rig3d.retocar(lay, {**fm, "giro": 135}, "east", model, "x")  # fuera de la vista / off view
+    # La cabeza girada a 135° (mira atrás) no lleva el sello del ojo; el de la cadera sí / head turned away: no eye stamp
+    out = rig3d.retocar(lay, {**fm, "ojos": {**fm["ojos"], "giro": 135}}, "east", model, "reposo")
+    assert out["Retoques"][12, 12, 3] == 0 and tuple(out["Retoques"][12, 13, :3]) == (9, 9, 9)
+
+
+def test_cuadrar_arriba():
+    # "cuadrar_arriba" ensancha solo en x la mitad de arriba del cráneo; y, z y la mitad de abajo no cambian
+    # widens only x on the skull's top half; y, z and the bottom half stay
+    import rig3d_partes as RP
+    cab = {"centro": [0, 0, 6], "radios": [5.0, 5.0, 6.0]}
+    M = {"huesos": RP.esqueleto({}), "cuerpo": {"cabeza": cab}}
+    a = RP.p_cabeza({}, M)["v"]; M["cuerpo"]["cabeza"] = {**cab, "cuadrar_arriba": 3.0}; b = RP.p_cabeza({}, M)["v"]
+    cz = RP.cabeza_centro(M)[2]
+    for p, q in zip(a, b):
+        assert abs(p[1] - q[1]) < 1e-9 and abs(p[2] - q[2]) < 1e-9
+        if p[2] < cz - 1e-6: assert abs(p[0] - q[0]) < 1e-9
+        else: assert abs(q[0]) >= abs(p[0]) - 1e-9
+    assert max(abs(q[0]) - abs(p[0]) for p, q in zip(a, b)) > 0.3
+    assert RP.p_cabeza({"cuadrar_arriba": 3.0}, {**M, "cuerpo": {"cabeza": cab}})["v"] == b  # en la parte / on the part
+
+
+def test_hombro_piel():
+    # "hombro" en el cuerpo: dos hombros desde la sisa en la malla del tronco, pesados al brazo de su lado; sin tronco
+    # (ropa encima) no se generan / two armhole shoulders in the torso mesh, weighted to their arm; skipped without torso
+    import rig3d_partes as RP
+    c = json.load(open(os.path.join(ROOT, "art", "source", "modulos", "cuerpo", "chibi_mujer.json")))["cuerpo"]
+    M = {"huesos": RP.esqueleto(c), "cuerpo": c}
+    h = {"sisa": [2.6, -1.0, 1.4, 2.0], "radios": [[0.0, 1.6, 1.4], [0.45, 1.3, 0.9]]}
+    solo, con = RP.p_cuerpo({}, M), RP.p_cuerpo({"hombro": h}, M)
+    extra = con["v"][len(solo["v"]):]; w = con["w"][len(solo["v"]):]
+    assert extra and any(v[0] > 4 for v in extra) and any(v[0] < -4 for v in extra)
+    assert any("upper_L" in x for x in w) and any("upper_R" in x for x in w)
+    assert len(RP.p_cuerpo({"hombro": h, "tronco": False}, M)["v"]) == len(RP.p_cuerpo({"tronco": False}, M)["v"])
+
+
+def test_rellenar_huecos():
+    # "rellenar_huecos": un hueco encerrado chico toma el color del contorno vecino; uno más grande o abierto al borde no
+    # A small enclosed hole takes the neighbouring outline colour; a bigger one or one open to the border does not
+    import rig3d
+    comp = np.zeros((12, 12, 4), np.uint8); line = np.zeros_like(comp)
+    line[2:9, 2:9] = (122, 88, 76, 255); line[4, 3] = 0; line[4:8, 6] = 0  # huecos de 1 y 4 px / 1 and 4 px holes
+    out = rig3d.rellenar_huecos(line, comp, 3)
+    assert tuple(out[4, 3]) == (122, 88, 76, 255) and out[5, 6, 3] == 0 and out[0, 0, 3] == 0
+    assert rig3d.rellenar_huecos(line, comp, 4)[5, 6, 3] == 255
+
+
 def test_skin_counts():
     import rig3d
     ids = np.zeros((10, 4, 4), np.uint8); ids[..., 3] = 255
@@ -415,6 +513,77 @@ def test_paquete_hoja_guias():
     y = (60 - 10) * pm.SCALE + 40
     assert tuple(out[y, 5]) == pm.GUIDE, tuple(out[y, 5])  # la guía cruza a la altura pedida / guide at its row
     assert out.shape[0] == 100 * pm.SCALE + 60, out.shape
+
+
+def test_flora_suelo():
+    import flora
+    preset = json.load(open(os.path.join(ROOT, "art", "source", "flora", "pradera.json"), encoding="utf-8"))
+    preset["variantes"] = {"pasto": 3, "tierra": 2}
+    preset["densidad"].update(pasto_corto=9, borde_horneadas=3)  # el preset ya no hornea; el test sí / test bakes
+    # Mata horneada sintética de 4 cuadros (sin Blender): la punta se corre / synthetic 4-frame baked tuft, tip moves
+    P = flora.Palette(preset["rampas"])
+    tuft = np.full((5, 3), flora.EMPTY); tuft[1:, 1] = P("hoja_pasto", 1); tuft[0, 0] = P("hoja_pasto", 3)
+    moved = tuft.copy(); moved[0] = flora.EMPTY; moved[0, 1] = P("hoja_pasto", 3)
+    baked = {"pasto_corto": [{"img": tuft, "frames": [tuft, moved, moved, tuft], "pivot": (1, 4)}]}
+    s = flora.Suelo(preset, baked=baked)
+    tiles = s.wang()
+    frames = {k: [t["cuadros"] for t in v] for k, v in tiles.items()}
+    assert len(frames["UUUU"][0]) == 4 and any(not np.array_equal(f[0], f[1]) for f in frames["UUUU"])
+    again = flora.Suelo(preset, baked=baked).wang()
+    assert all(np.array_equal(frames[k][i][c], t["cuadros"][c]) for k, v in again.items() for i, t in enumerate(v)
+               for c in range(4)), "misma semilla, mismo suelo / same seed, same ground"
+    other = flora.Suelo(preset, seed=preset["semilla"] + 1, baked=baked).wang()
+    assert not np.array_equal(frames["UUUU"][0][0], other["UUUU"][0]["cuadros"][0])
+    # Los tiles animan sincronizados: se compara cuadro a cuadro / tiles animate in sync: compared frame by frame
+    comp = {(k, c): [fs[c] for fs in v] for k, v in frames.items() for c in range(4)}
+    # Sin costura: la franja de 2 px de cada borde depende solo de las dos esquinas de ese borde, en cualquier variante
+    # Seamless: each edge's 2 px band depends only on that edge's two corners, in any variant
+    sides = {"W": ((0, 2), (np.s_[:], np.s_[:2])), "E": ((1, 3), (np.s_[:], np.s_[-2:])),
+             "N": ((0, 1), (np.s_[:2], np.s_[:])), "S": ((2, 3), (np.s_[-2:], np.s_[:]))}
+    for side, ((a, b), cut) in sides.items():
+        groups = {}
+        for k, v in comp.items():
+            for img in v: groups.setdefault((k[0][a] + k[0][b], k[1]), []).append(img[cut])
+        for pair, strips in groups.items():
+            assert all(np.array_equal(strips[0], x) for x in strips), f"borde {side} {pair} no empalma / doesn't match"
+    # El pasto/tierra cruza el borde en el mismo lugar de los dos lados / grass/dirt crosses each edge at the same spot
+    for k, v in tiles.items():
+        for k2, v2 in tiles.items():
+            if k[1] + k[3] == k2[0] + k2[2]: assert np.array_equal(v[0]["grass"][:, -1], v2[0]["grass"][:, 0]), (k, k2)
+    # Solo colores de la paleta / palette colours only
+    pal = {tuple(c) for c in s.P.rgb}
+    for v in comp.values():
+        for img in v:
+            rgba = s.P.rgba(img)
+            assert {tuple(c) for c in rgba[rgba[..., 3] > 0][:, :3].tolist()} <= pal
+
+
+def test_flora_disco_poisson():
+    import flora
+    mask = np.zeros((60, 90), bool); mask[:, :70] = True
+    wanted = [("alta", 6, 14), ("chica", 60, 6)]
+    a = flora.blue_noise(flora.rng(3, "p"), mask, wanted, keep_out=[(10, 10, 12)])
+    assert a == flora.blue_noise(flora.rng(3, "p"), mask, wanted, keep_out=[(10, 10, 12)])  # determinista
+    dist = {"alta": 14, "chica": 6, "fuera": 12}
+    pts = a + [("fuera", 10, 10)]
+    for i, (n1, x1, y1) in enumerate(pts):
+        assert n1 == "fuera" or mask[y1, x1]  # solo sobre la máscara / on the mask only
+        for n2, x2, y2 in pts[i + 1:]:
+            assert np.hypot(x1 - x2, y1 - y2) >= (dist[n1] + dist[n2]) / 2, (n1, x1, y1, n2, x2, y2)
+    assert sum(n == "chica" for n, _, _ in a) > 30  # llena, no se queda en un puñado / fills up
+    assert flora.wind_frame(0, 0.0, [400, 200, 200, 200]) == 0 and flora.wind_frame(500, 0.0, [400, 200, 200, 200]) == 1
+    assert flora.wind_frame(0, 0.65, [400, 200, 200, 200]) == 2  # la fase corre el ciclo / the phase shifts the cycle
+
+
+def test_flora_reduccion_y_viento():
+    import flora
+    pal = np.array([[10, 10, 10], [200, 200, 200]])
+    hi = np.zeros((32, 32, 4), np.uint8); hi[8:24, 12:16] = (200, 200, 200, 255); hi[8:10, 12:13] = (10, 10, 10, 255)
+    ind = flora.reduce_block(hi, pal)
+    assert ind.shape == (8, 8) and (ind[2:6, 3] == 1).all() and (ind >= 0).sum() == 4  # el tono mayoritario gana
+    stalk = np.full((10, 5), flora.EMPTY); stalk[1:10, 2] = 1
+    moved = flora.sway(stalk, 0, 1)
+    assert (moved[1:4, 3] == 1).all() and (moved[7:, 2] == 1).all()  # se mueve la punta, la base queda / tip moves, base stays
 
 
 if __name__ == "__main__":

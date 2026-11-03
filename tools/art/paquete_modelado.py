@@ -11,14 +11,15 @@ SCALE = 3  # aumento de la hoja medida (entero) / sheet zoom (integer)
 GUIDE = (0, 140, 255)
 
 
-def game_row(row, suela, tope, alto=40):
-    # Fila de juego estimada: la suela cae en 47 y de `tope` a `suela` hay `alto` px / estimated game row
-    return round(47 - (suela - row) * alto / (suela - tope), 1)
+def game_row(row, suela, tope, alto=40, fila=47):
+    # Fila de juego estimada: la suela cae en `fila` y de `tope` a `suela` hay `alto` px / estimated game row
+    return round(fila - (suela - row) * alto / (suela - tope), 1)
 
 
 def hoja(cfg, base_dir, out_png):
     # cfg: giro (ruta relativa al paquete), filas [arriba, abajo], suela, tope, vistas {nombre: [x0, x1]},
     # guias [[fila, nombre], ...]; todas las filas y columnas son de la hoja de giro / rows and columns of the sheet
+    # Opcionales: "alto" (px de la figura en el juego, 40) y "fila_suela" (47) / optional: figure height and sole row
     from PIL import Image, ImageDraw, ImageFont
     im = Image.open(os.path.join(base_dir, cfg["giro"])).convert("RGB")
     top, bot = cfg["filas"]
@@ -37,7 +38,7 @@ def hoja(cfg, base_dir, out_png):
     for row, name in cfg["guias"]:
         y = (row - top) * SCALE + 40
         d.line([(0, y), (x - 10, y)], fill=GUIDE, width=1)
-        d.text((x, y - 9), f"{name}  (fila juego ~{game_row(row, cfg['suela'], cfg['tope'])})", fill=(0, 90, 200), font=font)
+        d.text((x, y - 9), f"{name}  (fila juego ~{game_row(row, cfg['suela'], cfg['tope'], cfg.get('alto', 40), cfg.get('fila_suela', 47))})", fill=(0, 90, 200), font=font)
     out.save(out_png)
     return out_png
 
