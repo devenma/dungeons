@@ -1,7 +1,7 @@
 {
  "nombre": "caminar",
  "bucle": true,
- "lienzo": 64,
+ "lienzo": 80,
  "margen_suela": 2,
  "pixel_pantalla": true,
  "duraciones_ms": [

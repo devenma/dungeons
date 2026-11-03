@@ -269,7 +269,7 @@ def build():
     frames += [mirror(f) for f in frames]
     frames = por_direccion(frames)
     for f in frames: f.pop("_apoyo"); f.pop("_i")
-    return {"nombre": "caminar", "bucle": True, "lienzo": 64, "margen_suela": 2, "pixel_pantalla": True,
+    return {"nombre": "caminar", "bucle": True, "lienzo": 80, "margen_suela": 2, "pixel_pantalla": True,
             "duraciones_ms": [MS] * len(frames), "velocidad_px_s": SPEED, "espejar_oeste": True, "espejar_ciclo": True,
             "cabeza_fija": ["east"],  # la cabeza de perfil no tiembla (limpieza de rig3d) / steady profile head
             "cuadros": frames,
