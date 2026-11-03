@@ -1,4 +1,5 @@
 {
+  "pieza": {"id": "maid_vestido", "tipo": "equipo", "ocupa": ["torso", "piernas"], "tags": ["maid"]},
   "rampas": {
     "vestido": {"tonos": [[20, 18, 24], [36, 32, 40], [58, 53, 66]], "umbrales": [0.05, 0.3]},
     "vestido_pollera": {"tonos": [[20, 18, 24], [36, 32, 40], [58, 53, 66]], "umbrales": [0.1, 0.38], "normales_reposo": true},

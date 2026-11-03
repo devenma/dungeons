@@ -1,4 +1,5 @@
 {
+  "pieza": {"id": "ojos_verdes", "tipo": "personalizacion", "ocupa": ["ojos"], "tags": []},
   "cuerpo": {
     "cabeza": {
       "radios": [5.6, 7.15, 6.4],

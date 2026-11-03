@@ -106,9 +106,23 @@ def read_recipe(path):
     if ref:
         for s in model.get("partes", []): s.setdefault("craneo", ref)
         if "orejas" in model.get("cuerpo", {}): model["cuerpo"].setdefault("orejas_craneo", ref)
+    # "pieza": {"id", "tipo", "ocupa": [slots], "tags"}: qué es el fragmento como ítem; no se mezcla, se junta en
+    # "_piezas" y dos piezas no pueden ocupar el mismo slot / what the fragment is as an item; not merged, collected
+    # into "_piezas", and two pieces cannot take the same slot
+    piezas = [model.pop("pieza")] if "pieza" in model else []
     out = {}
-    for inc in model.pop("incluir", []): out = merge_recipe(out, read_recipe(os.path.join(base, inc)))
-    return merge_recipe(out, model)
+    for inc in model.pop("incluir", []):
+        frag = read_recipe(os.path.join(base, inc))
+        piezas += frag.pop("_piezas", [])
+        out = merge_recipe(out, frag)
+    usados = {}
+    for p in piezas:
+        for slot in p.get("ocupa", []):
+            if slot in usados: raise ValueError(f"slot '{slot}' ocupado por '{usados[slot]}' y '{p['id']}'")
+            usados[slot] = p["id"]
+    out = merge_recipe(out, model)
+    if piezas: out["_piezas"] = piezas
+    return out
 
 
 def load_model(path):

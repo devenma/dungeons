@@ -198,6 +198,13 @@ Un personaje es una receta corta que junta módulos de `art/source/modulos/` con
 - **La forma de la cabeza va con la cara** (decisión del usuario, 2026-11-01): la cara trae la parte `cabeza` y
   `cuerpo.cabeza` con `radios`, `mandibula`, `menton`, `cuadrar_abajo`, `alto_arriba` y `fondo`. Así cambiar de
   cuerpo no deforma la cabeza ni el peinado (con el cráneo de la cara, el peinado no se escala).
+- **Cada módulo es una pieza con slot** (2026-11-03): arriba de todo lleva
+  `"pieza": {"id", "tipo", "ocupa": [slots], "tags"}`. `tipo` es `base`, `personalizacion` (pelo, ojos: los elige el
+  jugador, no se lootean), `cosmetico` (orejas, cola: accesorios) o `equipo` (ropa, calzado, armas, sombreros). Slots
+  en uso: `cuerpo`, `manos`, `ojos`, `pelo`, `orejas`, `cabeza` (sombreros, cascos, cofias), `cola`, `torso`,
+  `piernas`, `pies`, `arma`. Una prenda puede ocupar varios (el vestido: `torso` y `piernas`); rig3d corta con error si
+  dos piezas de una receta comparten slot. `id` es el que va a usar el `ItemData` del juego para saber qué módulo
+  dibujar; los stats viven en el `ItemData`, no acá.
 - **Anclas:** las piezas sueltas (cuello, moños, mano, suelas) usan `"relativo": [hueso, "cabeza"|"cola"]` para
   seguir al hueso en cualquier cuerpo.
 - **Cabeza:** peinado, orejas y ojos declaran `"craneo"` (los radios de la cabeza sobre la que se midieron) y se

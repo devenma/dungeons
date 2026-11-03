@@ -1,4 +1,5 @@
 {
+  "pieza": {"id": "mano_miton", "tipo": "base", "ocupa": ["manos"], "tags": []},
   "partes": [
     {
       "nombre": "mano_perfil",

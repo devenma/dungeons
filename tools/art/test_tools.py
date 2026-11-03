@@ -581,6 +581,23 @@ def test_aseprite_roundtrip():
 
 
 
+def test_piezas_y_slots():
+    import rig3d
+    with tempfile.TemporaryDirectory() as tmp:
+        def receta(nombre, data):
+            json.dump(data, open(os.path.join(tmp, nombre), "w")); return os.path.join(tmp, nombre)
+        receta("cofia.json", {"pieza": {"id": "cofia", "tipo": "cosmetico", "ocupa": ["cabeza"]}, "partes": [{"nombre": "a"}]})
+        receta("casco.json", {"pieza": {"id": "casco", "tipo": "equipo", "ocupa": ["cabeza"]}, "partes": [{"nombre": "b"}]})
+        receta("vestido.json", {"pieza": {"id": "vestido", "tipo": "equipo", "ocupa": ["torso", "piernas"]}})
+        ok = rig3d.read_recipe(receta("ok.json", {"incluir": ["cofia.json", "vestido.json"]}))
+        assert [p["id"] for p in ok["_piezas"]] == ["cofia", "vestido"] and "pieza" not in ok
+        try:
+            rig3d.read_recipe(receta("mal.json", {"incluir": ["cofia.json", "casco.json"]}))
+            assert False, "dos piezas en el mismo slot"
+        except ValueError as e:
+            assert "cabeza" in str(e)
+
+
 def test_paquete_hoja_guias():
     import paquete_modelado as pm
     assert pm.game_row(310, 310, 84) == 47 and pm.game_row(84, 310, 84) == 7

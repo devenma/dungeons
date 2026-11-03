@@ -1,4 +1,5 @@
 {
+  "pieza": {"id": "espada_basica", "tipo": "equipo", "ocupa": ["arma"], "tags": ["espada"]},
   "rampas": {
     "mango": {
       "tonos": [

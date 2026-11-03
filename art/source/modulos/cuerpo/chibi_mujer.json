@@ -1,4 +1,5 @@
 {
+  "pieza": {"id": "chibi_mujer", "tipo": "base", "ocupa": ["cuerpo"], "tags": ["humano", "chibi"]},
   "rampas": {
     "piel_sombra": {"tonos": [[122, 88, 76], [160, 122, 106], [196, 160, 144]], "umbrales": [0.05, 0.2], "ambiente": 0.06},
     "piel_plana": {"tonos": [[122, 88, 76], [160, 122, 106], [196, 160, 144]], "umbrales": [0.0, 0.05], "plano": true},

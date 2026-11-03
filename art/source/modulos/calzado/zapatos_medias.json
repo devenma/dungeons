@@ -1,4 +1,5 @@
 {
+  "pieza": {"id": "zapatos_medias", "tipo": "equipo", "ocupa": ["pies"], "tags": ["maid"]},
   "rampas": {
     "zapatos": {"tonos": [[30, 26, 28], [53, 48, 50]], "umbrales": [0.65]},
     "zapatos_luz": {"tonos": [[30, 26, 28], [53, 48, 50]], "umbrales": [0.2]},
