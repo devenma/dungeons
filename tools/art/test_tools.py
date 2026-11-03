@@ -526,6 +526,70 @@ def test_limpieza_cabeza_fija_y_capas():
     assert tuple(fr["south"][1]["Contorno"][6, 6, :3]) == O  # solo east / east only
 
 
+def test_espejar_sin():
+    # "espejar_sin": en el ciclo, el cuerpo sale espejado y la cola (±1 px) queda del render propio de c + n/2
+    # Cycle mirror: the body is mirrored and the tail (±1 px) keeps the own render of c + n/2
+    import rig3d
+    def cuadro(xc, xt):
+        a = np.zeros((64, 64, 4), np.uint8); ids = np.full((64, 64), -1)
+        a[10, xc] = 255; ids[10, xc] = 0; a[30, xt] = 255; ids[30, xt] = 1
+        return {"Cuerpo": a}, ids
+    (f0, i0), (f1, i1) = cuadro(20, 25), cuadro(21, 50)
+    fr = {d: [f0, f1] if d == "south" else [{"Cuerpo": f0["Cuerpo"].copy()}, {"Cuerpo": f1["Cuerpo"].copy()}] for d in rig3d.DIRS}
+    anim = {"nombre": "c", "espejar_ciclo": True, "_ids": {d: [i0, i1] for d in rig3d.DIRS}}
+    meta = {"partes": [{"nombre": "cuerpo"}, {"nombre": "cola_1"}]}
+    rig3d.espejar(anim, fr, meta, {"desfase_x": -0.5, "espejar_sin": ["cola_"]}, 64)
+    s1, n1 = fr["south"][1]["Cuerpo"][..., 3], fr["north"][1]["Cuerpo"][..., 3]
+    assert s1[10, 42] == 255 and s1[10, 21] == 0  # cuerpo espejado / mirrored body
+    assert s1[30, 50] == 255 and s1[30, 37] == 0  # cola propia, sin su espejo / own tail, not its mirror
+    assert n1[30, 50] == 255  # la norte también / north too
+    rig3d.espejar(anim, fr2 := {d: [{"Cuerpo": f0["Cuerpo"].copy()}, {"Cuerpo": f1["Cuerpo"].copy()}] for d in rig3d.DIRS},
+                  meta, {"desfase_x": -0.5}, 64)
+    assert fr2["south"][1]["Cuerpo"][30, 37, 3] == 255  # sin la clave, todo espejado / without the key, all mirrored
+
+
+def test_cabeza_fija_por_id():
+    # Con IDs, "cabeza_fija" pega solo la cabeza (partes que cuelgan del cuello) y su contorno: una cola en esas filas
+    # sigue su cuadro / with IDs only the head and its outline are pasted: a tail in those rows keeps its own frame
+    import rig3d
+    model = {"huesos": {"hips": {"padre": None}, "chest": {"padre": "hips"}, "neck": {"padre": "chest"},
+                        "hair": {"padre": "neck"}, "tail_1": {"padre": "hips"}}}
+    meta = {"partes": [{"nombre": "cabeza", "hueso": "neck"}, {"nombre": "pelo", "hueso": "hair"},
+                       {"nombre": "cola_1", "hueso": "tail_1"}, {"nombre": "cuerpo", "hueso": "chest"}]}
+    assert rig3d.partes_cabeza(meta["partes"], model) == [0, 1]
+    def cuadro(dy, xc, xt):
+        a = np.zeros((16, 16, 4), np.uint8); ids = np.full((16, 16), -1)
+        a[2 + dy:6 + dy, 4:8] = (*P, 255); ids[2 + dy:6 + dy, 4:8] = 0; a[2 + dy, xc] = (*P, 255); ids[2 + dy, xc] = 1
+        a[3 + dy, xt] = (*S, 255); ids[3 + dy, xt] = 2; a[9 + dy:12 + dy, 4:8] = (*P, 255); ids[9 + dy:12 + dy, 4:8] = 3
+        return {"Cuerpo": a}, ids
+    (f0, i0), (f1, i1) = cuadro(0, 8, 12), cuadro(1, 9, 14)  # c1: rebote 1 fila, pelo y cola en otro lugar
+    fr = {d: [f0, f1] for d in rig3d.DIRS}
+    meta.update({f"c_{d}_{i}": {"marcadores": {"cuello": [6.0, 9.0 + i]}} for d in rig3d.DIRS for i in range(2)})
+    rig3d.limpiar({"nombre": "c", "cuadros": [{}, {}], "cabeza_fija": ["east"], "_ids": {d: [i0, i1] for d in rig3d.DIRS}},
+                  fr, meta, model, 16, ["east"], 2)
+    e1 = fr["east"][1]["Cuerpo"]
+    assert e1[3, 8, 3] == 255 and e1[3, 9, 3] == 0  # pelo de c0 corrido 1 fila / c0 hair shifted one row
+    assert e1[4, 14, 3] == 255 and e1[4, 12, 3] == 0  # la cola sigue a c1 / the tail keeps c1
+
+
+def test_resortes_receta():
+    # "resortes" de la receta: un resorte por canal, sumado a la animación y atrasado "retraso" cuadros
+    # Recipe springs: one per channel, added to the animation and delayed "retraso" frames
+    import motion
+    sway = [0, 3, 6, 3, 0, -3, -6, -3]
+    anim = lambda: {"bucle": True, "duraciones_ms": [100] * 8,
+                    "cuadros": [{"pose": {"hips": {"girar": s}, "tail_2": {"lado": 1}}} for s in sway]}
+    spec = {"impulsado_por": {"pose.hips.girar": 2}, "rigidez": 160, "amortiguacion": 0.35}
+    a = motion.resortes(anim(), {"pose.tail_1.lado": spec, "pose.tail_2.lado": {**spec, "retraso": 1}})
+    t1 = [motion.get(f, "pose.tail_1.lado") for f in a["cuadros"]]
+    t2 = [motion.get(f, "pose.tail_2.lado") - 1 for f in a["cuadros"]]
+    ref = [motion.get(f, "pose.x.lado") for f in motion.resorte(
+        [{"pose": {"hips": {"girar": s}}} for s in sway], "pose.x.lado", {"pose.hips.girar": 2}, 160, 0.35, ms=100)]
+    assert t1 == ref and max(map(abs, t1)) > 0.5, t1
+    assert all(abs(t2[i] - t1[i - 1]) < 1e-6 for i in range(8)), (t1, t2)  # un cuadro de atraso / one frame late
+    assert motion.resortes(anim(), None)["cuadros"][0]["pose"] == {"hips": {"girar": 0}, "tail_2": {"lado": 1}}
+
+
 def test_ojos_inclinacion():
     # Con la coronilla más de 90° del arriba de la cámara (cara al revés) no se estampan ojos / upside-down face: no eyes
     import rig3d

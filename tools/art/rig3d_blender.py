@@ -605,8 +605,16 @@ else:
             em = nt.nodes.new("ShaderNodeEmission"); out = nt.nodes.new("ShaderNodeOutputMaterial")
             nt.links.new(comb.outputs[0], em.inputs[0]); nt.links.new(em.outputs[0], out.inputs[0])
             ID_MATS[o.name] = m
+        def main_bone(p):
+            # Hueso que más pesa en la parte (o el de la pieza rígida): rig3d.py saca de acá qué es cabeza
+            # Bone with the most weight in the part (or the rigid piece's bone): rig3d.py tells the head from it
+            tot = {}
+            for w in p.get("w", []):
+                for b, v in w.items(): tot[b] = tot.get(b, 0) + v
+            return max(tot, key=tot.get) if tot else p.get("hueso")
         meta["partes"] = [{"nombre": o.name, "capa": p.get("capa", "arma" if p.get("grupo") == "espada" else "efectos3d"),
-                           "linea": p.get("linea"), "material": p.get("material"), "grupo": p.get("grupo")} for p, o in PARTS]
+                           "linea": p.get("linea"), "material": p.get("material"), "grupo": p.get("grupo"),
+                           "hueso": main_bone(p)} for p, o in PARTS]
 
     # Pasada de normales: normal en espacio de cámara (x derecha, y arriba, z hacia la cámara) codificada n * 0.5 + 0.5,
     # como espera un normal map 2D de Godot / normals pass: camera-space normal encoded n * 0.5 + 0.5, as Godot 2D expects

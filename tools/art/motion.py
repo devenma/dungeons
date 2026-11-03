@@ -126,6 +126,26 @@ def resorte(frames, destino, impulsado_por, rigidez=900.0, amortiguacion=0.45, m
     return frames
 
 
+def resortes(anim, specs):
+    """"resortes" de la receta: {destino: {"impulsado_por", "rigidez", "amortiguacion", "retraso"}}, un resorte por
+    canal (como resorte) que se suma a cualquier animación; "retraso" en cuadros atrasa la onda (segmentos de una cola).
+    Recipe springs: one spring per channel added to any animation; "retraso" (frames) delays the wave (tail segments)."""
+    if not specs: return anim
+    fr, loop = anim["cuadros"], anim.get("bucle", False); n = len(fr)
+    for dest, s in specs.items():
+        tmp = [{} for _ in fr]
+        for t, f in zip(tmp, fr):
+            for c in s["impulsado_por"]: put(t, c, get(f, c))
+        base = [get(t, dest) for t in tmp]  # por si el destino también impulsa / in case the target also drives
+        resorte(tmp, dest, s["impulsado_por"], s.get("rigidez", 900.0), s.get("amortiguacion", 0.45),
+                ms=anim["duraciones_ms"], bucle=loop)
+        k = s.get("retraso", 0)
+        for i, f in enumerate(fr):
+            j = (i - k) % n if loop else max(i - k, 0)
+            put(f, dest, round(get(f, dest) + get(tmp[j], dest) - base[j], 1))
+    return anim
+
+
 def exagerar(frames, factor, canales):
     # Amplía cada canal alrededor de su media / widens each channel around its mean
     for name in canales:

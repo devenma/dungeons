@@ -816,6 +816,29 @@ def limpiar_compuesto(lay, fn):
     return out
 
 
+def dilatar(m):
+    # Máscara crecida 1 px en 8 vecinos / mask grown by 1 px over 8 neighbours
+    p = np.pad(m, 1); h, w = m.shape
+    return np.any([p[1 + dy:1 + dy + h, 1 + dx:1 + dx + w] for dy in (-1, 0, 1) for dx in (-1, 0, 1)], 0)
+
+
+def partes_cabeza(parts, model):
+    # Códigos de las partes cuyo hueso principal es el cuello o cuelga de él (cabeza, pelo, orejas, cofia)
+    # Codes of the parts whose main bone is the neck or hangs from it (head, hair, ears, cap)
+    def bajo_cuello(b):
+        while b:
+            if b == "neck": return True
+            b = model.get("huesos", {}).get(b, {}).get("padre")
+        return False
+    return [i for i, p in enumerate(parts or []) if bajo_cuello(p.get("hueso"))]
+
+
+def mascara_cabeza(part, cab):
+    # Píxeles de esas partes más su contorno (el anillo de 1 px sobre el vacío) / those parts' pixels plus their outline
+    m = np.isin(part, cab)
+    return m | (dilatar(m) & (part < 0))
+
+
 def limpiar(anim, frames, meta, model, size, dirs, margin):
     # Limpieza 2D del cuadro compuesto, antes del espejado (la simetría sale exacta) y de exportar.
     # "cabeza_fija": [direcciones] en la animación: la cabeza del cuadro 0 (del tope hasta 2 filas sobre el marcador
@@ -830,11 +853,22 @@ def limpiar(anim, frames, meta, model, size, dirs, margin):
     n, name = len(anim["cuadros"]), anim["nombre"]
     cuello = lambda d, i: int(meta[f"{name}_{d}_{i}"]["marcadores"]["cuello"][1])
     comp = lambda lay: flatten({k: v for k, v in lay.items() if k != "Efectos"})
+    # Con IDs de parte se pegan solo la cabeza y lo que cuelga del cuello (pelo, orejas, cofia) con su contorno: lo
+    # demás de esas filas (una cola detrás de la cabeza) sigue su cuadro / with part IDs only the head and what hangs
+    # from the neck (hair, ears, cap) plus its outline is pasted: the rest of those rows (a tail) keeps its own frame
+    ids, cab = anim.get("_ids"), partes_cabeza(meta.get("partes"), model)
+    def banda(m, t, filas): out = np.zeros_like(m); out[max(t, 0):t + filas] = m[max(t, 0):t + filas]; return out
     for d in anim.get("cabeza_fija", []):
         c0 = comp(frames[d][0]); t0 = tope(c0); filas = cuello(d, 0) - 2 - t0
+        h0 = banda(mascara_cabeza(ids[d][0], cab), t0, filas) if ids else None
         for i in range(1, n):
             dy = tope(comp(frames[d][i])) - t0
-            def pegar(c): c[t0 + dy:t0 + dy + filas] = c0[t0:t0 + filas]
+            if h0 is None:
+                def pegar(c): c[t0 + dy:t0 + dy + filas] = c0[t0:t0 + filas]
+            else:
+                hi = banda(mascara_cabeza(ids[d][i], cab), t0 + dy, filas)
+                ys, xs = np.nonzero(h0); ok = (ys + dy >= 0) & (ys + dy < size)
+                def pegar(c, hi=hi, ys=ys[ok], xs=xs[ok]): c[hi] = 0; c[ys + dy, xs] = c0[ys, xs]
             frames[d][i] = limpiar_compuesto(frames[d][i], pegar)
     spec = model.get("limpieza")
     if not spec: return
@@ -872,8 +906,18 @@ def espejar(anim, frames, meta, model, size):
     if anim.get("espejar_oeste"): pares += [("east", i, "west", i) for i in range(n) if not giro(i)]
     if anim.get("espejar_ciclo"):
         pares += [(d, i, d, i + n // 2) for d in ("south", "north") for i in range(n // 2) if not giro(i) and not giro(i + n // 2)]
+    # "espejar_sin" (receta): prefijos de partes asimétricas (una cola de un lado) que en el ciclo no se espejan: donde
+    # están en c o en c + n/2 (±1 px por el contorno) queda el render propio de c + n/2 / asymmetric part prefixes kept
+    # out of the cycle mirror: where they are in c or c + n/2 (±1 px for the outline) the own render of c + n/2 stays
+    sin, ids = tuple(model.get("espejar_sin", [])), anim.get("_ids")
+    cod = [c for c, p in enumerate(meta.get("partes") or []) if p["nombre"].startswith(sin)] if sin and ids else []
+    anim["_sin"] = {}
     for d0, i, d1, j in pares:
-        frames[d1][j] = flip(frames[d0][i])
+        if cod and d0 == d1:
+            m = dilatar(np.isin(ids[d1][j], cod) | espejo_capa(np.isin(ids[d0][i], cod), k))
+            own, mir = frames[d1][j], flip(frames[d0][i]); anim["_sin"][(d1, j)] = m
+            frames[d1][j] = {name: v if v is None else np.where(m[..., None], own[name], v) for name, v in mir.items()}
+        else: frames[d1][j] = flip(frames[d0][i])
         a, b = meta.get(f"{anim['nombre']}_{d0}_{i}"), f"{anim['nombre']}_{d1}_{j}"
         if a and a.get("marcadores"):
             meta[b] = {**meta.get(b, {}), "marcadores": {m: [round((k + 1) - p[0], 2), p[1]] for m, p in a["marcadores"].items()}}
@@ -894,6 +938,8 @@ def espejar_normales(path, anim, size, model):
         r0, r1 = DIRS.index(d0), DIRS.index(d1)
         c = espejo_capa(sheet[r0 * size:(r0 + 1) * size, i * size:(i + 1) * size], k)
         c[..., 0] = np.where(c[..., 3] > 0, 255 - c[..., 0], 0)
+        m = anim.get("_sin", {}).get((d1, j))  # espejar_sin: queda la normal propia / own normal stays
+        if m is not None: c = np.where(m[..., None], sheet[r1 * size:(r1 + 1) * size, j * size:(j + 1) * size], c)
         sheet[r1 * size:(r1 + 1) * size, j * size:(j + 1) * size] = c
     Image.fromarray(sheet).save(path)
 
@@ -916,8 +962,10 @@ def fundir(anim, frames, dirs):
 
 def cmd_frames(args):
     model = load_model(args.modelo)
-    anims = [motion.plantar(motion.limitar(motion.expand(json.load(open(p, encoding="utf-8"))), getattr(args, "denso", None)),
-                            model.get("cuerpo")) for p in args.anims]
+    # "resortes" de la receta (módulos): se suman a cada animación / recipe springs (modules), added to every animation
+    anims = [motion.resortes(motion.plantar(motion.limitar(motion.expand(json.load(open(p, encoding="utf-8"))),
+                                                           getattr(args, "denso", None)), model.get("cuerpo")),
+                             model.get("resortes")) for p in args.anims]
     dirs = args.dirs.split(",") if args.dirs else DIRS
     raw = os.path.join(args.salida, "_render")
     run_blender({"modelo": model, "anims": anims, "dirs": dirs, "salida": raw, "modo": "cuadros", "normales": args.normales})
@@ -932,6 +980,7 @@ def cmd_frames(args):
         margin = anim.get("margen_suela", SOLE_MARGIN)
         frames = {d: [] for d in DIRS}
         n = len(anim["cuadros"])
+        if parts: anim["_ids"] = {d: [] for d in DIRS}  # parte por píxel, para cabeza_fija y espejar_sin / part per pixel
         for d in DIRS:
             for i in range(n):
                 p = os.path.join(raw, f"{anim['nombre']}_{d}_{i}.png")
@@ -942,6 +991,7 @@ def cmd_frames(args):
                 if parts:
                     ids = np.array(Image.open(p[:-4] + "_id.png").convert("RGBA")) if d in dirs else np.zeros((size, size, 4), np.uint8)
                     if img.shape[0] != size: img, ids = reduce_frame(img, ids, parts, model, size, p, args.normales)
+                    anim["_ids"][d].append(decode_ids(ids)[0])
                     lay = layers_parts(img, ids, parts, fm, model, size, d in ("south", "north"), fx, pal, margin)
                     if model.get("limpiar_huerfanos"): lay = limpiar_huerfanos(lay)
                     if model.get("retoques"): lay = retocar(lay, fm, d, model, anim["nombre"])

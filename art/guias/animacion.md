@@ -75,7 +75,9 @@ frente y de espaldas el cuadro c + n/2 es el c espejado) y `simetrico` (de frent
 izquierda espejada) se aplican **después** de la limpieza 2D, así la simetría sale exacta: `"limpieza"` en la receta
 (pasadas `hilos`, `sueltos`, `colgados`, `islas` sobre el cuadro compuesto, que vuelven a sus capas) y
 `"cabeza_fija": ["east"]` en la animación (la cabeza del cuadro 0 pegada en todos, corrida por el rebote: la cabeza
-de perfil no tiembla). Los ojos 2D no se estampan con la cara cabeza abajo en pantalla (tendida con la cabeza hacia
+de perfil no tiembla; con IDs de parte, solo las partes que cuelgan del cuello). `"espejar_sin": [prefijos]` en la
+receta deja partes asimétricas (la cola) fuera de `espejar_ciclo`, y `"resortes"` en la receta suma resortes a
+cualquier animación (ver `modelado.md`, "Personajes por módulos"). Los ojos 2D no se estampan con la cara cabeza abajo en pantalla (tendida con la cabeza hacia
 la cámara, muerte de espaldas): `EYES_TILT_MAX` en `rig3d.py`.
 
 ```json

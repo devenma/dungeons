@@ -211,6 +211,13 @@ Un personaje es una receta corta que junta módulos de `art/source/modulos/` con
   escalan solos a otro cráneo.
 - **Animaciones compartidas:** si un personaje no tiene un hueso que la animación pide (por ejemplo, sin orejas), se
   ignora.
+- **Partes asimétricas y movimiento propio** (2026-11-03, cola de `cola/op15_cola_gato.json`): `"espejar_sin":
+  ["cola_"]` deja esas partes fuera del espejo del ciclo (`espejar_ciclo`): el cuerpo sale espejado exacto y la cola,
+  con ±1 px de contorno, sale del render propio de c + n/2, así sigue de su lado. `"resortes"`: `{"pose.tail_1.lado":
+  {"impulsado_por": {"pose.hips.girar": 3.2}, "rigidez": 160, "amortiguacion": 0.35, "retraso": 0}, ...}`, un
+  resorte por canal que rig3d suma a cualquier animación; `retraso` (cuadros) hace subir la onda segmento a segmento.
+  `cabeza_fija` pega solo las partes que cuelgan del cuello (por ID), así una cola puede subir detrás de la cabeza de
+  perfil sin congelarse.
 - **Gravedad del pelo:** el peinado declara `"gravedad": {"hair": 1, "lock_L": 1, "lock_R": 1}` y esos colgantes
   compensan la inclinación de la columna (ver `animacion.md` §5).
 - **Pelo de espaldas:** la tarjeta puede llevar `mechas` (líneas), `mechas_desde` (fracción del largo donde empiezan:

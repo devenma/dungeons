@@ -10,7 +10,7 @@
    "op15"
   ]
  },
- "_nota": "Cola de gato: cadenas tail_1..4 (frente y espalda) y tail_perfil_1..4 (perfil) colgando de hips, base bajo el lazo del delantal. Medida sobre el cuerpo op15 (cintura z 28). Colores de op15_orejas_gato. Generado por art/pruebas/maniqui_op15/modulos/cola/gen_modulo.py.",
+ "_nota": "Cola de gato: cadena tail_1..4 colgando de hips, base bajo el lazo del delantal; sube en S hacia la izquierda del personaje (+X) y hacia atrás. Medida sobre el cuerpo op15 (cintura z 28). Colores de op15_orejas_gato. Asimétrica: queda fuera del espejo del ciclo (espejar_sin). Resortes: vaivén con atraso respecto de la cadera, un cuadro más por segmento.",
  "rampas": {
   "cola_gato": {
    "tonos": [
@@ -58,95 +58,39 @@
     22.2
    ],
    "cola": [
-    10.6,
-    14.2,
-    25.6
+    8.5,
+    15.0,
+    25.0
    ],
    "padre": "tail_1",
    "tipo": "colgante"
   },
   "tail_3": {
    "cabeza": [
-    10.6,
-    14.2,
-    25.6
+    8.5,
+    15.0,
+    25.0
    ],
    "cola": [
-    14.6,
-    14.6,
-    31.0
+    12.3,
+    16.5,
+    30.5
    ],
    "padre": "tail_2",
    "tipo": "colgante"
   },
   "tail_4": {
    "cabeza": [
-    14.6,
-    14.6,
-    31.0
+    12.3,
+    16.5,
+    30.5
    ],
    "cola": [
-    16.4,
-    16.2,
-    34.0
+    15.5,
+    18.3,
+    33.5
    ],
    "padre": "tail_3",
-   "tipo": "colgante"
-  },
-  "tail_perfil_1": {
-   "cabeza": [
-    0.4,
-    6.0,
-    25.2
-   ],
-   "cola": [
-    3.4,
-    12.4,
-    22.2
-   ],
-   "padre": "hips",
-   "tipo": "colgante"
-  },
-  "tail_perfil_2": {
-   "cabeza": [
-    3.4,
-    12.4,
-    22.2
-   ],
-   "cola": [
-    2.65,
-    14.2,
-    25.6
-   ],
-   "padre": "tail_perfil_1",
-   "tipo": "colgante"
-  },
-  "tail_perfil_3": {
-   "cabeza": [
-    2.65,
-    14.2,
-    25.6
-   ],
-   "cola": [
-    3.65,
-    14.6,
-    31.0
-   ],
-   "padre": "tail_perfil_2",
-   "tipo": "colgante"
-  },
-  "tail_perfil_4": {
-   "cabeza": [
-    3.65,
-    14.6,
-    31.0
-   ],
-   "cola": [
-    4.1,
-    17.6,
-    33.0
-   ],
-   "padre": "tail_perfil_3",
    "tipo": "colgante"
   }
  },
@@ -172,11 +116,7 @@
     1.0,
     1.0
    ],
-   "seg": 10,
-   "solo_en": [
-    "south",
-    "north"
-   ]
+   "seg": 10
   },
   {
    "tipo": "tubo",
@@ -200,10 +140,6 @@
     1.0
    ],
    "seg": 10,
-   "solo_en": [
-    "south",
-    "north"
-   ],
    "mezcla": [
     "tail_1",
     0.25
@@ -231,10 +167,6 @@
     1.0
    ],
    "seg": 10,
-   "solo_en": [
-    "south",
-    "north"
-   ],
    "mezcla": [
     "tail_2",
     0.25
@@ -262,134 +194,83 @@
     1.0
    ],
    "seg": 10,
-   "solo_en": [
-    "south",
-    "north"
-   ],
    "mezcla": [
     "tail_3",
     0.25
    ]
-  },
-  {
-   "tipo": "tubo",
-   "nombre": "cola_perfil_1",
-   "hueso": "tail_perfil_1",
-   "material": "cola_gato",
-   "capa": "pelo",
-   "linea": "cola",
-   "radios": [
-    [
-     0.0,
-     1.3
-    ],
-    [
-     1.0,
-     1.3
-    ]
-   ],
-   "tapas": [
-    1.0,
-    1.0
-   ],
-   "seg": 10,
-   "solo_en": [
-    "east",
-    "west"
-   ]
-  },
-  {
-   "tipo": "tubo",
-   "nombre": "cola_perfil_2",
-   "hueso": "tail_perfil_2",
-   "material": "cola_gato",
-   "capa": "pelo",
-   "linea": "cola",
-   "radios": [
-    [
-     0.0,
-     1.3
-    ],
-    [
-     1.0,
-     1.3
-    ]
-   ],
-   "tapas": [
-    1.0,
-    1.0
-   ],
-   "seg": 10,
-   "solo_en": [
-    "east",
-    "west"
-   ],
-   "mezcla": [
-    "tail_perfil_1",
-    0.25
-   ]
-  },
-  {
-   "tipo": "tubo",
-   "nombre": "cola_perfil_3",
-   "hueso": "tail_perfil_3",
-   "material": "cola_gato",
-   "capa": "pelo",
-   "linea": "cola",
-   "radios": [
-    [
-     0.0,
-     1.3
-    ],
-    [
-     1.0,
-     1.3
-    ]
-   ],
-   "tapas": [
-    1.0,
-    1.0
-   ],
-   "seg": 10,
-   "solo_en": [
-    "east",
-    "west"
-   ],
-   "mezcla": [
-    "tail_perfil_2",
-    0.25
-   ]
-  },
-  {
-   "tipo": "tubo",
-   "nombre": "cola_perfil_4",
-   "hueso": "tail_perfil_4",
-   "material": "cola_gato",
-   "capa": "pelo",
-   "linea": "cola",
-   "radios": [
-    [
-     0.0,
-     1.3
-    ],
-    [
-     1.0,
-     1.3
-    ]
-   ],
-   "tapas": [
-    1.0,
-    1.0
-   ],
-   "seg": 10,
-   "solo_en": [
-    "east",
-    "west"
-   ],
-   "mezcla": [
-    "tail_perfil_3",
-    0.25
-   ]
   }
- ]
+ ],
+ "espejar_sin": [
+  "cola_"
+ ],
+ "resortes": {
+  "pose.tail_1.lado": {
+   "impulsado_por": {
+    "pose.hips.girar": 3.2
+   },
+   "rigidez": 160,
+   "amortiguacion": 0.35,
+   "retraso": 0
+  },
+  "pose.tail_1.adelante": {
+   "impulsado_por": {
+    "pose.hips.girar": 2.4,
+    "cadera.subir": -3.0
+   },
+   "rigidez": 160,
+   "amortiguacion": 0.35,
+   "retraso": 0
+  },
+  "pose.tail_2.lado": {
+   "impulsado_por": {
+    "pose.hips.girar": 2.88
+   },
+   "rigidez": 160,
+   "amortiguacion": 0.35,
+   "retraso": 1
+  },
+  "pose.tail_2.adelante": {
+   "impulsado_por": {
+    "pose.hips.girar": 2.16,
+    "cadera.subir": -2.7
+   },
+   "rigidez": 160,
+   "amortiguacion": 0.35,
+   "retraso": 1
+  },
+  "pose.tail_3.lado": {
+   "impulsado_por": {
+    "pose.hips.girar": 2.56
+   },
+   "rigidez": 160,
+   "amortiguacion": 0.35,
+   "retraso": 2
+  },
+  "pose.tail_3.adelante": {
+   "impulsado_por": {
+    "pose.hips.girar": 1.92,
+    "cadera.subir": -2.4
+   },
+   "rigidez": 160,
+   "amortiguacion": 0.35,
+   "retraso": 2
+  },
+  "pose.tail_4.lado": {
+   "impulsado_por": {
+    "pose.hips.girar": 2.24
+   },
+   "rigidez": 160,
+   "amortiguacion": 0.35,
+   "retraso": 3
+  },
+  "pose.tail_4.adelante": {
+   "impulsado_por": {
+    "pose.hips.girar": 1.68,
+    "cadera.subir": -2.1
+   },
+   "rigidez": 160,
+   "amortiguacion": 0.35,
+   "retraso": 3
+  }
+ }
 }
