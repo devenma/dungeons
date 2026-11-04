@@ -886,6 +886,7 @@
   {
    "tipo": "lofteo",
    "nombre": "pollera",
+   "colision": true,
    "material": "vestido_pollera",
    "capa": "ropa",
    "pesos": "pollera",
@@ -955,6 +956,7 @@
   {
    "tipo": "lofteo",
    "nombre": "pollera_perfil",
+   "colision": true,
    "material": "vestido_pollera",
    "capa": "ropa",
    "pesos": "pollera",
@@ -1018,6 +1020,8 @@
   {
    "tipo": "lofteo",
    "nombre": "ruedo",
+   "colision": true,
+   "colision_margen": 0.5,
    "material": "blanco_ruedo",
    "capa": "ropa",
    "pesos": "pollera",
@@ -1091,6 +1095,8 @@
   {
    "tipo": "lofteo",
    "nombre": "ruedo_perfil",
+   "colision": true,
+   "colision_margen": 0.5,
    "material": "blanco_ruedo",
    "capa": "ropa",
    "pesos": "pollera",
@@ -1158,6 +1164,8 @@
   {
    "tipo": "parche",
    "nombre": "delantal",
+   "colision": true,
+   "colision_margen": 0.75,
    "material": "blanco_delantal",
    "capa": "ropa",
    "hueso": "skirt_F",
@@ -1255,6 +1263,8 @@
   {
    "tipo": "parche",
    "nombre": "delantal_perfil",
+   "colision": true,
+   "colision_margen": 0.75,
    "material": "blanco_plano",
    "capa": "ropa",
    "hueso": "skirt_F",
