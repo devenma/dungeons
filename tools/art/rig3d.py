@@ -89,11 +89,17 @@ def merge_recipe(a, b, top=True):
     return out
 
 
+# Módulos editados en memoria (panel de ajuste): ruta normalizada -> datos, leídos en lugar del archivo
+# In-memory edited modules (tuning panel): normalized path -> data, read instead of the file
+PARCHES = {}
+
+
 def read_recipe(path):
     # Receta con "incluir": [rutas relativas]: los fragmentos se mezclan en orden y la receta pisa a sus incluidos;
     # las rutas de cada fragmento quedan absolutas / recipe with "incluir": fragments merge in order and the recipe
     # overrides them; each fragment's paths become absolute
-    model = json.load(open(path, encoding="utf-8"))
+    key = os.path.normcase(os.path.normpath(os.path.abspath(path)))
+    model = json.loads(json.dumps(PARCHES[key])) if key in PARCHES else json.load(open(path, encoding="utf-8"))
     base = os.path.dirname(os.path.abspath(path))
     for spec in model.get("proyecciones", {}).values():
         spec["sprites"] = {d: os.path.abspath(os.path.join(base, p)) for d, p in spec["sprites"].items()}
@@ -144,7 +150,13 @@ def tones(ramp):
     return ramp["tonos"] if isinstance(ramp, dict) else ramp
 
 
+# Si no es None, corre el trabajo en vez de lanzar un Blender nuevo (el panel de ajuste deja uno abierto)
+# If not None, runs the job instead of launching a new Blender (the tuning panel keeps one open)
+RUN_BLENDER = None
+
+
 def run_blender(job):
+    if RUN_BLENDER: return RUN_BLENDER(job)
     tmp = tempfile.mkdtemp()
     path = os.path.join(tmp, "trabajo.json")
     json.dump(job, open(path, "w", encoding="utf-8"))
@@ -839,7 +851,16 @@ def mascara_cabeza(part, cab):
     return m | (dilatar(m) & (part < 0))
 
 
-def limpiar(anim, frames, meta, model, size, dirs, margin):
+def cuadros_necesarios(anim, solo):
+    # Cuadros que hay que renderizar para ver los de "solo" tal como saldrían en la hoja / frames that must render to see
+    # those in "solo" exactly as the sheet shows them
+    n = len(anim["cuadros"]); need = {i for i in solo if 0 <= i < n}
+    if anim.get("cabeza_fija"): need.add(0)
+    if anim.get("espejar_ciclo") and n % 2 == 0: need |= {i - n // 2 for i in list(need) if i >= n // 2}
+    return need
+
+
+def limpiar(anim, frames, meta, model, size, dirs, margin, need=None):
     # Limpieza 2D del cuadro compuesto, antes del espejado (la simetría sale exacta) y de exportar.
     # "cabeza_fija": [direcciones] en la animación: la cabeza del cuadro 0 (del tope hasta 2 filas sobre el marcador
     # "cuello") se pega en cada cuadro, corrida por el rebote: la cabeza de perfil no tiembla.
@@ -858,10 +879,11 @@ def limpiar(anim, frames, meta, model, size, dirs, margin):
     # from the neck (hair, ears, cap) plus its outline is pasted: the rest of those rows (a tail) keeps its own frame
     ids, cab = anim.get("_ids"), partes_cabeza(meta.get("partes"), model)
     def banda(m, t, filas): out = np.zeros_like(m); out[max(t, 0):t + filas] = m[max(t, 0):t + filas]; return out
-    for d in anim.get("cabeza_fija", []):
+    for d in [d for d in anim.get("cabeza_fija", []) if d in dirs]:  # con --dirs, solo las renderizadas / only rendered ones
         c0 = comp(frames[d][0]); t0 = tope(c0); filas = cuello(d, 0) - 2 - t0
         h0 = banda(mascara_cabeza(ids[d][0], cab), t0, filas) if ids else None
         for i in range(1, n):
+            if need is not None and i not in need: continue
             dy = tope(comp(frames[d][i])) - t0
             if h0 is None:
                 def pegar(c): c[t0 + dy:t0 + dy + filas] = c0[t0:t0 + filas]
@@ -875,6 +897,7 @@ def limpiar(anim, frames, meta, model, size, dirs, margin):
     o, sombras = tuple(spec["contorno"]), {tuple(t) for t in spec["sombras"]}
     for d in dirs:
         for i in range(n):
+            if need is not None and i not in need: continue
             args = {"o": o, "sombras": sombras, "pies": size - margin - COLGADOS_FILAS, "cuello": cuello(d, i) + 2}
             frames[d][i] = limpiar_compuesto(frames[d][i], lambda c: [PASADAS[p](c, **args) for p in spec["pasadas"]])
 
@@ -916,7 +939,7 @@ def espejar(anim, frames, meta, model, size):
         if cod and d0 == d1:
             m = dilatar(np.isin(ids[d1][j], cod) | espejo_capa(np.isin(ids[d0][i], cod), k))
             own, mir = frames[d1][j], flip(frames[d0][i]); anim["_sin"][(d1, j)] = m
-            frames[d1][j] = {name: v if v is None else np.where(m[..., None], own[name], v) for name, v in mir.items()}
+            frames[d1][j] = {name: v if v is None or name not in own else np.where(m[..., None], own[name], v) for name, v in mir.items()}
         else: frames[d1][j] = flip(frames[d0][i])
         a, b = meta.get(f"{anim['nombre']}_{d0}_{i}"), f"{anim['nombre']}_{d1}_{j}"
         if a and a.get("marcadores"):
@@ -968,13 +991,18 @@ def cmd_frames(args):
                              model.get("resortes")) for p in args.anims]
     dirs = args.dirs.split(",") if args.dirs else DIRS
     raw = os.path.join(args.salida, "_render")
-    run_blender({"modelo": model, "anims": anims, "dirs": dirs, "salida": raw, "modo": "cuadros", "normales": args.normales})
+    # args.solo: cuadros a mirar (el panel de ajuste); solo se renderizan esos y los que necesitan (cuadro 0 de cabeza_fija,
+    # el origen del espejo del ciclo) / args.solo: frames to look at (the tuning panel); only those and what they need render
+    solo = getattr(args, "solo", None)
+    need = [cuadros_necesarios(a, solo) for a in anims] if solo is not None else [None] * len(anims)
+    run_blender({"modelo": model, "anims": anims, "dirs": dirs, "salida": raw, "modo": "cuadros", "normales": args.normales,
+                 "solo": [sorted(x) if x is not None else None for x in need]})
     pal = palette(model)
     meta = json.load(open(os.path.join(raw, "meta.json")))
     prefix = args.prefijo or model["nombre"]
     parts = meta.get("partes")
     done = {}
-    for anim in anims:
+    for anim, need_a in zip(anims, need):
         size = anim["lienzo"]
         # "margen_suela": filas entre las suelas y el borde de abajo (17 en 64: suelas en 47) / rows from soles to bottom
         margin = anim.get("margen_suela", SOLE_MARGIN)
@@ -984,21 +1012,22 @@ def cmd_frames(args):
         for d in DIRS:
             for i in range(n):
                 p = os.path.join(raw, f"{anim['nombre']}_{d}_{i}.png")
-                img = quantize(np.array(Image.open(p).convert("RGBA")), ramp_palette(model, pal)) if d in dirs else np.zeros((size, size, 4), np.uint8)
-                fm = meta.get(f"{anim['nombre']}_{d}_{i}", {}) if d in dirs else {}
+                ren = d in dirs and (need_a is None or i in need_a)
+                img = quantize(np.array(Image.open(p).convert("RGBA")), ramp_palette(model, pal)) if ren else np.zeros((size, size, 4), np.uint8)
+                fm = meta.get(f"{anim['nombre']}_{d}_{i}", {}) if ren else {}
                 cu = anim["cuadros"][i]; ancho = cu.get("por_direccion", {}).get(d, {}).get("estela_ancho", cu.get("estela_ancho", 1.0))
                 fx = trail(size, fm["arco"], ancho) if fm.get("arco") else None
                 if parts:
-                    ids = np.array(Image.open(p[:-4] + "_id.png").convert("RGBA")) if d in dirs else np.zeros((size, size, 4), np.uint8)
+                    ids = np.array(Image.open(p[:-4] + "_id.png").convert("RGBA")) if ren else np.zeros((size, size, 4), np.uint8)
                     if img.shape[0] != size: img, ids = reduce_frame(img, ids, parts, model, size, p, args.normales)
                     anim["_ids"][d].append(decode_ids(ids)[0])
                     lay = layers_parts(img, ids, parts, fm, model, size, d in ("south", "north"), fx, pal, margin)
-                    if model.get("limpiar_huerfanos"): lay = limpiar_huerfanos(lay)
-                    if model.get("retoques"): lay = retocar(lay, fm, d, model, anim["nombre"])
+                    if model.get("limpiar_huerfanos") and ren: lay = limpiar_huerfanos(lay)
+                    if model.get("retoques") and ren: lay = retocar(lay, fm, d, model, anim["nombre"])
                     frames[d].append(lay)
                 else:
                     frames[d].append(layers(img, size, d in ("south", "north"), fx, pal, margin))
-        if model.get("limpieza") or anim.get("cabeza_fija"): limpiar(anim, frames, meta, model, size, dirs, margin)
+        if model.get("limpieza") or anim.get("cabeza_fija"): limpiar(anim, frames, meta, model, size, dirs, margin, need_a)
         if anim.get("espejar_oeste") or anim.get("espejar_ciclo") or anim.get("simetrico"): espejar(anim, frames, meta, model, size)
         if anim.get("fundir") or getattr(args, "fundir", False): fundir(anim, frames, dirs)
         base = export(anim, frames, args.salida, prefix)
@@ -1077,7 +1106,7 @@ def skin_counts(ids, parts, neck_y=None):
     # la base del cuello (el frente del cuello ya baja ~1,5 filas con la cámara): piel que asoma bajo la ropa
     # Visible pixels of each skin part; "tronco" = body part pixels more than 2 rows below the neck base (the neck
     # front already drops ~1.5 rows with the camera): skin showing under the clothes
-    part, _ = decode_ids(ids); out = {}
+    part = ids if ids.ndim == 2 else decode_ids(ids)[0]; out = {}  # pasada de ID o ya decodificada / ID pass or decoded
     for k, p in enumerate(parts):
         if not str(p.get("material")).startswith("piel"): continue
         m = part == k

@@ -5,12 +5,21 @@
 # The job is written by rig3d.py; mode = frames | views | probe.
 # Unidades = píxeles del sprite. Sin rotar la raíz el personaje mira a -Y; su izquierda es +X; arriba es +Z.
 # Units = sprite pixels. With no root turn the character faces -Y; its left is +X; up is +Z.
-import json, math, os, sys
+import hashlib, json, math, os, sys, time
 
 import bpy
+import numpy as np
 from bpy_extras.object_utils import world_to_camera_view
 from mathutils import Vector
 from mathutils.bvhtree import BVHTree
+
+# Tiempos por etapa (s) en OUT/tiempos.json / per-stage times (s) in OUT/tiempos.json
+T0 = time.perf_counter(); TIEMPOS = {}
+
+
+def tic(clave, desde):
+    TIEMPOS[clave] = TIEMPOS.get(clave, 0.0) + time.perf_counter() - desde
+
 
 JOB = json.load(open(sys.argv[sys.argv.index("--") + 1], encoding="utf-8"))
 MODEL = JOB["modelo"]
@@ -47,8 +56,23 @@ CHANNELS = {
     "mano": {},
 }
 
-bpy.ops.wm.read_factory_settings(use_empty=True)
-scene = bpy.context.scene
+# PERSIST_PANEL: el diccionario que el panel de ajuste conserva entre trabajos (worker_blender.py); sin él (rig3d.py, tests)
+# todo se arma de cero, igual que siempre / the dict the tuning panel keeps between jobs; without it everything is built from scratch
+PERSIST = globals().get("PERSIST_PANEL")
+if PERSIST is None: PERSIST = {}
+# Escena reutilizable: mismo esqueleto, rampas, luz y piezas sueltas que el trabajo anterior. Las partes se reusan una a una
+# (clave = su receta + lo que las afecta); el resto se arma de cero / reusable scene: same skeleton, ramps, light and rigid
+# pieces as the last job. Parts are reused one by one (key = their recipe + what affects them)
+BASE_KEY = hashlib.sha1(json.dumps({k: v for k, v in MODEL.items() if k not in ("partes", "hornear", "quitar_partes", "deformar")},
+                                    sort_keys=True, default=str).encode()).hexdigest()
+REUSE = (PERSIST.get("base") == BASE_KEY and JOB.get("modo", "cuadros") in ("cuadros", "vistas") and not MODEL.get("hornear")
+         and PERSIST.get("modo_ok"))
+if REUSE:
+    scene = bpy.context.scene
+else:
+    PERSIST.clear()
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    scene = bpy.context.scene
 
 
 def lin(c):
@@ -197,18 +221,21 @@ def projected_material(name, spec, tones, cuts, reposo=False):
 
 
 cuts = MODEL.get("umbrales", [0.18, 0.55])
-MATS = {k: ramp_material(k, v, cuts)[0] for k, v in MODEL["rampas"].items()}
+if REUSE:
+    MATS, rig, PB = PERSIST["mats"], PERSIST["rig"], PERSIST["rig"].pose.bones
+else:
+    MATS = {k: ramp_material(k, v, cuts)[0] for k, v in MODEL["rampas"].items()}
 
-arm_data = bpy.data.armatures.new("rig"); rig = bpy.data.objects.new("rig", arm_data)
-scene.collection.objects.link(rig); bpy.context.view_layer.objects.active = rig
-bpy.ops.object.mode_set(mode="EDIT")
-for name, b in MODEL["huesos"].items():
-    eb = arm_data.edit_bones.new(name); eb.head, eb.tail = b["cabeza"], b["cola"]
-for name, b in MODEL["huesos"].items():
-    if b.get("padre"): arm_data.edit_bones[name].parent = arm_data.edit_bones[b["padre"]]
-bpy.ops.object.mode_set(mode="OBJECT")
-PB = rig.pose.bones
-for b in PB: b.rotation_mode = "XYZ"
+    arm_data = bpy.data.armatures.new("rig"); rig = bpy.data.objects.new("rig", arm_data)
+    scene.collection.objects.link(rig); bpy.context.view_layer.objects.active = rig
+    bpy.ops.object.mode_set(mode="EDIT")
+    for name, b in MODEL["huesos"].items():
+        eb = arm_data.edit_bones.new(name); eb.head, eb.tail = b["cabeza"], b["cola"]
+    for name, b in MODEL["huesos"].items():
+        if b.get("padre"): arm_data.edit_bones[name].parent = arm_data.edit_bones[b["padre"]]
+    bpy.ops.object.mode_set(mode="OBJECT")
+    PB = rig.pose.bones
+    for b in PB: b.rotation_mode = "XYZ"
 
 
 def add_part(p):
@@ -239,13 +266,107 @@ def add_part(p):
     return o
 
 
-PARTS = [(p, add_part(p)) for p in MODEL.get("piezas", [])]
+# "quitar_partes": [nombres] (panel de ajuste): partes o piezas que no se arman, por su nombre ya expandido (brazo_L)
+# Parts or pieces not built, by their expanded name (tuning panel)
+QUITAR = set(MODEL.get("quitar_partes", []))
+t_c = time.perf_counter()
+if REUSE: PARTS = list(PERSIST["rigid"])
+else:
+    PARTS = [(p, add_part(p)) for p in MODEL.get("piezas", []) if p["nombre"] not in QUITAR]
+    PERSIST.update(base=BASE_KEY, mats=MATS, rig=rig, rigid=list(PARTS), parts={}, id_mats={}, normal_mats={})
+tic("escena_piezas", t_c)
 HIDDEN = set(MODEL.get("grupos_ocultos", []))
+
+
+def deformar(m):
+    # "deformar": {parte: {"n", "i", "d"}} (panel de ajuste): corrimientos del reposo en px por vértice, hechos a mano en
+    # el 3D. Si la parte ya no tiene "n" vértices (cambió su receta) no se aplican
+    # Hand-made per-vertex rest offsets (tuning panel); skipped if the part no longer has "n" vertices
+    d = MODEL.get("deformar", {}).get(m["nombre"])
+    if not d: return
+    if len(m["v"]) != d["n"]:
+        print(f"aviso: deformar '{m['nombre']}' ignorado: {len(m['v'])} vértices, esperaba {d['n']}"); return
+    v = [list(p) for p in m["v"]]
+    for i, dv in zip(d["i"], d["d"]): v[i] = [a + b for a, b in zip(v[i], dv)]
+    m["v"] = v
+
+
+# Cuerpos contra los que cae la tela (por prefijo de nombre) y partes ya simuladas: {nombre: (reposo, caído, objeto)}
+# Bodies the cloth falls against (by name prefix) and parts already simulated: {name: (rest, settled, object)}
+TELA_CUERPOS = ("cuerpo", "pierna", "muslo", "media")
+TELA_HECHA = {}
+TELA_STATS = {}  # cuánto se movió y si se asentó, por parte (OUT/tela.json) / how far it moved and whether it settled
+
+
+def tela_malla(nombre, v, f):
+    me = bpy.data.meshes.new(nombre); me.from_pydata(v, [], f); me.update()
+    o = bpy.data.objects.new(nombre, me); scene.collection.objects.link(o)
+    return o
+
+
+def tela(m):
+    # "tela" en una parte (apagada por defecto, rig3d_partes la copia de la receta): {"fijar": "cintura", "cuadros": 30,
+    # "rigidez": 15, "flexion": 0.5, "distancia": 0.05, "sobre": [partes ya caídas], "sigue": parte}. Cae como tela en el
+    # reposo: Cloth de Blender con la fila de arriba fija, colisión con el cuerpo y las partes de "sobre", N cuadros; el
+    # resultado reemplaza los vértices (pesos y sombra quedan) y la animación usa esa forma. "sigue": en vez de simular
+    # copia el corrimiento de la parte nombrada (el ruedo detrás de la pollera). Determinista: mismos pasos, misma forma
+    # Off by default: the part falls as cloth at rest (Cloth, top row pinned, body collision, N frames); the result
+    # replaces the vertices (weights and shading stay). "sigue" copies the named part's displacement instead
+    cfg = m["tela"]; v0 = [tuple(p) for p in m["v"]]
+    if cfg.get("sigue"):
+        rest, nuevo, _ = TELA_HECHA[cfg["sigue"]]
+        r = np.array(rest); d = np.array(nuevo) - r; out = []
+        for p in v0:
+            dist = np.linalg.norm(r - np.array(p), axis=1); k = np.argsort(dist, kind="stable")[:4]
+            wk = 1 / (dist[k] + 0.05); out.append(tuple(np.array(p) + (d[k] * wk[:, None]).sum(0) / wk.sum()))
+        out = [tuple(round(float(c), 4) for c in p) for p in out]  # 4 decimales: lo horneado sale idéntico / 4 decimals: baked output is identical
+        m["v"] = out; TELA_HECHA[m["nombre"]] = (v0, out, None); return
+    o = tela_malla("tela_" + m["nombre"], v0, m["f"])
+    top = max(p[2] for p in v0) - cfg.get("banda", 0.3)
+    g = o.vertex_groups.new(name="tela_fijo"); g.add([i for i, p in enumerate(v0) if p[2] >= top], 1.0, "REPLACE")
+    colliders = [c for q, c in PARTS if q["nombre"].startswith(TELA_CUERPOS) and not q.get("tela")]
+    colliders += [TELA_HECHA[n][2] for n in cfg.get("sobre", [])]
+    for c in colliders:
+        if not any(x.type == "COLLISION" for x in c.modifiers): c.modifiers.new("choque", "COLLISION")
+    cl = o.modifiers.new("tela", "CLOTH"); st = cl.settings
+    st.quality = 8; st.mass = cfg.get("masa", 0.3); st.air_damping = cfg.get("amortiguacion", 2.0)
+    st.tension_stiffness = cfg.get("rigidez", 15.0); st.shear_stiffness = cfg.get("cizalla", cfg.get("rigidez", 15.0))
+    st.compression_stiffness = cfg.get("compresion", cfg.get("rigidez", 15.0))
+    st.bending_stiffness = cfg.get("flexion", 0.5); st.vertex_group_mass = "tela_fijo"
+    cl.collision_settings.use_collision = True; cl.collision_settings.distance_min = cfg.get("distancia", 0.05)
+    cl.collision_settings.collision_quality = int(cfg.get("calidad_colision", 2))
+    cl.collision_settings.use_self_collision = False
+    n = int(cfg.get("cuadros", 30)); cl.point_cache.frame_start = 1; cl.point_cache.frame_end = n + 1
+    scene.frame_set(1); scene.gravity = (0, 0, -9.81 * cfg.get("gravedad", 1.0))
+    def leer():
+        ev = o.evaluated_get(bpy.context.evaluated_depsgraph_get()); me2 = ev.to_mesh()
+        q = np.array([tuple(p.co) for p in me2.vertices]); ev.to_mesh_clear(); return q
+    for fr in range(2, n + 1): scene.frame_set(fr)
+    ant = leer(); scene.frame_set(n + 1); fin = leer()
+    out = [tuple(round(float(c), 4) for c in p) for p in fin]
+    TELA_STATS[m["nombre"]] = {"cuadros": n, "corrimiento_max_px": round(float(np.abs(fin - np.array(v0)).max()), 3),
+                               "ultimo_cuadro_px": round(float(np.abs(fin - ant).max()), 4)}
+    json.dump(TELA_STATS, open(os.path.join(OUT, "tela.json"), "w"), indent=1)
+    scene.frame_set(1); scene.gravity = (0, 0, -9.81)
+    # Queda como colisión para lo que cae encima (delantal) / stays as a collider for what falls on it (apron)
+    o.modifiers.remove(cl)
+    for i, p in enumerate(out): o.data.vertices[i].co = p
+    o.modifiers.new("choque", "COLLISION"); o.hide_render = True
+    m["v"] = out; TELA_HECHA[m["nombre"]] = (v0, out, o)
 
 
 def mesh_part(m):
     # Malla de rig3d_partes: grupos de vértices por hueso y modificador de esqueleto con volumen preservado (codos y
     # rodillas no se afinan) / rig3d_partes mesh: vertex groups per bone and an armature modifier preserving volume
+    deformar(m)
+    if m.get("tela"):
+        t_tela = time.perf_counter(); tela(m); tic("tela", t_tela)
+        if MODEL.get("hornear"):
+            # El panel de ajuste pide la forma caída para guardarla como malla fija / the panel asks for the settled shape to bake it
+            os.makedirs(MODEL["hornear"], exist_ok=True)
+            dato = {"v": [[round(c, 4) for c in p] for p in m["v"]], "f": [list(f) for f in m["f"]], "w": m["w"]}
+            dato.update({k: m[k] for k in ("sesgo", "fijo", "mecha", "normales") if k in m})
+            json.dump(dato, open(os.path.join(MODEL["hornear"], m["nombre"] + ".json"), "w"), separators=(",", ":"))
     me = bpy.data.meshes.new(m["nombre"]); me.from_pydata(m["v"], [], m["f"]); me.update()
     for poly in me.polygons: poly.use_smooth = True
     # Normales propias (de un proxy): se guardan relativas a la cara, así siguen a la deformación
@@ -279,17 +400,74 @@ def mesh_part(m):
     return o
 
 
+def reposo_rig():
+    # Esqueleto y raíz sin pose, como en una escena nueva: la tela cae y los ojos se pegan contra el cuerpo en reposo, no contra
+    # la última pose del trabajo anterior / skeleton and root unposed, as in a fresh scene: cloth falls and eyes are parented
+    # against the rest body, not the last pose of the previous job
+    for pb in PB: pb.rotation_euler = (0, 0, 0); pb.location = (0, 0, 0); pb.scale = (1, 1, 1)
+    rig.rotation_euler = (0, 0, 0); rig.location = (0, 0, 0); rig.scale = (1, 1, 1); bpy.context.view_layer.update()
+
+
+def quitar_parte(o):
+    # Saca del Blender una parte reemplazada con su malla y los materiales que armó para ella
+    # Removes a replaced part from Blender with its mesh and the materials it built for it
+    mats = [sl.material for sl in o.material_slots if sl.material and sl.material not in MATS.values()]
+    me = o.data; bpy.data.objects.remove(o); bpy.data.meshes.remove(me)
+    for mt in mats:
+        if mt.users == 0: bpy.data.materials.remove(mt)
+
+
+def clave_parte(s, nombre, previas):
+    # Todo lo que cambia el resultado de una parte: su receta, su "deformar", las esferas en que se apoya ("sobre_partes") y,
+    # si es tela, las partes contra las que cae o a las que sigue / everything that changes a part: its recipe, its "deformar",
+    # the spheres it rests on and, for cloth, the parts it falls against or follows
+    dep = [q for q in MODEL["partes"] if q.get("nombre") in s.get("sobre_partes", [])]
+    extra = MODEL.get("deformar", {}).get(nombre)
+    if s.get("tela"):
+        cfg = s["tela"]
+        if cfg.get("sobre"): return None  # cae sobre otras telas: siempre de cero / falls on other cloth: always from scratch
+        if cfg.get("sigue"): dep.append(previas.get(cfg["sigue"]))
+        else: dep.append(sorted((n, k) for n, k in previas.items() if n.startswith(TELA_CUERPOS) and k and not previas.get("_tela_" + n)))
+    return hashlib.sha1(json.dumps([s, extra, dep], sort_keys=True, default=str).encode()).hexdigest()
+
+
 if MODEL.get("partes"):
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     import rig3d_partes as RP
-    PARTS += [(m, mesh_part(m)) for m in (RP.construir(s, MODEL) for s in RP.expandir(MODEL["partes"]))]
+    cache = PERSIST["parts"]; previas = {}; en_uso = set()
+    if REUSE: reposo_rig()
+    for sp in RP.expandir(MODEL["partes"]):
+        nombre = sp.get("nombre", sp["tipo"]) + (f"_{sp['lado']}" if sp.get("lado") else "")
+        if nombre in QUITAR: continue
+        clave = clave_parte(sp, nombre, previas); hit = cache.get(nombre)
+        if clave is not None and hit and hit["clave"] == clave:
+            m, o = hit["m"], hit["o"]; PARTS.append((m, o))
+            if hit.get("hecha"): TELA_HECHA[nombre] = (*hit["hecha"], None); TELA_STATS[nombre] = hit["stats"]
+        else:
+            t_c = time.perf_counter(); m = RP.construir(sp, MODEL); tic("escena_construir", t_c)
+            if hit: quitar_parte(hit["o"])
+            t_m = time.perf_counter(); o = mesh_part(m); tic("escena_malla", t_m); PARTS.append((m, o))
+            cache[nombre] = {"clave": clave, "m": m, "o": o}
+            if m["nombre"] in TELA_HECHA: cache[nombre].update(hecha=TELA_HECHA[nombre][:2], stats=TELA_STATS.get(nombre))
+        previas[nombre] = clave
+        if sp.get("tela"): previas["_tela_" + nombre] = True
+        en_uso.add(nombre)
+    for nombre in [n for n in cache if n not in en_uso]: quitar_parte(cache.pop(nombre)["o"])
+    if TELA_STATS: json.dump(TELA_STATS, open(os.path.join(OUT, "tela.json"), "w"), indent=1)
+    for _, _, o in TELA_HECHA.values():
+        if o: bpy.data.objects.remove(o)  # solo servían de colisión / they only served as colliders
 
-cam = bpy.data.objects.new("cam", bpy.data.cameras.new("cam")); scene.collection.objects.link(cam)
-cam.data.type = "ORTHO"; cam.rotation_euler = (math.pi / 2 - TILT, 0, 0); scene.camera = cam
+PERSIST["modo_ok"] = True
+tic("armar_escena", T0)
 light = MODEL.get("luz", {"rot": [50, -30, -20], "energia": 3.2})
-sun = bpy.data.objects.new("sun", bpy.data.lights.new("sun", "SUN")); scene.collection.objects.link(sun)
-sun.data.energy = light["energia"]; sun.rotation_euler = [math.radians(a) for a in light["rot"]]
-sun.data.use_shadow = light.get("sombras", True)  # sin sombras arrojadas el tono sale solo de la normal / no cast shadows
+if REUSE: cam, sun = PERSIST["cam"], PERSIST["sun"]; scene.camera = cam
+else:
+    cam = bpy.data.objects.new("cam", bpy.data.cameras.new("cam")); scene.collection.objects.link(cam)
+    cam.data.type = "ORTHO"; cam.rotation_euler = (math.pi / 2 - TILT, 0, 0); scene.camera = cam
+    sun = bpy.data.objects.new("sun", bpy.data.lights.new("sun", "SUN")); scene.collection.objects.link(sun)
+    sun.data.energy = light["energia"]; sun.rotation_euler = [math.radians(a) for a in light["rot"]]
+    sun.data.use_shadow = light.get("sombras", True)  # sin sombras arrojadas el tono sale solo de la normal / no cast shadows
+    PERSIST.update(cam=cam, sun=sun)
 R = scene.render; R.engine = "BLENDER_EEVEE"; R.film_transparent = True
 scene.view_settings.view_transform = "Standard"
 
@@ -307,7 +485,80 @@ def canvas(size, zoom=1.0, margin=17):
     return ground
 
 
+# Partes de ropa con "colision" y cuerpos contra los que se empujan (los mismos prefijos que la tela) / clothing parts with
+# "colision" and the bodies they are pushed out of (the same prefixes as the cloth)
+COLISION = [(m, o) for m, o in PARTS if m.get("colision") and o.type == "MESH"]
+CUERPOS = [o for m, o in PARTS if m["nombre"].startswith(TELA_CUERPOS) and not m.get("tela") and not m.get("colision") and o.type == "MESH"]
+COLISION_STATS = {}  # vértices empujados y empuje máximo por parte, sumado sobre los cuadros (OUT/colision.json) / pushed vertices and max push per part
+# Margen por defecto sobre la superficie del cuerpo (px) / default margin above the body surface (px)
+MARGEN_COLISION = 0.4
+# Vueltas de empuje por cuadro (vértices y caras) / push rounds per frame (vertices and faces)
+COLISION_PASADAS = 16
+# Hasta dónde se busca la superficie (px): más hondo que cualquier tela dentro de un miembro / search distance for the surface (px)
+COLISION_ALCANCE = 8.0
+
+
+def restaurar_colision():
+    # Devuelve a su forma de reposo (con el esqueleto deformándola) las partes que el cuadro anterior dejó empujadas
+    # Gives back the rest shape (deformed by the skeleton) to the parts the previous frame left pushed
+    for m, o in COLISION:
+        if not o.get("colision_sucia"): continue
+        o.data.vertices.foreach_set("co", np.array(m["v"], np.float32).ravel()); o.data.update()
+        mod = o.modifiers["rig"]; mod.show_viewport = mod.show_render = True
+        if m.get("normales"): o.data.normals_split_custom_set_from_vertices(m["normales"])
+        o["colision_sucia"] = False
+
+
+def aplicar_colision():
+    # Después de posar: cada vértice de la tela que queda a menos del margen de la superficie del cuerpo (adentro incluido)
+    # sube hasta superficie + margen. Geométrico y determinista, sin simulación. La parte empujada pasa a malla estática
+    # (el esqueleto ya está aplicado). Sin partes con "colision" no hace nada
+    # After posing: each cloth vertex closer than the margin to the body surface (inside included) goes up to surface +
+    # margin. Geometric and deterministic, no simulation. A pushed part becomes a static mesh (the skeleton is already applied)
+    if not COLISION or not CUERPOS: return
+    dg = bpy.context.evaluated_depsgraph_get(); verts, polys = [], []
+    for o in CUERPOS:
+        ev = o.evaluated_get(dg); me = ev.to_mesh(); k = len(verts); mw = o.matrix_world
+        verts += [mw @ v.co for v in me.vertices]; polys += [tuple(k + i for i in p.vertices) for p in me.polygons]; ev.to_mesh_clear()
+    bvh = BVHTree.FromPolygons(verts, polys); tocado = False
+    for m, o in COLISION:
+        if o.hide_render: continue  # no se dibuja en esta dirección / not drawn in this direction
+        ev = o.evaluated_get(dg); me = ev.to_mesh(); mw = o.matrix_world; margen = m.get("colision_margen", MARGEN_COLISION)
+        mundo = [mw @ v.co for v in me.vertices]; normales = [tuple(n) for n in me.corner_normals] if m.get("normales") else None
+        ev.to_mesh_clear(); original = list(mundo); caras = [tuple(pl.vertices) for pl in o.data.polygons]
+        # Cada arista una sola vez / each edge once
+        puntos = [(k,) for k in range(len(mundo))] + caras + sorted({tuple(sorted(e.vertices)) for e in o.data.edges})
+        # Hasta COLISION_PASADAS vueltas: los vértices a menos del margen suben; si el centro de una cara sigue adentro, sube
+        # toda la cara lo que le falta. Se corta apenas una vuelta no mueve nada
+        # Up to COLISION_PASADAS rounds: vertices closer than the margin go up; if a face centre is still inside, the whole face rises
+        for _ in range(COLISION_PASADAS):
+            sube = {}
+            # Vértices, centro de cada cara y punto medio de cada arista / vertices, each face centre and each edge's midpoint
+            for ks in puntos:
+                c = sum((mundo[k] for k in ks), Vector()) / len(ks); loc, nrm, _, dist = bvh.find_nearest(c, COLISION_ALCANCE)
+                if loc is None or (c - loc).dot(nrm) >= margen: continue
+                d = nrm * (margen - (c - loc).dot(nrm))
+                for k in ks:
+                    if k not in sube or sube[k].length < d.length: sube[k] = d
+            if not sube: break
+            for k, d in sube.items(): mundo[k] = mundo[k] + d
+        empujados = sum(1 for a, b in zip(original, mundo) if (a - b).length > 1e-6); maximo = max((a - b).length for a, b in zip(original, mundo))
+        st = COLISION_STATS.setdefault(m["nombre"], {"empujados": 0, "maximo_px": 0.0})
+        st["empujados"] += empujados; st["maximo_px"] = round(max(st["maximo_px"], maximo), 3)
+        if not empujados: continue
+        inv = mw.inverted(); local = np.array([tuple(inv @ p) for p in mundo], np.float32).ravel()
+        o.data.vertices.foreach_set("co", local); o.data.update(); o["colision_sucia"] = True; tocado = True
+        mod = o.modifiers["rig"]; mod.show_viewport = mod.show_render = False
+        if normales: o.data.normals_split_custom_set(normales)
+    if tocado: bpy.context.view_layer.update()
+
+
 def pose(frame, base_yaw):
+    restaurar_colision(); pose_huesos(frame, base_yaw)
+    t_c = time.perf_counter(); aplicar_colision(); tic("colision", t_c)
+
+
+def pose_huesos(frame, base_yaw):
     root = frame.get("raiz", {})
     squash = root.get("aplastar", 1.0)
     rig.rotation_euler = (0, 0, math.radians(base_yaw + root.get("giro", 0)))
@@ -337,6 +588,16 @@ def pose(frame, base_yaw):
                 p = MODEL["huesos"][p]["padre"]
             own = chans_all.setdefault(bone, {})
             own["adelante"] = own.get("adelante", 0) + k * inc; own["lado"] = own.get("lado", 0) + k * side
+    # "limites_pose": [{"nombre", "vistas": [direcciones], "huesos": {hueso: {canal: [mín, máx]}}}] (receta): en esas
+    # direcciones base el canal no pasa de ahí. De perfil, abrir el brazo lo corre hacia la cámara sin cambiar la
+    # silueta: el brazo pasa por delante de la pollera en vez de atravesarla
+    # In those base directions the channel stays within range. In profile, opening the arm moves it toward the
+    # camera without changing the silhouette: the arm passes in front of the skirt instead of through it
+    for lim in MODEL.get("limites_pose", []) if JOB.get("modo") != "sondeo" else []:
+        if DIR_OF.get(base_yaw) not in lim.get("vistas", list(YAW)): continue
+        for bone, chans in lim["huesos"].items():
+            for chan, (lo, hi) in chans.items():
+                own = chans_all.setdefault(bone, {}); own[chan] = min(max(own.get(chan, 0.0), lo), hi)
     if "skirt_F" in MODEL["huesos"]:
         # Sectores de la pollera: siguen a los muslos y al canal skirt, sumados a lo que pide la animación
         # Skirt sectors: follow the thighs and the skirt channel, added to what the animation asks
@@ -522,6 +783,34 @@ def legs_in_skirt():
     return out
 
 
+# Muestras por tramo del brazo (hombro-codo, codo-muñeca) para medir contra la pollera / samples per arm segment
+ARM_SAMPLES = 9
+
+
+def arms_vs_skirt():
+    # Por brazo: la menor holgura (px) entre la superficie del brazo (hombro a muñeca, con el radio de "grosor_brazo") y
+    # la tela de la pollera que se ve en este cuadro, bajo su borde de arriba; negativa = el brazo atraviesa la tela
+    # Per arm: the smallest clearance (px) between the arm surface (shoulder to wrist, "grosor_brazo" radius) and the
+    # skirt cloth shown in this frame, below its top edge; negative = the arm goes through the cloth
+    dg = bpy.context.evaluated_depsgraph_get(); g = MODEL["cuerpo"].get("grosor_brazo", [1.8, 1.7, 1.4])
+    telas = [(BVHTree.FromObject(o, dg), max(v[2] for v in o.evaluated_get(dg).bound_box))
+             for p, o in PARTS if p.get("pollera") and not o.hide_render]
+    if not telas: return {}
+    out = {}
+    for s in ("L", "R"):
+        sh, el, wr = PB[f"upper_{s}"].head, PB[f"upper_{s}"].tail, PB[f"fore_{s}"].tail
+        h = math.inf
+        for a, b, ra, rb in ((sh, el, g[0], g[1]), (el, wr, g[1], g[2])):
+            for k in range(ARM_SAMPLES):
+                t = k / (ARM_SAMPLES - 1); q = a.lerp(b, t); r = ra + (rb - ra) * t
+                for bvh, top in telas:
+                    loc, nrm, _, dist = bvh.find_nearest(q)
+                    if loc is None or q.z > top - 0.5: continue  # sobre el borde de la tela no hay adentro / no inside above the rim
+                    h = min(h, (dist if (q - loc).dot(nrm) >= 0 else -dist) - r)
+        out[s] = {"cruza": h < 0, "holgura": round(h, 2) if h != math.inf else None}
+    return out
+
+
 if mode == "sondeo":
     # Para cada hueso y canal con +20: cuánto se mueven su punta y un punto pegado 3 px a su izquierda
     # For each bone and channel at +20: how far its tail and a point stuck 3 px to its left move
@@ -544,6 +833,8 @@ if mode == "sondeo":
     json.dump(report, open(os.path.join(OUT, "sondeo.json"), "w"), indent=1)
 elif mode == "vistas":
     # Vistas grandes y suavizadas del modelo para mostrarlo / large smoothed views to show the model
+    reposo_rig()  # los ojos se pegan al hueso con la pose de ese momento / the eyes are parented with the pose of that moment
+    DECALES = []  # se sacan al terminar para que el próximo trabajo reuse la escena / removed at the end so the next job reuses the scene
     if MODEL.get("partes") and "ojos" in MODEL:
         # Los ojos son 2D en los sprites; en las vistas van como calcomanías con los mismos sellos, en el mismo punto
         # The eyes are 2D in the sprites; in the views they are decals with the same stamps, at the same point
@@ -565,7 +856,7 @@ elif mode == "vistas":
             nt.links.new(mix.outputs[0], out.inputs[0])
             # Un píxel del sello = un px del sprite; el plano mira a la cámara / one stamp pixel = one sprite px
             bpy.ops.mesh.primitive_plane_add(size=1, location=(p[0], p[1] - 0.6, p[2]), rotation=(math.radians(90), 0, 0))
-            o = bpy.context.active_object; o.scale = (w, h, 1); o.data.materials.append(m)
+            o = bpy.context.active_object; o.scale = (w, h, 1); o.data.materials.append(m); DECALES.append((o, m, img))
             bpy.context.view_layer.update(); world = o.matrix_world.copy()
             o.parent = rig; o.parent_type = "BONE"; o.parent_bone = "neck"
             bpy.context.view_layer.update(); o.matrix_world = world  # conserva el lugar / keep its place
@@ -574,11 +865,13 @@ elif mode == "vistas":
     else:
         cam.data.ortho_scale = 64
         below = 47.5 - 32; cam.location = Vector((0, -200 * math.cos(TILT), below / math.cos(TILT) + 200 * math.sin(TILT)))
-    R.resolution_x = R.resolution_y = 512
+    R.resolution_x = R.resolution_y = JOB.get("res", 512)  # el panel de ajuste pide 256 / the tuning panel asks for 256
     R.filter_size = 1.5; scene.eevee.taa_render_samples = 16
     for name, yaw in (("frente", 0), ("tres_cuartos", 35), ("perfil", 90), ("espalda", 180)):
         pose({"raiz": {"giro": yaw}}, 0)
         R.filepath = os.path.join(OUT, f"modelo_{name}.png"); bpy.ops.render.render(write_still=True)
+    for o, m, img in DECALES:
+        me = o.data; bpy.data.objects.remove(o); bpy.data.meshes.remove(me); bpy.data.materials.remove(m); bpy.data.images.remove(img)
 else:
     R.filter_size = 0.0; scene.eevee.taa_render_samples = 1
     meta = {}
@@ -589,6 +882,7 @@ else:
     if MODEL.get("partes"):
         fwd = Vector((0, math.cos(TILT), -math.sin(TILT)))
         for code, (p, o) in enumerate(PARTS, 1):
+            if code in PERSIST["id_mats"]: ID_MATS[o.name] = PERSIST["id_mats"][code]; continue  # solo depende del código / depends only on the code
             m = bpy.data.materials.new(f"id_{code}"); m.use_nodes = True; nt = m.node_tree; nt.nodes.clear()
             geo = nt.nodes.new("ShaderNodeNewGeometry")
             dp = nt.nodes.new("ShaderNodeVectorMath"); dp.operation = "DOT_PRODUCT"; dp.inputs[1].default_value = fwd
@@ -604,7 +898,7 @@ else:
             nt.links.new(hd.outputs[0], comb.inputs[1]); nt.links.new(lo.outputs[0], comb.inputs[2])
             em = nt.nodes.new("ShaderNodeEmission"); out = nt.nodes.new("ShaderNodeOutputMaterial")
             nt.links.new(comb.outputs[0], em.inputs[0]); nt.links.new(em.outputs[0], out.inputs[0])
-            ID_MATS[o.name] = m
+            ID_MATS[o.name] = PERSIST["id_mats"][code] = m
         def main_bone(p):
             # Hueso que más pesa en la parte (o el de la pieza rígida): rig3d.py saca de acá qué es cabeza
             # Bone with the most weight in the part (or the rigid piece's bone): rig3d.py tells the head from it
@@ -645,7 +939,7 @@ else:
         return m
 
     if JOB.get("normales"):
-        mats = [normal_material(False), None]
+        mats = PERSIST["normal_mats"].setdefault("par", [normal_material(False), None])
         for p, o in PARTS:
             rest = o.type == "MESH" and "n_reposo" in o.data.attributes
             if rest and mats[1] is None: mats[1] = normal_material(True)
@@ -661,9 +955,6 @@ else:
         for p, o in PARTS:
             for sl, mat in zip(o.material_slots, saved[o.name]): sl.material = mat
 
-    # RIG3D_BLEND=<ruta>: guarda la escena armada (malla, huesos, cámara) para abrirla en Blender
-    # RIG3D_BLEND=<path>: saves the built scene (meshes, bones, camera) to open it in Blender
-    if os.environ.get("RIG3D_BLEND"): bpy.ops.wm.save_as_mainfile(filepath=os.environ["RIG3D_BLEND"])
     for anim in JOB["anims"]:
         size = anim.get("lienzo", 64); canvas(size, anim.get("zoom", 1.0), anim.get("margen_suela", 17))
         frames = anim["cuadros"]
@@ -679,7 +970,9 @@ else:
             if anim.get("pixel_pantalla"):
                 pose({}, YAW[d]); v = world_to_camera_view(scene, cam, rig.matrix_world @ PB["hips"].head)
                 PIXEL_REF = (v.x * size, v.y * size)
+            solo = JOB.get("solo", [None] * len(JOB["anims"]))[JOB["anims"].index(anim)]
             for i, frame in enumerate(frames):
+                if solo is not None and i not in solo: continue  # el panel de ajuste mira solo algunos / the panel looks at a few
                 arc = None
                 if "estela" in frame.get("mostrar", []) and (i > 0 or anim.get("bucle")):
                     # Recorrido de la hoja entre el cuadro anterior y este, para que la estela siga el arco
@@ -690,18 +983,31 @@ else:
                         pose(blend(prev, frame, k / TRAIL_STEPS), YAW[d])
                         m = markers()
                         arc.append([project(m["mano_R"]), project(m["punta_espada"])])
-                pose(frame, YAW[d])
+                t_p = time.perf_counter(); pose(frame, YAW[d]); tic("posar", t_p)
                 R.filepath = os.path.join(OUT, f"{anim['nombre']}_{d}_{i}.png")
-                bpy.ops.render.render(write_still=True)
+                t_p = time.perf_counter(); bpy.ops.render.render(write_still=True); tic("render_color", t_p)
+                t_p = time.perf_counter()
                 pts = {name: project(w) for name, w in markers().items()}
                 meta[f"{anim['nombre']}_{d}_{i}"] = {"marcadores": pts, "arco": arc,
                                                      "giro": (YAW[d] + frame.get("raiz", {}).get("giro", 0)) % 360}
-                if any(p.get("pollera") for p, o in PARTS): meta[f"{anim['nombre']}_{d}_{i}"]["pollera"] = legs_in_skirt()
+                if any(p.get("pollera") for p, o in PARTS):
+                    meta[f"{anim['nombre']}_{d}_{i}"]["pollera"] = legs_in_skirt()
+                    meta[f"{anim['nombre']}_{d}_{i}"]["brazos"] = arms_vs_skirt()
+                tic("medidas", t_p)
                 if NORMAL_MATS:
-                    render_ids(os.path.join(OUT, f"{anim['nombre']}_{d}_{i}_n.png"), NORMAL_MATS)
+                    t_p = time.perf_counter(); render_ids(os.path.join(OUT, f"{anim['nombre']}_{d}_{i}_n.png"), NORMAL_MATS); tic("render_normales", t_p)
                 if ID_MATS:
-                    render_ids(os.path.join(OUT, f"{anim['nombre']}_{d}_{i}_id.png"))
+                    t_p = time.perf_counter(); render_ids(os.path.join(OUT, f"{anim['nombre']}_{d}_{i}_id.png")); tic("render_ids", t_p)
                     if "ojos" in MODEL: meta[f"{anim['nombre']}_{d}_{i}"]["ojos"] = eyes(project)
                     if "ojos" in MODEL: meta[f"{anim['nombre']}_{d}_{i}"]["esqueleto"] = skeleton(size)
     json.dump(meta, open(os.path.join(OUT, "meta.json"), "w"), indent=0)
+    if COLISION_STATS: json.dump(COLISION_STATS, open(os.path.join(OUT, "colision.json"), "w"), indent=1)
+    tic("total_blender", T0); json.dump({k: round(v, 4) for k, v in TIEMPOS.items()}, open(os.path.join(OUT, "tiempos.json"), "w"))
+    # RIG3D_BLEND=<ruta>: guarda la escena armada (malla, huesos, cámara) posada en el cuadro RIG3D_BLEND_CUADRO (0) de
+    # la última animación y dirección renderizadas, para abrirla en Blender (el panel de ajuste la usa)
+    # RIG3D_BLEND=<path>: saves the built scene posed at frame RIG3D_BLEND_CUADRO (0) of the last rendered animation and
+    # direction, to open it in Blender (the tuning panel uses it)
+    if os.environ.get("RIG3D_BLEND"):
+        pose(frames[min(int(os.environ.get("RIG3D_BLEND_CUADRO", 0)), len(frames) - 1)], YAW[d])
+        bpy.ops.wm.save_as_mainfile(filepath=os.environ["RIG3D_BLEND"])
 print("RIG3D_OK", mode)

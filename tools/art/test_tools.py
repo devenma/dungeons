@@ -662,6 +662,223 @@ def test_piezas_y_slots():
             assert "cabeza" in str(e)
 
 
+def test_panel_receta():
+    # Panel de ajuste: un control mueve números de varios módulos; lo de una base protegida se pisa en la receta; guardar
+    # escribe solo lo tocado sin cambiar el formato; y la tabla real de la maid resuelve a números que existen
+    sys.path.insert(0, os.path.join(HERE, "panel_ajuste")); import receta as R
+    with tempfile.TemporaryDirectory() as tmp:
+        os.makedirs(os.path.join(tmp, "maniqui_op15")); os.makedirs(os.path.join(tmp, "p"))
+        base = '{"cuerpo": {"cintura": 8.0, "caderas": [5.0, -1.0]},\n "partes": [{"nombre": "a", "radios": [[0.1, 2.0], [1, 4]]}]}'
+        ves = '{"partes": [{"nombre": "a", "radios": [[0.1, 3.0], [1, 6]]}, {"nombre": "b", "alto": 10}]}'
+        rec = '{"incluir": ["../maniqui_op15/b.json", "v.json"], "cuerpo": {"x": 1}}'
+        for n, t in (("maniqui_op15/b.json", base), ("p/v.json", ves), ("p/r.json", rec)): open(os.path.join(tmp, n), "w", newline="").write(t)
+        mods = R.modulos(os.path.join(tmp, "p", "r.json")); merged = {"cuerpo": {"cintura": 8.0, "x": 1}, "partes": [{"nombre": "a", "radios": [[0.1, 3.0], [1, 6]]}, {"nombre": "b", "alto": 10}]}
+        ctl = {"id": "c", "objetivos": [{"ruta": ["cuerpo", "cintura"]}, {"ruta": ["partes", "a", "radios", [0, 1], 1]}, {"ruta": ["partes", "b", "alto"], "modo": "add", "factor": -1}]}
+        hs = R.hojas_de(mods, merged, ctl)
+        assert [h["modulo"] for h in hs] == [2, 1, 1, 1], "la cintura vive en la base protegida: va a la receta (último)"
+        nuevos = R.aplicar(mods, hs, {"c": 10}, {"c": "%"})
+        assert set(nuevos) == {1, 2} and nuevos[2]["cuerpo"] == {"x": 1, "cintura": 8.8}
+        assert nuevos[1]["partes"][0]["radios"] == [[0.1, 3.3], [1, 6.6]] and nuevos[1]["partes"][1]["alto"] == 9.9
+        t = R.texto_nuevo(mods[1]["texto"], mods[1]["datos"], nuevos[1])
+        assert t == ves.replace("3.0", "3.3").replace("6]", "6.6]").replace("10}", "9.9}")
+        assert R.texto_nuevo(mods[2]["texto"], mods[2]["datos"], nuevos[2]) == rec.replace('"cuerpo": {"x": 1}', '"cuerpo": {"x": 1, "cintura": 8.8}')
+        assert R.aplicar(mods, hs, {"c": 0}, {"c": "%"}) == {}, "sin cambios no se toca ningún módulo"
+        assert R.aplicar(mods, hs, {"c": 0}, {"c": "%"}, {hs[0]["id"]: 9})[2]["cuerpo"]["cintura"] == 9
+        assert list(R.cambios({"a": [1, 2]}, {"a": [1, 2, 3], "b": 1})) == [("add", ("a",), None, 3), ("add", (), "b", 1)]
+    import json, rig3d
+    cfg = json.load(open(os.path.join(HERE, "panel_ajuste", "controles.json"), encoding="utf-8"))
+    grupos = {g for g, _ in cfg["grupos"]}
+    assert all(c["slot"] in grupos and c["min"] < 0 < c["max"] and c["objetivos"] for c in cfg["controles"]), "cada control declara su slot"
+    fuente = os.path.join(HERE, "..", "..", "art", "source")
+    aplican = {}
+    for pid in sorted(os.listdir(fuente)):
+        receta = os.path.join(fuente, pid, "3d", "malla.json")
+        if not os.path.exists(receta): continue
+        mods = R.modulos(receta); merged = rig3d.read_recipe(receta)
+        aplican[pid] = {c["id"] for c in cfg["controles"] if R.hojas_de(mods, merged, c)}
+        for c in cfg["controles"]:  # lo que aplica se escribe en un módulo editable (salvo que la receta misma sea la base)
+            hs = R.hojas_de(mods, merged, c)
+            assert pid in R.PROTEGIDOS or all(not R.protegido(mods[h["modulo"]]) for h in hs), (pid, c["id"])
+    assert {"largo_pollera", "pelo_largo", "busto", "cadera"} <= aplican["maid_op15"], "la maid recibe sus controles sin personaje en la tabla"
+    assert "largo_pollera" not in aplican["maniqui_op15"] and "cadera" in aplican["maniqui_op15"], "la base desnuda no tiene pollera"
+    assert aplican["maid_gato"] != aplican["maid_op15"] and "cintura" in aplican["maid_gato"], "otro vestido y otro peinado: otro juego de controles"
+    # Piezas por slot: catálogo, elegidas, cambio y apagado en el incluir, y el texto de la receta
+    cat = R.catalogo(os.path.join(fuente, "modulos"))
+    assert {"busto", "pelo", "pies", "torso+piernas", "cola"} <= set(cat) and len(cat["busto"]) >= 5
+    receta = os.path.join(fuente, "maid_op15", "3d", "malla.json"); texto = open(receta, encoding="utf-8", newline="").read(); inc = json.loads(texto)["incluir"]
+    eleg = R.elegidas(receta, inc); medio = next(o["ruta"] for o in cat["busto"] if o["id"] == "busto_medio")
+    assert os.path.basename(eleg["busto"]) == "busto_xl.json" and "cola" in eleg
+    cambiado = R.con_pieza(receta, inc, "busto", medio)
+    assert cambiado[inc.index(next(i for i in inc if "busto_xl" in i))] == "../../modulos/busto/busto_medio.json" and len(cambiado) == len(inc), "conserva el lugar"
+    apagado = R.con_pieza(receta, inc, "cola", "")
+    assert len(apagado) == len(inc) - 1 and not any("cola" in i for i in apagado)
+    assert R.texto_incluir(texto, inc) == texto, "sin cambios el texto queda igual"
+    nuevo = R.texto_incluir(texto, apagado); assert json.loads(nuevo)["incluir"] == apagado and nuevo.count("\n") == texto.count("\n") - 1
+    mods = R.modulos(receta, apagado); assert not any("cola" in m["ruta"] for m in mods) and mods[-1]["datos"]["incluir"] == apagado
+    merged = rig3d.read_recipe(receta)  # la receta del disco no cambió
+    assert any(p["id"] == "op15_cola_gato" for p in merged["_piezas"])
+    with tempfile.TemporaryDirectory() as tmp:
+        roto = os.path.join(tmp, "roto.json"); open(roto, "w").write("{\"a\": ")
+        try: R.modulos(roto); assert False, "JSON roto"
+        except ValueError as e: assert "roto.json" in str(e) and "roto" in str(e)
+
+
+def test_tela_reposo_y_horneado():
+    # "tela" en una parte de ropa: apagada no cambia nada, prendida es determinista y cambia la forma, y la malla horneada
+    # ("hornear") renderiza igual que la tela simulada / "tela" on a clothing part: off changes nothing, on is deterministic
+    # and reshapes it, and the baked mesh renders the same as the simulated cloth
+    import hashlib, shutil
+    if not (os.environ.get("BLENDER") or shutil.which("blender")):
+        print("skip test_tela_reposo_y_horneado: sin Blender / no Blender"); return
+    sys.path.insert(0, os.path.join(HERE, "panel_ajuste")); import vista, rig3d, receta as R
+    maid = os.path.join(ROOT, "art", "source", "maid_op15", "3d", "malla.json")
+    cfg = R.tela_partes(json.load(open(os.path.join(HERE, "panel_ajuste", "controles.json"), encoding="utf-8"))["tela"])
+    with tempfile.TemporaryDirectory() as tmp:
+        try: inc = os.path.relpath(maid, tmp).replace("\\", "/")
+        except ValueError: print("skip: otra unidad / other drive"); return
+        def md5s(partes, extra=None, nombre="r"):
+            receta = os.path.join(tmp, nombre + ".json")
+            json.dump({"incluir": [inc], "partes": partes, **(extra or {})}, open(receta, "w"))
+            out = os.path.join(tmp, "v_" + nombre)
+            info = vista.correr({"receta": receta, "anim": "", "dirs": ["south", "east", "north"], "cuadros": [0], "parches": {}, "salida": out, "ref": "", "modo": "vista"})
+            assert "error" not in info, info
+            return [hashlib.md5(open(os.path.join(out, f"f0_{d}.png"), "rb").read()).hexdigest() for d in ("south", "east", "north")]
+        rigido = md5s([])
+        assert md5s([{"nombre": n, "tela": {}} for n in cfg], nombre="vacia") == rigido, "tela vacía = apagada"
+        tela = [{"nombre": n, "tela": v} for n, v in cfg.items()]
+        a = md5s(tela, {"hornear": os.path.join(tmp, "h")}); assert a == md5s(tela, nombre="r2"), "determinista"
+        assert all(x != y for x, y in zip(a, rigido)), "la tela cambia la forma"
+        stats = json.load(open(os.path.join(tmp, "v_r", "_render", "tela.json")))
+        assert stats["pollera"]["ultimo_cuadro_px"] < 0.1 and stats["pollera_perfil"]["ultimo_cuadro_px"] < 0.5, stats
+        modelo = rig3d.read_recipe(maid); fijas = []
+        for sp in modelo["partes"]:
+            if sp.get("nombre") in cfg:
+                fijas.append({"nombre": sp["nombre"], "tipo": "malla_fija", "archivo": os.path.join(tmp, "h", sp["nombre"] + ".json").replace("\\", "/"),
+                              **{k: v for k, v in sp.items() if k in ("material", "capa", "solo_en", "tono_linea", "colision", "colision_margen")}, **({"pollera": True} if sp.get("pesos") == "pollera" else {})})
+        assert md5s(fijas, nombre="horneada") == a, "horneada = tela simulada"
+        assert md5s([], nombre="r3") == rigido
+
+
+def test_panel_secuencia_y_tela_preajustes():
+    # Servidor del panel: un pedido "cambiar" viejo se descarta si ya llegó uno más nuevo (sin renderizar), y la tela sale del
+    # preajuste elegido con los números crudos encima / panel server: a stale "cambiar" is dropped when a newer one arrived
+    # (no render), and the cloth comes from the chosen preset with the raw numbers on top
+    sys.path.insert(0, os.path.join(HERE, "panel_ajuste")); import servidor as S, receta as R
+    o = S.Orden(); assert o.vigente(None) and o.vigente(1)
+    o.registrar(1); o.registrar(3); o.registrar(2)
+    assert not o.vigente(1) and not o.vigente(2) and o.vigente(3) and o.vigente(None), "gana el más nuevo"
+    cfg = json.load(open(os.path.join(HERE, "panel_ajuste", "controles.json"), encoding="utf-8"))
+    ids = [x["id"] for x in cfg["tela"]["preajustes"]]; assert ids == ["algodon", "seda", "lona"] and cfg["tela"]["predeterminado"] == "algodon"
+    base = R.tela_partes(cfg["tela"]); seda = R.tela_partes(cfg["tela"], "seda", {"rigidez": 99})
+    assert base["pollera"]["rigidez"] == 20 and seda["pollera"]["rigidez"] == 99 and seda["pollera"]["flexion"] == 0.01
+    assert base["ruedo"] == {"sigue": "pollera"} == seda["ruedo"], "lo que sigue no lleva física"
+    assert len({tuple(sorted(R.tela_partes(cfg["tela"], i)["pollera"].items())) for i in ids}) == 3
+    maid = next(q for q in S.personajes() if q["id"] == "maid_op15"); ses = S.Sesion(cfg, maid)
+    llamadas = []; real = S.vista.correr; S.vista.correr = lambda t: llamadas.append(t) or {"cuadros": 1}
+    try:
+        S.ORDEN.registrar(10); r = ses.cambiar({"seq": 9, "dirs": ["south"]})
+        assert r == {"descartado": True, "seq": 9} and not llamadas, "el viejo no renderiza"
+        r = ses.cambiar({"seq": 10, "dirs": ["south"], "tela": {"torso+piernas": True}, "tela_preajuste": {"torso+piernas": "seda"}, "tela_crudos": {"rigidez": 7}})
+        assert len(llamadas) == 1 and r["seq"] == 10 and ses.tela == {"torso+piernas": "seda"}
+        pol = next(s for d in llamadas[0]["parches"].values() for s in d["partes"] if s.get("nombre") == "pollera")
+        assert pol["tela"]["rigidez"] == 7 and pol["tela"]["flexion"] == 0.01 and pol["tela"]["fijar"] == "cintura", pol["tela"]
+        ses.cambiar({"seq": 11, "tela": {"torso+piernas": True}, "tela_preajuste": {"torso+piernas": "no_existe"}})
+        assert ses.tela == {"torso+piernas": "algodon"}, "un preajuste que no existe cae al predeterminado"
+        pieza = next(p for p in ses.estado()["piezas"] if p["slot"] == "torso+piernas")
+        assert [x["id"] for x in pieza["tela"]["preajustes"]] == ids and pieza["tela"]["activa"]
+    finally: S.vista.correr = real; S.ORDEN.ultima = 0
+
+
+def R_eleg(ses, slot):
+    import receta as R
+    return R.elegidas(ses.receta, ses.incluir)[slot]
+
+
+def test_panel_escena_reusada_igual_que_en_frio():
+    # El Blender del panel reusa la escena entre trabajos (esqueleto, partes y tela sin cambios): cada resultado tiene que
+    # ser idéntico al de un Blender nuevo, y lo mismo las vistas 3D / the panel's Blender reuses the scene between jobs: every
+    # result must equal a fresh Blender's, and so must the 3D views
+    import shutil
+    if not (os.environ.get("BLENDER") or shutil.which("blender")):
+        print("skip test_panel_escena_reusada_igual_que_en_frio: sin Blender / no Blender"); return
+    sys.path.insert(0, os.path.join(HERE, "panel_ajuste")); import servidor as S, vista, rig3d
+    cfg = json.load(open(os.path.join(HERE, "panel_ajuste", "controles.json"), encoding="utf-8"))
+    ses = S.Sesion(cfg, next(q for q in S.personajes() if q["id"] == "maid_op15")); dirs = ["south", "east", "north", "west"]
+    caliente = S.Blender(); rig3d.RUN_BLENDER = caliente.correr
+    px = lambda d, f: np.array(Image.open(os.path.join(d, f)).convert("RGBA"))
+    try:
+        pasos = [{}, {"valores": {"busto": 20}}, {"tela": {"torso+piernas": True}}, {"tela": {"torso+piernas": True}, "valores": {"pelo_largo": 15}},
+                 {"tela": {"torso+piernas": True}, "tela_preajuste": {"torso+piernas": "seda"}}, {"tela": {}, "valores": {"cintura": -10}}]
+        # Piezas: apagar la cofia, cambiar el busto y volver a ponerla (Ctrl+Z) / pieces: cofia off, another bust, cofia back
+        rutas = {s_: {o["id"]: o["ruta"] for o in ops} for s_, ops in ses.catalogo.items()}; cofia = S.rel(R_eleg(ses, "cabeza"))
+        otro_busto = next(r for i, r in rutas["busto"].items() if r != S.rel(R_eleg(ses, "busto")))
+        pasos += [{"valores": {"busto": 0, "cintura": 0}, "piezas": {"cabeza": ""}},  # sin sliders: la receta solo cambia por el "incluir"
+                    {"piezas": {"cabeza": "", "busto": otro_busto}}, {"piezas": {"cabeza": cofia, "busto": otro_busto}}]
+        previo = None
+        for k, req in enumerate(pasos):
+            req = {"dirs": dirs, "cuadros": [0], **req}; ses.cambiar(req)
+            if k == len(pasos) - 3: previo = px(ses.salida, "f0_south.png")
+            if k == len(pasos) - 2: assert not np.array_equal(previo, px(ses.salida, "f0_south.png")), "sin cofia el render cambia"
+            parches, _ = ses.parches(); rig3d.RUN_BLENDER = None; frio = os.path.join(caliente.tmp, f"frio{k}")
+            try: info = vista.correr(ses.trabajo(req, parches, frio))
+            finally: rig3d.RUN_BLENDER = caliente.correr
+            assert "error" not in info, info
+            for d in dirs: assert np.array_equal(px(ses.salida, f"f0_{d}.png"), px(frio, f"f0_{d}.png")), (k, d)
+        modelo = ses.modelo_3d(); a, b = os.path.join(caliente.tmp, "tira_a"), os.path.join(caliente.tmp, "tira_b")
+        vista.ver3d(modelo, a, caliente.correr, 128); rig3d.RUN_BLENDER = None
+        try: vista.ver3d(modelo, b, rig3d.run_blender, 128)
+        finally: rig3d.RUN_BLENDER = caliente.correr
+        for f in os.listdir(a): assert np.array_equal(px(a, f), px(b, f)), f
+    finally:
+        rig3d.RUN_BLENDER = None
+        if caliente.proc: caliente.proc.kill()
+
+
+def px_hoja(info): return np.array(Image.open(info["hoja"]).convert("RGBA"))
+def px_cuadro(tmp, k, d): return np.array(Image.open(os.path.join(tmp, k, f"f0_{d}.png")).convert("RGBA"))
+
+
+def test_colision_ropa_piel():
+    # "colision" en las partes de ropa: apagada (o false) no cambia nada; prendida con el vuelo de la pollera al mínimo deja en 0
+    # la piel de pierna que asoma a través de la tela en todos los cuadros de la caminata, y sin ella asoma
+    # "colision" on clothing parts: off (or false) changes nothing; on, with the skirt flare at its minimum, leaves 0 px of leg
+    # skin showing through the cloth in every walk frame, and without it the skin shows
+    import copy, re, shutil
+    if not (os.environ.get("BLENDER") or shutil.which("blender")):
+        print("skip test_colision_ropa_piel: sin Blender / no Blender"); return
+    sys.path.insert(0, os.path.join(HERE, "panel_ajuste")); import servidor as S, vista
+    cfg = json.load(open(os.path.join(HERE, "panel_ajuste", "controles.json"), encoding="utf-8"))
+    ses = S.Sesion(cfg, next(q for q in S.personajes() if q["id"] == "maid_op15"))
+    ves = next(m for m in ses.mods if m["ruta"].endswith("op15_vestido.json"))
+    con = [p["nombre"] for p in ves["datos"]["partes"] if p.get("colision")]
+    assert {"pollera", "pollera_perfil", "ruedo", "delantal"} <= set(con), con
+    def variante(modo, datos):
+        d = copy.deepcopy(datos)
+        for p in d["partes"]:
+            if modo == "sin": p.pop("colision", None); p.pop("colision_margen", None)
+            elif modo == "false" and "colision" in p: p["colision"] = False
+        return d
+    tmp = tempfile.mkdtemp(); walk = ses.ruta_anim("caminar")
+    def correr(modo, valores, anim, k):
+        ses.valores = {c: 0 for c in ses.valores}; ses.valores.update(valores); parches, _ = ses.parches()
+        parches[ves["ruta"]] = variante(modo, parches.get(ves["ruta"], ves["datos"]))
+        info = vista.correr({"receta": ses.receta, "anim": anim, "parches": parches, "salida": os.path.join(tmp, k), "ref": "",
+                             "modo": "verificar" if anim else "vista", "dirs": ["south", "east", "north", "west"], "cuadros": [0]})
+        assert "error" not in info, info
+        return info
+    asoma = lambda info: sum(int(x) for c in info["controles"] if c["nombre"] == "piernas tapadas por la pollera" for x in re.findall(r"(\d+) px", c["detalle"]))
+    bajo = {"vuelo_pollera": -40}
+    sin, falso, con_ = correr("sin", bajo, walk, "sin"), correr("false", bajo, walk, "falso"), correr("con", bajo, walk, "con")
+    assert asoma(sin) > 100, asoma(sin)
+    assert asoma(falso) == asoma(sin) and np.array_equal(px_hoja(sin), px_hoja(falso)), "colision false = apagada"
+    assert asoma(con_) == 0, asoma(con_)
+    st = json.load(open(os.path.join(tmp, "con", "caminata", "_render", "colision.json")))
+    assert st["pollera"]["empujados"] > 0 and not os.path.exists(os.path.join(tmp, "sin", "caminata", "_render", "colision.json"))
+    correr("con", {}, "", "n_con"), correr("sin", {}, "", "n_sin")
+    dif = sum(int((px_cuadro(tmp, "n_con", d) != px_cuadro(tmp, "n_sin", d)).any(-1).sum()) for d in ("south", "east", "north", "west"))
+    assert dif <= 20, f"con la pollera sin tocar casi no cambia el reposo: {dif} px"
+
+
 def test_paquete_hoja_guias():
     import paquete_modelado as pm
     assert pm.game_row(310, 310, 84) == 47 and pm.game_row(84, 310, 84) == 7

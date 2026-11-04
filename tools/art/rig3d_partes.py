@@ -492,6 +492,16 @@ def p_importada(s, M):
     return {"v": v, "f": faces, "w": [w_pelo(c, p) for p in v], "mecha": mecha}
 
 
+def p_malla_fija(s, M):
+    # Malla horneada (la tela caída del panel de ajuste, rig3d_blender.tela): vértices, caras y pesos tal cual, en el
+    # archivo de "archivo" / baked mesh (the settled cloth from the tuning panel): vertices, faces and weights as they are
+    import json, os
+    d = json.load(open(os.path.join(M.get("_dir", ""), s["archivo"]), encoding="utf-8"))
+    out = {"v": [tuple(p) for p in d["v"]], "f": [tuple(f) for f in d["f"]], "w": d["w"]}
+    out.update({k: d[k] for k in ("sesgo", "fijo", "mecha", "normales") if k in d})
+    return out
+
+
 def p_mechon(s, M):
     # Mechón cónico que cuelga del hueso lock_<lado> con la punta afinada / conical lock hanging from lock_<side>
     b = M["huesos"][f"lock_{s['lado']}"]; k = SIDE[s["lado"]]
@@ -698,7 +708,8 @@ def sectores_pollera(pose, k, umbral=None):
     # "umbral": the front follows k2 more past those degrees forward (lunge) without changing the walk
     t = lambda s, c: pose.get(f"thigh_{s}", {}).get(c, 0.0)
     fw = (t("L", "adelante"), t("R", "adelante")); extra = umbral[1] * max(max(fw) - umbral[0], 0) if umbral else 0.0
-    out = {"skirt_F": {"adelante": k * max(*fw, 0) + extra}, "skirt_B": {"adelante": k * min(*fw, 0)},
+    atras = umbral[1] * max(-min(fw) - umbral[0], 0) if umbral else 0.0  # lo mismo hacia atrás / same backwards
+    out = {"skirt_F": {"adelante": k * max(*fw, 0) + extra}, "skirt_B": {"adelante": k * min(*fw, 0) - atras},
            "skirt_L": {"lado": k * max(t("L", "afuera"), 0)}, "skirt_R": {"lado": -k * max(t("R", "afuera"), 0)}}
     for chans in out.values():
         for c, v in pose.get("skirt", {}).items():
@@ -924,7 +935,7 @@ def p_lazo(s, M):
 
 PARTES = {"cuerpo": p_cuerpo, "brazo": p_brazo, "pierna": p_pierna, "cabeza": p_cabeza, "pelo": p_pelo,
           "mechon": p_mechon, "esfera": p_esfera, "toro": p_toro, "lofteo": p_lofteo, "parche": p_parche,
-          "tubo": p_tubo_hueso, "lazo": p_lazo, "importada": p_importada,
+          "tubo": p_tubo_hueso, "lazo": p_lazo, "importada": p_importada, "malla_fija": p_malla_fija,
           "tarjeta": p_tarjeta, "oreja": p_oreja, "manga": p_manga, "miton": p_miton}
 # Grupo de línea interna por tipo; brazos y piernas llevan el lado / inner-line group per type; limbs carry the side
 LINEA = {"brazo": "brazo", "pierna": "pierna"}
@@ -952,11 +963,15 @@ def construir(s, M):
         m["ocultar_si"] = s["ocultar_si"].replace("<lado>", lado)
     if s.get("ocultar_lejos"):  # [lado, grados]: se oculta si ese costado mira lejos de la cámara / hidden facing away
         m["ocultar_lejos"] = [SIDE.get(lado, 1), s["ocultar_lejos"]]
+    if s.get("tela"): m["tela"] = s["tela"]  # cae como tela en el reposo (rig3d_blender.tela) / falls as cloth at rest
+    if s.get("colision"):  # tela empujada fuera del cuerpo en cada cuadro (rig3d_blender.aplicar_colision) / pushed out of the body every frame
+        m["colision"] = True
+        if "colision_margen" in s: m["colision_margen"] = s["colision_margen"]
     if s.get("solo_en"): m["solo_en"] = s["solo_en"]  # direcciones base donde se dibuja / base directions where it renders
     if s.get("sesgo_sombra"):
         m["sesgo"] = sesgo_sombra(s, M, m["v"], m["f"]); f = sesgo_fijo(s, M, m["v"], m["f"])
         if f: m["fijo"] = f
-    if s["tipo"] == "lofteo" and s.get("pesos") == "pollera":
+    if s.get("pollera") or (s["tipo"] == "lofteo" and s.get("pesos") == "pollera"):
         m["pollera"] = True  # la usa el control de piernas dentro de la pollera / used by the legs-inside-skirt check
     return m
 
