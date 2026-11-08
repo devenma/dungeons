@@ -182,6 +182,42 @@ diferencia entre dos rondas rechazadas y una base aprobable.
   píxeles, no filas. Con la cámara a 22°, un pie a más de ~4 px delante (o detrás, de espaldas) de la cadera cae bajo
   la fila 47: las poses de estrés usan pies a ±4 por IK (antes había ±5-6 y la sentada sin IK).
 
+### Tela animada (2026-11-08)
+
+Plan y decisiones: `plan_tela_animada.md` y `plan_tela_animada_tareas.md`.
+
+- **Marcar una prenda:** `"tela": {"tipo": "algodon", "animada": true}` en la parte del módulo. Los tipos (`algodon`,
+  `seda`, `lona`) están en `art/source/modulos/telas.json`; cualquier clave de la parte pisa la del tipo. Una capa encima
+  de otra (el delantal sobre la falda) suma `"sobre": ["<parte>"]`. Lo que va pegado a otra parte (el ruedo) lleva
+  `"tela": {"sigue": "<parte>", "animada": true}`.
+- **Qué pasa:** la prenda conserva su forma diseñada, sin caída de reposo. En las animaciones con `"bucle": true` se simula
+  con el Cloth de Blender sobre la animación continua, `ciclos` vueltas de calentamiento y `subpasos` por cuadro, y se usa
+  la última vuelta. Una simulación por grupo de direcciones con las mismas poses y partes a la vista (la maid: S, E y N; W
+  sale del espejo). Sin bucle (golpes) la prenda queda rígida.
+- **Campana y vuelo:** la tela tiende a la forma diseñada posada por el esqueleto. `altura_libre` es la fracción de abajo
+  que se suelta (0 borde, 1 cintura), `fijo_ruedo` la fuerza que queda en el borde y `rigidez_fijo` el multiplicador
+  general. Menos fuerza, más vuelo; la campana se conserva igual.
+- **Orden por cuadro:** forma simulada → `sobre` (por fuera de la capa de abajo, a `margen_sobre` px) → `sigue` (atado al triángulo más cercano de su guía) → `brazo_encima`.
+- **Brazos sobre la falda:** `"brazo_encima": {"vistas": [...], "ambos_en": ["south", "north"], "px": 16}` en la receta. Los
+  brazos no chocan con la tela (son finos y se cuelan entre vértices) y abollarla se ve mal. La malla posada del brazo cercano
+  (los dos en `ambos_en`) se corre hacia la cámara por la línea de visión: la cámara es ortográfica, así que no cambia un
+  píxel de lugar y queda delante de la falda. Va graduado por fila de pantalla desde la cintura (por altura, brazo y manga
+  se cruzan). `"extra": [{"vistas", "partes", "px"}]` corre otras partes enteras, por prefijo de nombre (la cola de espaldas, delante del
+  brazo, con más `px` que él). `px` negativo las aleja, y `"solo_sobre_ruedo": true` lo aplica solo por encima del borde de la falda: así
+  el muslo no asoma por la zona fijada y los pies siguen ordenados como en la rígida. `prioridad` no sirve para esto y `corr_ante` tampoco en la maid: lo que queda adentro de la campana es el codo.
+- **Delantal:** `"amortiguacion": 10` (Blender topa ahí). Con menos, la tela floja avanza despacio y vuelve de golpe dos veces por ciclo.
+- **`colision` no corre sobre tela animada:** la simulación ya choca con cuerpo y piernas, y esa pasada hacía saltar vértices
+  hasta 9 px por paso. Sigue valiendo para ropa rígida y para animaciones sin bucle.
+- **Se mantienen** los huesos de sector y los resortes de la falda: mueven la forma a la que tiende la tela, y las
+  animaciones sin bucle los siguen necesitando.
+- **Qué medir** (en `_render/`): `tela_anim.json` (`loop` ≤ `max_entre_cuadros`), marcadores `pollera` sin cruces (`brazos`
+  sigue dando negativo con `brazo_encima`: mide posición 3D, no lo que se ve; las medidas del oeste no cuentan: la fila es el este espejado), `tela_anim.titileo` de la hoja contra la versión
+  rígida y el ancho de la silueta en las filas de la falda.
+- **Estado:** aprobada en la caminata. `op15_vestido.json` sigue rígido porque el panel y sus tests lo asumen; la versión animada de la
+  maid es la receta `art/source/maid_op15/3d/tela_animada.json`.
+- **Pendiente:** los golpes (sin bucle) no tienen tela animada. El maniquí op15 solo tiene `caminar`: correr y reposo no se
+  probaron.
+
 ## Personajes por módulos
 
 Un personaje es una receta corta que junta módulos de `art/source/modulos/` con `"incluir"`; las variantes viven en
