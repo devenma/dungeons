@@ -12,6 +12,9 @@ import numpy as np
 from bpy_extras.object_utils import world_to_camera_view
 from mathutils import Vector
 from mathutils.bvhtree import BVHTree
+from mathutils.geometry import barycentric_transform
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import tela_anim as TA
 
 # Tiempos por etapa (s) en OUT/tiempos.json / per-stage times (s) in OUT/tiempos.json
 T0 = time.perf_counter(); TIEMPOS = {}
@@ -304,6 +307,40 @@ def tela_malla(nombre, v, f):
     return o
 
 
+def seguir(rest, nuevo, v0):
+    # Corrimiento de la parte guía (nuevo - rest) llevado a v0 por sus 4 vecinos más cercanos / the guide part's displacement
+    # carried to v0 through its 4 nearest neighbours
+    d = nuevo - rest; out = []
+    for p in v0:
+        dist = np.linalg.norm(rest - np.array(p), axis=1); k = np.argsort(dist, kind="stable")[:4]
+        wk = 1 / (dist[k] + 0.05); out.append(tuple(np.array(p) + (d[k] * wk[:, None]).sum(0) / wk.sum()))
+    return [tuple(round(float(c), 4) for c in p) for p in out]  # 4 decimales: lo horneado sale idéntico / 4 decimals: baked output is identical
+
+
+def ajustar_cloth(o, cfg, cuerpos):
+    # Modificador Cloth con los valores de la tela (tipo + overrides) y la banda "tela_fijo" fija. Choca solo con "cuerpos"
+    # (una colección propia, que hay que borrar después con soltar_cloth): sin ella Blender usa todo objeto con colisión,
+    # y la falda de frente ya caída empujaba a la de perfil / Cloth modifier with the cloth values and the "tela_fijo" band
+    # pinned. It collides only with "cuerpos" (its own collection, removed later with soltar_cloth)
+    for c in cuerpos:
+        if not any(x.type == "COLLISION" for x in c.modifiers): c.modifiers.new("choque", "COLLISION")
+    col = bpy.data.collections.new("choque_" + o.name); scene.collection.children.link(col)
+    for c in cuerpos: col.objects.link(c)
+    cl = o.modifiers.new("tela", "CLOTH"); st = cl.settings; cl.collision_settings.collection = col
+    st.quality = 8; st.mass = cfg.get("masa", 0.3); st.air_damping = cfg.get("amortiguacion", 2.0)
+    st.tension_stiffness = cfg.get("rigidez", 15.0); st.shear_stiffness = cfg.get("cizalla", cfg.get("rigidez", 15.0))
+    st.compression_stiffness = cfg.get("compresion", cfg.get("rigidez", 15.0))
+    st.bending_stiffness = cfg.get("flexion", 0.5); st.vertex_group_mass = "tela_fijo"
+    cl.collision_settings.use_collision = True; cl.collision_settings.distance_min = cfg.get("distancia", 0.05)
+    cl.collision_settings.collision_quality = int(cfg.get("calidad_colision", 2))
+    cl.collision_settings.use_self_collision = False
+    return cl
+
+
+def soltar_cloth(o, cl):
+    col = cl.collision_settings.collection; o.modifiers.remove(cl); bpy.data.collections.remove(col)
+
+
 def tela(m):
     # "tela" en una parte (apagada por defecto, rig3d_partes la copia de la receta): {"fijar": "cintura", "cuadros": 30,
     # "rigidez": 15, "flexion": 0.5, "distancia": 0.05, "sobre": [partes ya caídas], "sigue": parte}. Cae como tela en el
@@ -313,29 +350,17 @@ def tela(m):
     # Off by default: the part falls as cloth at rest (Cloth, top row pinned, body collision, N frames); the result
     # replaces the vertices (weights and shading stay). "sigue" copies the named part's displacement instead
     cfg = m["tela"]; v0 = [tuple(p) for p in m["v"]]
+    if cfg.get("animada"): return  # conserva la forma diseñada (la campana); se mueve en tela_animada / keeps the designed shape
     if cfg.get("sigue"):
         rest, nuevo, _ = TELA_HECHA[cfg["sigue"]]
-        r = np.array(rest); d = np.array(nuevo) - r; out = []
-        for p in v0:
-            dist = np.linalg.norm(r - np.array(p), axis=1); k = np.argsort(dist, kind="stable")[:4]
-            wk = 1 / (dist[k] + 0.05); out.append(tuple(np.array(p) + (d[k] * wk[:, None]).sum(0) / wk.sum()))
-        out = [tuple(round(float(c), 4) for c in p) for p in out]  # 4 decimales: lo horneado sale idéntico / 4 decimals: baked output is identical
+        out = seguir(np.array(rest), np.array(nuevo), v0)
         m["v"] = out; TELA_HECHA[m["nombre"]] = (v0, out, None); return
     o = tela_malla("tela_" + m["nombre"], v0, m["f"])
     top = max(p[2] for p in v0) - cfg.get("banda", 0.3)
     g = o.vertex_groups.new(name="tela_fijo"); g.add([i for i, p in enumerate(v0) if p[2] >= top], 1.0, "REPLACE")
     colliders = [c for q, c in PARTS if q["nombre"].startswith(TELA_CUERPOS) and not q.get("tela")]
     colliders += [TELA_HECHA[n][2] for n in cfg.get("sobre", [])]
-    for c in colliders:
-        if not any(x.type == "COLLISION" for x in c.modifiers): c.modifiers.new("choque", "COLLISION")
-    cl = o.modifiers.new("tela", "CLOTH"); st = cl.settings
-    st.quality = 8; st.mass = cfg.get("masa", 0.3); st.air_damping = cfg.get("amortiguacion", 2.0)
-    st.tension_stiffness = cfg.get("rigidez", 15.0); st.shear_stiffness = cfg.get("cizalla", cfg.get("rigidez", 15.0))
-    st.compression_stiffness = cfg.get("compresion", cfg.get("rigidez", 15.0))
-    st.bending_stiffness = cfg.get("flexion", 0.5); st.vertex_group_mass = "tela_fijo"
-    cl.collision_settings.use_collision = True; cl.collision_settings.distance_min = cfg.get("distancia", 0.05)
-    cl.collision_settings.collision_quality = int(cfg.get("calidad_colision", 2))
-    cl.collision_settings.use_self_collision = False
+    cl = ajustar_cloth(o, cfg, colliders)
     n = int(cfg.get("cuadros", 30)); cl.point_cache.frame_start = 1; cl.point_cache.frame_end = n + 1
     scene.frame_set(1); scene.gravity = (0, 0, -9.81 * cfg.get("gravedad", 1.0))
     def leer():
@@ -349,7 +374,7 @@ def tela(m):
     json.dump(TELA_STATS, open(os.path.join(OUT, "tela.json"), "w"), indent=1)
     scene.frame_set(1); scene.gravity = (0, 0, -9.81)
     # Queda como colisión para lo que cae encima (delantal) / stays as a collider for what falls on it (apron)
-    o.modifiers.remove(cl)
+    soltar_cloth(o, cl)
     for i, p in enumerate(out): o.data.vertices[i].co = p
     o.modifiers.new("choque", "COLLISION"); o.hide_render = True
     m["v"] = out; TELA_HECHA[m["nombre"]] = (v0, out, o)
@@ -424,7 +449,7 @@ def clave_parte(s, nombre, previas):
     dep = [q for q in MODEL["partes"] if q.get("nombre") in s.get("sobre_partes", [])]
     extra = MODEL.get("deformar", {}).get(nombre)
     if s.get("tela"):
-        cfg = s["tela"]
+        cfg = s["tela"]; dep.append(RP.tela_anim.cargar_telas().get(cfg.get("tipo")))  # valores del tipo / type values
         if cfg.get("sobre"): return None  # cae sobre otras telas: siempre de cero / falls on other cloth: always from scratch
         if cfg.get("sigue"): dep.append(previas.get(cfg["sigue"]))
         else: dep.append(sorted((n, k) for n, k in previas.items() if n.startswith(TELA_CUERPOS) and k and not previas.get("_tela_" + n)))
@@ -501,7 +526,7 @@ COLISION_ALCANCE = 8.0
 def restaurar_colision():
     # Devuelve a su forma de reposo (con el esqueleto deformándola) las partes que el cuadro anterior dejó empujadas
     # Gives back the rest shape (deformed by the skeleton) to the parts the previous frame left pushed
-    for m, o in COLISION:
+    for m, o in PARTS:
         if not o.get("colision_sucia"): continue
         o.data.vertices.foreach_set("co", np.array(m["v"], np.float32).ravel()); o.data.update()
         mod = o.modifiers["rig"]; mod.show_viewport = mod.show_render = True
@@ -523,6 +548,9 @@ def aplicar_colision():
     bvh = BVHTree.FromPolygons(verts, polys); tocado = False
     for m, o in COLISION:
         if o.hide_render: continue  # no se dibuja en esta dirección / not drawn in this direction
+        # La tela animada ya choca con cuerpo y piernas en la simulación; empujarla acá hacía saltar vértices hasta 9 px por paso
+        # Animated cloth already collides in the simulation; pushing it here made vertices jump up to 9 px per step
+        if TELA_FORMAS and (m.get("tela") or {}).get("animada"): continue
         ev = o.evaluated_get(dg); me = ev.to_mesh(); mw = o.matrix_world; margen = m.get("colision_margen", MARGEN_COLISION)
         mundo = [mw @ v.co for v in me.vertices]; normales = [tuple(n) for n in me.corner_normals] if m.get("normales") else None
         ev.to_mesh_clear(); original = list(mundo); caras = [tuple(pl.vertices) for pl in o.data.polygons]
@@ -554,8 +582,196 @@ def aplicar_colision():
 
 
 def pose(frame, base_yaw):
-    restaurar_colision(); pose_huesos(frame, base_yaw)
-    t_c = time.perf_counter(); aplicar_colision(); tic("colision", t_c)
+    restaurar_colision(); pose_huesos(frame, base_yaw); aplicar_tela_formas()
+    t_c = time.perf_counter(); aplicar_colision(); apoyar_sobre(); seguir_guias(); brazo_encima(base_yaw); tic("colision", t_c)
+
+
+# Escala de tiempo del Cloth: el modelo está en px (~21,7 px por metro, fuente de la caminata), así que el tiempo se acelera
+# por su raíz para que la tela se mueva como de su tamaño real / Cloth time scale: the model is in px (~21.7 px per metre),
+# so time runs faster by its square root for the cloth to move like its real size
+TELA_ESCALA_TIEMPO = math.sqrt(21.7)
+# Forma (espacio del esqueleto) de cada parte animada en el cuadro que se está posando / shape of each animated part
+# (armature space) in the frame being posed
+TELA_FORMAS = {}
+TELA_ANIM_STATS = {}
+
+
+def aplicar_tela_formas():
+    # Pisa los vértices de las partes con tela animada con su forma simulada de este cuadro / overwrites animated cloth parts
+    # with this frame's simulated shape
+    tocado = False
+    for m, o in PARTS:
+        f = TELA_FORMAS.get(m["nombre"])
+        if f is None or o.hide_render: continue
+        pisar(m, o, f)
+        tocado = True
+    if tocado: bpy.context.view_layer.update()
+
+
+def pisar(m, o, v):
+    # Deja la parte con estos vértices (espacio del esqueleto) como malla estática, con sus normales propias posadas
+    # Leaves the part with these vertices (armature space) as a static mesh, keeping its own posed normals
+    normales = None
+    if m.get("normales"):
+        ev = o.evaluated_get(bpy.context.evaluated_depsgraph_get()); me = ev.to_mesh()
+        normales = [tuple(n.vector) for n in me.corner_normals]; ev.to_mesh_clear()
+    o.data.vertices.foreach_set("co", np.asarray(v, np.float32).ravel()); o.data.update(); o["colision_sucia"] = True
+    mod = o.modifiers["rig"]; mod.show_viewport = mod.show_render = False
+    if normales: o.data.normals_split_custom_set(normales)
+
+
+def brazo_encima(base_yaw):
+    # "extra": [{"vistas": [...], "partes": [prefijos], "px": N}] corre esas partes igual, enteras; N negativo las aleja (la cola de
+    # espaldas va delante del brazo y las piernas detrás de la falda) / "extra" moves those whole parts the same way; negative N
+    # moves them away (the tail from behind in front of the arm, the legs behind the skirt)
+    # "brazo_encima": {"vistas": [...], "ambos_en": [...], "px": N} (receta): en esas direcciones el brazo cercano (los dos en
+    # "ambos_en") se corre N px hacia la cámara, a lo largo de la línea de visión. La cámara es ortográfica: no cambia ni un píxel
+    # de lugar, solo queda delante de la falda / in those directions the near arm (both in "ambos_en") moves N px toward the
+    # camera along the view line: orthographic, so no pixel moves, it just ends up in front of the skirt
+    cfg = MODEL.get("brazo_encima")
+    if not cfg: return
+    if mode != "cuadros": return
+    vista = cam.matrix_world.to_3x3().col[2].normalized()
+    dg = bpy.context.evaluated_depsgraph_get(); inv = rig.matrix_world.to_3x3().inverted()
+    for e in cfg.get("extra", []):
+        if DIR_OF.get(base_yaw) not in e["vistas"]: continue
+        for m, o in PARTS:
+            if m["nombre"].startswith(tuple(e["partes"])) and not o.hide_render:
+                ev = o.evaluated_get(dg); me = ev.to_mesh(); v = np.array([tuple(p.co) for p in me.vertices]); ev.to_mesh_clear()
+                k = 1.0
+                if e.get("solo_sobre_ruedo"):
+                    # Solo por encima del borde de la falda (6 filas de transición): abajo no hay nada que tapar y los pies no se tocan
+                    # Only above the skirt hem (6-row blend): below there is nothing to cover and the feet stay as they are
+                    ruedo = min(min(q[2] for q in n["v"]) for n, _ in PARTS if n.get("pollera"))
+                    up = np.array(cam.matrix_world.to_3x3().col[1].normalized()); mw0 = np.array(rig.matrix_world)
+                    k = np.clip(((v @ mw0[:3, :3].T + mw0[:3, 3]) @ up - float(np.array(rig.matrix_world @ Vector((0, 0, ruedo))) @ up)) / 6.0, 0.0, 1.0)[:, None]
+                pisar(m, o, v + np.array(inv @ (vista * e["px"])) * k)
+    if DIR_OF.get(base_yaw) not in cfg.get("vistas", []):
+        bpy.context.view_layer.update(); return
+    cerca = "LR" if DIR_OF[base_yaw] in cfg.get("ambos_en", []) else max("LR", key=lambda s: (rig.matrix_world @ PB[f"upper_{s}"].head).dot(vista))
+    hacia = np.array(rig.matrix_world.to_3x3().inverted() @ (vista * cfg.get("px", 12)))
+    # Solo desde la fila de pantalla de la cintura hacia abajo (6 filas de transición): más arriba las mangas taparían los tirantes.
+    # Por fila, no por altura: lo que cae en el mismo píxel se corre igual y brazo y manga no se cruzan
+    # Only from the waist's screen row down (6-row blend). By row, not height: whatever shares a pixel moves alike
+    tope = max((max(v[2] for v in m["v"]) for m, _ in PARTS if m.get("pollera")), default=None)
+    arriba = np.array(cam.matrix_world.to_3x3().col[1].normalized()); mw = np.array(rig.matrix_world)
+    fila_tope = None if tope is None else float(np.array(rig.matrix_world @ Vector((0, 0, tope))) @ arriba)
+    dg = bpy.context.evaluated_depsgraph_get()
+    for m, o in PARTS:
+        if not m["nombre"].startswith(("brazo_", "manga_", "puno_")) or m["nombre"][-1] not in cerca: continue
+        # Sobre la malla ya posada: mover el objeto haría que el esqueleto rote también el corrimiento
+        # On the posed mesh: moving the object would make the skeleton rotate the offset too
+        ev = o.evaluated_get(dg); me = ev.to_mesh(); v = np.array([tuple(p.co) for p in me.vertices]); ev.to_mesh_clear()
+        k = 1.0 if fila_tope is None else np.clip((fila_tope - (v @ mw[:3, :3].T + mw[:3, 3]) @ arriba) / 6.0, 0.0, 1.0)[:, None]
+        pisar(m, o, v + hacia * k)
+    bpy.context.view_layer.update()
+
+
+def apoyar_sobre():
+    # Las telas animadas con "sobre" (el delantal) quedan por fuera de la superficie terminada de esas partes, a "margen_sobre" px
+    # Animated cloth with "sobre" (the apron) stays outside the finished surface of those parts
+    visibles = {m["nombre"]: o for m, o in PARTS if m["nombre"] in TELA_FORMAS and not o.hide_render}
+    tocado = False
+    for m, o in PARTS:
+        cfg = m.get("tela") or {}
+        guias = [visibles[n] for n in cfg.get("sobre", []) if n in visibles]
+        if m["nombre"] not in visibles or not guias: continue
+        margen = cfg.get("margen_sobre", 0.3); pts = [v.co.copy() for v in o.data.vertices]
+        for go in guias:
+            bvh = BVHTree.FromPolygons([v.co.copy() for v in go.data.vertices], [tuple(p.vertices) for p in go.data.polygons])
+            for k, p in enumerate(pts):
+                loc, nrm, _, _ = bvh.find_nearest(p, COLISION_ALCANCE)
+                if loc is not None and (p - loc).dot(nrm) < margen: pts[k] = p + nrm * (margen - (p - loc).dot(nrm))
+        pisar(m, o, [tuple(p) for p in pts]); tocado = True
+    if tocado: bpy.context.view_layer.update()
+
+
+def seguir_guias():
+    # Las partes animadas con "sigue" (ruedo, delantal) copian el corrimiento de su guía ya terminada (simulada, empujada
+    # fuera del cuerpo y cedida a los brazos), así no se atraviesan / animated "sigue" parts copy their finished guide's
+    # displacement, so they do not cut through each other
+    hechas = {m["nombre"]: (m, o) for m, o in PARTS if m["nombre"] in TELA_FORMAS and not o.hide_render}
+    tocado = False
+    for m, o in PARTS:
+        cfg = m.get("tela") or {}
+        if not (cfg.get("animada") and cfg.get("sigue") in hechas) or o.hide_render: continue
+        guia = cfg["sigue"]
+        gm, go = hechas[guia]; f = np.empty(len(go.data.vertices) * 3, np.float32); go.data.vertices.foreach_get("co", f)
+        # Cada vértice queda atado al triángulo más cercano de la guía en reposo y se lleva al mismo triángulo de la guía
+        # terminada, con su separación / each vertex is tied to the guide's nearest rest triangle and carried to the same
+        # triangle of the finished guide, keeping its offset
+        rest = [Vector(p) for p in gm["v"]]; fin = [Vector(p) for p in f.reshape(-1, 3)]
+        tris = [(c[0], c[i], c[i + 1]) for c in gm["f"] for i in range(1, len(c) - 1)]
+        bvh = BVHTree.FromPolygons(rest, tris); nuevo = []
+        for p in m["v"]:
+            _, _, k, _ = bvh.find_nearest(Vector(p)); a, b, c = tris[k]
+            nuevo.append(tuple(barycentric_transform(Vector(p), rest[a], rest[b], rest[c], fin[a], fin[b], fin[c])))
+        pisar(m, o, nuevo); tocado = True
+    if tocado: bpy.context.view_layer.update()
+
+
+def tela_animada(anim, grupo):
+    # Simula las partes con tela animada a la vista en este grupo de direcciones durante "ciclos" vueltas de la animación
+    # (curva cíclica, "subpasos" por cuadro) más una, y devuelve {parte: [forma por cuadro]} de la última vuelta, en el
+    # espacio del esqueleto. Las partes con "sigue" copian el corrimiento de su guía cuadro por cuadro
+    # Simulates the animated cloth parts visible in this direction group over "ciclos" loops (cyclic curve, "subpasos" per
+    # frame) plus one, and returns the last loop's shape per frame in armature space; "sigue" parts copy their guide
+    global PIXEL_REF
+    d0 = grupo[0]; yaw = YAW[d0]
+    partes = [(m, o) for m, o in PARTS if (m.get("tela") or {}).get("animada") and (not m.get("solo_en") or d0 in m["solo_en"])]
+    sims = [(m, o) for m, o in partes if not m["tela"].get("sigue")]
+    if not sims: return {}
+    cuadros = [por_direccion(f, anim, d0) for f in anim["cuadros"]]; dur = anim["duraciones_ms"]; n = len(cuadros)
+    sub = max(int(m["tela"].get("subpasos", 4)) for m, _ in sims); ciclos = max(int(m["tela"].get("ciclos", 3)) for m, _ in sims)
+    paso = min(dur) / sub; total = sum(dur); pasos = round((ciclos + 1) * total / paso)
+    inicios = [ciclos * total + sum(dur[:i]) for i in range(n)]; muestras = {round(t / paso): i for i, t in enumerate(inicios)}
+    curva = lambda t: TA.curva_ciclica(cuadros, dur, t, REST)
+    ref, PIXEL_REF = PIXEL_REF, None; restaurar_colision(); pose_huesos(curva(0.0), yaw)
+    # Cuerpo y piernas chocan en la simulación; los brazos no: son finos y se cuelan entre vértices, y pasan por fuera de la tela
+    # Body and legs collide in the simulation; arms do not: too thin, they slip between vertices, and they pass outside the cloth
+    cuerpos = [c for q, c in PARTS if q["nombre"].startswith(TELA_CUERPOS) and not q.get("tela") and c.type == "MESH"]
+    nuevos = [c for c in cuerpos if not any(x.type == "COLLISION" for x in c.modifiers)]  # se les saca al final / removed at the end
+    objs, cloths = {}, []
+    for m, o in sims:
+        cfg = m["tela"]; me = bpy.data.meshes.new("telaanim_" + m["nombre"]); me.from_pydata(m["v"], [], m["f"]); me.update()
+        t = bpy.data.objects.new(me.name, me); scene.collection.objects.link(t); t.parent = rig; t.hide_render = True
+        grupos = {}
+        for i, w in enumerate(m["w"]):
+            for b, v in w.items():
+                if b not in grupos: grupos[b] = t.vertex_groups.new(name=b)
+                grupos[b].add([i], v, "REPLACE")
+        # Fijación graduada hacia la forma diseñada posada por el esqueleto: conserva la silueta y solo se balancea el borde
+        # Graded pinning to the designed shape posed by the skeleton: keeps the silhouette and only the hem sways
+        z0 = min(p[2] for p in m["v"]); top = max(p[2] for p in m["v"]) - cfg.get("banda", 0.3); g = t.vertex_groups.new(name="tela_fijo")
+        for i, p in enumerate(m["v"]):
+            g.add([i], TA.peso_fijo((p[2] - z0) / max(top - z0, 1e-6), cfg.get("fijo_ruedo", 0.25), cfg.get("altura_libre", 0.6)), "REPLACE")
+        mod = t.modifiers.new("rig", "ARMATURE"); mod.object = rig; mod.use_deform_preserve_volume = True
+        cl = ajustar_cloth(t, cfg, cuerpos); cl.settings.time_scale = TA.escala_cloth(cfg.get("escala_tiempo", TELA_ESCALA_TIEMPO), paso)
+        cl.settings.pin_stiffness = cfg.get("rigidez_fijo", 5.0)
+        cl.point_cache.frame_start = 1; cl.point_cache.frame_end = pasos + 1
+        objs[m["nombre"]] = t; cloths.append((t, cl))
+    g0 = scene.gravity[:]
+    scene.gravity = (0, 0, -9.81 * sims[0][0]["tela"].get("gravedad", 1.0))
+    formas = {nombre: [None] * n for nombre in objs}
+    scene.frame_set(1)
+    for k in range(1, pasos + 1):
+        pose_huesos(curva(k * paso), yaw); scene.frame_set(k + 1)
+        if k in muestras:
+            dg = bpy.context.evaluated_depsgraph_get()
+            for nombre, t in objs.items():
+                ev = t.evaluated_get(dg); me2 = ev.to_mesh()
+                formas[nombre][muestras[k]] = np.array([tuple(p.co) for p in me2.vertices]); ev.to_mesh_clear()
+    # Limpieza: la escena queda como antes (el panel reusa Blender) / cleanup: the scene is left as before (the panel reuses it)
+    for t, cl in cloths:
+        soltar_cloth(t, cl); me = t.data; bpy.data.objects.remove(t); bpy.data.meshes.remove(me)
+    for c in nuevos: c.modifiers.remove(c.modifiers["choque"])
+    scene.gravity = g0; scene.frame_set(1); PIXEL_REF = ref
+    clave = f"{anim['nombre']}_{'+'.join(grupo)}"; TELA_ANIM_STATS[clave] = {}
+    for nombre, fs in formas.items():
+        rest = np.array(next(q for q, _ in PARTS if q["nombre"] == nombre)["v"]); abajo = rest[:, 2] < rest[:, 2].min() + 1.0
+        TELA_ANIM_STATS[clave][nombre] = {**{k: round(v, 3) for k, v in TA.saltos_de_tela(fs).items()},
+            "corrimiento_ruedo_px": [round(float(np.abs(fs[i][abajo] - fs[i - 1][abajo]).max()), 3) for i in range(n)]}
+    return formas
 
 
 def pose_huesos(frame, base_yaw):
@@ -771,15 +987,19 @@ def legs_in_skirt():
     # Mesh and bones in armature space.
     dg = bpy.context.evaluated_depsgraph_get(); out = {}
     r = MODEL["cuerpo"].get("grosor_pierna", [2.2, 1.8])[1]
+    # Solo las telas que se ven en este cuadro; cruza si cruza cualquiera, holgura la menor
+    # Only the cloth shown in this frame; it crosses if any does, clearance is the smallest
     for p, o in PARTS:
-        if not p.get("pollera"): continue
+        if not p.get("pollera") or o.hide_render: continue
         bvh = BVHTree.FromObject(o, dg)
         hit = lambda a, b: bvh.ray_cast(a, (b - a).normalized(), (b - a).length)[0] is not None
         for s in ("L", "R"):
             hip, knee, ank = PB[f"thigh_{s}"].head, PB[f"thigh_{s}"].tail, PB[f"shin_{s}"].tail
             near, _, _, gap = bvh.find_nearest(knee)
             side = knee + (near - knee).normalized() * r  # la media del lado de la tela / the stocking toward the cloth
-            out[s] = {"cruza": hit(hip, knee) or hit(knee, ank) or hit(hip, side), "holgura_rodilla": round(gap, 2)}
+            prev = out.get(s, {"cruza": False, "holgura_rodilla": math.inf})
+            out[s] = {"cruza": prev["cruza"] or hit(hip, knee) or hit(knee, ank) or hit(hip, side),
+                      "holgura_rodilla": min(prev["holgura_rodilla"], round(gap, 2))}
     return out
 
 
@@ -960,7 +1180,17 @@ else:
         frames = anim["cuadros"]
         project = lambda w: [round(c, 2) for c in (world_to_camera_view(scene, cam, w).x * size,
                                                   (1 - world_to_camera_view(scene, cam, w).y) * size)]
-        for d in JOB.get("dirs", list(YAW)):
+        dirs_job = JOB.get("dirs", list(YAW)); formas_dir = {}
+        animadas = {m["nombre"]: m.get("solo_en") for m, o in PARTS if (m.get("tela") or {}).get("animada")}
+        if anim.get("bucle") and animadas and mode == "cuadros":
+            t_t = time.perf_counter()
+            resueltos = {d: [por_direccion(f, anim, d) for f in anim["cuadros"]] for d in dirs_job}
+            for g in TA.grupos_de_simulacion(dirs_job, animadas, resueltos, bool(anim.get("espejar_oeste"))):
+                f = tela_animada(anim, g)
+                for d in g: formas_dir[d] = f
+            if "west" in dirs_job and "west" not in formas_dir: formas_dir["west"] = formas_dir.get("east", {})  # se pisa con el espejo / replaced by the mirror
+            json.dump(TELA_ANIM_STATS, open(os.path.join(OUT, "tela_anim.json"), "w"), indent=1); tic("tela_animada", t_t)
+        for d in dirs_job:
             frames = [por_direccion(f, anim, d) for f in anim["cuadros"]]
             CANVAS = size
             if ID_MATS and MODEL.get("prioridad") is not None and d in MODEL.get("prioridad_en", YAW):
@@ -983,6 +1213,7 @@ else:
                         pose(blend(prev, frame, k / TRAIL_STEPS), YAW[d])
                         m = markers()
                         arc.append([project(m["mano_R"]), project(m["punta_espada"])])
+                TELA_FORMAS.clear(); TELA_FORMAS.update({k: v[i] for k, v in formas_dir.get(d, {}).items()})
                 t_p = time.perf_counter(); pose(frame, YAW[d]); tic("posar", t_p)
                 R.filepath = os.path.join(OUT, f"{anim['nombre']}_{d}_{i}.png")
                 t_p = time.perf_counter(); bpy.ops.render.render(write_still=True); tic("render_color", t_p)
@@ -1000,6 +1231,7 @@ else:
                     t_p = time.perf_counter(); render_ids(os.path.join(OUT, f"{anim['nombre']}_{d}_{i}_id.png")); tic("render_ids", t_p)
                     if "ojos" in MODEL: meta[f"{anim['nombre']}_{d}_{i}"]["ojos"] = eyes(project)
                     if "ojos" in MODEL: meta[f"{anim['nombre']}_{d}_{i}"]["esqueleto"] = skeleton(size)
+    TELA_FORMAS.clear()
     json.dump(meta, open(os.path.join(OUT, "meta.json"), "w"), indent=0)
     if COLISION_STATS: json.dump(COLISION_STATS, open(os.path.join(OUT, "colision.json"), "w"), indent=1)
     tic("total_blender", T0); json.dump({k: round(v, 4) for k, v in TIEMPOS.items()}, open(os.path.join(OUT, "tiempos.json"), "w"))
