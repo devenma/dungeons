@@ -5,6 +5,7 @@
 # Unidades = px del sprite; frente = -Y, izquierda del personaje = +X, arriba = +Z (como modelo.json).
 # Units = sprite px; front = -Y, the character's left = +X, up = +Z (like modelo.json).
 import math
+import tela_anim
 
 SIDE = {"L": 1, "R": -1}
 
@@ -963,7 +964,8 @@ def construir(s, M):
         m["ocultar_si"] = s["ocultar_si"].replace("<lado>", lado)
     if s.get("ocultar_lejos"):  # [lado, grados]: se oculta si ese costado mira lejos de la cámara / hidden facing away
         m["ocultar_lejos"] = [SIDE.get(lado, 1), s["ocultar_lejos"]]
-    if s.get("tela"): m["tela"] = s["tela"]  # cae como tela en el reposo (rig3d_blender.tela) / falls as cloth at rest
+    if s.get("tela"):  # cae como tela en el reposo y, con "animada", en los loops (rig3d_blender) / falls as cloth at rest and in loops
+        m["tela"] = tela_anim.resolver_tela(s["tela"], tela_anim.cargar_telas(), m["nombre"])
     if s.get("colision"):  # tela empujada fuera del cuerpo en cada cuadro (rig3d_blender.aplicar_colision) / pushed out of the body every frame
         m["colision"] = True
         if "colision_margen" in s: m["colision_margen"] = s["colision_margen"]

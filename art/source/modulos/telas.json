@@ -1,0 +1,6 @@
+{
+ "_nota": "Tipos de tela: claves del Cloth de Blender (rig3d_blender.tela) + ciclos de calentamiento y subpasos por cuadro de la tela animada / cloth types: Blender Cloth keys + warm-up cycles and substeps per sheet frame",
+ "algodon": {"cuadros": 100, "rigidez": 20, "cizalla": 4, "compresion": 0.03, "flexion": 0.04, "amortiguacion": 1.5, "masa": 0.3, "distancia": 0.05, "calidad_colision": 2, "gravedad": 1.5, "ciclos": 3, "subpasos": 4, "fijo_ruedo": 0.25, "altura_libre": 0.6, "rigidez_fijo": 0.15},
+ "seda": {"cuadros": 120, "rigidez": 10, "cizalla": 3, "compresion": 0.01, "flexion": 0.01, "amortiguacion": 1, "masa": 0.3, "distancia": 0.05, "calidad_colision": 2, "gravedad": 1.3, "ciclos": 3, "subpasos": 4, "fijo_ruedo": 0.1, "altura_libre": 0.75, "rigidez_fijo": 0.05},
+ "lona": {"cuadros": 100, "rigidez": 60, "cizalla": 20, "compresion": 0.4, "flexion": 1.0, "amortiguacion": 2, "masa": 0.3, "distancia": 0.05, "calidad_colision": 2, "gravedad": 2.5, "ciclos": 3, "subpasos": 4, "fijo_ruedo": 0.6, "altura_libre": 0.4, "rigidez_fijo": 0.6}
+}
