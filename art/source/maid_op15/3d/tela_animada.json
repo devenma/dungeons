@@ -1,0 +1,104 @@
+{
+ "incluir": [
+  "malla.json"
+ ],
+ "partes": [
+  {
+   "nombre": "pollera",
+   "tela": {
+    "tipo": "algodon",
+    "animada": true
+   }
+  },
+  {
+   "nombre": "pollera_perfil",
+   "tela": {
+    "tipo": "algodon",
+    "animada": true
+   }
+  },
+  {
+   "nombre": "ruedo",
+   "tela": {
+    "sigue": "pollera",
+    "animada": true
+   }
+  },
+  {
+   "nombre": "ruedo_perfil",
+   "tela": {
+    "sigue": "pollera_perfil",
+    "animada": true
+   }
+  },
+  {
+   "nombre": "delantal",
+   "tela": {
+    "tipo": "algodon",
+    "animada": true,
+    "sobre": [
+     "pollera"
+    ],
+    "fijo_ruedo": 0.08,
+    "altura_libre": 0.85,
+    "margen_sobre": 0.8,
+    "amortiguacion": 10
+   }
+  },
+  {
+   "nombre": "delantal_perfil",
+   "tela": {
+    "tipo": "algodon",
+    "animada": true,
+    "sobre": [
+     "pollera_perfil"
+    ],
+    "fijo_ruedo": 0.08,
+    "altura_libre": 0.85,
+    "margen_sobre": 0.8,
+    "amortiguacion": 10
+   }
+  }
+ ],
+ "brazo_encima": {
+  "vistas": [
+   "south",
+   "east",
+   "north",
+   "west"
+  ],
+  "ambos_en": [
+   "south",
+   "north"
+  ],
+  "px": 16,
+  "extra": [
+   {
+    "vistas": [
+     "north"
+    ],
+    "partes": [
+     "cola_2",
+     "cola_3",
+     "cola_4"
+    ],
+    "px": 28
+   },
+   {
+    "vistas": [
+     "south",
+     "east",
+     "north",
+     "west"
+    ],
+    "partes": [
+     "muslo_",
+     "pierna_",
+     "media_"
+    ],
+    "px": -16,
+    "solo_sobre_ruedo": true
+   }
+  ]
+ }
+}
