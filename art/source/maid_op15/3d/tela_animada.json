@@ -98,6 +98,16 @@
     ],
     "px": -16,
     "solo_sobre_ruedo": true
+   },
+   {
+    "vistas": [
+     "east",
+     "west"
+    ],
+    "partes": [
+     "delantal_perfil"
+    ],
+    "px": 6
    }
   ]
  }
