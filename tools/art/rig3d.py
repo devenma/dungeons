@@ -948,7 +948,9 @@ def espejar(anim, frames, meta, model, size):
         izq = np.arange(size) <= k // 2  # la columna del eje queda / the axis column stays
         for d in ("south", "north"):
             for i in (i for i in range(n) if not giro(i)):
-                frames[d][i] = {name: (np.where(izq[None, :, None], v, espejo_capa(v, k)) if v is not None else None)
+                # espejar_sin: una cola de un lado no se duplica del otro / a one-sided tail is not doubled on the other side
+                propio = dilatar(np.isin(ids[d][i], cod) | espejo_capa(np.isin(ids[d][i], cod), k))[..., None] if cod else False
+                frames[d][i] = {name: (np.where(izq[None, :, None] | propio, v, espejo_capa(v, k)) if v is not None else None)
                                 for name, v in frames[d][i].items()}
     anim["_espejos"] = pares
 
