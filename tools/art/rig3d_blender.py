@@ -594,6 +594,7 @@ TELA_ESCALA_TIEMPO = math.sqrt(21.7)
 # (armature space) in the frame being posed
 TELA_FORMAS = {}
 TELA_ANIM_STATS = {}
+BRAZO_ANIM = {}  # Lo que la animación pisa de "brazo_encima" (correr no trae los brazos de espaldas) / what the animation overrides of "brazo_encima"
 
 
 def aplicar_tela_formas():
@@ -628,7 +629,7 @@ def brazo_encima(base_yaw):
     # "ambos_en") se corre N px hacia la cámara, a lo largo de la línea de visión. La cámara es ortográfica: no cambia ni un píxel
     # de lugar, solo queda delante de la falda / in those directions the near arm (both in "ambos_en") moves N px toward the
     # camera along the view line: orthographic, so no pixel moves, it just ends up in front of the skirt
-    cfg = MODEL.get("brazo_encima")
+    cfg = MODEL.get("brazo_encima") and {**MODEL["brazo_encima"], **BRAZO_ANIM}
     if not cfg: return
     if mode != "cuadros": return
     vista = cam.matrix_world.to_3x3().col[2].normalized()
@@ -1176,6 +1177,7 @@ else:
             for sl, mat in zip(o.material_slots, saved[o.name]): sl.material = mat
 
     for anim in JOB["anims"]:
+        BRAZO_ANIM.clear(); BRAZO_ANIM.update(anim.get("brazo_encima", {}))
         size = anim.get("lienzo", 64); canvas(size, anim.get("zoom", 1.0), anim.get("margen_suela", 17))
         frames = anim["cuadros"]
         project = lambda w: [round(c, 2) for c in (world_to_camera_view(scene, cam, w).x * size,
