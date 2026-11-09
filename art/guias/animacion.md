@@ -76,7 +76,7 @@ izquierda espejada) se aplican **después** de la limpieza 2D, así la simetría
 (pasadas `hilos`, `sueltos`, `colgados`, `islas` sobre el cuadro compuesto, que vuelven a sus capas) y
 `"cabeza_fija": ["east"]` en la animación (la cabeza del cuadro 0 pegada en todos, corrida por el rebote: la cabeza
 de perfil no tiembla; con IDs de parte, solo las partes que cuelgan del cuello). `"espejar_sin": [prefijos]` en la
-receta deja partes asimétricas (la cola) fuera de `espejar_ciclo`, y `"resortes"` en la receta suma resortes a
+receta deja partes asimétricas (la cola) fuera de `espejar_ciclo` y `simetrico`, y `"resortes"` en la receta suma resortes a
 cualquier animación (ver `modelado.md`, "Personajes por módulos"). Los ojos 2D no se estampan con la cara cabeza abajo en pantalla (tendida con la cabeza hacia
 la cámara, muerte de espaldas): `EYES_TILT_MAX` en `rig3d.py`.
 
@@ -266,6 +266,13 @@ En todos los cuadros: `chest.inclinar` 12, `neck.inclinar` -6 (la cara sigue al 
 - Con espada en la mano, el brazo derecho se balancea la mitad. Pisadas en `c0` y `c4`.
 - Pie de apoyo en el lienzo: +4, 0, -4 px (§6). Los cuadros duran 40 ms (§4).
 - Las dos zancadas vuelan: de perfil, el cuadro de vuelo de la pierna cercana espeja al de la lejana.
+- **Maid op15** (`art/source/maid_op15/3d/anim/correr.json`, aprobada 2026-11-09): sale de mocap fiel (Quaternius UAL,
+  `Sprint_Loop`, CC0), no de las poses de arriba. 8 × 40 ms, 150 px/s, lienzo 80. Frente y espaldas **no** se aplanan como en la
+  caminata: el torso gira, los brazos cruzan por delante y hay vuelo. Inclinación de toda la masa: `hips.inclinar` 9,
+  `chest.inclinar` 13, `neck.inclinar` -17. De perfil el vaivén de la cabeza que se ve de frente queda en profundidad: se suma a
+  `chest.inclinar` la segunda armónica del cabeceo medido en el mocap (ángulo `spine_02`→`neck_01`, ganancia 0,8, la cabeza se
+  mueve ±0,7 px y salta 1 px como mucho entre cuadros), y `upper_L/R.adelante` restan lo mismo para que los brazos no cambien.
+  `"brazo_encima": {"vistas": ["south", "east", "west"]}` en la animación: de espaldas los brazos no vienen hacia adelante.
 
 ### 7.2. Combo de espada — prioridad
 
@@ -588,6 +595,14 @@ una sección de esta guía, se corrige la sección en el mismo cambio y la lecci
   la lejana; medir el fondo de los 8 cuadros de perfil.
 - 2026-11-01, correr: con la misma duración que la caminata no se leía como carrera. Regla: la carrera tiene su propio
   ritmo (8 × 40 ms); el juego acelera la hoja según `velocidad_px_s`, no cambia el ritmo.
+- 2026-11-09, correr de frente: heredar el aplanado de la caminata (un pie siempre en el piso, pecho sin giro, brazo casi
+  quieto) daba una marcha en el lugar, tiesa y sin inclinación. Regla: lo de §7.4 sobre frente y espaldas vale solo para caminar;
+  la carrera usa el mocap entero.
+- 2026-11-09, correr de perfil: con la inclinación constante la cabeza queda clavada. El cabeceo crudo del mocap saltaba 2,4 px
+  entre cuadros y se veía mal; un promedio de armónicas perdía vida. Regla: una sola armónica, la de paso, y 1 px de salto como
+  máximo entre cuadros.
+- 2026-11-09, fuentes de carrera: los `*_FR.bvh` de 100STYLE se descartaron (espacio de captura chico, rectas de 0,8 a 1,8 s,
+  casi todas a velocidad de caminata rápida, bucles que no cierran). En la maid se veían mal. Quaternius UAL funciona.
 
 - 2026-11-01, caminar este/oeste: la mano se leía como muslo. Regla: el brazo pasa hacia adelante (vaivén de -28 a
   +4 aprox.) y la mano cae sobre el delantal claro, no sobre la pollera oscura; el codo dobla más cuando el brazo va

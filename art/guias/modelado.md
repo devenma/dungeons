@@ -205,6 +205,7 @@ Plan y decisiones: `plan_tela_animada.md` y `plan_tela_animada_tareas.md`.
   se cruzan). `"extra": [{"vistas", "partes", "px"}]` corre otras partes enteras, por prefijo de nombre (la cola de espaldas, delante del
   brazo, con más `px` que él). `px` negativo las aleja, y `"solo_sobre_ruedo": true` lo aplica solo por encima del borde de la falda: así
   el muslo no asoma por la zona fijada y los pies siguen ordenados como en la rígida. `prioridad` no sirve para esto y `corr_ante` tampoco en la maid: lo que queda adentro de la campana es el codo.
+  Una animación puede pisar campos con su propio `"brazo_encima"` (la carrera cambia `vistas`: de espaldas los brazos no vienen hacia adelante).
 - **Delantal:** `"amortiguacion": 10` (Blender topa ahí). Con menos, la tela floja avanza despacio y vuelve de golpe dos veces por ciclo.
 - **`colision` no corre sobre tela animada:** la simulación ya choca con cuerpo y piernas, y esa pasada hacía saltar vértices
   hasta 9 px por paso. Sigue valiendo para ropa rígida y para animaciones sin bucle.
@@ -215,8 +216,8 @@ Plan y decisiones: `plan_tela_animada.md` y `plan_tela_animada_tareas.md`.
   rígida y el ancho de la silueta en las filas de la falda.
 - **Estado:** aprobada en la caminata. `op15_vestido.json` sigue rígido porque el panel y sus tests lo asumen; la versión animada de la
   maid es la receta `art/source/maid_op15/3d/tela_animada.json`.
-- **Pendiente:** los golpes (sin bucle) no tienen tela animada. El maniquí op15 solo tiene `caminar`: correr y reposo no se
-  probaron.
+- **Pendiente:** los golpes (sin bucle) no tienen tela animada. La carrera y el reposo de la maid con tela animada están en
+  `art/source/maid_op15/3d/anim/`.
 
 ## Personajes por módulos
 
