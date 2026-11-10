@@ -20,6 +20,7 @@
 [ext_resource type="AudioStream" path="res://assets/audio/sfx/footstep_stone.tres" id="20"]
 [ext_resource type="Script" path="res://scripts/player/potion_drinker.gd" id="22"]
 [ext_resource type="Resource" path="res://resources/items/vial_sangre.tres" id="23"]
+[ext_resource type="Script" path="res://scripts/player/equipment_layers.gd" id="24"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
 size = Vector2(12, 6)
@@ -85,6 +86,9 @@ script = ExtResource("21")
 
 [node name="PlayerAnimator" type="Node" parent="."]
 script = ExtResource("13")
+
+[node name="EquipmentLayers" type="Node" parent="."]
+script = ExtResource("24")
 
 [node name="EquipmentController" type="Node" parent="."]
 script = ExtResource("9")

@@ -194,8 +194,10 @@ func _on_backpack_changed() -> void:
 	profile.save_profile()
 
 
-## Máximos del jugador: base + mejoras del perfil (D11), menos un 20 % de vida por ofrenda de carne (D23).
-## Player maxima: base + profile upgrades (D11), minus 20% health per flesh offering (D23).
+## Máximos del jugador: base + mejoras y equipo del perfil (D11, D27), menos un 20 % de vida por ofrenda de carne
+## (D23); también redibuja las capas del equipo puesto.
+## Player maxima: base + profile upgrades and gear (D11, D27), minus 20% health per flesh offering (D23); also
+## redraws the worn gear layers.
 func _apply_player_stats() -> void:
 	var profile: ProfileState = _get_profile_state()
 	var run_manager: RunManager = _get_run_manager()
@@ -208,6 +210,9 @@ func _apply_player_stats() -> void:
 	var stamina := player.get_node_or_null("Stamina") as StaminaComponent
 	if stamina != null:
 		stamina.set_max_stamina(_base_max_stamina + stamina_bonus)
+	var gear_layers: Node = player.get_node_or_null("EquipmentLayers")
+	if gear_layers != null and profile != null:
+		gear_layers.call("show_items", profile.equipped_items())
 
 
 func _play_sound(sound_name: String) -> void:

@@ -32,6 +32,9 @@ var owned_weapons: Array[WeaponData] = []
 var unlocks: Array[String] = []
 ## Mejoras compradas (D11), guardadas por ruta como las armas / Bought upgrades (D11), saved by path like weapons
 var owned_upgrades: Array[UpgradeData] = []
+## Equipo puesto (D27): slot -> ItemData; una pieza de varios slots figura en cada uno. Se pone y se saca en el gremio
+## Worn gear (D27): slot -> ItemData; a multi-slot piece is listed under each. Put on and taken off in the guild
+var equipped: Dictionary = {}
 ## Día del pueblo: cada expedición es una noche y la vuelta abre el día siguiente (D2)
 ## Town day: every expedition is a night and coming back opens the next day (D2)
 var day: int = 1
@@ -61,6 +64,7 @@ func reset_profile() -> void:
 		owned_weapons.append(weapon_data)
 	unlocks.clear()
 	owned_upgrades.clear()
+	equipped.clear()
 	day = 1
 	night = false
 	carried_backpack = {}
@@ -126,6 +130,14 @@ func load_profile() -> bool:
 				var upgrade: UpgradeData = load(upgrade_path) as UpgradeData
 				if upgrade != null:
 					owned_upgrades.append(upgrade)
+	var equipped_paths: Variant = data.get("equipped", {})
+	if equipped_paths is Dictionary:
+		for slot in equipped_paths:
+			var gear_path: String = str(equipped_paths[slot])
+			if gear_path.begins_with("res://") and ResourceLoader.exists(gear_path):
+				var gear: ItemData = load(gear_path) as ItemData
+				if gear != null and gear.equip_slots.has(StringName(str(slot))):
+					equipped[StringName(str(slot))] = gear
 	profile_changed.emit()
 	return true
 
@@ -138,6 +150,10 @@ func save_profile() -> bool:
 	var upgrade_paths: Array[String] = []
 	for upgrade in owned_upgrades:
 		upgrade_paths.append(upgrade.resource_path)
+	var equipped_paths: Dictionary = {}
+	for slot: StringName in equipped:
+		var gear: ItemData = equipped[slot]
+		equipped_paths[str(slot)] = gear.resource_path
 	var data: Dictionary = {
 		"version": SAVE_VERSION,
 		"banked_gold": banked_gold,
@@ -145,6 +161,7 @@ func save_profile() -> bool:
 		"owned_weapons": weapon_paths,
 		"unlocks": unlocks,
 		"upgrades": upgrade_paths,
+		"equipped": equipped_paths,
 		"day": day,
 		"night": night,
 		"carried_backpack": carried_backpack,
@@ -225,13 +242,67 @@ func buy_upgrade(upgrade: UpgradeData) -> bool:
 	return true
 
 
-## Puntos que suman las mejoras compradas a una estadística / Points the bought upgrades add to a stat
+## Puntos que suman las mejoras compradas y el equipo puesto a una estadística
+## Points the bought upgrades and the worn gear add to a stat
 func stat_bonus(stat: UpgradeData.Stat) -> int:
 	var total: int = 0
 	for upgrade in owned_upgrades:
 		if upgrade.stat == stat:
 			total += upgrade.amount
+	for gear in equipped_items():
+		total += gear.bonus_health if stat == UpgradeData.Stat.MAX_HEALTH else gear.bonus_stamina
 	return total
+
+
+## Cada pieza puesta una vez / Each worn piece once
+func equipped_items() -> Array[ItemData]:
+	var items: Array[ItemData] = []
+	for gear: ItemData in equipped.values():
+		if not items.has(gear):
+			items.append(gear)
+	return items
+
+
+## Se pone una pieza que venga de `source` (mochila o almacén); lo que ocupaba sus slots vuelve al almacén.
+## Si algo no entra, no cambia nada / Wears a piece taken from `source` (backpack or storage); whatever filled
+## its slots goes back to storage. If anything does not fit, nothing changes
+func equip(source: Inventory, gear: ItemData) -> bool:
+	if not gear.is_equipment() or not source.remove(gear, 1):
+		return false
+	var displaced: Array[ItemData] = []
+	for slot in gear.equip_slots:
+		var worn: ItemData = equipped.get(slot)
+		if worn != null and not displaced.has(worn):
+			displaced.append(worn)
+	for i in displaced.size():
+		if storage.add(displaced[i]) > 0:
+			for j in i:
+				storage.remove(displaced[j])
+			source.add(gear)
+			return false
+	for worn in displaced:
+		_take_off(worn)
+	for slot in gear.equip_slots:
+		equipped[slot] = gear
+	profile_changed.emit()
+	return true
+
+
+## Saca la pieza puesta en `slot` al almacén; con el almacén lleno no la saca
+## Takes the piece worn on `slot` off into storage; with storage full it stays on
+func unequip(slot: StringName) -> bool:
+	var gear: ItemData = equipped.get(slot)
+	if gear == null or storage.add(gear) > 0:
+		return false
+	_take_off(gear)
+	profile_changed.emit()
+	return true
+
+
+func _take_off(gear: ItemData) -> void:
+	for slot in gear.equip_slots:
+		if equipped.get(slot) == gear:
+			equipped.erase(slot)
 
 
 ## Un dungeon limpio queda como desbloqueo "cleared:<id>" (D22) / A cleared dungeon is stored as the unlock "cleared:<id>" (D22)

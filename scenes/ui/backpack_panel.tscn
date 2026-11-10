@@ -27,6 +27,36 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 6
 
+[node name="Equipped" type="PanelContainer" parent="Center/Panels"]
+layout_mode = 2
+size_flags_vertical = 0
+mouse_filter = 0
+theme_type_variation = &"BackpackPanel"
+
+[node name="Column" type="VBoxContainer" parent="Center/Panels/Equipped"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="Title" type="PanelContainer" parent="Center/Panels/Equipped/Column"]
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+theme_type_variation = &"TitlePlate"
+
+[node name="Label" type="Label" parent="Center/Panels/Equipped/Column/Title"]
+layout_mode = 2
+text = "ui.inventory.equipped"
+
+[node name="EquippedGrid" type="GridContainer" parent="Center/Panels/Equipped/Column"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+theme_override_constants/h_separation = 1
+theme_override_constants/v_separation = 1
+columns = 2
+
 [node name="Backpack" type="PanelContainer" parent="Center/Panels"]
 layout_mode = 2
 size_flags_vertical = 0

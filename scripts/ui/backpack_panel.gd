@@ -4,14 +4,18 @@ extends Control
 ## borde de rareza y tooltip. Se navega con el mouse o con el foco (flechas / cruceta).
 ## En el gremio pausa el juego y deja pasar objetos: activar un slot mueve la pila al otro lado,
 ## con `transfer_one` (Shift / X del mando) mueve una unidad, y "Guardar todo" deposita la mochila
-## y banca el oro. Guarda el perfil tras cada cambio. En la mazmorra el almacén es solo lectura.
+## y banca el oro. Activar una pieza de equipo la pone (D27) y activar una puesta la saca al almacén; con
+## `transfer_one` la pieza se mueve como cualquier objeto. Guarda el perfil tras cada cambio. En la mazmorra el
+## almacén y el equipo son solo lectura.
 ## Corre con PROCESS_MODE_ALWAYS (en la escena) para recibir input en pausa.
 ## Backpack and guild storage (`inventory` action, I): slot grids with icon, count, rarity
 ## border and tooltip. Navigable with the mouse or with focus (arrows / d-pad).
 ## In the guild it pauses the game and lets items through: activating a slot moves the stack to
 ## the other side, `transfer_one` (Shift / gamepad X) moves one unit, and "Store all" deposits the
-## backpack and banks the gold. Saves the profile after every change. In the dungeon the storage
-## is read-only. Runs with PROCESS_MODE_ALWAYS (set in the scene) to get input while paused.
+## backpack and banks the gold. Activating a gear piece wears it (D27) and activating a worn one takes it
+## off into storage; with `transfer_one` the piece moves like any item. Saves the profile after every change.
+## In the dungeon the storage and the gear are read-only.
+## Runs with PROCESS_MODE_ALWAYS (set in the scene) to get input while paused.
 
 ## Variación del tema por rareza, en el orden de ItemData.Rarity / Theme variation per rarity, in ItemData.Rarity order
 const RARITY_VARIATIONS: Array[StringName] = [
@@ -23,6 +27,8 @@ const RARITY_VARIATIONS: Array[StringName] = [
 ]
 ## Lado de un slot del kit (px) / Kit slot side (px)
 const SLOT_SIZE: int = 20
+## Slots de la grilla de equipo puesto / Worn gear grid slots
+const EQUIPPED_SLOTS: int = 6
 
 @export var run_manager_node_path: NodePath = NodePath("../../RunManager")
 @export var profile_state_node_path: NodePath = NodePath("../../ProfileState")
@@ -34,6 +40,7 @@ var _paused_by_panel: bool = false
 
 @onready var _backpack_grid: GridContainer = %BackpackGrid
 @onready var _storage_grid: GridContainer = %StorageGrid
+@onready var _equipped_grid: GridContainer = %EquippedGrid
 @onready var _deposit_button: Button = %DepositButton
 @onready var _tooltip: PanelContainer = %Tooltip
 @onready var _tooltip_name: Label = %TooltipName
@@ -101,6 +108,10 @@ func _transfer_slot(grid: GridContainer, index: int, one_unit: bool) -> void:
 	if not storage_accessible():
 		return
 	var source: Inventory = _inventory_of(grid)
+	var picked: ItemData = _item_at(source, index)
+	if grid == _equipped_grid or (not one_unit and picked != null and picked.is_equipment()):
+		_wear_slot(grid, index)
+		return
 	var target: Inventory = _profile.storage if grid == _backpack_grid else _run_manager.backpack
 	if index >= source.slots.size():
 		return
@@ -117,6 +128,19 @@ func _transfer_slot(grid: GridContainer, index: int, one_unit: bool) -> void:
 	_refresh()
 	var slot: Button = grid.get_child(index)
 	_show_tooltip(slot, grid, index)
+
+
+func _wear_slot(grid: GridContainer, index: int) -> void:
+	var item: ItemData = _item_at(_inventory_of(grid), index)
+	if item == null:
+		return
+	var done: bool = _profile.unequip(item.equip_slots[0]) if grid == _equipped_grid \
+			else _profile.equip(_inventory_of(grid), item)
+	if not done:
+		return
+	_profile.save_profile()
+	_refresh()
+	_show_tooltip(grid.get_child(index), grid, index)
 
 
 func _on_slot_pressed(grid: GridContainer, index: int) -> void:
@@ -139,12 +163,23 @@ func _refresh() -> void:
 		_fill_grid(_backpack_grid, _run_manager.backpack)
 	if _profile != null:
 		_fill_grid(_storage_grid, _profile.storage)
+		_fill_grid(_equipped_grid, _equipped_view())
 
 
 func _inventory_of(grid: GridContainer) -> Inventory:
 	if grid == _backpack_grid:
 		return _run_manager.backpack if _run_manager != null else null
+	if grid == _equipped_grid:
+		return _equipped_view() if _profile != null else null
 	return _profile.storage if _profile != null else null
+
+
+# Vista de solo lectura del equipo puesto, una pieza por slot de la grilla / Read-only view of the worn gear, one piece per grid slot
+func _equipped_view() -> Inventory:
+	var view: Inventory = Inventory.new(EQUIPPED_SLOTS)
+	for gear in _profile.equipped_items():
+		view.add(gear)
+	return view
 
 
 # Los slots se crean una vez por capacidad; refrescar solo cambia su contenido
