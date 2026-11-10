@@ -19,7 +19,7 @@ validación, no antes.
 
 ## Cómo leer este documento
 
-Cada decisión tiene un ID (`D1`…`D26`) para poder citarla en la discusión.
+Cada decisión tiene un ID (`D1`…`D27`) para poder citarla en la discusión.
 
 | Marca | Significado |
 |---|---|
@@ -832,6 +832,33 @@ Falta definir antes de implementar:
 
 **[IMPACTO]** `RollComponent` y la acción `roll` se reemplazan por el dash. Bloqueo y parry pasan por la
 `Hurtbox`, como ya hace el `Guard` de los enemigos.
+
+### D27 — Equipo por slots del cuerpo [PROPUESTA]
+
+**Pedido (2026-11-10):** el poder del personaje viene del equipo (D11) y los módulos 3D ya son piezas con slot
+(`"pieza"` en `art/source/modulos/`). Se propone que el equipo del juego use esos mismos slots.
+
+- **De dónde sale:** de las dos fuentes. La tienda vende piezas base (la herrería, las *Botas del osario*) y en la
+  cripta caen piezas en cofres y enemigos. Lo que cae va a la mochila y se pierde al morir sin piedra azul (D1).
+- **Se pone y se saca en el gremio**, desde la mochila o el almacén. Lo puesto vive en el perfil
+  (`ProfileState.equipped`) y no se pierde al morir.
+- **Estadísticas fijas por pieza**, en su `ItemData` (`bonus_health`, `bonus_stamina`). La rareza es solo un tier
+  con mejores números; sin afijos al azar. Si alguna pieza necesita una estadística nueva, se suma recién ahí.
+- **Se ve en el personaje:** cada pieza dibuja su capa sobre el sprite con `layer_prefix` (hojas en el formato de
+  `KitSprite`) e indica en `module_id` qué módulo 3D la dibuja.
+- **Slots:** los del campo `ocupa` de los módulos (`pies`, `piernas`, `torso`, `manos`, `cabeza`, `arma`...). Una
+  pieza puede ocupar varios, como el vestido.
+
+Falta definir:
+- Las capas del sprite salen de rig3d: cada pieza se renderiza sobre la base (la base tapa lo que queda detrás) y
+  se exporta sola. El cuerpo base va sin ropa, así que hace falta una base "en ropa interior" para que sacarse una
+  pieza no deje un hueco. Por ahora el jugador sigue con la hoja del aventurero y las botas no tienen capa.
+- Si el peto y el cinturón (hoy `UpgradeData`) pasan a ser piezas de `torso` y `cintura`.
+- Si el arma entra a este sistema o sigue en `RunManager.owned_weapons`.
+
+**[IMPACTO]** Cambia AGENTS §29, que deja afuera del MVP el "equipo por slots del cuerpo". `ItemData` suma
+`equip_slots`, `module_id`, `bonus_*` y `layer_prefix`; `ProfileState` guarda `equipped` en el perfil; el panel
+de la mochila suma la grilla *Equipado*; el jugador suma el nodo `EquipmentLayers`.
 
 ---
 
