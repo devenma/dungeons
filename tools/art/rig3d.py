@@ -272,7 +272,7 @@ def inner_lines(img, group, depth, shade=OUTLINE_SHADE, gap=LINE_GAP, allow=None
     return out
 
 
-def stamp_eyes(eyes, spec, mask):
+def stamp_eyes(eyes, spec, mask, eje=None):
     # Ojos 2D dibujados por el artista, estampados donde cae cada ojo y solo sobre la cara visible (mask): de frente
     # los dos, de perfil el del lado de la cámara (el sello "perfil" mira a la derecha; a la izquierda se espeja)
     # 2D eyes drawn by the artist, stamped where each eye lands and only on the visible face (mask): both from the
@@ -292,7 +292,15 @@ def stamp_eyes(eyes, spec, mask):
         # "redondear": the row is rounded (no jump when the head sits on a pixel edge); the column stays truncated
         # because rounding would break the E/W mirror and the front symmetry (x and 64 - x)
         y = round(eyes[eye][1]) if spec.get("redondear") else int(eyes[eye][1])
-        x0, y0 = int(eyes[eye][0]) - ax, y - st["ancla"][1]
+        x = int(eyes[eye][0])
+        if eye == "L" and len(picks) == 2 and eje is not None:
+            # De frente el izquierdo sale del derecho a una separación con la paridad del eje: centrado, el par queda
+            # simétrico y el espejo del ciclo no lo corre 1 px (con zoom, truncar los dos lo hacía bailar)
+            # From the front the left eye follows the right one at a gap with the axis parity: centred, the pair stays
+            # symmetric and the cycle mirror does not shift it 1 px (under zoom, truncating both made it jump)
+            par = (eje + 1) % 2
+            x = int(eyes["R"][0]) + 2 * round((eyes["L"][0] - eyes["R"][0] - par) / 2) + par
+        x0, y0 = x - ax, y - st["ancla"][1]
         for j, row in enumerate(rows):
             for i, ch in enumerate(row):
                 x, y = x0 + i, y0 + j
@@ -465,7 +473,7 @@ def layers_parts(img, ids, parts, fmeta, model, size, gap, fx=None, pal=None, ma
     lines = contorno_contra(lines, part, parts, model)
     names = model.get("ojos", {}).get("parte", "cabeza")  # una parte o lista: la pestaña puede pisar el flequillo / one part or a list
     face = np.isin(part, [k for k, p in enumerate(parts) if p["nombre"] in ([names] if isinstance(names, str) else names)])
-    eyes = stamp_eyes(fmeta.get("ojos"), model.get("ojos"), face)
+    eyes = stamp_eyes(fmeta.get("ojos"), model.get("ojos"), face, eje_espejo(model, face.shape[1]))
     out = {"Efectos": fx} if fx is not None else {}
     capa = np.array([p["capa"] for p in parts] + [""])
     for name in PART_LAYERS + sorted(set(capa[:-1]) - set(PART_LAYERS)):
