@@ -19,7 +19,7 @@ validación, no antes.
 
 ## Cómo leer este documento
 
-Cada decisión tiene un ID (`D1`…`D27`) para poder citarla en la discusión.
+Cada decisión tiene un ID (`D1`…`D28`) para poder citarla en la discusión.
 
 | Marca | Significado |
 |---|---|
@@ -859,6 +859,22 @@ Falta definir:
 **[IMPACTO]** Cambia AGENTS §29, que deja afuera del MVP el "equipo por slots del cuerpo". `ItemData` suma
 `equip_slots`, `module_id`, `bonus_*` y `layer_prefix`; `ProfileState` guarda `equipped` en el perfil; el panel
 de la mochila suma la grilla *Equipado*; el jugador suma el nodo `EquipmentLayers`.
+
+### D28 — Reliquias: mejoras de expedición [PROPUESTA]
+
+La segunda capa de progreso de D11: mejoras temporales que viven en `RunManager.relics` y se pierden al terminar la
+expedición, siempre (al morir, al volver con piedra azul y al ganar).
+
+- **De dónde salen:** el cofre de cada zona REWARD, además del arma y el botín, ofrece **tres reliquias** sorteadas
+  con la seed del piso; se elige una (`RelicPanel`, pausa el juego y no se cancela).
+- **Efectos del primer corte** (`RelicData`, acumulables): +20 de vida máxima, +20 de aguante máximo, +25 % de
+  regeneración de aguante y +15 % de daño. El daño se escala en el arma o la habilidad del jugador
+  (`Player.damage_multiplier`), sin rutas nuevas de daño.
+- **Fuera del primer corte:** rarezas, sinergias, reliquias con precio (como la ofrenda de carne del altar) y arte
+  propio (hoy son solo texto).
+
+**[IMPACTO]** `RunManager` suma `relics`; `DungeonManager._apply_player_stats` las aplica junto a las mejoras y el
+equipo; el cofre suma `relic_pool`; la UI suma `RelicPanel`.
 
 ---
 
