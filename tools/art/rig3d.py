@@ -515,10 +515,13 @@ def rellenar_huecos(line, comp, max_px):
         if border or len(comp_px) > max_px: continue
         todo = set(comp_px)
         while todo:  # de afuera hacia adentro / outside in
+            antes = len(todo)
             for y, x in list(todo):
                 c = next((out[yy, xx] for yy, xx in ((y - 1, x), (y + 1, x), (y, x - 1), (y, x + 1))
                           if 0 <= yy < h and 0 <= xx < w and out[yy, xx, 3] > 0 and (yy, xx) not in todo), None)
                 if c is not None: out[y, x] = c; todo.discard((y, x))
+            # hueco sin ninguna línea alrededor: no hay color que tomar / hole with no line around it: nothing to take
+            if len(todo) == antes: break
     return out
 
 
