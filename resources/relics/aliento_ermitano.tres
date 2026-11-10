@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="RelicData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/relics/relic_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"aliento_ermitano"
+name_key = "relic.aliento_ermitano.name"
+desc_key = "relic.aliento_ermitano.desc"
+stat = 2
+amount = 25

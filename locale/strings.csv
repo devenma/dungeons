@@ -450,6 +450,16 @@ item.corona_velas.desc,Sigue tibia. Las velas no se apagan del todo.,Still warm.
 dungeon.san_ulmo.name,Cripta de San Ulmo,Crypt of San Ulmo
 ui.altar.title,Altar del Voto,Altar of the Vow
 ui.altar.line,Cura todo. Algo se lleva.,It heals everything. It takes something.
+ui.relic.title,Reliquias,Relics
+ui.relic.line,Toma una. Las demás se quedan con los muertos.,Take one. The rest stay with the dead.
+relic.hueso_santo.name,Hueso del santo,Saint's bone
+relic.hueso_santo.desc,+20 de vida máxima hasta volver al gremio.,+20 max health until you return to the guild.
+relic.rosario_negro.name,Rosario negro,Black rosary
+relic.rosario_negro.desc,+20 de aguante máximo hasta volver al gremio.,+20 max stamina until you return to the guild.
+relic.aliento_ermitano.name,Aliento del ermitaño,Hermit's breath
+relic.aliento_ermitano.desc,El aguante vuelve un 25 % más rápido hasta volver al gremio.,Stamina comes back 25% faster until you return to the guild.
+relic.diente_martir.name,Diente del mártir,Martyr's tooth
+relic.diente_martir.desc,+15 % de daño hasta volver al gremio.,+15% damage until you return to the guild.
 ui.altar.not_hurt,No necesitas cura.,You need no healing.
 ui.altar.nothing,El altar no acepta nada más.,The altar accepts nothing more.
 ui.altar.flesh,Carne,Flesh

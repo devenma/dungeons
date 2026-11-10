@@ -11,6 +11,9 @@ extends CharacterBody2D
 
 ## Velocidad de caminata (px/s) / Walk speed (px/s)
 @export var speed: float = 60.0
+## Multiplica el daño de las armas y habilidades del jugador; lo fijan las reliquias (D28)
+## Scales the player's weapon and ability damage; set by relics (D28)
+var damage_multiplier: float = 1.0
 @onready var knockback: KnockbackComponent = get_node_or_null("Knockback") as KnockbackComponent
 @onready var _health: HealthComponent = get_node_or_null("Health") as HealthComponent
 @onready var _roll: RollComponent = get_node_or_null("Roll") as RollComponent

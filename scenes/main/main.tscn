@@ -7,6 +7,7 @@
 [ext_resource type="Resource" path="res://resources/floors/floor_data.tres" id="6"]
 [ext_resource type="Resource" path="res://resources/dungeons/san_ulmo.tres" id="22"]
 [ext_resource type="PackedScene" path="res://scenes/ui/altar_panel.tscn" id="23"]
+[ext_resource type="PackedScene" path="res://scenes/ui/relic_panel.tscn" id="99"]
 [ext_resource type="PackedScene" path="res://scenes/ui/dialogue_panel.tscn" id="24"]
 [ext_resource type="Resource" path="res://resources/weapons/sword_basic.tres" id="9"]
 [ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="12"]
@@ -79,6 +80,8 @@ script = ExtResource("2")
 [node name="DeathScreen" parent="UI" instance=ExtResource("21")]
 
 [node name="AltarPanel" parent="UI" instance=ExtResource("23")]
+
+[node name="RelicPanel" parent="UI" instance=ExtResource("99")]
 
 [node name="DialoguePanel" parent="UI" instance=ExtResource("24")]
 

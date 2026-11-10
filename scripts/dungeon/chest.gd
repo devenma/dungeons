@@ -15,11 +15,18 @@ signal loot_found(items: Array[ItemData], gold: int)
 const REWARD_SALT: int = 0x5EED
 ## Sal extra de la tirada de botín (RC-3) / Extra salt for the loot roll (RC-3)
 const LOOT_SALT: int = 0x1007
+## Sal extra del sorteo de reliquias / Extra salt for the relic draw
+const RELIC_SALT: int = 0x2E11C
+## Reliquias que ofrece para elegir (D28) / Relics offered to pick from (D28)
+const RELIC_CHOICES: int = 3
 
 ## Armas posibles; el Spawner la inyecta / Possible weapons; injected by the Spawner
 @export var weapon_pool: Array[WeaponData] = []
 ## Botín además del arma; null = solo arma / Loot besides the weapon; null = weapon only
 @export var drop_table: DropTable
+## Reliquias posibles; se ofrecen RELIC_CHOICES al grupo "relic_panel" (D28); vacío = ninguna
+## Possible relics; RELIC_CHOICES are offered to the "relic_panel" group (D28); empty = none
+@export var relic_pool: Array[RelicData] = []
 ## Seed del piso y zona del cofre: fijan la tirada (RC-3) / Floor seed and chest zone: they fix the roll (RC-3)
 @export var floor_seed: int = 0
 @export var zone_id: int = 0
@@ -57,7 +64,8 @@ func _grant() -> void:
 		rng.seed = floor_seed ^ zone_id ^ REWARD_SALT ^ LOOT_SALT
 		loot_items = drop_table.roll_items(rng)
 		loot_gold = drop_table.roll_gold(rng)
-	if data == null and loot_items.is_empty() and loot_gold == 0:
+	var relics: Array[RelicData] = _pick_relics()
+	if data == null and loot_items.is_empty() and loot_gold == 0 and relics.is_empty():
 		return
 	# Cofre abierto y vacío / Open, empty chest
 	_visual.texture = open_texture
@@ -66,6 +74,18 @@ func _grant() -> void:
 		granted.emit(data)
 	if not loot_items.is_empty() or loot_gold > 0:
 		loot_found.emit(loot_items, loot_gold)
+	if not relics.is_empty():
+		get_tree().call_group("relic_panel", "offer", relics)
+
+
+func _pick_relics() -> Array[RelicData]:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = floor_seed ^ zone_id ^ REWARD_SALT ^ RELIC_SALT
+	var left: Array[RelicData] = relic_pool.duplicate()
+	var picked: Array[RelicData] = []
+	while picked.size() < RELIC_CHOICES and not left.is_empty():
+		picked.append(left.pop_at(rng.randi_range(0, left.size() - 1)))
+	return picked
 
 
 func _pick_weapon() -> WeaponData:

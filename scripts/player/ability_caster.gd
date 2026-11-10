@@ -49,7 +49,9 @@ func cast(slot: int, aim: Vector2) -> bool:
 	effect.set("ability", ability)
 	effect.set("weapon_data", weapon_data)
 	effect.set("direction", aim.normalized())
-	effect.set("damage", ability.damage)
+	# Reliquias de daño del jugador (D28) / Player damage relics (D28)
+	var multiplier: float = _player.get("damage_multiplier") if "damage_multiplier" in _player else 1.0
+	effect.set("damage", roundi(ability.damage * multiplier))
 	effect.set("knockback", Vector2(ability.knockback, 0.0))
 	effect.set("radius", ability.radius)
 	# Como las flechas: en la raíz de la escena, encima del TileMap / Like the arrows: at the scene root, above the TileMap
