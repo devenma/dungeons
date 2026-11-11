@@ -83,3 +83,29 @@ def titileo(hoja, n, size):
             ant, sig = cel[(i - 1) % n], cel[(i + 1) % n]
             total += int(((cel[i] != ant) & (cel[i] != sig) & (ant == sig)).sum())
     return total
+
+
+def curva_correccion(costo, valores, peso, ciclo):
+    # Curva de corrección sobre todo el ciclo: un valor de "valores" (grados) por cuadro que minimiza la suma de costo[i][k]
+    # (lo que cuesta ese valor en ese cuadro: su tamaño y lo que el brazo penetra) más peso·(aceleración entre cuadros)².
+    # Se penaliza la aceleración y no el cambio: un cambio parejo no tiembla, un pico sí. Programación dinámica exacta sobre
+    # la grilla con el par de cuadros anteriores como estado; ciclo: el último cuadro sigue al primero
+    # Correction curve over the whole cycle: one value of "valores" (degrees) per frame minimising the sum of costo[i][k]
+    # (what that value costs in that frame: its size and the arm penetration) plus peso·(frame-to-frame acceleration)².
+    # Acceleration, not change, is penalised: an even change does not jitter, a spike does. Exact dynamic programming over
+    # the grid with the two previous frames as state; ciclo: the last frame is followed by the first
+    c = np.asarray(costo, float); v = np.asarray(valores, float); n, g = c.shape
+    if n < 3: return [float(v[k]) for k in c.argmin(1)]
+    acel = peso * (v[:, None, None] - 2 * v[None, :, None] + v[None, None, :]) ** 2  # [x(i-1), x(i), x(i+1)]
+    # D[p, q, a, b]: mejor costo con x0 = p, x1 = q, x(i-1) = a, x(i) = b / best cost with x0 = p, x1 = q, x(i-1) = a, x(i) = b
+    D = np.full((g,) * 4, np.inf); I = np.arange(g)
+    D[I[:, None], I[None, :], I[:, None], I[None, :]] = c[0][:, None] + c[1][None, :]
+    camino = []
+    for i in range(2, n):
+        t = D[..., None] + acel[None, None]; k = t.argmin(2); camino.append(k)
+        D = np.take_along_axis(t, k[:, :, None], 2)[:, :, 0] + c[i]
+    if ciclo:  # aceleración en n-1 (a, b, p) y en 0 (b, p, q) / acceleration at n-1 (a, b, p) and at 0 (b, p, q)
+        D = D + np.transpose(acel, (2, 0, 1))[:, None] + np.transpose(acel, (1, 2, 0))[:, :, None]
+    p, q, a, b = np.unravel_index(D.argmin(), D.shape); atras = [b, a]
+    for i in range(n - 1, 2, -1): atras.append(camino[i - 2][p, q, atras[-1], atras[-2]])
+    return [float(v[j]) for j in [p] + atras[::-1]]

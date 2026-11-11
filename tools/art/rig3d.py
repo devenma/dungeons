@@ -6,6 +6,7 @@
 #   python -I tools/art/rig3d.py vistas  <modelo.json> --salida DIR
 #   python -I tools/art/rig3d.py ajuste  <modelo.json> --refs DIR --salida DIR
 #   python -I tools/art/rig3d.py sondeo  <modelo.json>
+#   python -I tools/art/rig3d.py separacion <modelo.json>  (separación base de brazos para "colision_brazos")
 #   python -I tools/art/rig3d.py estres  <modelo.json> --salida DIR  (poses fijas de tools/art/estres.json, con controles)
 # El modelo puede ser de piezas proyectadas (modelo.json) o una receta de malla con "cuerpo" y "partes" (malla.json).
 # The model can be projected pieces (modelo.json) or a mesh recipe with "cuerpo" and "partes" (malla.json).
@@ -955,6 +956,13 @@ def espejar(anim, frames, meta, model, size):
         a, b = meta.get(f"{anim['nombre']}_{d0}_{i}"), f"{anim['nombre']}_{d1}_{j}"
         if a and a.get("marcadores"):
             meta[b] = {**meta.get(b, {}), "marcadores": {m: [round((k + 1) - p[0], 2), p[1]] for m, p in a["marcadores"].items()}}
+        if a and a.get("colision"):
+            # El informe de colisión de brazos sigue al cuadro que se ve: lados cambiados y la mano espejada / the arm
+            # collision report follows the frame shown: sides swapped and the hand mirrored
+            c = a["colision"]; ma = lambda e: {**e, "mano_px": [round((k + 1) - e["mano_px"][0], 2), e["mano_px"][1]],
+                                                "mano_px_original": [round((k + 1) - e["mano_px_original"][0], 2), e["mano_px_original"][1]],
+                                                "px_por_grado": {eje: [-v[0], v[1]] for eje, v in e["px_por_grado"].items()}}
+            meta.setdefault(b, {})["colision"] = {**c, "L": ma(c["R"]), "R": ma(c["L"])}
     if anim.get("simetrico"):
         izq = np.arange(size) <= k // 2  # la columna del eje queda / the axis column stays
         for d in ("south", "north"):
@@ -1047,6 +1055,12 @@ def cmd_frames(args):
         report = {k: v for k, v in meta.items() if k.startswith(anim["nombre"] + "_")}
         if parts: report["partes"] = parts
         json.dump(report, open(base + "_marcadores.json", "w"), indent=0)
+        col = {k[len(anim["nombre"]) + 1:]: v["colision"] for k, v in report.items() if isinstance(v, dict) and "colision" in v}
+        if col:  # "colision_brazos": informe por cuadro y dirección para test_colision.py / per frame and direction report
+            json.dump({"eje_espejo": eje_espejo(model, size), "lienzo": size, "cuadros": len(anim["cuadros"]),
+                       "bucle": bool(anim.get("bucle")), "espejar_oeste": bool(anim.get("espejar_oeste")),
+                       "topes": {k: v for k, v in model["colision_brazos"].items() if k.startswith("tope_")}, "por_cuadro": col},
+                      open(base + "_colision.json", "w"), indent=1)
         if args.esqueleto: export_skeleton(anim, frames, meta, args.esqueleto)
         if args.normales:
             normal_sheet(anim, frames, raw, base, dirs)
@@ -1156,6 +1170,14 @@ def cmd_stress(args):
     print("controles / checks:", base + "_controles.json")
 
 
+def cmd_separacion(args):
+    # Separación base de los brazos de un personaje desde el ancho de su ropa ("colision_brazos.separacion_grados")
+    # Base arm separation of a character from the width of its clothing
+    out = tempfile.mkdtemp()
+    run_blender({"modelo": load_model(args.modelo), "salida": out, "modo": "separacion"})
+    print(json.dumps(json.load(open(os.path.join(out, "separacion.json")))))
+
+
 def probe(model_path):
     out = tempfile.mkdtemp()
     run_blender({"modelo": load_model(model_path), "salida": out, "modo": "sondeo"})
@@ -1176,6 +1198,8 @@ def main():
     a = sub.add_parser("ajuste"); a.add_argument("modelo"); a.add_argument("--refs", required=True)
     a.add_argument("--salida", required=True)
     s = sub.add_parser("sondeo"); s.add_argument("modelo")
+    sp = sub.add_parser("separacion", help="separación base de los brazos para colision_brazos / base arm separation")
+    sp.add_argument("modelo")
     e = sub.add_parser("estres"); e.add_argument("modelo"); e.add_argument("--salida", required=True)
     args = ap.parse_args()
     # Blender corre en otra carpeta: con una ruta relativa solo escribía meta.json / Blender runs elsewhere: a relative
@@ -1184,6 +1208,7 @@ def main():
     if args.cmd == "cuadros": cmd_frames(args)
     elif args.cmd == "estres": cmd_stress(args)
     elif args.cmd == "vistas": cmd_views(args)
+    elif args.cmd == "separacion": cmd_separacion(args)
     elif args.cmd == "ajuste": cmd_fit(args)
     else: print(json.dumps(probe(args.modelo), indent=1))
 

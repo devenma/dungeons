@@ -583,7 +583,8 @@ def aplicar_colision():
 
 def pose(frame, base_yaw):
     restaurar_colision(); pose_huesos(frame, base_yaw); aplicar_tela_formas()
-    t_c = time.perf_counter(); aplicar_colision(); apoyar_sobre(); seguir_guias(); brazo_encima(base_yaw); tic("colision", t_c)
+    t_c = time.perf_counter(); aplicar_colision(); ceder(False); apoyar_sobre(); seguir_guias(); ceder(True); brazo_encima(base_yaw)
+    tic("colision", t_c)
 
 
 # Escala de tiempo del Cloth: el modelo está en px (~21,7 px por metro, fuente de la caminata), así que el tiempo se acelera
@@ -647,7 +648,9 @@ def brazo_encima(base_yaw):
                     up = np.array(cam.matrix_world.to_3x3().col[1].normalized()); mw0 = np.array(rig.matrix_world)
                     k = np.clip(((v @ mw0[:3, :3].T + mw0[:3, 3]) @ up - float(np.array(rig.matrix_world @ Vector((0, 0, ruedo))) @ up)) / 6.0, 0.0, 1.0)[:, None]
                 pisar(m, o, v + np.array(inv @ (vista * e["px"])) * k)
-    if DIR_OF.get(base_yaw) not in cfg.get("vistas", []):
+    # Con "colision_brazos" el brazo no se corre: encima o detrás sale de la profundidad real / with "colision_brazos" the
+    # arm is not shifted: in front or behind comes from the real depth
+    if DIR_OF.get(base_yaw) not in cfg.get("vistas", []) or CB:
         bpy.context.view_layer.update(); return
     cerca = "LR" if DIR_OF[base_yaw] in cfg.get("ambos_en", []) else max("LR", key=lambda s: (rig.matrix_world @ PB[f"upper_{s}"].head).dot(vista))
     hacia = np.array(rig.matrix_world.to_3x3().inverted() @ (vista * cfg.get("px", 12)))
@@ -709,6 +712,275 @@ def seguir_guias():
             nuevo.append(tuple(barycentric_transform(Vector(p), rest[a], rest[b], rest[c], fin[a], fin[b], fin[c])))
         pisar(m, o, nuevo); tocado = True
     if tocado: bpy.context.view_layer.update()
+
+
+# "colision_brazos" (receta, apagado por defecto): {"contra": [partes], "margen_px": 1, "tela_cede": true, "caida_px": 2,
+# "cede_max_px": 4, "separacion_grados": 0, "tope_codo_grados": 30, "tope_hombro_grados": 15, "tope_afuera_grados": 10,
+# "orden": ["codo", "hombro", "afuera"], "paso_grados": 5, "suavizado": 2, "por_vista": {dirección: {lo que pisa}}}.
+# Brazo, antebrazo y mano no atraviesan las partes de "contra" (la falda). Primero cede la tela: se hunde donde la tocan, con
+# caída suave y sin entrar al cuerpo (ceder). Lo que queda lo corrige el brazo, con tope y en orden: codo, hombro hacia donde
+# va el braceo y afuera, resuelto sobre el ciclo entero (resolver_brazos). "separacion_grados" abre los dos brazos en todas
+# las animaciones del personaje (sale de `rig3d.py separacion`). Sin el bloque nada cambia
+# Arm, forearm and hand do not cut through the "contra" parts (the skirt). The cloth gives way first (dents where touched,
+# smooth falloff, never into the body); the arm fixes the rest, capped and in order: elbow, shoulder along the swing,
+# outward, solved over the whole cycle. "separacion_grados" opens both arms in every animation of the character
+CB = MODEL.get("colision_brazos")
+# Partes que forman cada brazo (prefijos; el lado va al final del nombre) / parts making up each arm (prefixes; side last)
+BRAZO_PARTES = ("brazo_", "manga_", "puno_")
+# Px pasada la muñeca desde los que un vértice cuenta como mano / px past the wrist from which a vertex counts as hand
+MANO_DESDE = 0.3
+# Vueltas de hundimiento por tela: cada una vuelve a mirar qué caras siguen tapando al brazo / dent rounds per cloth: each
+# one looks again at which faces still cover the arm
+CEDER_VUELTAS = 8
+# Distancia máxima (px) a la que se busca la falda desde un vértice del brazo / max search distance (px) from an arm vertex
+ALCANCE_BRAZO = 16.0
+CEDER = True  # apagado para medir la pose original / off to measure the original pose
+SEPARACION = 0.0  # grados que pose_huesos suma a upper.afuera / degrees pose_huesos adds to upper.afuera
+CEDE_MAX = [0.0]  # mayor hundimiento de la tela (px) en el cuadro posado / largest cloth dent (px) in the posed frame
+TABLAS = {}  # penetración medida por dirección, cuadro y valor de la escalera (OUT/colision_tabla.json) / measured penetration table
+
+
+def contra_visibles(d=None):
+    return [(m, o) for m, o in PARTS if m["nombre"] in CB["contra"] and not o.hide_render
+            and (d is None or not m.get("solo_en") or d in m["solo_en"])]
+
+
+def malla_mundo(o, dg):
+    # Vértices y caras de la parte posada en el mundo / posed part vertices and faces in world space
+    ev = o.evaluated_get(dg); me = ev.to_mesh(); mw = np.array(o.matrix_world)
+    v = np.array([tuple(p.co) for p in me.vertices]) @ mw[:3, :3].T + mw[:3, 3]
+    f = [tuple(p.vertices) for p in me.polygons]; ev.to_mesh_clear()
+    return v, f
+
+
+def brazos(dg):
+    # Por lado: vértices del brazo posado (mundo), su tramo (0 brazo, 1 antebrazo, 2 mano) y las articulaciones
+    # Per side: posed arm vertices (world), their segment (0 arm, 1 forearm, 2 hand) and the joints
+    mw = rig.matrix_world; out = {}
+    for s in "LR":
+        pts = [malla_mundo(o, dg)[0] for m, o in PARTS
+               if m["nombre"].startswith(BRAZO_PARTES) and m["nombre"].endswith(s) and not o.hide_render]
+        if not pts: continue
+        pts = np.vstack(pts)
+        j = [np.array(mw @ PB[f"upper_{s}"].head), np.array(mw @ PB[f"upper_{s}"].tail), np.array(mw @ PB[f"fore_{s}"].tail),
+             np.array(mw @ PB[f"hand_{s}"].tail)]
+        ax = (j[2] - j[1]) / np.linalg.norm(j[2] - j[1])
+        seg = np.where((pts - j[2]) @ ax > MANO_DESDE, 2, np.where((pts - j[1]) @ ax > 0, 1, 0))
+        out[s] = (pts, seg, j)
+    return out
+
+
+def medir_brazos(d=None):
+    # Penetración (px) por lado y tramo [brazo, antebrazo, mano]: lo más hondo que un vértice del brazo queda dentro de la
+    # tela (negativa = holgura); None = ese tramo no tiene falda cerca. Adentro = la tela queda por fuera del vértice: la
+    # cruza un rayo horizontal que sale del eje del cuerpo (la cadera). La hondura es la distancia a la superficie más
+    # cercana, así el valor cambia suave con la pose y solo cambia de signo al cruzar la tela / penetration per side and segment: the
+    # deepest an arm vertex sits inside the cloth (negative = clearance); None = no skirt near that segment. Inside = the
+    # cloth lies outside the vertex: a horizontal ray going out from the body axis crosses it. Depth is the distance to the
+    # nearest surface, so the value changes smoothly with the pose and only flips sign when crossing the cloth
+    dg = bpy.context.evaluated_depsgraph_get(); telas = []
+    for m, o in contra_visibles(d):
+        v, f = malla_mundo(o, dg); telas.append(BVHTree.FromPolygons(v.tolist(), f))
+    eje = rig.matrix_world @ PB["hips"].head; out = {}
+    for s, (pts, seg, _) in brazos(dg).items():
+        pen = [None] * 3
+        for q, k in zip(pts, seg):
+            q = Vector(q); dist = min((h[3] for h in (bvh.find_nearest(q, ALCANCE_BRAZO) for bvh in telas) if h[0] is not None), default=None)
+            if dist is None: continue
+            r = Vector((q.x - eje.x, q.y - eje.y, 0.0)).normalized()
+            p = dist if any(bvh.ray_cast(q, r, 4 * ALCANCE_BRAZO)[0] is not None for bvh in telas) else -dist
+            pen[k] = p if pen[k] is None else max(pen[k], p)
+        out[s] = [None if p is None else round(p, 2) for p in pen]
+    return out
+
+
+CUERPO_BVH = [None, None]  # pose del cuerpo y su BVH: no cambia mientras se prueba la corrección de un cuadro / body pose and its BVH
+
+
+def cuerpo_bvh(dg):
+    # BVH del cuerpo posado (mundo); se reusa mientras no cambie ningún hueso que no sea del brazo
+    # Posed body BVH (world); reused while no bone other than the arm's changes
+    clave = hash((tuple(round(c, 4) for row in rig.matrix_world for c in row),
+                  tuple(round(c, 4) for pb in PB if not pb.name.startswith(("upper_", "fore_", "hand_", "weapon_")) for row in pb.matrix for c in row)))
+    if CUERPO_BVH[0] != clave:
+        verts, polys = [], []
+        for o in CUERPOS:
+            ev = o.evaluated_get(dg); me = ev.to_mesh(); k = len(verts); mw = o.matrix_world
+            verts += [mw @ p.co for p in me.vertices]; polys += [tuple(k + i for i in p.vertices) for p in me.polygons]; ev.to_mesh_clear()
+        CUERPO_BVH[:] = [clave, BVHTree.FromPolygons(verts, polys) if verts else None]
+    return CUERPO_BVH[1]
+
+
+def ceder(seguidoras):
+    # La tela de "contra" se hunde hacia el eje del cuerpo donde tapa al brazo: cada cara que queda por fuera de un vértice
+    # del brazo (la cruza su rayo horizontal desde el eje, igual que en medir_brazos) se corre hasta "margen_px" detrás de
+    # él, con caída suave alrededor ("caida_px"), tope "cede_max_px" y sin entrar al cuerpo; lo que falte lo corrige el
+    # brazo. Primero las telas guía y, ya acomodadas sobre ellas, las que las siguen ("sobre", "sigue": delantal y ruedo)
+    # The "contra" cloth dents toward the body axis where it covers the arm: each face lying outside an arm vertex (crossed
+    # by its horizontal ray from the axis, as in medir_brazos) moves until it is "margen_px" behind it, with a smooth
+    # falloff, capped at "cede_max_px" and never into the body; the arm fixes what is left. Guide cloth first and then,
+    # once settled over it, the cloth that follows ("sobre", "sigue": apron and hem)
+    if not CB or not CEDER or not CB.get("tela_cede", True) or mode != "cuadros": return
+    dg = bpy.context.evaluated_depsgraph_get(); b = brazos(dg)
+    if not b: return
+    cuerpo = cuerpo_bvh(dg); eje = np.array(rig.matrix_world @ PB["hips"].head); pts = np.vstack([x[0] for x in b.values()])
+    rayos = (pts - eje) * (1, 1, 0); rayos = rayos / np.maximum(np.linalg.norm(rayos, axis=1), 1e-9)[:, None]
+    margen, sigma, tope = CB.get("margen_px", 1.0), CB.get("caida_px", 2.0), CB.get("cede_max_px", 4.0); tocado = False
+
+    def afuera(q):
+        loc, nrm, _, _ = cuerpo.find_nearest(Vector(q), COLISION_ALCANCE)
+        return loc is None or (Vector(q) - loc).dot(nrm) >= MARGEN_COLISION
+    for m, o in contra_visibles():
+        cfg = m.get("tela") or {}
+        if bool(cfg.get("sobre") or cfg.get("sigue")) != seguidoras: continue
+        # Con otra tela apoyada encima (el delantal) cede además lo que esa necesita para caber entre el brazo y esta
+        # With another cloth lying on it (the apron) it also gives what that one needs to fit between the arm and this one
+        encima = max((q["tela"].get("margen_sobre", 0.3) for q, _ in contra_visibles() if m["nombre"] in (q.get("tela") or {}).get("sobre", [])),
+                     default=0.0)
+        v0, caras = malla_mundo(o, dg); v = v0.copy()
+        hacia = (eje - v0) * (1, 1, 0); hacia = hacia / np.maximum(np.linalg.norm(hacia, axis=1), 1e-9)[:, None]
+        for _ in range(CEDER_VUELTAS):
+            bvh = BVHTree.FromPolygons(v.tolist(), caras); pide = np.zeros(len(v))
+            for q, r in zip(pts, rayos):
+                loc, _, cara, t = bvh.ray_cast(Vector(q), Vector(r), 4 * ALCANCE_BRAZO)
+                if loc is not None: pide[list(caras[cara])] = np.maximum(pide[list(caras[cara])], t + margen + encima)
+            toc = np.nonzero(pide)[0]
+            if not len(toc): break
+            # Caída: promedio pesado (gaussiana) de lo que piden los vecinos; los que tapan se corren entero
+            # Falloff: Gaussian-weighted average of what the neighbours ask; the covering ones move in full
+            w = np.exp(-(np.linalg.norm(v0[:, None] - v0[toc][None], axis=2) / sigma) ** 2)
+            v = v + hacia * np.maximum(pide, (w @ pide[toc]) / np.maximum(w.sum(1), 1.0))[:, None]
+            mov = v - v0; v = v0 + mov * np.minimum(1.0, tope / np.maximum(np.linalg.norm(mov, axis=1), 1e-9))[:, None]
+            if cuerpo:
+                # Donde el hundimiento entraría al cuerpo, la tela cede menos (bisección) / where the dent would get
+                # into the body the cloth gives less (bisection)
+                for k in np.nonzero(np.abs(v - v0).sum(1) > 1e-6)[0]:
+                    if afuera(v[k]): continue
+                    lo, hi = 0.0, 1.0
+                    for _ in range(6):
+                        t = (lo + hi) / 2; lo, hi = (t, hi) if afuera(v0[k] + (v[k] - v0[k]) * t) else (lo, t)
+                    v[k] = v0[k] + (v[k] - v0[k]) * lo
+        if np.abs(v - v0).max() < 1e-6: continue
+        CEDE_MAX[0] = max(CEDE_MAX[0], float(np.linalg.norm(v - v0, axis=1).max()))
+        mw = np.array(o.matrix_world); pisar(m, o, (v - mw[:3, 3]) @ np.linalg.inv(mw[:3, :3]).T); tocado = True
+    if tocado: bpy.context.view_layer.update()
+    # El delantal hundido no baja de la falda sobre la que va: si no, la falda asoma por él / the dented apron never goes
+    # below the skirt it lies on, or the skirt would show through it
+    if tocado and seguidoras: apoyar_sobre()
+
+
+# Peso de cada (grado/cuadro²)² de aceleración de la corrección contra un grado de corrección (tela_anim.curva_correccion).
+# Con 2 un pico de 10° en un cuadro se reparte en una loma de 1,25°/cuadro² (~0,4 px de la mano); con 0,5 quedaba en 5°/cuadro²
+# (1,6 px, tiembla) / weight of each (degree/frame²)² of correction acceleration against one degree of correction. At 2 a
+# one-frame 10° spike spreads into a 1.25°/frame² hump (~0.4 px at the hand); at 0.5 it stayed at 5°/frame² (1.6 px, jitters)
+SUAVIZADO = 2.0
+# Paso de la grilla de corrección (grados) y costo de cada px de penetración contra un grado de corrección
+# Correction grid step (degrees) and the cost of each px of penetration against one degree of correction
+PASO_CORRECCION = 5.0
+PENETRAR = 1e5
+# Valores de la grilla fina sobre la que se elige la curva / values of the fine grid the curve is chosen on
+GRILLA_CURVA = 16
+# Ejes de la corrección del brazo en su orden por defecto y sus topes (grados) / arm correction axes in their default order
+# and their caps (degrees)
+EJES = ("codo", "hombro", "afuera")
+EJE_CANAL = {"codo": ("fore", "doblar"), "hombro": ("upper", "adelante"), "afuera": ("upper", "afuera")}
+TOPES = {"codo": 30, "hombro": 15, "afuera": 10}
+
+
+def vista(d):
+    # El bloque con lo que pise "por_vista" en esa dirección (de perfil abrir el brazo no se ve: va primero)
+    # The block with what "por_vista" overrides in that direction (in profile opening the arm does not show: it goes first)
+    return {**CB, **CB.get("por_vista", {}).get(d, {})}
+
+
+def escalera(x, cfg):
+    # Una sola medida de corrección (grados) repartida en "orden" (codo, hombro, afuera), cada eje hasta su tope
+    # One correction amount (degrees) spent in "orden" (elbow, shoulder, outward), each axis up to its cap
+    out, resto = dict.fromkeys(EJES, 0.0), x
+    for eje in cfg.get("orden", EJES):
+        out[eje] = min(resto, cfg.get(f"tope_{eje}_grados", TOPES[eje])); resto -= out[eje]
+    return out
+
+
+def tope_total(cfg):
+    return sum(cfg.get(f"tope_{e}_grados", TOPES[e]) for e in cfg.get("orden", EJES))
+
+
+def corregir(frame, xs, signos, cfg):
+    # El cuadro con la corrección de cada brazo; el hombro va hacia donde ya va el braceo (signo de -1 a 1)
+    # The frame with each arm's correction; the shoulder goes the way the swing already goes (sign from -1 to 1)
+    f = dict(frame); f["pose"] = {b: dict(c) for b, c in frame.get("pose", {}).items()}
+    for s, x in xs.items():
+        for eje, grados in escalera(x, cfg).items():
+            hueso, canal = EJE_CANAL[eje]; c = f["pose"].setdefault(f"{hueso}_{s}", {})
+            c[canal] = c.get(canal, 0) + grados * (signos[s] if eje == "hombro" else 1)
+    return f
+
+
+def sin_penetrar(pen, margen=0.0):
+    return all(p is None or p <= -margen for p in pen)
+
+
+def resolver_brazos(frames, d, formas, ciclo, espejo_ciclo):
+    # Corrección de cada brazo en todo el ciclo: se mide la penetración en la tela ya cedida para cada valor de la escalera
+    # (de a "paso_grados") en cada cuadro, y la curva sale de tela_anim.curva_correccion: el menor tamaño sin penetrar y con
+    # la aceleración entre cuadros penalizada ("suavizado"). Con espejo_ciclo (S/N con espejar_ciclo) el brazo R en c es el
+    # L en c + n/2. Donde ni el tope alcanza queda lo que menos penetra y se marca / each arm's correction over the whole
+    # cycle: the penetration into the given cloth is measured for each ladder value in each frame, and the curve comes from
+    # tela_anim.curva_correccion: the smallest size without penetrating, with frame-to-frame acceleration penalised. With
+    # espejo_ciclo the R arm at c is the L arm at c + n/2. Where even the cap is not enough, the least penetrating stays, flagged
+    global SEPARACION, CEDER
+    CEDER = True; cfg = vista(d); n = len(frames); SEPARACION = cfg.get("separacion_grados", 0.0)
+    valores = np.arange(0.0, tope_total(cfg) + 1e-6, cfg.get("paso_grados", PASO_CORRECCION))
+    media = {s: sum(f["pose"].get(f"upper_{s}", {}).get("adelante", 0) for f in frames) / n for s in "LR"}
+    signos = [{s: max(-1.0, min(1.0, (f["pose"].get(f"upper_{s}", {}).get("adelante", 0) - media[s]) / 10.0)) for s in "LR"}
+              for f in frames]
+    pen = {s: np.zeros((n, len(valores))) for s in "LR"}; h = n // 2
+
+    def medir_en(i, xs):
+        # Peor penetración de cada brazo en el cuadro i con esa corrección / each arm's worst penetration in frame i
+        TELA_FORMAS.clear(); TELA_FORMAS.update({k: v[i] for k, v in formas.items()})
+        pose(corregir(frames[i], xs, signos[i], cfg), YAW[d]); m = medir_brazos()
+        return {s: max((p for p in m.get(s, []) if p is not None), default=-99.0) for s in "LR"}
+    # Con espejo_ciclo la segunda mitad sale espejada de la primera: no se mide / with espejo_ciclo the second half is
+    # mirrored from the first: not measured
+    for i in range(h if espejo_ciclo else n):
+        for k, x in enumerate(valores):
+            m = medir_en(i, {"L": x, "R": x})
+            for s in "LR": pen[s][i, k] = m[s]
+    tabla = {"valores": valores.tolist(), **{s: np.round(pen[s], 2).tolist() for s in "LR"}}
+    # La curva se elige sobre una grilla más fina, interpolada (la penetración es suave), y sin los valores que ningún
+    # cuadro necesita: hasta GRILLA_CURVA valores, que la tabla de la curva crece a la quinta. Lo que la interpolación
+    # erra se mide de verdad más abajo / the curve is chosen on a finer grid, interpolated (penetration is smooth), without
+    # the values no frame needs: up to GRILLA_CURVA values, since the curve's table grows with the fifth power. What the
+    # interpolation gets wrong is really measured below
+    falta = max(int(np.argmax(pen[s][i] <= 0)) if (pen[s][i] <= 0).any() else len(valores) - 1
+                for s in "LR" for i in range(h if espejo_ciclo else n))
+    hasta = valores[min(falta + 1, len(valores) - 1)]; paso = valores[1] - valores[0] if len(valores) > 1 else 1.0
+    fino = np.arange(0.0, hasta + 1e-6, paso / max(1, 2 ** int(math.log2(max(GRILLA_CURVA * paso / max(hasta, paso), 1)))))
+    pen = {s: np.array([np.interp(fino, valores, fila) for fila in pen[s]]) for s in "LR"}; valores = fino
+    costo = {s: valores[None] + PENETRAR * np.maximum(pen[s], 0.0) for s in "LR"}
+    peso = cfg.get("suavizado", SUAVIZADO)
+    for _ in range(4):
+        if espejo_ciclo:
+            # Solo cuentan los brazos que se ven: L en la primera mitad y, en la segunda, el R de medio ciclo antes (su espejo)
+            # Only the arms that show count: L in the first half and, in the second, R from half a cycle before (its mirror)
+            curva = TA.curva_correccion([costo["L"][j] if j < h else costo["R"][j - h] for j in range(n)], valores, peso, ciclo)
+            xs = {"L": curva, "R": [curva[(i + h) % n] for i in range(n)]}
+        else: xs = {s: TA.curva_correccion(costo[s], valores, peso, ciclo) for s in "LR"}
+        # Se mide la curva elegida: donde la interpolación daba libre y no lo está, ese valor se descarta y se elige de nuevo
+        # The chosen curve is measured: where interpolation said clear and it is not, that value is dropped and chosen again
+        cambio = False
+        for i in range(h if espejo_ciclo else n):
+            m = medir_en(i, {s: xs[s][i] for s in "LR"})
+            for s in "LR":
+                k = np.abs(valores - xs[s][i]).argmin()
+                if m[s] > 0 and pen[s][i, k] <= 0: pen[s][i, k] = m[s]; costo[s][i, k] += PENETRAR * m[s]; cambio = True
+        if not cambio: break
+    # El cuadro que se ve en i (segunda mitad con espejo_ciclo: el otro brazo medio ciclo antes) / the frame shown at i
+    visto = lambda s, i: ("LR"[s == "L"], i - h) if espejo_ciclo and i >= h else (s, i)
+    tope = {s: [bool(pen[visto(s, i)[0]][visto(s, i)[1], np.abs(valores - xs[s][i]).argmin()] > 0) for i in range(n)] for s in "LR"}
+    return xs, signos, tope, tabla
 
 
 def tela_animada(anim, grupo):
@@ -792,6 +1064,8 @@ def pose_huesos(frame, base_yaw):
         for bone, chans in MODEL.get("pose_base", {}).items():
             for chan, value in chans.items():
                 chans_all.setdefault(bone, {})[chan] = chans_all.get(bone, {}).get(chan, 0) + value
+    for s in "LR" if SEPARACION else "":  # "colision_brazos.separacion_grados"
+        own = chans_all.setdefault(f"upper_{s}", {}); own["afuera"] = own.get("afuera", 0) + SEPARACION
     if JOB.get("modo") != "sondeo":
         # "gravedad": {hueso: factor}: el colgante cuelga a plomo; suma la inclinación de la columna sobre él (cadera,
         # pecho, cuello) a su "adelante" y "lado", además de lo que pida la animación
@@ -1052,6 +1326,21 @@ if mode == "sondeo":
     pose({"raiz": {"giro": 90}}, 0)
     report["raiz.giro"] = list(rig.matrix_world @ PB["thigh_L"].head)
     json.dump(report, open(os.path.join(OUT, "sondeo.json"), "w"), indent=1)
+elif mode == "separacion":
+    # Separación base del brazo para "colision_brazos": la menor apertura (upper.afuera, grados, de a 0,5) con la que el
+    # brazo en reposo no entra en la ropa de "contra" en ninguna vista ("con_margen": además a "margen_px"). Lo que pide el
+    # movimiento lo pone la tela al ceder / base arm separation: the smallest opening with which the rest arm does not get
+    # into the "contra" clothing in any view ("con_margen": also clearing margen_px); motion is handled by the cloth giving way
+    out = {}
+    for d in ("south", "east"):
+        out[d] = {}
+        for a in np.arange(0.0, 30.01, 0.5):
+            pose({"pose": {f"upper_{s}": {"afuera": float(a)} for s in "LR"}}, YAW[d]); m = medir_brazos(d).values()
+            if "toca" not in out[d] and all(sin_penetrar(pen) for pen in m): out[d]["toca"] = float(a)
+            if all(sin_penetrar(pen, CB.get("margen_px", 1.0)) for pen in m): out[d]["con_margen"] = float(a); break
+    json.dump({"separacion_grados": max(v.get("toca", 30.0) for v in out.values()),
+               "con_margen": max(v.get("con_margen", 30.0) for v in out.values()), "por_vista": out},
+              open(os.path.join(OUT, "separacion.json"), "w"))
 elif mode == "vistas":
     # Vistas grandes y suavizadas del modelo para mostrarlo / large smoothed views to show the model
     reposo_rig()  # los ojos se pegan al hueso con la pose de ese momento / the eyes are parented with the pose of that moment
@@ -1182,7 +1471,7 @@ else:
         frames = anim["cuadros"]
         project = lambda w: [round(c, 2) for c in (world_to_camera_view(scene, cam, w).x * size,
                                                   (1 - world_to_camera_view(scene, cam, w).y) * size)]
-        dirs_job = JOB.get("dirs", list(YAW)); formas_dir = {}
+        dirs_job = JOB.get("dirs", list(YAW)); formas_dir = {}; sol_dir = {}
         animadas = {m["nombre"]: m.get("solo_en") for m, o in PARTS if (m.get("tela") or {}).get("animada")}
         if anim.get("bucle") and animadas and mode == "cuadros":
             t_t = time.perf_counter()
@@ -1203,6 +1492,18 @@ else:
                 pose({}, YAW[d]); v = world_to_camera_view(scene, cam, rig.matrix_world @ PB["hips"].head)
                 PIXEL_REF = (v.x * size, v.y * size)
             solo = JOB.get("solo", [None] * len(JOB["anims"]))[JOB["anims"].index(anim)]
+            corr = None
+            if CB and mode == "cuadros":
+                t_p = time.perf_counter()
+                if anim.get("espejar_oeste") and d == "west" and "east" in sol_dir:
+                    # El oeste es el este espejado: la misma corrección con los lados cambiados / west is the mirrored east
+                    cambio = lambda x: {"L": x["R"], "R": x["L"]}; xe, se, te = sol_dir["east"][:3]
+                    corr = (cambio(xe), [cambio(g) for g in se], cambio(te))
+                else:
+                    corr = resolver_brazos(frames, d, formas_dir.get(d, {}), bool(anim.get("bucle")),
+                                           bool(anim.get("espejar_ciclo")) and d in ("south", "north") and len(frames) % 2 == 0)
+                    TABLAS[f"{anim['nombre']}_{d}"] = corr[3]
+                sol_dir[d] = corr; tic("colision_brazos", t_p)
             for i, frame in enumerate(frames):
                 if solo is not None and i not in solo: continue  # el panel de ajuste mira solo algunos / the panel looks at a few
                 arc = None
@@ -1216,6 +1517,12 @@ else:
                         m = markers()
                         arc.append([project(m["mano_R"]), project(m["punta_espada"])])
                 TELA_FORMAS.clear(); TELA_FORMAS.update({k: v[i] for k, v in formas_dir.get(d, {}).items()})
+                if corr:
+                    # Pose original (sin separación, sin ceder ni corregir) para el informe / original pose for the report
+                    SEPARACION, CEDER = 0.0, False; pose(frame, YAW[d]); antes = medir_brazos()
+                    mano0 = {s: project(rig.matrix_world @ PB[f"hand_{s}"].tail) for s in "LR"}
+                    SEPARACION, CEDER = vista(d).get("separacion_grados", 0.0), True; CEDE_MAX[0] = 0.0
+                    xs = {s: corr[0][s][i] for s in "LR"}; frame = corregir(frame, xs, corr[1][i], vista(d))
                 t_p = time.perf_counter(); pose(frame, YAW[d]); tic("posar", t_p)
                 R.filepath = os.path.join(OUT, f"{anim['nombre']}_{d}_{i}.png")
                 t_p = time.perf_counter(); bpy.ops.render.render(write_still=True); tic("render_color", t_p)
@@ -1226,6 +1533,26 @@ else:
                 if any(p.get("pollera") for p, o in PARTS):
                     meta[f"{anim['nombre']}_{d}_{i}"]["pollera"] = legs_in_skirt()
                     meta[f"{anim['nombre']}_{d}_{i}"]["brazos"] = arms_vs_skirt()
+                if corr:
+                    despues = medir_brazos(); col = {"cede_max_px": round(CEDE_MAX[0], 2)}; tramos = ("brazo", "antebrazo", "mano")
+                    for s in "LR":
+                        e = escalera(xs[s], vista(d)); mano1 = project(rig.matrix_world @ PB[f"hand_{s}"].tail)
+                        col[s] = {"antes": dict(zip(tramos, antes.get(s, [None] * 3))), "despues": dict(zip(tramos, despues.get(s, [None] * 3))),
+                                  "correccion": {"codo": round(e["codo"], 2), "hombro": round(corr[1][i][s] * e["hombro"], 2), "afuera": round(e["afuera"], 2)},
+                                  "separacion_base": SEPARACION, "mano_px_original": mano0[s], "mano_px": mano1,
+                                  "desvio_mano_px": round(math.dist(mano0[s], mano1), 2), "paso_tope": bool(corr[2][s][i])}
+                    # Cuánto mueve la mano en pantalla un grado de cada eje en esta pose: test_colision.py mide con esto el
+                    # temblor que agrega la corrección / how far one degree of each axis moves the hand on screen in this
+                    # pose: test_colision.py measures the jitter the correction adds with it
+                    CEDER = False
+                    for eje, (hueso, canal) in EJE_CANAL.items():
+                        f2 = dict(frame); f2["pose"] = {b: dict(c) for b, c in frame["pose"].items()}
+                        for s in "LR": f2["pose"][f"{hueso}_{s}"][canal] = f2["pose"][f"{hueso}_{s}"].get(canal, 0) + 1.0
+                        pose(f2, YAW[d])
+                        for s in "LR":
+                            m1 = project(rig.matrix_world @ PB[f"hand_{s}"].tail)
+                            col[s].setdefault("px_por_grado", {})[eje] = [round(m1[k] - col[s]["mano_px"][k], 2) for k in (0, 1)]
+                    CEDER = True; meta[f"{anim['nombre']}_{d}_{i}"]["colision"] = col
                 tic("medidas", t_p)
                 if NORMAL_MATS:
                     t_p = time.perf_counter(); render_ids(os.path.join(OUT, f"{anim['nombre']}_{d}_{i}_n.png"), NORMAL_MATS); tic("render_normales", t_p)
@@ -1236,6 +1563,7 @@ else:
     TELA_FORMAS.clear()
     json.dump(meta, open(os.path.join(OUT, "meta.json"), "w"), indent=0)
     if COLISION_STATS: json.dump(COLISION_STATS, open(os.path.join(OUT, "colision.json"), "w"), indent=1)
+    if TABLAS: json.dump(TABLAS, open(os.path.join(OUT, "colision_tabla.json"), "w"))
     tic("total_blender", T0); json.dump({k: round(v, 4) for k, v in TIEMPOS.items()}, open(os.path.join(OUT, "tiempos.json"), "w"))
     # RIG3D_BLEND=<ruta>: guarda la escena armada (malla, huesos, cámara) posada en el cuadro RIG3D_BLEND_CUADRO (0) de
     # la última animación y dirección renderizadas, para abrirla en Blender (el panel de ajuste la usa)
