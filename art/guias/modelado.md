@@ -113,6 +113,60 @@ diferencia entre dos rondas rechazadas y una base aprobable.
 - `"ambiente"` en una rampa le da una luz mínima (el pelo de espaldas, para que no quede un corte duro de boina).
 - Las orejas de tela llevan hueso propio (`cuerpo.orejas` crea `ear_L/R`, tipo `oreja`) para el movimiento
   secundario. `ojos.redondear` evita que los ojos salten medio píxel cuando la cabeza baja.
+- **Rasgos por piezas (2026-11-11):** cada rasgo de la cara es un módulo con su slot y su imagen, no letras redibujadas.
+  - Ojos: `"ojos": {"sellos": {"frente_R": {"imagen": "ojo.png", "ancla": [col, fila]}, "frente_L": "espejo"}}`. La imagen
+    es un PNG 1:1 al lado del módulo (opaco pinta, transparente no toca); `"espejo"` saca el izquierdo del derecho.
+  - Nariz, boca, rubor, cejas: un módulo cada uno con un retoque `{"nombre": "boca", "tipo": "retoque", "vistas": ["south"],
+    "ancla": "ojo_R", "origen": [col, fila], "imagen": "boca.png", "rasgo": true}`. `origen` puede ser negativo.
+  - Copiar una cara es recortar sus rasgos de la referencia a tamaño real, no redibujarla. Si la referencia es de otra
+    escala, primero se agranda o achica la cabeza de la receta, no el dibujo.
+  - Los ojos y los retoques con `"rasgo": true` se pintan solo sobre la cara visible (las partes de `ojos.parte`): el
+    peinado los tapa donde cae. Con `"parte": ["cabeza", "cabeza_sn", "nariz"]` los ojos van debajo del pelo.
+  - `python -I tools/art/test_cara.py <receta> <hoja.png>` falla si a un rasgo le falta o le cambia un píxel sobre la
+    cara visible (cortado por el contorno, cambiado por el espejado); lo que tapa el peinado solo se informa. Es
+    condición de entrega de cualquier cambio de cara.
+  - **Forma de la cabeza por vista:** `radios`, `mandibula`, `menton`, `cuadrar_abajo`, `cuadrar_arriba`, `alto_arriba`
+    y `fondo` puestos en la parte `cabeza_sn` (frente y espalda) o `cabeza` (perfil) pisan a los de `cuerpo.cabeza` solo
+    para esa malla. El modelo no tiene que verse bien en 3D: importa el render de cada dirección.
+  - **Por capas, de abajo hacia arriba, cada una contra una referencia de esa capa:** (1) cabeza pelada: forma por vista
+    y piel; (2) rasgos limpios; (3) peinado, que tapa y sombrea lo que le toca; (4) ropa. No se copian rasgos de un
+    personaje terminado: trae horneadas la sombra del pelo, el borde de la cara y las cejas medio tapadas. La referencia
+    pelada se pide a PixelLab como estado del personaje ("completely bald, same face and outfit", 10 generaciones).
+  - **Piel de la cara:** rampa con `"plano": true` más `"borde_piel": {"partes": ["cabeza", "oreja_L", "oreja_R",
+    "nariz"], "rampa": "cara"}` en la receta. Los píxeles de esas partes que tocan otra cosa (fondo, pelo, ropa) bajan
+    un tono: es el borde que da volumen y, con pelo, la sombra del peinado sobre la cara. `"px"` lo ensancha y `"tono"`
+    lo oscurece. `"sin": ["cuerpo"]` evita el borde donde el mentón toca el cuello: ahí se lee como papada.
+  - **Sombras de una parte sobre otra:** `"sombras_2d": [{"de": ["cabeza"], "sobre": ["cuerpo"], "filas": 2, "rampa":
+    "piel", "tono": 2}]`. Los píxeles de `sobre` que tienen uno de `de` hasta `filas` filas más arriba bajan de tono: la
+    cabeza sobre el cuello, el flequillo sobre la frente.
+  - **El mentón termina bajo la boca.** Si la cabeza sigue varias filas por debajo, de frente parece papada; el cuello
+    de la prenda lo puede estar tapando. Se acorta con `radios` (z) en `cabeza_sn` y `cabeza`, no en el cuerpo, para que
+    el pelo no cambie de largo.
+  - **Perfil:** la oreja, los labios y el hundido de la cara a la altura de los ojos (que deja salidas la frente y la
+    nariz) van como retoques `"rasgo"` de la vista `east`. En la imagen de un retoque, el magenta puro borra; un
+    `"rasgo"` solo borra donde no hay ninguna parte y en las filas donde el sello cae sobre la cara visible, así no se
+    come el pelo ni su contorno.
+  - Antes de copiar una cara, medir en la referencia pelada el ancho de la cabeza por fila en cada vista y llevar la
+    malla a esas medidas; se cierra la forma antes de poner los rasgos.
+  - La separación entre ojos sale impar o par según `desfase_x` de la receta (-0,5: eje en el centro de un píxel, impar).
+  - **Sombra del flequillo sobre los ojos:** `"sombra_ojos": {"filas": 2, "factor": 0.75}` en la receta oscurece los
+    píxeles de los ojos que tienen pelo hasta `filas` filas más arriba. El ojo se recorta limpio de la pelada; la sombra
+    la pone el peinado.
+  - **Cuello:** una entrada de `sombras_2d` puede llevar `"color": [r, g, b]` en vez de rampa y tono. De frente, la
+    sombra bajo el mentón va más oscura que el contorno de la mandíbula; si no, se lee como mucho cuello (maid: 3 filas).
+  - **Peinado por vista (capa 3):** una `tapa` para frente y espalda y otra para perfil (`solo_en`), y lo mismo con el
+    flequillo. De frente el pelo pide ancho a la altura de la oreja; esa misma tapa, de perfil, es una bola. De perfil
+    el flequillo tapa la frente: un píxel de piel por delante del pelo se lee como un cuerno.
+  - **Cabeza y pelo "rectangulares":** antes de tocar nada, comparar la pelada con la peinada para saber cuál de las
+    dos es. En la maid era la frente baja (cabeza de 19 filas contra 22 de la referencia, `alto_arriba`) y un pelo del
+    mismo ancho de arriba abajo: va más ancho a la altura de la oreja y se afina hacia abajo (rizos de `esfera` con
+    hueso `lock_<lado>`, solo en S/N).
+  - Si cambia el tamaño de la cabeza, la cofia y las orejas se reajustan pisando su `craneo` en la receta, no
+    rehaciendo la pieza.
+  - En una caminata con `cabeza_fija`, `test_cara.py --cabeza_fija east` chequea solo el cuadro 0 de esa vista: los
+    demás llevan pegada esa cabeza.
+  - Las medidas no alcanzan para cerrar una capa: "piel a la vista por fila" daba bien con los ojos tapados del todo.
+    Cada ronda se mira la imagen a tamaño real y ampliada, además del número.
 
 ## Ropa
 
@@ -206,6 +260,14 @@ Plan y decisiones: `plan_tela_animada.md` y `plan_tela_animada_tareas.md`.
   brazo, con más `px` que él). `px` negativo las aleja, y `"solo_sobre_ruedo": true` lo aplica solo por encima del borde de la falda: así
   el muslo no asoma por la zona fijada y los pies siguen ordenados como en la rígida. `prioridad` no sirve para esto y `corr_ante` tampoco en la maid: lo que queda adentro de la campana es el codo.
   Una animación puede pisar campos con su propio `"brazo_encima"` (la carrera cambia `vistas`: de espaldas los brazos no vienen hacia adelante).
+- **Brazos que no atraviesan la ropa:** `"colision_brazos": {"contra": [partes], "tela_cede": true, "separacion_grados": N}` en la
+  receta (apagado por defecto; campos y valores por defecto en el comentario de `rig3d_blender.py`). Reemplaza el corrimiento de brazos
+  de `brazo_encima`, que se leía como atravesar: con el bloque activo solo valen sus `extra`. Por cuadro, la tela cede donde pasa el
+  brazo (hasta `cede_max_px`, sin entrar al cuerpo) y lo que falte lo corrige el brazo en el `orden` dado, cada eje con su tope
+  (codo 30°, hombro 15°, afuera 10°; `por_vista` pisa valores por dirección). Si no alcanza, lo informa (`paso_tope`) y no deforma.
+  `rig3d.py separacion <receta>` da el `separacion_grados` del personaje. Cada render deja `<prefijo>_<anim>_colision.json` y
+  `python -I tools/art/test_colision.py <carpeta>` falla si queda penetración, si se pasa un tope, si la mano tiembla o si W no es E
+  espejado. Probado en caminata y carrera de la maid; todavía no está en su receta.
 - **Delantal:** `"amortiguacion": 10` (Blender topa ahí). Con menos, la tela floja avanza despacio y vuelve de golpe dos veces por ciclo.
 - **`colision` no corre sobre tela animada:** la simulación ya choca con cuerpo y piernas, y esa pasada hacía saltar vértices
   hasta 9 px por paso. Sigue valiendo para ropa rígida y para animaciones sin bucle.
@@ -296,6 +358,12 @@ meta: perseguir el puntaje contra las vistas deforma el modelo para imitar una c
 ## Lecciones
 
 Correcciones de Sam, la más nueva arriba: fecha, qué estaba mal y la regla que lo evita.
+
+- 2026-11-12, cara de la maid (`cara_r6` a `cara_r8`): copiar la cara de un personaje terminado no cerró en dos
+  rondas (pálida, sin cejas, con la sombra del pelo horneada en los ojos y papada por el cuello blanco). Cerró por
+  capas contra una sola referencia pelada, con un chequeo automático por capa. Lo que alargó las rondas: cambiar de
+  referencia a mitad de camino y arreglar un síntoma por vez sin separar la capa que lo causaba. Reglas en "Cabeza,
+  pelo y orejas".
 
 - 2026-11-01, pelirroja con más detalle (prueba de 68 px proyectando una referencia de PixelLab,
   `art/pruebas/pelirroja_detalle/`; las opciones de proyección sobre malla y `contorno_suave` están solo en la copia de
