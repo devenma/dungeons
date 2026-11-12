@@ -13,8 +13,8 @@ Cada sesión de trabajo empieza leyendo el **Estado** y termina actualizándolo 
 | Actualizado | 2026-11-12 |
 | Hito activo | **H0 — Ordenar la casa** |
 | Último avance | Cabeza de la maid cerrada por capas contra la opción 10 (cabeza pelada, rasgos recortados de la referencia, peinado por vista, moño sin cuello blanco); el usuario la dio por buena el 2026-11-12. Probada en reposo, caminata y carrera con el chequeo de cara en verde. Herramienta (rasgos por imagen, `borde_piel`, `sombras_2d`, `sombra_ojos`, forma de cabeza por vista, `test_cara.py`) y guía commiteadas (`c1158a5`, `8db85e5`), sin push. Las piezas de la cabeza siguen en `art/pruebas/maid_op15/cara_r8/`. Fuera del plan: sirve a H1. |
-| Siguiente paso | En este orden y sin abrir rondas nuevas de cara: (1) pasar cabeza, rasgos y peinado de `cara_r8/m10/` a `art/source/modulos/` y armar la receta real de la maid con tela animada y `colision_brazos` (el bloque todavía no está en ninguna receta de `art/source`); (2) regenerar reposo, caminata y carrera una sola vez y verlas en `scenes/preview/paseo_maid.tscn`; (3) cerrar H0: commits pendientes, D27 y tamaño de figura en `DECISIONES.md`, push y PR a `dev`; (4) H1: prueba de escala con la maid como jugador. Comandos y valores cerrados en `art/pruebas/maid_op15/cara_r8/LEEME.md`. |
-| Bloqueos | Ninguno técnico. Las tiras de movimiento de `cara_r8/m10/mov/` salieron de la receta de prueba (maniquí base y vestido rígido, sin tela animada ni `colision_brazos`): los brazos atraviesan la falda y no valen para juzgar brazos ni falda. Aceptado para seguir y anotado para una sola pasada posterior: espalda del pelo sin afinar (silueta 0,83), cofia y orejas algo chicas, zona lisa entre la cofia y el flequillo, el personaje mide ~62 px. Señales de §7 encendidas: la cara pasó las 3 rondas (`cara_r6` a `cara_r8`) y van más de tres sesiones de arte sin nada nuevo en el juego real, así que la próxima sesión de arte termina con la maid nueva dentro del juego. Hay trabajo de equipo por slots (D27) a medio hacer en el árbol de trabajo. |
+| Siguiente paso | Sin abrir rondas nuevas de cara. (1) H1, prueba de escala: la maid como jugador en una sala de la cripta y en Hondoval con las hojas que ya están en el juego (`89fc495`); colisión por los pies, puerta de 1 tile, orden por Y, y un veredicto escrito de escala. Va primero porque los rasgos de la cara son imágenes a tamaño fijo: si la escala cambia, hay que rehacerlos. (2) Con la escala cerrada: pasar cabeza, rasgos y peinado de `cara_r8/m10/` a `art/source/modulos/`, armar la receta real de la maid con tela animada y `colision_brazos` (el bloque todavía no está en ninguna receta de `art/source`) y regenerar reposo, caminata y carrera una sola vez. (3) Cerrar H0: commits de lo pendiente, tamaño de figura en `DECISIONES.md`, push y PR a `dev`. Comandos y valores cerrados de la cabeza en `art/pruebas/maid_op15/cara_r8/LEEME.md`. |
+| Bloqueos | Ninguno técnico. Las tiras de movimiento de `cara_r8/m10/mov/` salieron de la receta de prueba (maniquí base y vestido rígido, sin tela animada ni `colision_brazos`): los brazos atraviesan la falda y no valen para juzgar brazos ni falda. Aceptado para seguir y anotado para una sola pasada posterior: espalda del pelo sin afinar (silueta 0,83), cofia y orejas algo chicas, zona lisa entre la cofia y el flequillo, el personaje mide ~62 px. Señales de §7 encendidas: la cara pasó las 3 rondas (`cara_r6` a `cara_r8`) y van más de tres sesiones de arte sin nada nuevo en el juego real, así que la próxima sesión de arte termina con la maid nueva dentro del juego. |
 
 ## 1. Dónde estamos (2026-11-10)
 
@@ -28,7 +28,7 @@ Cada sesión de trabajo empieza leyendo el **Estado** y termina actualizándolo 
 - **Escala sin resolver:** la maid mide ~59 px en un lienzo de 80×80; el mundo está pensado para figuras de ~40 px
   sobre tiles de 32, con puertas de 1 tile y sin orden por Y.
 - **Ramas:** `main` ← `dev` (90 commits adelante) ← `feat/estilo-3d-pixel` (59 adelante, 20 sin push), más cambios
-  sin commit. D27 (equipo por slots) existe en código y no en `DECISIONES.md`. `AGENTS.md` §38.1 todavía habla de 40 px.
+  sin commit. D27 (equipo por slots) está en código y en `DECISIONES.md` como propuesta. `AGENTS.md` §38.1 todavía habla de 40 px.
 
 El riesgo principal no es técnico: es que el flujo de arte siga absorbiendo las sesiones mientras el juego no avanza.
 
@@ -55,9 +55,9 @@ El MVP es el de D17: `pueblo → 1 dungeon de 3 pisos → jefe → volver con lo
 
 ### H0 — Ordenar la casa (tamaño: chico)
 
-- [ ] Commits por punto de lo pendiente: hojas de la maid, equipo por slots, escenas de prueba, `rush_ghost`,
+- [ ] Commits por punto de lo pendiente (ya están las hojas de la maid, `89fc495`, y el equipo por slots, `3c9f5a5`): escenas de prueba, `rush_ghost`,
       `sombra.py`. Push de la rama.
-- [ ] `DECISIONES.md`: registrar D27 (equipo por slots), el tamaño de figura variable (D5), "sin animación a mano,
+- [ ] `DECISIONES.md`: D27 (equipo por slots) ya está como propuesta (`464b7f3`); falta registrar el tamaño de figura variable (D5), "sin animación a mano,
       solo mocap" (D7) y el reemplazo del estilo oscuro como propuesta (D15).
 - [ ] Alinear `AGENTS.md` §38.1 y §31 (que apunte a este plan) y `FEATURES.md` §1.
 - [ ] Una corrida completa de tests para saber desde dónde se parte.
