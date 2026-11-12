@@ -106,6 +106,8 @@ def read_recipe(path):
         spec["sprites"] = {d: os.path.abspath(os.path.join(base, p)) for d, p in spec["sprites"].items()}
     for s in model.get("partes", []):
         if "archivo" in s: s["archivo"] = os.path.abspath(os.path.join(base, s["archivo"]))
+    for st in list(model.get("ojos", {}).get("sellos", {}).values()) + model.get("retoques", []):
+        if "imagen" in st: st["imagen"] = os.path.abspath(os.path.join(base, st["imagen"]))
     # "craneo": radios [x, frente, atrás, arriba, abajo] de la cabeza sobre la que se midió el fragmento (peinado,
     # orejas); sus partes y sus huesos de orejas se adaptan a la cabeza del cuerpo (rig3d_partes.craneo); la cara lo
     # lleva en "ojos" / skull radii the fragment was measured on; its parts and ear bones adapt to the body's head
@@ -132,8 +134,37 @@ def read_recipe(path):
     return out
 
 
+def sellos_de_imagen(model):
+    # "imagen": PNG 1:1 en un sello de "ojos" o en un retoque, en lugar de "px": cada píxel opaco pinta su color y lo
+    # transparente no toca; en un retoque el magenta puro (255, 0, 255) borra. Se pasa a "px" con claves propias en
+    # "colores", así el resto no cambia / "imagen": 1:1 PNG in an eye stamp or a retoque instead of "px": opaque pixels
+    # paint their colour, transparent ones are left alone; in a retoque pure magenta erases. It becomes "px" with its
+    # own keys in "colores", so nothing downstream changes
+    ojos = model.get("ojos", {})
+    sellos = [(st, ojos.setdefault("colores", {})) for st in ojos.get("sellos", {}).values() if "imagen" in st]
+    sellos += [(st, st.setdefault("colores", {})) for st in model.get("retoques", []) if "imagen" in st]
+    for st, colores in sellos:
+        clave = {tuple(c): k for k, c in colores.items()}
+        libres = (chr(c) for c in range(0xE000, 0xF900) if chr(c) not in colores)  # letras de uso privado / private-use letters
+        filas = []
+        for fila in np.array(Image.open(st.pop("imagen")).convert("RGBA")).tolist():
+            s = ""
+            for r, g, b, a in fila:
+                if a > 127 and (r, g, b) == (255, 0, 255): s += "_"; continue
+                if a > 127 and (r, g, b) not in clave: clave[(r, g, b)] = next(libres); colores[clave[(r, g, b)]] = [r, g, b]
+                s += clave[(r, g, b)] if a > 127 else "."
+            filas.append(s)
+        st["px"] = filas
+    # "frente_L": "espejo" (o sin él): el ojo izquierdo es el derecho espejado sobre el eje de la cara
+    # "frente_L": "espejo" (or absent): the left eye is the right one mirrored about the face axis
+    s = ojos.get("sellos", {})
+    if "frente_R" in s and s.get("frente_L", "espejo") == "espejo":
+        r = s["frente_R"]; s["frente_L"] = {"px": [f[::-1] for f in r["px"]], "ancla": [len(r["px"][0]) - r["ancla"][0], r["ancla"][1]]}
+
+
 def load_model(path):
     model = read_recipe(path)
+    sellos_de_imagen(model)
     model["_dir"] = os.path.dirname(os.path.abspath(path))  # para partes que leen archivos / for parts that read files
     if "cuerpo" in model:  # receta: el esqueleto sale de las proporciones / recipe: the skeleton comes from the proportions
         import rig3d_partes
@@ -446,6 +477,57 @@ def contorno_contra_fondo(line, part, parts, model):
     return line
 
 
+def borde_piel(img, part, parts, model, spec):
+    # "borde_piel": {"partes": [prefijos], "sin": [prefijos], "rampa": "piel", "tono": 1, "px": 1}: los píxeles de esas
+    # partes que tocan otra cosa (el fondo, el pelo, la ropa) bajan "tono" pasos desde el claro de la rampa. Es el borde
+    # que le da volumen a la cara y la sombra que le deja el peinado, sea cual sea. Tocar una parte de "sin" no cuenta (el
+    # cuello bajo el mentón: ahí el borde se lee como papada) / pixels of those parts touching anything else (background,
+    # hair, clothes) drop "tono" steps from the ramp's light tone: the rim that gives the face volume and the shadow
+    # whatever hairstyle is on leaves on it. Touching a "sin" part does not count (the neck under the chin)
+    def de(pref): return np.isin(part, [k for k, p in enumerate(parts) if p["nombre"].startswith(tuple(pref))])
+    grupo = de(spec["partes"]); dentro = grupo | de(spec["sin"]) if spec.get("sin") else grupo
+    for _ in range(spec.get("px", 1)):
+        P = np.pad(dentro, 1); dentro = dentro & P[:-2, 1:-1] & P[2:, 1:-1] & P[1:-1, :-2] & P[1:-1, 2:]
+    out = img.copy(); out[grupo & ~dentro, :3] = tones(model["rampas"][spec.get("rampa", "piel")])[-1 - spec.get("tono", 1)]
+    return out
+
+
+def sombra_2d(img, part, parts, model, spec):
+    # "sombras_2d": [{"de": [prefijos], "sobre": [prefijos], "filas": 2, "rampa": "piel", "tono": 2}]: la sombra que unas
+    # partes dejan sobre otras. Los píxeles de "sobre" que tienen uno de "de" hasta "filas" filas más arriba en su columna
+    # bajan "tono" pasos desde el claro de la rampa (la cabeza sobre el cuello, el flequillo sobre la frente); "color":
+    # [r, g, b] en lugar de la rampa para una sombra más oscura que el contorno. Se aplican en orden: la última manda
+    # The shadow some parts cast on others: "sobre" pixels with a "de" pixel up to "filas" rows above in their column
+    # drop "tono" steps from the ramp's light tone (the head on the neck, the fringe on the forehead); "color" instead
+    # of the ramp for a shadow darker than the outline. Applied in order: the last one wins
+    def de(pref): return np.isin(part, [k for k, p in enumerate(parts) if p["nombre"].startswith(tuple(pref))])
+    arriba = de(spec["de"]); cerca = np.zeros_like(arriba)
+    for n in range(1, spec.get("filas", 2) + 1): cerca[n:] |= arriba[:-n]
+    color = spec.get("color") or tones(model["rampas"][spec.get("rampa", "piel")])[-1 - spec.get("tono", 2)]
+    out = img.copy(); out[de(spec["sobre"]) & cerca, :3] = color
+    return out
+
+
+def sombrear_ojos(eyes, part, parts, model):
+    # "sombra_ojos": {"filas": 2, "factor": 0.75}: los píxeles de los ojos con pelo hasta "filas" filas más arriba en su
+    # columna se oscurecen: la sombra del flequillo, según el peinado que haya / eye pixels with hair up to "filas"
+    # rows above in their column darken: the fringe's shadow, whatever hairstyle is on
+    so = model.get("sombra_ojos")
+    if not so: return eyes
+    pelo = np.isin(part, [k for k, p in enumerate(parts) if p["capa"] == "pelo"]); cerca = np.zeros_like(pelo)
+    for n in range(1, so.get("filas", 2) + 1): cerca[n:] |= pelo[:-n]
+    m = cerca & (eyes[..., 3] > 0); eyes[m, :3] = (eyes[m, :3] * so.get("factor", 0.75)).astype(np.uint8)
+    return eyes
+
+
+def cara_visible(part, parts, model):
+    # Píxeles donde se ve la cara: las partes de "ojos.parte" (una o lista). Ahí van los ojos y los retoques "rasgo"; lo
+    # que el peinado tapa no se pinta / pixels where the face shows: the "ojos.parte" parts (one or a list). Eyes and
+    # "rasgo" retoques go there; what the hairstyle covers is not painted
+    names = model.get("ojos", {}).get("parte", "cabeza")
+    return np.isin(part, [k for k, p in enumerate(parts) if p["nombre"] in ([names] if isinstance(names, str) else names)])
+
+
 def layers_parts(img, ids, parts, fmeta, model, size, gap, fx=None, pal=None, margin=SOLE_MARGIN):
     # Receta de malla: una capa por grupo de partes con solo lo que se ve de cada una, las líneas internas, los ojos
     # y el contorno de color, cada uno en su capa / mesh recipe: one layer per part group holding only what shows of
@@ -454,6 +536,8 @@ def layers_parts(img, ids, parts, fmeta, model, size, gap, fx=None, pal=None, ma
     part[(part < 0) & (img[..., 3] > 127)] = 0  # nunca perder un píxel del render / never drop a rendered pixel
     if model.get("punta_1px"): img = img.copy(); punta_1px(img, part, parts, model["punta_1px"])
     if model.get("filo"): img = filo(img, part, parts, model["filo"])
+    if model.get("borde_piel"): img = borde_piel(img, part, parts, model, model["borde_piel"])
+    for spec in model.get("sombras_2d", []): img = sombra_2d(img, part, parts, model, spec)
     names = sorted({p["linea"] for p in parts if p.get("linea")})
     grp = np.array([names.index(p["linea"]) if p.get("linea") else -2 for p in parts] + [-1])
     ramp = model.get("contorno") == "rampa"  # líneas y contorno en el tono más oscuro de cada material / darkest ramp tone
@@ -472,9 +556,8 @@ def layers_parts(img, ids, parts, fmeta, model, size, gap, fx=None, pal=None, ma
     if dark is not None and not ramp: lines = quantize(lines, dark)
     lines = tono_linea(lines, part, parts, model) if ramp else lines
     lines = contorno_contra(lines, part, parts, model)
-    names = model.get("ojos", {}).get("parte", "cabeza")  # una parte o lista: la pestaña puede pisar el flequillo / one part or a list
-    face = np.isin(part, [k for k, p in enumerate(parts) if p["nombre"] in ([names] if isinstance(names, str) else names)])
-    eyes = stamp_eyes(fmeta.get("ojos"), model.get("ojos"), face, eje_espejo(model, face.shape[1]))
+    face = cara_visible(part, parts, model)
+    eyes = sombrear_ojos(stamp_eyes(fmeta.get("ojos"), model.get("ojos"), face, eje_espejo(model, face.shape[1])), part, parts, model)
     out = {"Efectos": fx} if fx is not None else {}
     capa = np.array([p["capa"] for p in parts] + [""])
     for name in PART_LAYERS + sorted(set(capa[:-1]) - set(PART_LAYERS)):
@@ -559,7 +642,7 @@ def limpiar_huerfanos(lay):
 DIR_GIRO = {"south": 0, "east": 90, "north": 180, "west": -90}
 
 
-def retocar(lay, fm, d, model, anim=None):
+def retocar(lay, fm, d, model, anim=None, cara=None, vacio=None):
     # "retoques": [{"vistas", "ancla", "origen", "px", "colores", "tolerancia"}]: sellos 2D por dirección base sobre el
     # cuadro terminado (borde de la cara de perfil). "ancla": "ojo_R"/"ojo_L" o un marcador; "origen": [col, fila] del
     # sello que cae en el ancla; en "px", "." no toca, "_" borra y cada letra pinta su color de "colores" en la capa
@@ -567,7 +650,11 @@ def retocar(lay, fm, d, model, anim=None):
     # 2D stamps per base direction on the finished frame (profile face edge). "ancla": an eye or a marker; "origen":
     # the stamp's [col, row] on the anchor; "." leaves, "_" erases, letters paint on the top Retoques layer. Only when
     # the frame's turn is within "tolerancia" degrees (10) of the view. "anims": [nombres] lo limita a esas animaciones
-    # / limits it to those animations
+    # / limits it to those animations. "rasgo": true (nariz, boca, rubor) pinta solo sobre la cara visible (cara), como
+    # los ojos, y borra además donde no hay ninguna parte (vacio), pero solo en las filas donde algo suyo cae sobre la
+    # cara: así talla el contorno de la cara sin comerse el pelo ni su contorno / paints only on the visible face, like
+    # the eyes, and also erases where no part is (vacio), but only on rows where something of it lands on the face: it
+    # carves the face outline without eating the hair or its outline
     out = {k: (v.copy() if v is not None else None) for k, v in lay.items()}
     size = next(v for v in lay.values() if v is not None).shape[0]
     for st in model.get("retoques", []):
@@ -589,10 +676,13 @@ def retocar(lay, fm, d, model, anim=None):
             tapa = ("Lineas", "Ojos", "Contorno", "Retoques")
             relleno = np.any([a for k, a in capas if k not in tapa], 0) & ~np.any([a for k, a in capas if k in tapa] or [np.zeros((size, size), bool)], 0)
         for j, row in enumerate(st["px"]):
+            en_cara = cara is not None and any(ch not in "._" and 0 <= x0 + i < size and 0 <= y0 + j < size and cara[y0 + j, x0 + i]
+                                               for i, ch in enumerate(row))
             for i, ch in enumerate(row):
                 x, y = x0 + i, y0 + j
                 if ch == "." or not (0 <= x < size and 0 <= y < size): continue
                 if relleno is not None and not relleno[y, x]: continue
+                if st.get("rasgo") and cara is not None and not cara[y, x] and not (ch == "_" and en_cara and vacio is not None and vacio[y, x]): continue
                 for k, v in out.items():
                     if v is not None and k != "Efectos": v[y, x] = 0
                 top[y, x] = 0 if ch == "_" else (*st["colores"][ch], 255)
@@ -1044,7 +1134,7 @@ def cmd_frames(args):
                     anim["_ids"][d].append(decode_ids(ids)[0])
                     lay = layers_parts(img, ids, parts, fm, model, size, d in ("south", "north"), fx, pal, margin)
                     if model.get("limpiar_huerfanos") and ren: lay = limpiar_huerfanos(lay)
-                    if model.get("retoques") and ren: lay = retocar(lay, fm, d, model, anim["nombre"])
+                    if model.get("retoques") and ren: lay = retocar(lay, fm, d, model, anim["nombre"], cara_visible(anim["_ids"][d][-1], parts, model), anim["_ids"][d][-1] < 0)
                     frames[d].append(lay)
                 else:
                     frames[d].append(layers(img, size, d in ("south", "north"), fx, pal, margin))

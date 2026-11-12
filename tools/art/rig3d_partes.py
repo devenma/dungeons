@@ -330,15 +330,20 @@ def anclar(s, M, pos):
     return pos
 
 
+FORMA_CABEZA = ("radios", "mandibula", "menton", "cuadrar_abajo", "cuadrar_arriba", "alto_arriba", "fondo")
+
+
 def p_cabeza(s, M):
     # Cráneo grande y mandíbula que se angosta hacia el mentón / big skull and a jaw that narrows to the chin
-    h = M["cuerpo"]["cabeza"]; c = cabeza_centro(M); r = h["radios"]; jaw = h.get("mandibula", 0.4)
+    # La forma puesta en la parte pisa a la del cuerpo: una cabeza por par de vistas (con "solo_en"); el centro, los ojos y
+    # el pelo siguen saliendo del cuerpo / shape keys on the part override the body's: one head per pair of views (with
+    # "solo_en"); the centre, the eyes and the hair still come from the body
+    h = {**M["cuerpo"]["cabeza"], **{k: s[k] for k in FORMA_CABEZA if k in s}}
+    c = cabeza_centro(M); r = h["radios"]; jaw = h.get("mandibula", 0.4)
     n = h.get("cuadrar_abajo", 2.0)  # superelipse de la mitad de abajo: más de 2 da mejillas llenas / fuller cheeks above 2
     # "cuadrar_arriba": superelipse solo a lo ancho (x) de la mitad de arriba: más de 2 da una tapa ancha de frente y
     # redonda de perfil / superellipse across (x) only on the top half: a broad top from the front, round in profile
-    # En la parte pisa al del cuerpo: una cabeza por par de vistas (con "solo_en") / on the part it overrides the
-    # body's: one head per pair of views (with "solo_en")
-    na = s.get("cuadrar_arriba", h.get("cuadrar_arriba", 2.0))
+    na = h.get("cuadrar_arriba", 2.0)
     def deform(p, la, lo):
         if la >= 0:
             if na == 2: return p
