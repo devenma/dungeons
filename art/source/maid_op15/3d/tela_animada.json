@@ -61,17 +61,6 @@
   }
  ],
  "brazo_encima": {
-  "vistas": [
-   "south",
-   "east",
-   "north",
-   "west"
-  ],
-  "ambos_en": [
-   "south",
-   "north"
-  ],
-  "px": 16,
   "extra": [
    {
     "vistas": [
@@ -98,17 +87,36 @@
     ],
     "px": -16,
     "solo_sobre_ruedo": true
-   },
-   {
-    "vistas": [
-     "east",
-     "west"
-    ],
-    "partes": [
-     "delantal_perfil"
-    ],
-    "px": 6
    }
+  ]
+ },
+ "colision_brazos": {
+  "contra": [
+   "pollera",
+   "pollera_perfil",
+   "ruedo",
+   "ruedo_perfil",
+   "delantal",
+   "delantal_perfil"
+  ],
+  "margen_px": 1,
+  "tela_cede": true,
+  "separacion_grados": 4,
+  "tope_codo_grados": 30,
+  "tope_hombro_grados": 15,
+  "tope_afuera_grados": 10,
+  "por_vista": {
+   "east": {
+    "tope_afuera_grados": 30
+   },
+   "west": {
+    "tope_afuera_grados": 30
+   }
+  },
+  "orden": [
+   "afuera",
+   "codo",
+   "hombro"
   ]
  }
 }
