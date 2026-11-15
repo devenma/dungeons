@@ -1,0 +1,18 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/preview/test_zone.tscn" id="1"]
+[ext_resource type="Script" path="res://scripts/preview/paseo_maid_combate.gd" id="2"]
+
+[node name="PaseoMaidCombate" type="Node2D"]
+
+[node name="Zona" parent="." instance=ExtResource("1")]
+
+[node name="Maid" parent="Zona/World" index="3"]
+script = ExtResource("2")
+
+[node name="Sprite" parent="Zona/World/Maid" index="0"]
+sheet_prefix = "res://assets/art/characters/maid_op15/maid_op15_"
+animations = PackedStringArray("idle", "walk", "run")
+looping = PackedStringArray("idle", "walk", "run")
+
+[editable path="Zona"]
