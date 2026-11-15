@@ -10,11 +10,11 @@ Cada sesión de trabajo empieza leyendo el **Estado** y termina actualizándolo 
 
 | | |
 |---|---|
-| Actualizado | 2026-11-12 |
+| Actualizado | 2026-11-15 |
 | Hito activo | **H0 — Ordenar la casa** |
-| Último avance | Cabeza de la maid cerrada por capas contra la opción 10 (cabeza pelada, rasgos recortados de la referencia, peinado por vista, moño sin cuello blanco); el usuario la dio por buena el 2026-11-12. Probada en reposo, caminata y carrera con el chequeo de cara en verde. Herramienta (rasgos por imagen, `borde_piel`, `sombras_2d`, `sombra_ojos`, forma de cabeza por vista, `test_cara.py`) y guía commiteadas (`c1158a5`, `8db85e5`), sin push. Las piezas de la cabeza siguen en `art/pruebas/maid_op15/cara_r8/`. Fuera del plan: sirve a H1. |
-| Siguiente paso | Sin abrir rondas nuevas de cara. (1) H1, prueba de escala: la maid como jugador en una sala de la cripta y en Hondoval con las hojas que ya están en el juego (`89fc495`); colisión por los pies, puerta de 1 tile, orden por Y, y un veredicto escrito de escala. Va primero porque los rasgos de la cara son imágenes a tamaño fijo: si la escala cambia, hay que rehacerlos. (2) Con la escala cerrada: pasar cabeza, rasgos y peinado de `cara_r8/m10/` a `art/source/modulos/`, armar la receta real de la maid con tela animada y `colision_brazos` (el bloque todavía no está en ninguna receta de `art/source`) y regenerar reposo, caminata y carrera una sola vez. (3) Cerrar H0: commits de lo pendiente, tamaño de figura en `DECISIONES.md`, push y PR a `dev`. Comandos y valores cerrados de la cabeza en `art/pruebas/maid_op15/cara_r8/LEEME.md`. |
-| Bloqueos | Ninguno técnico. Las tiras de movimiento de `cara_r8/m10/mov/` salieron de la receta de prueba (maniquí base y vestido rígido, sin tela animada ni `colision_brazos`): los brazos atraviesan la falda y no valen para juzgar brazos ni falda. Aceptado para seguir y anotado para una sola pasada posterior: espalda del pelo sin afinar (silueta 0,83), cofia y orejas algo chicas, zona lisa entre la cofia y el flequillo, el personaje mide ~62 px. Señales de §7 encendidas: la cara pasó las 3 rondas (`cara_r6` a `cara_r8`) y van más de tres sesiones de arte sin nada nuevo en el juego real, así que la próxima sesión de arte termina con la maid nueva dentro del juego. |
+| Último avance | 2026-11-15: el escenario pasa a 3D en tiempo real. Tres rondas de prueba fuera del juego (`art/pruebas/escenario_3d/`, ver `NOTA.md`): una sala de la cripta y una parcela exterior, sin temblor con la cámara en píxeles enteros, la maid tapada por el escenario y con luz por normales, vegetación medida contra ella. El usuario aprobó luz, tamaño y técnica: D5 y D15 escritos en `DECISIONES.md` (sin commit: el clasificador bloqueó el commit). La cabeza nueva pasó a `art/source/modulos/` (`op15_cara_10`, `op15_pelo_10`) y la receta real de la maid suma la colisión de brazos; hojas nuevas en `art/pruebas/maid_op15/receta_real/`, todavía no en el juego. 2026-11-14: prueba de escala en el juego real (`art/pruebas/escala/`). |
+| Siguiente paso | (1) Que el usuario mire las hojas nuevas de la maid (`art/pruebas/maid_op15/receta_real/`) y, con su sí, copiarlas a `assets/art/characters/maid_op15/`. (2) Commits con su visto bueno: `PLAN.md`, `DECISIONES.md`, cabeza en `art/source` y hojas. (3) Cerrar H0: `AGENTS.md` §38.1 (escala y escenario 3D) y `FEATURES.md` §1, push y PR a `dev`. (4) Integrar el escenario 3D al juego: el TileMap queda como capa lógica y una capa 3D dibuja; es un cambio de arquitectura y se explica antes de tocar `DungeonManager` y `Hondoval` (AGENTS §44.10). |
+| Bloqueos | Ninguno técnico. Los commits desde la sesión los bloquea el clasificador de permisos: los corre el usuario o da permiso. Pasada final anotada en `art/pruebas/escenario_3d/NOTA.md` (flores, punta del pino, troncos, contornos sobre fondo oscuro, pared sur que tapa los pies, VFX 2D sin profundidad). |
 
 ## 1. Dónde estamos (2026-11-10)
 
@@ -69,7 +69,7 @@ El MVP es el de D17: `pueblo → 1 dungeon de 3 pisos → jefe → volver con lo
 
 Carril de juego, con arte provisorio en todo lo demás.
 
-- [ ] **Prueba de escala** (primera tarea, decide el resto): la maid como jugador en una sala de la cripta y en
+- [x] **Prueba de escala** (primera tarea, decide el resto): la maid como jugador en una sala de la cripta y en
       Hondoval. Colisión por los pies, puertas, cámara y orden por Y (hoy solo hay `z_index`).
 - [ ] Combo de espada de 3 golpes por mocap (Quaternius UAL2), sincronizado con las fases de `SwingData`.
 - [ ] Correr y dash (D26); el dash reemplaza a `RollComponent`. Números de partida: los de la rodada de D24.
@@ -141,12 +141,10 @@ Con el MVP en la mano y los costos medidos, el equipo decide el alcance del jueg
 
 | Decisión | Se necesita en | Recomendación |
 |---|---|---|
-| Escala: maid de ~62 px (59 antes de la frente alta del 2026-11-12) sobre tiles de 32 y 480×270 | H1 | Decidir mirándola en el juego real. Antes que cambiar tiles o pantalla, probar colisión por los pies y orden por Y. |
+| Escala: maid de ~62 px (59 antes de la frente alta del 2026-11-12) sobre tiles de 32 y 480×270 | H1 | Cerrada el 2026-11-15 en D5: la maid queda en ~62 px y la vegetación se mide contra ella (árbol normal ~2,3 maids). Si el combate queda apretado, 640×360 antes que achicarla. |
 | ¿La maid es la protagonista? (D13) | H1 | Sí; este plan lo asume. |
 | Correr y dash: botón, coste, i-frames (D26) | H1 | Correr manteniendo el botón, sin coste, se corta al atacar o recibir un golpe. Dash con los números de la rodada. |
 | Alcance de D27 (equipo por slots) en el MVP | H1 | Solo ponerse y sacarse piezas con stats simples en el gremio. |
-| Estilo del entorno y reemplazo de la cripta oscura (D15) | H2 | Elegir sobre la rebanada, no sobre pruebas sueltas. |
-| HD-2D o luz por normal maps (D5) | H2 | Lo que mejor se vea en la rebanada con el menor costo por asset. |
 | Bloqueo y parry: ventanas y stamina (D26) | H3 | Reusar el camino del `Guard` de los enemigos. |
 | "Tú" o "vos" en los textos (D16) | H4 | Elegir uno y pasarlo por el glosario. |
 | Quién hace el audio (D18) | H4 | Packs libres para SFX; música encargada o generada, a decidir. |
