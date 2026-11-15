@@ -252,6 +252,11 @@ Plan y decisiones: `plan_tela_animada.md` y `plan_tela_animada_tareas.md`.
   que se suelta (0 borde, 1 cintura), `fijo_ruedo` la fuerza que queda en el borde y `rigidez_fijo` el multiplicador
   general. Menos fuerza, más vuelo; la campana se conserva igual.
 - **Orden por cuadro:** forma simulada → `sobre` (por fuera de la capa de abajo, a `margen_sobre` px) → `sigue` (atado al triángulo más cercano de su guía) → `brazo_encima`.
+- **Viento (opcional):** `"viento": {"dir": [x, y], "fuerza": f, "rafagas": r, "profundidad": p}` en la animación (o en la receta)
+  suma un campo WIND fijo en el mundo (no gira con el rig) a la simulación. `dir` en pantalla: x a la derecha, y hacia la cámara;
+  `fuerza` en unidades de Blender (la maid en reposo: ~200 se nota poco, ~400 es fuerte; con más se levanta la falda); `rafagas`, ráfagas
+  enteras por ciclo (el bucle cierra) con `profundidad` (0 a 1, 0,6 por defecto) de modulación. Con `dir[0] != 0` W deja de ser E espejado:
+  se renderiza de verdad y se apagan `espejar_oeste`, `espejar_ciclo` y `simetrico`. Sin la clave la salida es idéntica a la de siempre.
 - **Brazos sobre la falda:** `"brazo_encima": {"vistas": [...], "ambos_en": ["south", "north"], "px": 16}` en la receta. Los
   brazos no chocan con la tela (son finos y se cuelan entre vértices) y abollarla se ve mal. La malla posada del brazo cercano
   (los dos en `ambos_en`) se corre hacia la cámara por la línea de visión: la cámara es ortográfica, así que no cambia un

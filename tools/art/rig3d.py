@@ -20,6 +20,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import aseprite_io
 import motion
+import tela_anim as TA
 from outline import outline, ring, selout
 
 SCRIPT = os.path.join(HERE, "rig3d_blender.py")
@@ -1100,6 +1101,12 @@ def cmd_frames(args):
     anims = [motion.resortes(motion.plantar(motion.limitar(motion.expand(json.load(open(p, encoding="utf-8"))),
                                                            getattr(args, "denso", None)), model.get("cuerpo")),
                              model.get("resortes")) for p in args.anims]
+    for a in anims:
+        # "viento" (animación o receta) con componente lateral: W ya no es E espejado, ni el ciclo ni la mitad de frente
+        # lateral wind: W is no longer mirrored E, nor the cycle or the front halves
+        a["viento"] = TA.viento_resuelto(a.get("viento") or model.get("viento"))
+        if TA.rompe_simetria(a["viento"]): a.update(espejar_oeste=False, espejar_ciclo=False, simetrico=False)
+        elif not a["viento"]: del a["viento"]
     dirs = args.dirs.split(",") if args.dirs else DIRS
     raw = os.path.join(args.salida, "_render")
     # args.solo: cuadros a mirar (el panel de ajuste); solo se renderizan esos y los que necesitan (cuadro 0 de cabeza_fija,

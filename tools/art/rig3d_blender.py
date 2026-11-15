@@ -1025,10 +1025,18 @@ def tela_animada(anim, grupo):
         objs[m["nombre"]] = t; cloths.append((t, cl))
     g0 = scene.gravity[:]
     scene.gravity = (0, 0, -9.81 * sims[0][0]["tela"].get("gravedad", 1.0))
+    # "viento" (animación o receta): campo WIND fijo en el mundo, no gira con el rig; dir en pantalla (x derecha, y hacia
+    # la cámara = -Y del mundo) / WIND field fixed in the world, does not turn with the rig; screen-space dir
+    viento = TA.viento_resuelto(anim.get("viento")); campo = None
+    if viento:
+        bpy.ops.object.effector_add(type="WIND"); campo = bpy.context.active_object; campo.name = "viento"; campo.field.noise = 0.0
+        campo.rotation_euler = Vector((viento["dir"][0], -viento["dir"][1], 0)).to_track_quat("Z", "Y").to_euler()
     formas = {nombre: [None] * n for nombre in objs}
     scene.frame_set(1)
     for k in range(1, pasos + 1):
-        pose_huesos(curva(k * paso), yaw); scene.frame_set(k + 1)
+        pose_huesos(curva(k * paso), yaw)
+        if campo: campo.field.strength = TA.fuerza_viento(viento, k * paso, total)
+        scene.frame_set(k + 1)
         if k in muestras:
             dg = bpy.context.evaluated_depsgraph_get()
             for nombre, t in objs.items():
@@ -1038,6 +1046,7 @@ def tela_animada(anim, grupo):
     for t, cl in cloths:
         soltar_cloth(t, cl); me = t.data; bpy.data.objects.remove(t); bpy.data.meshes.remove(me)
     for c in nuevos: c.modifiers.remove(c.modifiers["choque"])
+    if campo: bpy.data.objects.remove(campo)
     scene.gravity = g0; scene.frame_set(1); PIXEL_REF = ref
     clave = f"{anim['nombre']}_{'+'.join(grupo)}"; TELA_ANIM_STATS[clave] = {}
     for nombre, fs in formas.items():

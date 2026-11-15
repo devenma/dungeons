@@ -1,6 +1,6 @@
 # Lógica de la tela animada sin Blender: tipos de tela, curva cíclica entre cuadros, grupos de simulación y medidas
 # Animated cloth logic without Blender: cloth types, cyclic curve between frames, simulation groups and measurements
-import json, os
+import json, math, os
 import numpy as np
 
 TELAS = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
@@ -63,6 +63,25 @@ def grupos_de_simulacion(dirs, solo_en, resueltos, espejar_oeste):
         partes = tuple(sorted(p for p, s in solo_en.items() if not s or d in s))
         grupos.setdefault((json.dumps(resueltos[d], sort_keys=True), partes), []).append(d)
     return list(grupos.values())
+
+
+def viento_resuelto(viento):
+    # "viento": {"dir": [x, y], "fuerza": f, "rafagas": r, "profundidad": p} -> None si no sopla; dir en pantalla (x derecha,
+    # y hacia la cámara) / None when it does not blow; dir in screen space (x right, y toward the camera)
+    if not viento or not viento.get("fuerza") or not any(viento.get("dir", (0, 0))): return None
+    return {"dir": [float(c) for c in viento["dir"]], "fuerza": float(viento["fuerza"]),
+            "rafagas": int(viento.get("rafagas", 1)), "profundidad": float(viento.get("profundidad", 0.6))}
+
+
+def rompe_simetria(viento):
+    # Un viento con componente lateral rompe W = E espejado y el espejo del ciclo / lateral wind breaks the W = E mirror
+    return bool(viento) and abs(viento["dir"][0]) > 1e-9
+
+
+def fuerza_viento(viento, t, total):
+    # Fuerza en el instante t (ms): "rafagas" ráfagas enteras por ciclo, así el bucle cierra / strength at time t (ms):
+    # whole gusts per loop so the loop closes
+    return viento["fuerza"] * (1.0 + viento["profundidad"] * math.sin(2 * math.pi * viento["rafagas"] * t / total))
 
 
 def saltos_de_tela(formas):
