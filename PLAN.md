@@ -12,9 +12,9 @@ Cada sesión de trabajo empieza leyendo el **Estado** y termina actualizándolo 
 |---|---|
 | Actualizado | 2026-11-15 |
 | Hito activo | **H0 — Ordenar la casa** |
-| Último avance | 2026-11-15: el escenario pasa a 3D en tiempo real. Tres rondas de prueba fuera del juego (`art/pruebas/escenario_3d/`, ver `NOTA.md`): una sala de la cripta y una parcela exterior, sin temblor con la cámara en píxeles enteros, la maid tapada por el escenario y con luz por normales, vegetación medida contra ella. El usuario aprobó luz, tamaño y técnica: D5 y D15 escritos en `DECISIONES.md` (`7fd9760`). La cabeza nueva pasó a `art/source/modulos/` (`op15_cara_10`, `op15_pelo_10`) y la receta real de la maid suma la colisión de brazos (`9ac557b`); las hojas de reposo, caminata y carrera ya están en el juego con la cara nueva (`f4b534c`), con el chequeo de cara y el de colisión en verde. 2026-11-14: prueba de escala en el juego real (`art/pruebas/escala/`). |
-| Siguiente paso | (1) Cerrar H0, que queda casi listo: `AGENTS.md` §38.1 (escala y escenario 3D) y `FEATURES.md` §1, commits de lo que dejaron otras sesiones, push y PR a `dev`. (2) Integrar el escenario 3D al juego: el TileMap queda como capa lógica y una capa 3D dibuja; es un cambio de arquitectura y se explica antes de tocar `DungeonManager` y `Hondoval` (AGENTS §44.10). |
-| Bloqueos | Ninguno técnico. Pasada final anotada en `art/pruebas/escenario_3d/NOTA.md` (flores, punta del pino, troncos, contornos sobre fondo oscuro, pared sur que tapa los pies, VFX 2D sin profundidad). |
+| Último avance | 2026-11-15 (tarde): look-dev del escenario 3D cerrado, todo fuera del juego (`art/pruebas/escenario_3d/`, `NOTA.md`). El usuario eligió el sombreado B suave con capa de ambiente de tarde y noche, cristales con refracción y la falda con viento por shader de máscara (D5); los efectos de pantalla quedan disponibles sin decidir. Hechos: pasto con oclusión, copas irregulares, cristal, estandartes, banco de materiales, vivero y parcela con variantes; temblor medido (SSAO apagada). Cambio en `tools/art`: clave "viento" de la tela animada (md5 de la caminata igual, `test_tools` OK), sin commit. Propuesta para integrar el escenario 3D: `art/pruebas/escenario_3d/propuesta_integracion_3d.md`. Paquete para el equipo en `art/pruebas/escenario_3d/lookdev_r3/para_el_equipo/`. |
+| Siguiente paso | (1) Cerrar H0 sin tocar arte: commits de `tools/art` y `art/guias/modelado.md`, `AGENTS.md` §38.1 y `FEATURES.md` §1, suite de tests, push y PR a `dev`. (2) Responder las 3 preguntas de la propuesta de integración y recién ahí tocar `DungeonManager` (AGENTS §44.10). Sin más rondas de look-dev. |
+| Bloqueos | Ninguno técnico. Falta aprobar `propuesta_integracion_3d.md`. Pasada final del look-dev anotada en `NOTA.md`. |
 
 ## 1. Dónde estamos (2026-11-10)
 
@@ -55,12 +55,12 @@ El MVP es el de D17: `pueblo → 1 dungeon de 3 pisos → jefe → volver con lo
 
 ### H0 — Ordenar la casa (tamaño: chico)
 
-- [ ] Commits por punto de lo pendiente (ya están las hojas de la maid, `89fc495`, y el equipo por slots, `3c9f5a5`): escenas de prueba, `rush_ghost`,
+- [x] Commits por punto de lo pendiente (ya están las hojas de la maid, `89fc495`, y el equipo por slots, `3c9f5a5`): escenas de prueba, `rush_ghost`,
       `sombra.py`. Push de la rama.
-- [ ] `DECISIONES.md`: D27 (equipo por slots) ya está como propuesta (`464b7f3`); falta registrar el tamaño de figura variable (D5), "sin animación a mano,
+- [x] `DECISIONES.md`: D27 (equipo por slots) ya está como propuesta (`464b7f3`); falta registrar el tamaño de figura variable (D5), "sin animación a mano,
       solo mocap" (D7) y el reemplazo del estilo oscuro como propuesta (D15).
-- [ ] Alinear `AGENTS.md` §38.1 y §31 (que apunte a este plan) y `FEATURES.md` §1.
-- [ ] Una corrida completa de tests para saber desde dónde se parte.
+- [x] Alinear `AGENTS.md` §38.1 y §31 (que apunte a este plan) y `FEATURES.md` §1.
+- [x] Una corrida completa de tests para saber desde dónde se parte (2026-11-15: 71/71).
 - [ ] PR `feat/estilo-3d-pixel` → `dev`.
 
 **Salida:** árbol limpio, rama publicada, documentos sin contradicciones.
