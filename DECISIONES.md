@@ -287,6 +287,11 @@ probado en tres rondas (`art/pruebas/escenario_3d/NOTA.md`): una sala de la crip
 generador) y una capa 3D lo dibuja. Enemigos, efectos y objetos pasan a la escena 3D o llevan profundidad. Es un
 cambio de arquitectura: se explica y se acuerda antes de tocar `DungeonManager` y `Hondoval`.
 
+**Decisión del usuario (2026-11-15, look-dev ronda 3):** el sombreado es el **B suave** (luz en degradé, sombra con
+penumbra), no el toon de bandas duras. La capa de ambiente (niebla, motas, rayos de luz) va solo de tarde y de noche.
+Los cristales llevan refracción. Los efectos de pantalla (paleta, tinta, pintado, HD-2D, rampa) quedan disponibles
+sin decidir. La falda reacciona al viento con un shader de máscara en el juego.
+
 ### D6 — ¿Un jugador o cooperativo? [PROPUESTA]
 
 Un jugador. Co-op obliga a inventario por jugador en `RunManager`, cámara y límites por zona por jugador,
@@ -320,6 +325,10 @@ diseño (hoja de giro aprobada), no la meta píxel a píxel.
   y, más adelante, dejar que el jugador personalice.
 - Herramientas: `tools/art/rig3d.py` (Blender 5.2 sin interfaz). Proceso y lecciones: `art/guias/modelado.md` y
   `art/guias/animacion.md`. Primer personaje: la maid (`art/source/maid_gato/`).
+
+**Animación (usuario, en uso desde 2026-11):** las acciones salen de **mocap** (Quaternius, retargeteado al rig de
+`rig3d`), nunca animadas a mano; lo fino se ajusta en el panel de ajuste (`art/guias/plan_panel_ajuste.md`). Así
+trabajan los agentes del proyecto (`animador`).
 
 ### D8 — ¿Plataformas y control? [PROPUESTA]
 

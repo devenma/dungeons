@@ -33,18 +33,20 @@ Base de esta sección: D4, D5, D7 y D15 en [`DECISIONES.md`](../../DECISIONES.md
 - **Dos climas (D15)**: la mazmorra es lo más oscuro, con assets de estilo *Blasphemous* (solo el estilo, no la vista de costado) y gore y horror corporal permitidos; el pueblo y el gremio van más cálidos, como *Sea of Stars* pero más oscuros. La iluminación y los filtros llevan buena parte del clima.
 - **Cámara aérea como la de *Sea of Stars***: el suelo se ve desde arriba, las paredes muestran su cara frontal y los personajes se ven de frente, de espaldas o de perfil. No es una vista cenital pura ni un side-scroller.
 - **Paleta apagada (importante)**: colores desaturados y terrosos, sombras frías, pocos tonos por material. El saturado se reserva para lo que hay que leer de un vistazo: hit flash, VFX, telegrafía de ataque, peligros, botín e interactuables (D5). Todo asset nuevo se revisa contra esta paleta.
-- **Lectura de beat 'em up**: los ataques se leen de perfil, con anticipación e impacto claros. Las entidades deberían ordenarse por profundidad (Y) para que los grupos de enemigos se lean bien. Pendiente: hoy el orden es solo por `z_index`.
-- La paleta exacta, la perspectiva y las reglas de iluminación están en [`BIBLIA_ARTE.md`](../../BIBLIA_ARTE.md) (D7). El entorno de la mazmorra sigue siendo la cripta oscura hasta que se rehaga; los personajes siguen el estilo del NPC base del artista (2026-10-29). HD-2D se decide después (D5).
-- **Personajes en 3D renderizados a pixel art** (técnica de *Dead Cells*, D5, desde 2026-11-01): modelo low-poly por módulos en `art/source/`, render con `tools/art/rig3d.py` (Blender 5.2) a 40 px con la cámara del juego, contorno de color y normal map. Proceso en `art/guias/modelado.md` y `art/guias/animacion.md`.
+- **Lectura de beat 'em up**: los ataques se leen de perfil, con anticipación e impacto claros. Las entidades tienen que ordenarse por profundidad para que los grupos de enemigos se lean bien: en el escenario 3D lo resuelve la profundidad de la escena; mientras el juego siga en 2D, el orden es solo por `z_index`.
+- La paleta exacta, la perspectiva y las reglas de iluminación están en [`BIBLIA_ARTE.md`](../../BIBLIA_ARTE.md) (D7). Todo el arte actual del entorno (cripta oscura, pueblo, enemigos del kit) es provisorio y se rehace al estilo de la protagonista.
+- **Escenario 3D en tiempo real con aspecto de pixel art** (D5, cambio del 2026-11-15; cierra HD-2D): cámara ortográfica a 22°, 1 unidad = 1 px, que se mueve en píxeles enteros; luz en bandas, sombras de borde duro y contorno por profundidad. El TileMap queda como capa lógica y una capa 3D lo dibuja; ese cambio de arquitectura se acuerda antes de tocar `DungeonManager` y `Hondoval` (§44.10). Prototipo y medidas en `art/pruebas/escenario_3d/NOTA.md` (no versionado). En el escenario 3D queda suspendida la regla de 3 tonos por material.
+- **Personajes en 3D renderizados a pixel art** (técnica de *Dead Cells*, D5, desde 2026-11-01): modelo low-poly por módulos en `art/source/`, render con `tools/art/rig3d.py` (Blender 5.2) con la cámara del juego, contorno de color y hoja de normales. En el escenario 3D son láminas que reciben luz con esas normales. Proceso en `art/guias/modelado.md` y `art/guias/animacion.md`.
 
 ### Tamaños
 
-Decisión (D5): **la grilla del mundo es de 32×32 píxeles**, el mismo tamaño que los tiles de piso y pared (`DungeonGeometry.TILE_SIZE`). Los personajes se dibujan en un lienzo de 64×64, chibi, sobre el maniquí en capas del artista. El código todavía usa hojas de 48×48 para el jugador y los NPCs; pasan a 64×64 cuando entren los personajes nuevos.
+Decisión (D5): **la grilla del mundo es de 32×32 píxeles**, el mismo tamaño que los tiles de piso y pared (`DungeonGeometry.TILE_SIZE`). La protagonista (la maid) se renderiza en un lienzo de **80×80** con la figura de **~62 px** (prueba de escala del 2026-11-14, D5); la vegetación y los objetos se miden contra ella (árbol normal ~2,3 maids, ~140 px). El jugador del código todavía usa las hojas de 48×48 del aventurero (`player.tscn`); las de la maid ya están en `assets/art/characters/maid_op15/` (reposo, caminata y carrera, 8 cuadros, pies en x 40 y suelas en y 78).
 
 | Tipo | Tamaño del sprite | Ocupa |
 |---|---|---|
 | Tiles de piso y pared | 32×32 | 1 tile |
-| Jugador, NPCs, enemigos comunes (slime, goblin) | 64×64 (figura de ~40 px, máximo 42 sin contar adornos de la cabeza; pies en x 32, suelas en y 47) | ~1 tile de base |
+| Protagonista y personajes humanoides | 80×80 (figura de ~62 px; pies en x 40, suelas en y 78) | ~1 tile de base |
+| Enemigos comunes del kit actual (provisorios) | 64×64 o 48×48 | ~1 tile de base |
 | Objetos (cofre, salida, items) | sobre la grilla de 32 | 1 tile |
 | Enemigos grandes (troll, gigante, ogro) | 96×96 | 2×2 tiles de base |
 | Jefes (dragón, etc.) | 128×128 o más | 3×3 a 4×4 tiles |
@@ -60,13 +62,15 @@ Los tamaños grandes no tienen que ser cuadrados (un dragón puede ser 128×80).
 - **Capas:** ropa, pelo e ítems van en capas que se ponen y se sacan, y cada personaje se exporta a `.aseprite` con capas y etiquetas por animación y dirección.
 - **Formato:** PNG con transparencia, sin suavizado. Varias poses o frames del mismo personaje van juntos en una hoja (spritesheet) con celdas del mismo tamaño.
 
-### Animaciones (por personaje de 64×64)
+### Animaciones (por personaje)
 
 | Animación | Frames |
 |---|---|
-| Idle | 4 |
-| Caminar | 8 |
+| Idle | 8 (la maid; 4 en los personajes viejos) |
+| Caminar y correr | 8 |
 | Ataque | 3–5 |
+
+Las animaciones salen de mocap retargeteado al rig, nunca animadas a mano (D7).
 
 Cada animación se dibuja en **4 direcciones** (abajo, arriba, izquierda y derecha), sin espejar con `flip_h`: los personajes de lado con cámara cenital lo exigen (D4). Las criaturas grandes pueden usar menos frames o armarse por partes (cabeza, cuerpo, alas) animadas en Godot, que es más barato que dibujar cada frame.
 

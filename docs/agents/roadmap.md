@@ -350,7 +350,9 @@ Sin XP ni niveles: el poder viene del equipo del pueblo y de las mejoras de expe
 
 # 31. Orden recomendado de implementación
 
-Cuando haya dudas sobre qué desarrollar a continuación, priorizar:
+**El orden de trabajo vigente está en [`PLAN.md`](../../PLAN.md)** (hitos H0-H9 hasta el MVP y el juego completo); si
+esta sección lo contradice, gana el plan. Lo que sigue es el orden de la primera etapa, ya cumplido, y queda como
+historia:
 
 ```text
 1. ✅ Arreglar `_merge_cells` (rectángulos exactos + tamaño mínimo de zona)
