@@ -269,6 +269,24 @@ es barata de posponer.
 Ojo con la paleta apagada: choca con la legibilidad del combate. Reservar saturación para el feedback
 (hit flash, VFX, telegrafía de ataque).
 
+**Cambio del 2026-11-15 (usuario), cierra HD-2D:** el escenario es **3D en tiempo real con aspecto de pixel art**,
+probado en tres rondas (`art/pruebas/escenario_3d/NOTA.md`): una sala de la cripta y una parcela exterior.
+- Cámara ortográfica a 22° (la de `rig3d`), 1 unidad = 1 px, que se mueve en píxeles enteros para que el
+  escenario no tiemble. Pantalla de 480×270.
+- Luz en 4 bandas, sombras de borde duro y contornos por profundidad del color del material oscurecido. Las
+  texturas se muestrean en píxeles de pantalla (un texel = un px).
+- Los personajes son láminas dentro de la escena 3D con sus hojas de `rig3d`: reciben luz con la hoja de normales
+  y luz envolvente, y el escenario los tapa por profundidad (no hace falta orden por Y).
+- Escala: la maid mide ~62 px (prueba de escala del 2026-11-14, `art/pruebas/escala/`) y la vegetación se mide
+  contra ella: árbol normal de ~2,3 maids (~140 px), árbol grande solo como referencia del mapa (~2,8), arbustos a
+  su altura.
+- La regla de 3 tonos por material queda suspendida en el escenario 3D: el pixel sale del render y admite más
+  detalle.
+
+**[IMPACTO]** El mundo deja de dibujarse con el TileMap 2D: el TileMap queda como capa lógica (colisiones,
+generador) y una capa 3D lo dibuja. Enemigos, efectos y objetos pasan a la escena 3D o llevan profundidad. Es un
+cambio de arquitectura: se explica y se acuerda antes de tocar `DungeonManager` y `Hondoval`.
+
 ### D6 — ¿Un jugador o cooperativo? [PROPUESTA]
 
 Un jugador. Co-op obliga a inventario por jugador en `RunManager`, cámara y límites por zona por jugador,
@@ -386,6 +404,10 @@ vista de costado), con gore y horror corporal; *Fear & Hunger* queda como refere
 pueblo y el gremio** van más cálidos, como *Sea of Stars* (luz de velas y chimenea, mucho detalle en pisos y
 muebles) y un poco más oscuros, con un toque *Stardew Valley* pero menos colorido. La iluminación y los
 filtros de pantalla llevan buena parte del clima.
+
+**Decisión del usuario (2026-11-14), sobre el estilo del entorno:** el arte actual (la cripta oscura, el pueblo de
+PixelLab y los enemigos del kit) se va. El estilo nuevo es **el de la maid**, y el escenario sale con la técnica de
+D5 (3D en tiempo real). El tono de mundo de arriba sigue en propuesta.
 
 ### D16 — ¿Idiomas? [PROPUESTA]
 
