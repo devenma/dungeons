@@ -4,15 +4,17 @@ extends Node
 ## apuntado. Mientras el arma está en un golpe, la hoja de ataque sigue sus fases: cada fase reparte sus frames
 ## en la duración que le da el SwingData, con el peso relativo de las duraciones del JSON del kit, así el
 ## frame de golpe coincide siempre con la hitbox. Polvo y sonido de pisada en los frames de apoyo de la caminata.
-## La voltereta no tiene arte propio: juega la caminata acelerada hacia donde rueda, sin pisadas.
+## La voltereta no tiene arte propio: juega la caminata acelerada hacia donde rueda, sin pisadas, y deja fantasmas
+## "rush" que se derriten detrás.
 ## Picks the player's animation (§35: kept out of player.gd). Idle/walk from velocity, facing the aim. While
 ## the weapon is mid-swing the attack sheet follows its phases: each phase spreads its frames over the
 ## duration its SwingData gives, weighted by the kit JSON durations, so the hit frame always matches the
 ## hitbox. Footstep dust and sound on the walk's contact frames. The roll has no art of its own: it plays
-## the walk sheet sped up toward the roll direction, without footsteps.
+## the walk sheet sped up toward the roll direction, without footsteps, leaving melting "rush" ghosts behind.
 
 const KitSpriteScript: GDScript = preload("res://scripts/visual/kit_sprite.gd")
 const VfxScript: GDScript = preload("res://scripts/visual/vfx.gd")
+const RushGhostScript: GDScript = preload("res://scripts/visual/rush_ghost.gd")
 const SwordScript: GDScript = preload("res://scripts/weapons/sword.gd")
 const FOOTSTEP_DUST: Texture2D = preload("res://assets/art/vfx/footstep_dust.png")
 
@@ -30,6 +32,8 @@ const FOOTSTEP_PIVOT: Vector2 = Vector2(8, 11)
 const FOOTSTEP_Z: int = 1
 # Velocidad de la caminata durante la voltereta (veces las duraciones de la hoja) / Walk sheet speed during the roll (times the sheet durations)
 const ROLL_ANIMATION_SPEED: float = 2.5
+# Cada cuánto deja la voltereta un fantasma "rush" (s) / How often the roll leaves a "rush" ghost (s)
+const RUSH_GHOST_INTERVAL: float = 0.07
 
 @export var sprite_path: NodePath = NodePath("../AnimatedSprite2D")
 @export var weapons_path: NodePath = NodePath("../Weapons")
@@ -43,6 +47,8 @@ var _phase: int = SwordScript.SwingState.IDLE
 # Duración y tiempo transcurrido de la fase (s) / Phase duration and elapsed time (s)
 var _phase_seconds: float = 0.0
 var _phase_elapsed: float = 0.0
+# Tiempo hasta el próximo fantasma; 0 = el primero sale al empezar la voltereta / Time to the next ghost; 0 = the first one leaves as the roll starts
+var _ghost_wait: float = 0.0
 
 @onready var _body: CharacterBody2D = get_parent() as CharacterBody2D
 @onready var _sprite: AnimatedSprite2D = get_node(sprite_path) as AnimatedSprite2D
@@ -68,7 +74,12 @@ func _process(delta: float) -> void:
 	if _roll != null and _roll.is_rolling():
 		_facing = KitSpriteScript.row_for(_roll.roll_velocity())
 		_sprite.play("walk_" + _facing, ROLL_ANIMATION_SPEED)
+		_ghost_wait -= delta
+		if _ghost_wait <= 0.0:
+			_ghost_wait = RUSH_GHOST_INTERVAL
+			RushGhostScript.spawn(_body.get_parent(), _sprite, _roll.roll_velocity(), FOOTSTEP_Z)
 		return
+	_ghost_wait = 0.0
 	_facing = KitSpriteScript.row_for(_body.call("aim_direction") as Vector2)
 	if _body.velocity != Vector2.ZERO:
 		# La hoja dice a qué velocidad no patina; la vieja del aventurero trae un 1,5 fijo
