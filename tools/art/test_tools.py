@@ -963,6 +963,33 @@ def test_flora_reduccion_y_viento():
     assert (moved[1:4, 3] == 1).all() and (moved[7:, 2] == 1).all()  # se mueve la punta, la base queda / tip moves, base stays
 
 
+
+def test_sombra_cartel_sesga_desde_el_pie():
+    import sombra
+    img = np.zeros((11, 3, 4), np.uint8); img[:, 1, 3] = 255  # poste de 1 px, pie en la fila 10 / 1 px pole, foot on row 10
+    mask, (left, top, _, _) = sombra.cast(img, direction=(1.0, 0.5))
+    ys, xs = np.nonzero(mask)
+    assert len(ys) > 0 and (xs - left >= 1).all()  # cae hacia la luz contraria, nada a la izquierda / nothing left of the pole
+    assert mask[top + 10 + 5, left + 1 + 10]  # la punta (h 10) cae a (x + 10, pie + 5) / the tip lands at (x + 10, foot + 5)
+    assert not mask[top + 5, left + 1]  # el cuerpo del poste no se sombrea a sí mismo / the pole body casts nothing on itself
+
+
+def test_sombra_cartel_no_rellena_huecos():
+    import sombra
+    img = np.zeros((11, 9, 4), np.uint8); img[10, 4, 3] = 255; img[0, 0, 3] = img[0, 8, 3] = 255  # pie y dos ramas / foot and two branches
+    mask, (left, top, _, _) = sombra.cast(img, direction=(1.0, 0.5))
+    assert mask.sum() == 2  # cada rama, un punto; sin cuña entre ellas / one point per branch, no wedge between them
+
+
+def test_sombra_volumen_con_altura():
+    import sombra
+    img = np.zeros((4, 4, 4), np.uint8); img[..., 3] = 255
+    alt = np.zeros((4, 4), np.uint8); alt[0:2, :] = 255  # techo alto, frente en el piso / high roof, front on the floor
+    mask, (left, top, _, _) = sombra.cast(img, alt, direction=(1.0, 0.0), max_h=3)
+    row = mask[top + 3, left:]  # el techo de la fila 0 apoya en la fila 3 / row 0's roof stands on row 3
+    assert row[:7].all()  # columna sólida: el segmento entero, sin huecos / solid column: the whole segment, no gaps
+
+
 if __name__ == "__main__":
     only = sys.argv[1:]
     failed = 0
