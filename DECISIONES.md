@@ -288,9 +288,14 @@ generador) y una capa 3D lo dibuja. Enemigos, efectos y objetos pasan a la escen
 cambio de arquitectura: se explica y se acuerda antes de tocar `DungeonManager` y `Hondoval`.
 
 **Decisión del usuario (2026-11-15, look-dev ronda 3):** el sombreado es el **B suave** (luz en degradé, sombra con
-penumbra), no el toon de bandas duras. La capa de ambiente (niebla, motas, rayos de luz) va solo de tarde y de noche.
+penumbra), no el toon de bandas duras; queda como un valor global que se puede cambiar más adelante. La capa de ambiente (niebla, motas, rayos de luz) va solo de tarde y de noche.
 Los cristales llevan refracción. Los efectos de pantalla (paleta, tinta, pintado, HD-2D, rampa) quedan disponibles
 sin decidir. La falda reacciona al viento con un shader de máscara en el juego.
+
+**Escala, usuario (2026-11-15):** la maid se veía grande al lado de *Sea of Stars* (23 % del alto de pantalla contra
+~12 %). Se mantiene en ~62 px y las escenas de prueba pasan a **640×360** (17 %); el escenario y los muebles se miden
+contra ella (mesa a la cintura ~0,45 de su alto, asiento ~0,28, mostrador ~0,6, paredes ~1,9). En el juego real la
+resolución cambia cuántos tiles entran por sala y el tamaño de la UI: se decide al integrar.
 
 ### D6 — ¿Un jugador o cooperativo? [PROPUESTA]
 
@@ -383,6 +388,10 @@ vida porque quería algo más tranquilo, personaje importante de una subtrama. M
 sea **jugable**. Cada tanto tendría una animación propia: agarra a un NPC borracho tirado en el suelo, lo
 levanta en el aire y lo golpea. Si se confirma como jugable, esta decisión pasa a "varios protagonistas" y
 hay que revisar el costo de arte e historia.
+
+**Usuario (2026-11-15):** por ahora la jugable es **la maid**, pero el juego tiene que poder usar otro personaje
+cuando se defina más la historia, armado con el mismo sistema de módulos. El personaje jugable es un dato (sus hojas
+de `rig3d` y sus normales), no algo fijo en el código.
 
 ---
 
