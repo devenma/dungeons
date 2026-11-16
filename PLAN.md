@@ -10,11 +10,11 @@ Cada sesión de trabajo empieza leyendo el **Estado** y termina actualizándolo 
 
 | | |
 |---|---|
-| Actualizado | 2026-11-15 |
-| Hito activo | **H0 — Ordenar la casa** |
-| Último avance | 2026-11-15 (tarde): look-dev del escenario 3D cerrado, todo fuera del juego (`art/pruebas/escenario_3d/`, `NOTA.md`). El usuario eligió el sombreado B suave con capa de ambiente de tarde y noche, cristales con refracción y la falda con viento por shader de máscara (D5); los efectos de pantalla quedan disponibles sin decidir. Hechos: pasto con oclusión, copas irregulares, cristal, estandartes, banco de materiales, vivero y parcela con variantes; temblor medido (SSAO apagada). Cambio en `tools/art`: clave "viento" de la tela animada (md5 de la caminata igual, `test_tools` OK), sin commit. Propuesta para integrar el escenario 3D: `art/pruebas/escenario_3d/propuesta_integracion_3d.md`. Paquete para el equipo en `art/pruebas/escenario_3d/lookdev_r3/para_el_equipo/`. |
-| Siguiente paso | (1) Cerrar H0 sin tocar arte: commits de `tools/art` y `art/guias/modelado.md`, `AGENTS.md` §38.1 y `FEATURES.md` §1, suite de tests, push y PR a `dev`. (2) Responder las 3 preguntas de la propuesta de integración y recién ahí tocar `DungeonManager` (AGENTS §44.10). Sin más rondas de look-dev. |
-| Bloqueos | Ninguno técnico. Falta aprobar `propuesta_integracion_3d.md`. Pasada final del look-dev anotada en `NOTA.md`. |
+| Actualizado | 2026-11-16 |
+| Hito activo | **H1 — La protagonista en el juego real** (H0 cerrado con el PR de `feat/estilo-3d-pixel` a `dev`) |
+| Último avance | 2026-11-16: H0 cerrado (D5 escala y D13 commiteados, push y PR a `dev`). Antes: taberna del gremio en 3D como escena de prueba (`art/pruebas/escenario_3d/taberna.gd`, 3 rondas, cerrada por el director contra la referencia de Sea of Stars): halos y bloom de interior, mesas con candelabro y comida, ventanas, cuadros, alfombras, barra; interiores sin viento ni luciérnagas. Escala: la maid queda en 62 px, las pruebas pasan a 640×360 y todo se mide contra ella (D5). Brazos de frente de la caminata arreglados en 3 rondas (sin alas, codo doblado hacia adelante; hoja nueva en `assets/`). Commits de H0 hechos (`dee0401`..`19fb940`), sin push. El director recomienda cerrar el look-dev y pasar a la cripta con la maid jugando. |
+| Siguiente paso | Combo de espada de 3 golpes por mocap (H1), elegido por el usuario el 2026-11-16 antes que la cripta; `golpe1_r3` ya existe en `art/pruebas/maid_op15/`. La cripta en 3D (paso 3 de `art/pruebas/escenario_3d/propuesta_integracion_3d.md`) queda en prueba, sin aprobar. Sin más pulido del pueblo. |
+| Bloqueos | Ninguno técnico. Señal de §7 casi encendida (varias sesiones de arte sin nada en el juego real): la apaga el combo dentro del juego. |
 
 ## 1. Dónde estamos (2026-11-10)
 
@@ -61,7 +61,7 @@ El MVP es el de D17: `pueblo → 1 dungeon de 3 pisos → jefe → volver con lo
       solo mocap" (D7) y el reemplazo del estilo oscuro como propuesta (D15).
 - [x] Alinear `AGENTS.md` §38.1 y §31 (que apunte a este plan) y `FEATURES.md` §1.
 - [x] Una corrida completa de tests para saber desde dónde se parte (2026-11-15: 71/71).
-- [ ] PR `feat/estilo-3d-pixel` → `dev`.
+- [x] PR `feat/estilo-3d-pixel` → `dev`.
 
 **Salida:** árbol limpio, rama publicada, documentos sin contradicciones.
 
