@@ -13,7 +13,7 @@ signal weapon_granted(data: WeaponData)
 signal backpack_changed
 ## Botín recién agregado, para el toast / Freshly added loot, for the toast
 signal loot_added(items: Array[ItemData], gold: int)
-## Cambió algo que toca las estadísticas del jugador (ofrendas de carne) / Something affecting the player's stats changed (flesh offerings)
+## Cambió algo que toca las estadísticas del jugador (ofrendas de carne, reliquias) / Something affecting the player's stats changed (flesh offerings, relics)
 signal stats_changed
 
 ## Fallback weapon used when the scene graph does not inject one (headless
@@ -41,6 +41,8 @@ var backpack_gold: int = 0
 ## Ofrendas de carne en el altar: cada una quita el 20 % de la vida máxima hasta volver al gremio (D23)
 ## Flesh offerings at the altar: each takes 20% of max health until back in the guild (D23)
 var flesh_offerings: int = 0
+## Reliquias elegidas en esta expedición; se acumulan (D28) / Relics picked this expedition; they stack (D28)
+var relics: Array[RelicData] = []
 
 
 func _init() -> void:
@@ -53,6 +55,7 @@ func start_new_run(base_weapons: Array[WeaponData] = []) -> void:
 	run_seed = randi()
 	current_floor = 0
 	flesh_offerings = 0
+	relics.clear()
 	reset_inventory(base_weapons)
 	weapon_equipped.emit(get_equipped())
 	stats_changed.emit()
@@ -61,6 +64,20 @@ func start_new_run(base_weapons: Array[WeaponData] = []) -> void:
 func offer_flesh() -> void:
 	flesh_offerings += 1
 	stats_changed.emit()
+
+
+func add_relic(relic: RelicData) -> void:
+	relics.append(relic)
+	stats_changed.emit()
+
+
+## Lo que suman las reliquias a una estadística (puntos o porcentaje) / What the relics add to a stat (points or percent)
+func relic_bonus(stat: RelicData.Stat) -> int:
+	var total: int = 0
+	for relic in relics:
+		if relic.stat == stat:
+			total += relic.amount
+	return total
 
 
 ## shortcut: lo que no entra en la mochila llena se pierde; avisar en el toast cuando haya más loot.

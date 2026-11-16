@@ -1,0 +1,208 @@
+{
+ "pieza": {
+  "id": "op15_cara_10",
+  "tipo": "personalizacion",
+  "ocupa": [
+   "ojos"
+  ],
+  "tags": [
+   "op15"
+  ]
+ },
+ "cuerpo": {
+  "cabeza": {
+   "centro": [
+    0,
+    0.0,
+    10.0
+   ],
+   "radios": [
+    9.5,
+    9.5,
+    10.8
+   ],
+   "alto_arriba": 9.0,
+   "fondo": 10.0,
+   "mandibula": 0.2,
+   "cuadrar_abajo": 3.4,
+   "menton": 5.2
+  }
+ },
+ "ojos": {
+  "parte": [
+   "cabeza",
+   "cabeza_sn",
+   "nariz",
+   "oreja_L",
+   "oreja_R"
+  ],
+  "colores": {},
+  "sellos": {
+   "frente_R": {
+    "imagen": "op15_cara_10/ojo.png",
+    "ancla": [
+     3,
+     5
+    ]
+   },
+   "frente_L": "espejo",
+   "perfil": {
+    "imagen": "op15_cara_10/ojo_perfil.png",
+    "ancla": [
+     5,
+     5
+    ]
+   }
+  }
+ },
+ "retoques": [
+  {
+   "nombre": "borde_cara_perfil",
+   "quitar": true
+  },
+  {
+   "nombre": "borde_cara_perfil_mov",
+   "quitar": true
+  },
+  {
+   "nombre": "cejas",
+   "tipo": "retoque",
+   "vistas": [
+    "south"
+   ],
+   "ancla": "ojo_R",
+   "origen": [
+    2,
+    6
+   ],
+   "imagen": "op15_cara_10/cejas.png",
+   "rasgo": true
+  },
+  {
+   "nombre": "rubor",
+   "tipo": "retoque",
+   "vistas": [
+    "south"
+   ],
+   "ancla": "ojo_R",
+   "origen": [
+    2,
+    -1
+   ],
+   "imagen": "op15_cara_10/rubor.png",
+   "rasgo": true
+  },
+  {
+   "nombre": "nariz",
+   "tipo": "retoque",
+   "vistas": [
+    "south"
+   ],
+   "ancla": "ojo_R",
+   "origen": [
+    -4,
+    -1
+   ],
+   "imagen": "op15_cara_10/nariz.png",
+   "rasgo": true
+  },
+  {
+   "nombre": "boca",
+   "tipo": "retoque",
+   "vistas": [
+    "south"
+   ],
+   "ancla": "ojo_R",
+   "origen": [
+    -3,
+    -3
+   ],
+   "imagen": "op15_cara_10/boca.png",
+   "rasgo": true
+  },
+  {
+   "nombre": "ceja_perfil",
+   "tipo": "retoque",
+   "vistas": [
+    "east"
+   ],
+   "ancla": "ojo_R",
+   "origen": [
+    3,
+    6
+   ],
+   "imagen": "op15_cara_10/ceja_perfil.png",
+   "rasgo": true
+  },
+  {
+   "nombre": "rubor_perfil",
+   "tipo": "retoque",
+   "vistas": [
+    "east"
+   ],
+   "ancla": "ojo_R",
+   "origen": [
+    4,
+    -1
+   ],
+   "imagen": "op15_cara_10/rubor_perfil.png",
+   "rasgo": true
+  },
+  {
+   "nombre": "orejas",
+   "tipo": "retoque",
+   "vistas": [
+    "south"
+   ],
+   "ancla": "ojo_R",
+   "origen": [
+    6,
+    5
+   ],
+   "imagen": "op15_cara_10/orejas.png",
+   "rasgo": true
+  },
+  {
+   "nombre": "oreja_perfil",
+   "tipo": "retoque",
+   "vistas": [
+    "east"
+   ],
+   "ancla": "ojo_R",
+   "origen": [
+    13,
+    4
+   ],
+   "imagen": "op15_cara_10/oreja_perfil.png",
+   "rasgo": true
+  },
+  {
+   "nombre": "hundido_perfil",
+   "tipo": "retoque",
+   "vistas": [
+    "east"
+   ],
+   "ancla": "ojo_R",
+   "origen": [
+    -2,
+    4
+   ],
+   "imagen": "op15_cara_10/hundido_perfil.png",
+   "rasgo": true
+  },
+  {
+   "nombre": "labios_perfil",
+   "tipo": "retoque",
+   "vistas": [
+    "east"
+   ],
+   "ancla": "ojo_R",
+   "origen": [
+    1,
+    -4
+   ],
+   "imagen": "op15_cara_10/labios_perfil.png",
+   "rasgo": true
+  }
+ ]
+}

@@ -1,0 +1,340 @@
+{
+ "nombre": "golpe2",
+ "bucle": false,
+ "lienzo": 64,
+ "duraciones_ms": [
+  70,
+  130,
+  100,
+  100,
+  140
+ ],
+ "cuadros": [
+  {
+   "raiz": {},
+   "cadera": {
+    "subir": -1
+   },
+   "pose": {
+    "chest": {
+     "girar": 10,
+     "inclinar": 8
+    },
+    "hips": {
+     "girar": 5
+    },
+    "upper_R": {
+     "adelante": 21,
+     "afuera": -12
+    },
+    "fore_R": {
+     "doblar": 63
+    },
+    "weapon_R": {
+     "doblar": -22
+    },
+    "upper_L": {
+     "adelante": -10,
+     "afuera": 15
+    },
+    "fore_L": {
+     "doblar": 30
+    },
+    "hair": {
+     "adelante": 3
+    },
+    "lock_L": {
+     "adelante": 3
+    },
+    "lock_R": {
+     "adelante": 3
+    },
+    "skirt": {
+     "adelante": 0
+    },
+    "bow_back": {
+     "adelante": 4
+    },
+    "neck": {
+     "girar": -8
+    },
+    "thigh_L": {
+     "adelante": 26.1
+    },
+    "shin_L": {
+     "doblar": 54.8
+    },
+    "thigh_R": {
+     "adelante": 22.1
+    },
+    "shin_R": {
+     "doblar": 54.8
+    }
+   },
+   "mostrar": [
+    "espada"
+   ]
+  },
+  {
+   "raiz": {},
+   "cadera": {
+    "subir": -2,
+    "adelantar": -2
+   },
+   "pose": {
+    "chest": {
+     "girar": 30,
+     "inclinar": 12
+    },
+    "hips": {
+     "girar": 12
+    },
+    "upper_R": {
+     "adelante": -11,
+     "afuera": -70
+    },
+    "fore_R": {
+     "doblar": 99
+    },
+    "weapon_R": {
+     "doblar": -16
+    },
+    "upper_L": {
+     "adelante": -15,
+     "afuera": 20
+    },
+    "fore_L": {
+     "doblar": 30
+    },
+    "hair": {
+     "adelante": 5
+    },
+    "lock_L": {
+     "adelante": 5
+    },
+    "lock_R": {
+     "adelante": 5
+    },
+    "skirt": {
+     "adelante": 0
+    },
+    "bow_back": {
+     "adelante": 7
+    },
+    "neck": {
+     "girar": -24
+    },
+    "thigh_L": {
+     "adelante": 50.7
+    },
+    "shin_L": {
+     "doblar": 67.3
+    },
+    "thigh_R": {
+     "adelante": 44.0
+    },
+    "shin_R": {
+     "doblar": 75.7
+    }
+   },
+   "mostrar": [
+    "espada"
+   ]
+  },
+  {
+   "raiz": {},
+   "cadera": {
+    "subir": -2
+   },
+   "pose": {
+    "chest": {
+     "girar": -15,
+     "inclinar": -4
+    },
+    "hips": {
+     "girar": -8
+    },
+    "upper_R": {
+     "adelante": 133,
+     "afuera": -32
+    },
+    "fore_R": {
+     "doblar": 0
+    },
+    "weapon_R": {
+     "doblar": 8
+    },
+    "upper_L": {
+     "adelante": 20,
+     "afuera": 20
+    },
+    "fore_L": {
+     "doblar": 30
+    },
+    "hair": {
+     "adelante": -12
+    },
+    "lock_L": {
+     "adelante": -12
+    },
+    "lock_R": {
+     "adelante": -12
+    },
+    "skirt": {
+     "adelante": -4
+    },
+    "bow_back": {
+     "adelante": -18
+    },
+    "neck": {
+     "girar": 12
+    },
+    "thigh_L": {
+     "adelante": -12.7
+    },
+    "shin_L": {
+     "doblar": 45.3
+    },
+    "thigh_R": {
+     "adelante": 37.6
+    },
+    "shin_R": {
+     "doblar": 78.2
+    }
+   },
+   "mostrar": [
+    "espada",
+    "estela"
+   ]
+  },
+  {
+   "raiz": {},
+   "cadera": {
+    "subir": -2
+   },
+   "pose": {
+    "chest": {
+     "girar": -20,
+     "inclinar": -6
+    },
+    "hips": {
+     "girar": -8
+    },
+    "upper_R": {
+     "adelante": 134,
+     "afuera": -34
+    },
+    "fore_R": {
+     "doblar": 0
+    },
+    "weapon_R": {
+     "doblar": 12
+    },
+    "upper_L": {
+     "adelante": 15,
+     "afuera": 20
+    },
+    "fore_L": {
+     "doblar": 30
+    },
+    "hair": {
+     "adelante": 10
+    },
+    "lock_L": {
+     "adelante": 10
+    },
+    "lock_R": {
+     "adelante": 10
+    },
+    "skirt": {
+     "adelante": 3
+    },
+    "bow_back": {
+     "adelante": 15
+    },
+    "neck": {
+     "girar": 16
+    },
+    "thigh_L": {
+     "adelante": -12.7
+    },
+    "shin_L": {
+     "doblar": 45.3
+    },
+    "thigh_R": {
+     "adelante": 37.6
+    },
+    "shin_R": {
+     "doblar": 78.2
+    }
+   },
+   "mostrar": [
+    "espada"
+   ]
+  },
+  {
+   "raiz": {},
+   "cadera": {
+    "subir": -1
+   },
+   "pose": {
+    "chest": {
+     "girar": -10
+    },
+    "hips": {
+     "girar": -4
+    },
+    "upper_R": {
+     "adelante": 40,
+     "afuera": -12
+    },
+    "fore_R": {
+     "doblar": 66
+    },
+    "weapon_R": {
+     "doblar": 52
+    },
+    "upper_L": {
+     "adelante": 10,
+     "afuera": 12
+    },
+    "fore_L": {
+     "doblar": 30
+    },
+    "hair": {
+     "adelante": 3
+    },
+    "lock_L": {
+     "adelante": 3
+    },
+    "lock_R": {
+     "adelante": 3
+    },
+    "skirt": {
+     "adelante": 1
+    },
+    "bow_back": {
+     "adelante": 5
+    },
+    "neck": {
+     "girar": 8
+    },
+    "thigh_L": {
+     "adelante": 13.3
+    },
+    "shin_L": {
+     "doblar": 71.1
+    },
+    "thigh_R": {
+     "adelante": 25.7
+    },
+    "shin_R": {
+     "doblar": 54.8
+    }
+   },
+   "mostrar": [
+    "espada"
+   ]
+  }
+ ]
+}

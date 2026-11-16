@@ -1,0 +1,91 @@
+{
+  "pieza": {"id": "chibi_mujer", "tipo": "base", "ocupa": ["cuerpo"], "tags": ["humano", "chibi"]},
+  "rampas": {
+    "piel_sombra": {"tonos": [[122, 88, 76], [160, 122, 106], [196, 160, 144]], "umbrales": [0.05, 0.2], "ambiente": 0.06},
+    "piel_plana": {"tonos": [[122, 88, 76], [160, 122, 106], [196, 160, 144]], "umbrales": [0.0, 0.05], "plano": true},
+    "piel_mano": {"tonos": [[122, 88, 76], [160, 122, 106], [196, 160, 144]], "umbrales": [0.05, 0.2], "ambiente": 0.06},
+    "pierna": {"tonos": [[122, 88, 76], [160, 122, 106], [196, 160, 144]], "umbrales": [0.05, 0.2], "ambiente": 0.06}
+  },
+  "cuerpo": {
+    "tobillo": 1,
+    "pierna": [4, 3.5],
+    "caderas": [3.0, 1.1],
+    "cintura": 5.5,
+    "pecho": 7.5,
+    "cuello": 3,
+    "hombros": [6.6, 0.2, -3.8],
+    "brazo": [3.1, 3.8],
+    "apertura_brazo": 22,
+    "apertura_antebrazo": 16,
+    "pie": [3.0, 0.4],
+    "grosor_brazo": [1.0, 1.3, 1.15, 1.3],
+    "mano": 1.2,
+    "grosor_pierna": [2.4, 2.0, 1.6, 1.4],
+    "plano_pierna": 0.8,
+    "cuello_r": [1.9, 1.6],
+    "cuello_y": -0.8,
+    "cabeza": {"centro": [0, 0.0, 6.2]},
+    "torso_perfil": [
+      [-0.15, 4.0, 3.2, 0.6],
+      [0.0, 4.2, 3.4, 0.6],
+      [0.2, 3.8, 3.0, 0.5],
+      [0.4, 3.0, 2.6, 0.4],
+      [0.6, 3.1, 2.9, 0.2],
+      [0.78, 3.4, 3.4, -0.1],
+      [0.92, 3.3, 3.0, 0.1],
+      [1.0, 2.6, 1.9, 0.3]
+    ],
+    "plano_brazo": 0.7,
+    "clavicula": 1.5,
+    "mano_hueso": true,
+    "piernas_al_suelo": true
+  },
+  "rellenar_huecos": 2,
+  "grupos_ocultos": ["mano_perfil_L", "mano_perfil_R"],
+  "marcadores": {
+    "cuello": ["neck", "cabeza"],
+    "cadera": ["hips", "cabeza"],
+    "pie_L": ["shin_L", "cola"],
+    "pie_R": ["shin_R", "cola"],
+    "mano_R": ["fore_R", "cola"],
+    "mano_L": ["fore_L", "cola"]
+  },
+  "partes": [
+    {
+      "tipo": "cuerpo",
+      "material": "piel_sombra",
+      "capa": "cuerpo",
+      "hombro": {"sisa": [2.0, -2.0, 1.6, 2.0], "radios": [[0.0, 1.8, 1.6], [0.25, 1.7, 1.4], [0.5, 1.35, 1.1]], "mezcla": 0.3, "tapas": [0, 0]}
+    },
+    {"tipo": "brazo", "lados": ["L", "R"], "material": "piel_sombra", "capa": "cuerpo", "desde": 0.3},
+    {"tipo": "pierna", "lados": ["L", "R"], "material": "pierna", "capa": "cuerpo", "linea": ""},
+    {
+      "tipo": "esfera",
+      "nombre": "mano",
+      "lados": ["L", "R"],
+      "material": "piel_mano",
+      "capa": "cuerpo",
+      "linea": "brazo_<lado>",
+      "hueso": "hand_<lado>",
+      "ocultar_si": "mano_perfil_<lado>",
+      "pos": [0.03, 0.0, -1.602],
+      "relativo": ["fore_<lado>", "cola"],
+      "radios": [1.4, 1.1, 1.5],
+      "ocultar_lejos": 30
+    },
+    {
+      "tipo": "esfera",
+      "nombre": "mano_perfil",
+      "lados": ["L", "R"],
+      "grupo": "mano_perfil_<lado>",
+      "material": "piel_mano",
+      "capa": "cuerpo",
+      "linea": "brazo_<lado>",
+      "hueso": "hand_<lado>",
+      "pos": [0.03, -0.3, -1.2],
+      "relativo": ["fore_<lado>", "cola"],
+      "radios": [1.4, 0.8, 1.15],
+      "ocultar_lejos": 30
+    }
+  ]
+}

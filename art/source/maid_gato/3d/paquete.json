@@ -1,0 +1,26 @@
+{
+  "giro": "../giro/hoja_giro_alta.png",
+  "filas": [55, 318],
+  "suela": 310,
+  "tope": 84,
+  "vistas": {
+    "FRENTE": [30, 153],
+    "PERFIL (mira al este)": [378, 493],
+    "ESPALDA": [540, 657]
+  },
+  "guias": [
+    [62, "punta de orejas"],
+    [84, "tope del pelo"],
+    [142, "centro de ojos"],
+    [154, "boca"],
+    [163, "menton"],
+    [172, "hombros / cuello del vestido"],
+    [180, "fin del pelo de frente (costados)"],
+    [190, "mono rosa"],
+    [205, "fin del pelo atras / punos"],
+    [222, "cintura (lazo de atras)"],
+    [250, "manos"],
+    [288, "dobladillo"],
+    [310, "suela"]
+  ]
+}

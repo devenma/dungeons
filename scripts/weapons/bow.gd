@@ -59,7 +59,9 @@ func try_attack(aim_dir: Vector2 = Vector2.ZERO) -> bool:
 		return false
 	var player: Node2D = get_tree().get_first_node_in_group("player") as Node2D
 	var origin: Vector2 = player.global_position if player != null else global_position
-	arrow.damage = data.damage
+	# Reliquias de daño del jugador (D28) / Player damage relics (D28)
+	var multiplier: float = player.get("damage_multiplier") if player != null and "damage_multiplier" in player else 1.0
+	arrow.damage = roundi(data.damage * multiplier)
 	arrow.knockback = aim * data.knockback
 	arrow.direction = aim
 	arrow.speed = data.projectile_speed

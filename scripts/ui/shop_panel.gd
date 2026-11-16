@@ -104,6 +104,9 @@ func buy_upgrade(upgrade: UpgradeData) -> bool:
 	_profile.save_profile()
 	_say("upgrade")
 	_refresh()
+	# El foco del mando sigue en la lista de mejoras si quedan / The gamepad focus stays on the upgrade list if any are left
+	if _upgrade_list.get_child_count() > 0:
+		(_upgrade_list.get_child(0) as Button).grab_focus()
 	return true
 
 

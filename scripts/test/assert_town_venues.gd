@@ -4,7 +4,7 @@ extends SceneTree
 ## The venues (D25), on main.tscn: each NPC is in its place (Ilse in the shop, Sister Ancel in the apothecary,
 ## Hesse in the smithy, Nela and Tomé outside, Odran and Maren in the guild); each shopkeeper opens the shop
 ## panel with its own ShopData (Ilse buys loot and sells stones, the apothecary sells the vial and the bandages,
-## the smithy the breastplate and the belt); the apothecary refuses a fourth vial with its own line; NPCs
+## the smithy the boots, the breastplate and the belt); the apothecary refuses a fourth vial with its own line; NPCs
 ## outside greet; only one area is active at a time; NPCs and doors do not overlap.
 ## Exit 0 = pass, 1 = fail.
 
@@ -108,14 +108,14 @@ func _run() -> void:
 	_check(APOTHECARY_SHOP.item == VIAL and APOTHECARY_SHOP.price == 40 and APOTHECARY_SHOP.upgrades.size() == 1
 			and APOTHECARY_SHOP.upgrades[0].id == &"vendas" and not APOTHECARY_SHOP.buys_loot,
 			"the apothecary sells the vial at 40 and the bandages")
-	_check(SMITHY_SHOP.item == null and SMITHY_SHOP.upgrades.size() == 2 and not SMITHY_SHOP.buys_loot,
-			"the smithy sells the breastplate and the belt")
+	_check(SMITHY_SHOP.item != null and SMITHY_SHOP.item.is_equipment() and SMITHY_SHOP.upgrades.size() == 2
+			and not SMITHY_SHOP.buys_loot, "the smithy sells the boots, the breastplate and the belt")
 
 	_check(await _opens(&"shop", FENCE_SHOP, true, true), "Ilse's panel buys loot and sells stones")
 	_panel.call("close")
 	profile.banked_gold = 1000
 	profile.buy_upgrade(load("res://resources/upgrades/vendas.tres") as UpgradeData)
-	_check(await _opens(&"smithy", SMITHY_SHOP, false, false), "the smithy's panel only sells upgrades")
+	_check(await _opens(&"smithy", SMITHY_SHOP, false, true), "the smithy's panel sells the boots and upgrades")
 	_panel.call("buy_upgrade", load("res://resources/upgrades/peto.tres") as UpgradeData)
 	var focused: Control = _panel.get_viewport().gui_get_focus_owner()
 	_check(focused != null and focused.get_parent() == _panel.get_node("%UpgradeList"),

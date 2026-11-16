@@ -1,0 +1,20 @@
+{
+ "cell": [
+  64,
+  64
+ ],
+ "rows": [
+  "S",
+  "E",
+  "N",
+  "W"
+ ],
+ "frames": 1,
+ "durations_ms": [
+  100
+ ],
+ "anchor": {
+  "feet_x": 32,
+  "sole_y": 47
+ }
+}

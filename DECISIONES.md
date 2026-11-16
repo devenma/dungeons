@@ -9,13 +9,17 @@ propuestas vigentes hasta que el equipo las revise.
 suave") y se crea la biblia de arte (D7).
 **Revisión 5:** 2026-10-25. Se suman las propuestas del slice de San Ulmo: jefe (D21), techo de pisos y
 `DungeonData` (D22), sala de cura con precio (D23) y números de sensación de combate (D24).
+**Revisión 6:** 2026-10-29. Cambia el estilo de personajes al del NPC base del artista y la cámara pasa a
+tomar como referencia *Sea of Stars* (D5). Lo más oscuro queda para la mazmorra; el pueblo y el gremio
+son más cálidos (D15). Se suman propuestas: correr, dash, bloqueo y parry (D26), y una posible segunda
+jugable (D13).
 **Alcance:** define el juego que queremos hacer. Las decisiones cerradas acá mandan sobre `AGENTS.md`,
 `README.md` y `FEATURES.md` en todo lo que contradigan; esos documentos se actualizan **después** de la
 validación, no antes.
 
 ## Cómo leer este documento
 
-Cada decisión tiene un ID (`D1`…`D24`) para poder citarla en la discusión.
+Cada decisión tiene un ID (`D1`…`D28`) para poder citarla en la discusión.
 
 | Marca | Significado |
 |---|---|
@@ -60,7 +64,7 @@ Tres documentos describen hoy un juego distinto del que queremos:
 - `FEATURES.md` — backlog ordenado como roguelite (meta-progresión y hub en P3).
 
 La dirección nueva es **Moonlighter + Stardew Valley** en lo jugable, con exploración tipo Zelda, cámara
-cenital y paleta apagada; la atmósfera es *Fear & Hunger* (D15). Eso empuja hacia un mundo persistente y salas hechas a mano, mientras el código actual es
+aérea como la de *Sea of Stars* y paleta apagada; la mazmorra es lo más oscuro del juego (D15). Eso empuja hacia un mundo persistente y salas hechas a mano, mientras el código actual es
 procedural y borra todo al morir. **D1 a D3 resuelven cuánto de cada lado tomamos.**
 
 Auditoría de Engram (68 sesiones): no hay ninguna traza de esta dirección creativa. Todo lo registrado
@@ -235,11 +239,63 @@ Los números objetivo (plantado, rodada, dispersión, stagger por enemigo) está
 Todo el detalle está en [`BIBLIA_ARTE.md`](BIBLIA_ARTE.md). El estilo puede cambiar más adelante, pero
 mientras tanto todo asset nuevo sale con él.
 
+**Cambio del 2026-10-29 (equipo y artista):** los personajes dejan el estilo "esbelto" y pasan al del **NPC
+base del artista** (`Base_4_Player_V4.aseprite` y `Maid-V1.aseprite`):
+- Lienzo de **64×64**, figura chibi de ~31 px de alto (unas 3 cabezas), pies en x 32 y suelas en y 47.
+- **Cambio del 2026-10-30:** la figura crece a ~40 px (máximo 42 con el pelo; el artista la sigue pensando
+  sobre 32×32) y el contorno pasa a ser **de color** (sel-out). Se probó la pantalla a 640×360 y se descartó: el
+  juego sigue en 480×270 (×4).
+- **Cambio del 2026-11-01:** el máximo de 42 px se mide hasta la tapa del pelo. Los adornos de la cabeza (orejas,
+  cuernos, plumas, sombreros) pueden pasarlo. La maid mide 40-41 px hasta la tapa y 43-44 con las orejas de gato.
+- **Contorno de 1 px en su propia capa**, para poder cambiar el color cuando se quiera. Rodea la
+  silueta por fuera (4 vecinos) y no se dibuja en el hueco entre las piernas, de frente y de espaldas, para
+  que no se vean pegadas.
+- Cada personaje se arma sobre un **maniquí en capas** (femenino del artista y masculino derivado, de pecho
+  triangular y hombros anchos) con su mapa de articulaciones (`Grid_*`: rojo articulación, azul derecha,
+  amarillo izquierda). Ropa, pelo e ítems van en capas que se ponen y se sacan.
+- Todo personaje se exporta a **`.aseprite` con capas** y etiquetas por animación y dirección.
+- El artista hace lo mínimo: da las bases, la guía y las correcciones; lo demás se genera a partir de eso.
+
+**Cámara (2026-10-29):** vista aérea como la de *Sea of Stars*: cenital alta, con el piso visto desde
+arriba, las paredes de frente y los personajes de frente, de espaldas o de perfil. Reemplaza a *Minish Cap* /
+*A Link to the Past* como referencia; la geometría de tiles y paredes no cambia.
+
+**[IMPACTO]** El jugador y los NPCs del código usan hojas de 48×48; pasan a 64×64 cuando entren los
+personajes nuevos. Tiles (32), enemigos grandes (96) y jefes (128+) no cambian.
+
 HD-2D se decide después: en Godot implica sprites 2D con luces y normal maps, es una decisión de renderer y
 es barata de posponer.
 
 Ojo con la paleta apagada: choca con la legibilidad del combate. Reservar saturación para el feedback
 (hit flash, VFX, telegrafía de ataque).
+
+**Cambio del 2026-11-15 (usuario), cierra HD-2D:** el escenario es **3D en tiempo real con aspecto de pixel art**,
+probado en tres rondas (`art/pruebas/escenario_3d/NOTA.md`): una sala de la cripta y una parcela exterior.
+- Cámara ortográfica a 22° (la de `rig3d`), 1 unidad = 1 px, que se mueve en píxeles enteros para que el
+  escenario no tiemble. Pantalla de 480×270.
+- Luz en 4 bandas, sombras de borde duro y contornos por profundidad del color del material oscurecido. Las
+  texturas se muestrean en píxeles de pantalla (un texel = un px).
+- Los personajes son láminas dentro de la escena 3D con sus hojas de `rig3d`: reciben luz con la hoja de normales
+  y luz envolvente, y el escenario los tapa por profundidad (no hace falta orden por Y).
+- Escala: la maid mide ~62 px (prueba de escala del 2026-11-14, `art/pruebas/escala/`) y la vegetación se mide
+  contra ella: árbol normal de ~2,3 maids (~140 px), árbol grande solo como referencia del mapa (~2,8), arbustos a
+  su altura.
+- La regla de 3 tonos por material queda suspendida en el escenario 3D: el pixel sale del render y admite más
+  detalle.
+
+**[IMPACTO]** El mundo deja de dibujarse con el TileMap 2D: el TileMap queda como capa lógica (colisiones,
+generador) y una capa 3D lo dibuja. Enemigos, efectos y objetos pasan a la escena 3D o llevan profundidad. Es un
+cambio de arquitectura: se explica y se acuerda antes de tocar `DungeonManager` y `Hondoval`.
+
+**Decisión del usuario (2026-11-15, look-dev ronda 3):** el sombreado es el **B suave** (luz en degradé, sombra con
+penumbra), no el toon de bandas duras; queda como un valor global que se puede cambiar más adelante. La capa de ambiente (niebla, motas, rayos de luz) va solo de tarde y de noche.
+Los cristales llevan refracción. Los efectos de pantalla (paleta, tinta, pintado, HD-2D, rampa) quedan disponibles
+sin decidir. La falda reacciona al viento con un shader de máscara en el juego.
+
+**Escala, usuario (2026-11-15):** la maid se veía grande al lado de *Sea of Stars* (23 % del alto de pantalla contra
+~12 %). Se mantiene en ~62 px y las escenas de prueba pasan a **640×360** (17 %); el escenario y los muebles se miden
+contra ella (mesa a la cintura ~0,45 de su alto, asiento ~0,28, mostrador ~0,6, paredes ~1,9). En el juego real la
+resolución cambia cuántos tiles entran por sala y el tamaño de la UI: se decide al integrar.
 
 ### D6 — ¿Un jugador o cooperativo? [PROPUESTA]
 
@@ -256,6 +312,28 @@ Sin eso los assets no van a pegar entre sí. Lo primero que hay que resolver ah�
 
 La biblia ya existe: [`BIBLIA_ARTE.md`](BIBLIA_ARTE.md) (2026-10-24). Cubre escala, cámara, luz, el
 entorno y su paleta; la sección de personajes sigue en prueba.
+
+**Flujo de personajes (2026-10-29, en prueba):** el artista entrega el maniquí en capas y la guía de cada
+personaje. Con PixelLab se generan el maniquí masculino, la caminata (PixMiniMax con paleta fija y poses
+clave), la ropa transferida, el pelo y los ítems como capas; una limpieza automática fija la cabeza, la
+paleta y el contorno. El equipo aprobó el maniquí en capas y la animación de caminar; falta pulir.
+*Reemplazado el 2026-11-01 por el flujo 3D de abajo.*
+
+**Cambio del 2026-11-01 (equipo): personajes en 3D renderizados a pixel art, como *Dead Cells*.** Cada
+personaje es un modelo 3D simple (low-poly, por partes) que se anima y se renderiza directo a 40 px con la
+cámara del juego (ortográfica, 22°), sin suavizado, con rampas de 3 tonos por material, contorno de color y un
+normal map por cuadro para la luz 2D de Godot. Se mantienen el lienzo, el ancla, el contorno de color y las
+reglas del artista (máximo 3 tonos por material, una sola piel, simetría). El dibujo 2D del artista es la guía de
+diseño (hoja de giro aprobada), no la meta píxel a píxel.
+- El modelo es neutro, mirando al frente; la mirada a la cámara va en la pose.
+- Los personajes se arman con **módulos** (cuerpo, cara, peinado, adornos, ropa, calzado, arma) para sacar variantes
+  y, más adelante, dejar que el jugador personalice.
+- Herramientas: `tools/art/rig3d.py` (Blender 5.2 sin interfaz). Proceso y lecciones: `art/guias/modelado.md` y
+  `art/guias/animacion.md`. Primer personaje: la maid (`art/source/maid_gato/`).
+
+**Animación (usuario, en uso desde 2026-11):** las acciones salen de **mocap** (Quaternius, retargeteado al rig de
+`rig3d`), nunca animadas a mano; lo fino se ajusta en el panel de ajuste (`art/guias/plan_panel_ajuste.md`). Así
+trabajan los agentes del proyecto (`animador`).
 
 ### D8 — ¿Plataformas y control? [PROPUESTA]
 
@@ -305,6 +383,16 @@ reescribir después. Ya propagado a `AGENTS.md` §18–§19 y `FEATURES.md` P2.
 
 Uno solo. Varios protagonistas implican ramas de historia y multiplican el arte.
 
+**Idea del equipo (2026-10-29), sin confirmar:** una chica que fue aventurera de tipo asesina y dejó esa
+vida porque quería algo más tranquilo, personaje importante de una subtrama. Más que un NPC, probablemente
+sea **jugable**. Cada tanto tendría una animación propia: agarra a un NPC borracho tirado en el suelo, lo
+levanta en el aire y lo golpea. Si se confirma como jugable, esta decisión pasa a "varios protagonistas" y
+hay que revisar el costo de arte e historia.
+
+**Usuario (2026-11-15):** por ahora la jugable es **la maid**, pero el juego tiene que poder usar otro personaje
+cuando se defina más la historia, armado con el mismo sistema de módulos. El personaje jugable es un dato (sus hojas
+de `rig3d` y sus normales), no algo fijo en el código.
+
 ---
 
 ## HISTORIA Y ALCANCE
@@ -327,6 +415,17 @@ contrastado. Resuelve el tono y la legibilidad del combate al mismo tiempo.
 de juego; la atmósfera y el ambiente son *Fear & Hunger*: tono **lo más oscuro posible**. Se permiten gore y horror corporal. Trasfondo: el mundo se vino abajo por
 algo relacionado con las mazmorras y hay una crisis. El pueblo deja de ser acogedor: es un refugio frágil y
 desesperado. Falta confirmarlo formalmente para pasar a [DECIDIDO].
+
+**Dirección del equipo (2026-10-29), ajusta lo anterior:** lo de antes era demasiado oscuro para todo el
+juego. **Lo más oscuro es la mazmorra**: assets de estilo *Blasphemous* (solo el estilo de los assets, no la
+vista de costado), con gore y horror corporal; *Fear & Hunger* queda como referencia de la mazmorra. **El
+pueblo y el gremio** van más cálidos, como *Sea of Stars* (luz de velas y chimenea, mucho detalle en pisos y
+muebles) y un poco más oscuros, con un toque *Stardew Valley* pero menos colorido. La iluminación y los
+filtros de pantalla llevan buena parte del clima.
+
+**Decisión del usuario (2026-11-14), sobre el estilo del entorno:** el arte actual (la cripta oscura, el pueblo de
+PixelLab y los enemigos del kit) se va. El estilo nuevo es **el de la maid**, y el escenario sale con la técnica de
+D5 (3D en tiempo real). El tono de mundo de arriba sigue en propuesta.
 
 ### D16 — ¿Idiomas? [PROPUESTA]
 
@@ -753,6 +852,70 @@ pantalla. El diseño completo está en [`odd/tasks/hondoval-design.md`](odd/task
 Queda para el plan de arte: el suelo con transiciones (prueba con PixelLab), las fachadas, los interiores, los
 aventureros del gremio y las variantes de noche.
 
+### D26 — Correr, dash, bloqueo y parry [PROPUESTA]
+
+**Pedido del equipo (2026-10-29):** el personaje necesita más acciones que caminar, rodar y el combo:
+- **Correr.**
+- **Dash**, que **reemplaza a la voltereta** actual (`roll`).
+- **Bloqueo**, en dos versiones con poses distintas: con escudo y sin escudo.
+- **Parry.**
+- **Ataque normal y ataque fuerte.**
+- **Sentarse**, en las 4 direcciones (pose del pueblo, no de combate).
+
+Prioridad para tener algo jugable: **correr y el ataque con espada** primero; el resto después.
+
+Falta definir antes de implementar:
+- Correr: si es mantener un botón o la velocidad base, y si gasta stamina.
+- Dash: distancia, i-frames y coste; los números de la rodada (D24) son el punto de partida.
+- Bloqueo y parry: qué bloquea cada uno, la ventana del parry y qué pasa con la stamina al bloquear.
+- Ataque fuerte: si es un botón aparte o cargar el ataque, y cómo convive con el combo de 3.
+
+**[IMPACTO]** `RollComponent` y la acción `roll` se reemplazan por el dash. Bloqueo y parry pasan por la
+`Hurtbox`, como ya hace el `Guard` de los enemigos.
+
+### D27 — Equipo por slots del cuerpo [PROPUESTA]
+
+**Pedido (2026-11-10):** el poder del personaje viene del equipo (D11) y los módulos 3D ya son piezas con slot
+(`"pieza"` en `art/source/modulos/`). Se propone que el equipo del juego use esos mismos slots.
+
+- **De dónde sale:** de las dos fuentes. La tienda vende piezas base (la herrería, las *Botas del osario*) y en la
+  cripta caen piezas en cofres y enemigos. Lo que cae va a la mochila y se pierde al morir sin piedra azul (D1).
+- **Se pone y se saca en el gremio**, desde la mochila o el almacén. Lo puesto vive en el perfil
+  (`ProfileState.equipped`) y no se pierde al morir.
+- **Estadísticas fijas por pieza**, en su `ItemData` (`bonus_health`, `bonus_stamina`). La rareza es solo un tier
+  con mejores números; sin afijos al azar. Si alguna pieza necesita una estadística nueva, se suma recién ahí.
+- **Se ve en el personaje:** cada pieza dibuja su capa sobre el sprite con `layer_prefix` (hojas en el formato de
+  `KitSprite`) e indica en `module_id` qué módulo 3D la dibuja.
+- **Slots:** los del campo `ocupa` de los módulos (`pies`, `piernas`, `torso`, `manos`, `cabeza`, `arma`...). Una
+  pieza puede ocupar varios, como el vestido.
+
+Falta definir:
+- Las capas del sprite salen de rig3d: cada pieza se renderiza sobre la base (la base tapa lo que queda detrás) y
+  se exporta sola. El cuerpo base va sin ropa, así que hace falta una base "en ropa interior" para que sacarse una
+  pieza no deje un hueco. Por ahora el jugador sigue con la hoja del aventurero y las botas no tienen capa.
+- Si el peto y el cinturón (hoy `UpgradeData`) pasan a ser piezas de `torso` y `cintura`.
+- Si el arma entra a este sistema o sigue en `RunManager.owned_weapons`.
+
+**[IMPACTO]** Cambia AGENTS §29, que deja afuera del MVP el "equipo por slots del cuerpo". `ItemData` suma
+`equip_slots`, `module_id`, `bonus_*` y `layer_prefix`; `ProfileState` guarda `equipped` en el perfil; el panel
+de la mochila suma la grilla *Equipado*; el jugador suma el nodo `EquipmentLayers`.
+
+### D28 — Reliquias: mejoras de expedición [PROPUESTA]
+
+La segunda capa de progreso de D11: mejoras temporales que viven en `RunManager.relics` y se pierden al terminar la
+expedición, siempre (al morir, al volver con piedra azul y al ganar).
+
+- **De dónde salen:** el cofre de cada zona REWARD, además del arma y el botín, ofrece **tres reliquias** sorteadas
+  con la seed del piso; se elige una (`RelicPanel`, pausa el juego y no se cancela).
+- **Efectos del primer corte** (`RelicData`, acumulables): +20 de vida máxima, +20 de aguante máximo, +25 % de
+  regeneración de aguante y +15 % de daño. El daño se escala en el arma o la habilidad del jugador
+  (`Player.damage_multiplier`), sin rutas nuevas de daño.
+- **Fuera del primer corte:** rarezas, sinergias, reliquias con precio (como la ofrenda de carne del altar) y arte
+  propio (hoy son solo texto).
+
+**[IMPACTO]** `RunManager` suma `relics`; `DungeonManager._apply_player_stats` las aplica junto a las mejoras y el
+equipo; el cofre suma `relic_pool`; la UI suma `RelicPanel`.
+
 ---
 
 ## Si se aprueban D1–D4: orden técnico sugerido
@@ -833,4 +996,5 @@ fueron propagados; los de proceso siguen abiertos.
 
 `README.md`, `AGENTS.md` y `FEATURES.md` quedaron alineados con D1–D20 el 2026-10-24. Si aparece una
 contradicción nueva, gana este documento y se corrige el otro. D21–D24 (2026-10-25) son propuestas y
-todavía no se propagaron.
+todavía no se propagaron. El cambio de estilo de personajes, la cámara y el tono del 2026-10-29 (D5, D15)
+ya están en `BIBLIA_ARTE.md`, `AGENTS.md` §1 y §38.1 y `README.md`; D26 todavía no.

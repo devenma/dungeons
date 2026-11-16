@@ -140,7 +140,7 @@ func _start_swing(step: int, aim: Vector2) -> bool:
 	_chain_left = 0.0
 	_aim = aim
 	rotation = aim.angle()
-	hitbox.damage = swing.damage
+	hitbox.damage = roundi(swing.damage * _damage_multiplier())
 	hitbox.knockback = aim.normalized() * swing.knockback
 	hitbox.hit_stop_seconds = swing.hit_stop_seconds
 	hitbox.camera_shake_pixels = swing.camera_shake_pixels
@@ -180,6 +180,12 @@ func _reset_combo() -> void:
 func _player_holds_attack(aim: Vector2) -> bool:
 	var found: Node = get_tree().get_first_node_in_group("player")
 	return found != null and found.has_method("hold_attack") and found.call("hold_attack", aim) as bool
+
+
+# Reliquias de daño del jugador (D28) / Player damage relics (D28)
+func _damage_multiplier() -> float:
+	var found: Node = get_tree().get_first_node_in_group("player")
+	return found.get("damage_multiplier") if found != null and "damage_multiplier" in found else 1.0
 
 
 func _resolve_player_aim() -> Vector2:

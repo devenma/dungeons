@@ -1,0 +1,41 @@
+{
+ "pieza": {
+  "id": "busto_chico",
+  "tipo": "personalizacion",
+  "ocupa": [
+   "busto"
+  ],
+  "tags": [
+   "femenino"
+  ]
+ },
+ "partes": [
+  {
+   "tipo": "esfera",
+   "nombre": "pecho",
+   "lados": [
+    "L",
+    "R"
+   ],
+   "material": "piel",
+   "capa": "cuerpo",
+   "linea": "tronco",
+   "hueso": "chest",
+   "relativo": [
+    "chest",
+    "cola"
+   ],
+   "pos": [
+    2.4,
+    -4.8,
+    -5.5
+   ],
+   "radios": [
+    2.5,
+    1.5,
+    1.4
+   ],
+   "sesgo_sombra": []
+  }
+ ]
+}

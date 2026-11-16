@@ -52,6 +52,8 @@ var _in_guild: bool = false
 # Máximos del jugador sin mejoras ni ofrendas (los de player.tscn) / Player maxima without upgrades or offerings (player.tscn's)
 var _base_max_health: int = 100
 var _base_max_stamina: int = 100
+# Regeneración de aguante sin reliquias (puntos/s) / Stamina regen without relics (points/s)
+var _base_stamina_regen: float = 20.0
 
 # Nodos del piso actual / Current floor nodes
 var _dungeon: Node2D
@@ -71,6 +73,7 @@ func _ready() -> void:
 	var stamina := player.get_node_or_null("Stamina") as StaminaComponent
 	if stamina != null:
 		_base_max_stamina = stamina.max_stamina
+		_base_stamina_regen = stamina.stamina_regen_per_second
 	var profile: ProfileState = _get_profile_state()
 	if profile != null:
 		profile.profile_changed.connect(_apply_player_stats)
@@ -194,20 +197,32 @@ func _on_backpack_changed() -> void:
 	profile.save_profile()
 
 
-## Máximos del jugador: base + mejoras del perfil (D11), menos un 20 % de vida por ofrenda de carne (D23).
-## Player maxima: base + profile upgrades (D11), minus 20% health per flesh offering (D23).
+## Estadísticas del jugador: base + mejoras y equipo del perfil (D11, D27) + reliquias de la expedición (D28), menos
+## un 20 % de vida por ofrenda de carne (D23); también redibuja las capas del equipo puesto.
+## Player stats: base + profile upgrades and gear (D11, D27) + expedition relics (D28), minus 20% health per flesh
+## offering (D23); also redraws the worn gear layers.
 func _apply_player_stats() -> void:
 	var profile: ProfileState = _get_profile_state()
 	var run_manager: RunManager = _get_run_manager()
 	var health_bonus: int = profile.stat_bonus(UpgradeData.Stat.MAX_HEALTH) if profile != null else 0
 	var stamina_bonus: int = profile.stat_bonus(UpgradeData.Stat.MAX_STAMINA) if profile != null else 0
 	var offerings: int = run_manager.flesh_offerings if run_manager != null else 0
+	if run_manager != null:
+		health_bonus += run_manager.relic_bonus(RelicData.Stat.MAX_HEALTH)
+		stamina_bonus += run_manager.relic_bonus(RelicData.Stat.MAX_STAMINA)
+	var regen_percent: int = run_manager.relic_bonus(RelicData.Stat.STAMINA_REGEN_PERCENT) if run_manager != null else 0
+	var damage_percent: int = run_manager.relic_bonus(RelicData.Stat.DAMAGE_PERCENT) if run_manager != null else 0
+	player.set("damage_multiplier", 1.0 + damage_percent / 100.0)
 	var health := player.get_node_or_null("Health") as HealthComponent
 	if health != null:
 		health.set_max_health(roundi((_base_max_health + health_bonus) * (1.0 - FLESH_FRACTION * offerings)))
 	var stamina := player.get_node_or_null("Stamina") as StaminaComponent
 	if stamina != null:
 		stamina.set_max_stamina(_base_max_stamina + stamina_bonus)
+		stamina.stamina_regen_per_second = _base_stamina_regen * (1.0 + regen_percent / 100.0)
+	var gear_layers: Node = player.get_node_or_null("EquipmentLayers")
+	if gear_layers != null and profile != null:
+		gear_layers.call("show_items", profile.equipped_items())
 
 
 func _play_sound(sound_name: String) -> void:

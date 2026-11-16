@@ -1,0 +1,369 @@
+[gd_scene load_steps=17 format=3]
+
+[ext_resource type="Shader" path="res://scripts/visual/wind_sway.gdshader" id="1"]
+[ext_resource type="Texture2D" path="res://assets/art/nature/tree_round.png" id="2"]
+[ext_resource type="Texture2D" path="res://assets/art/nature/tree_tall.png" id="3"]
+[ext_resource type="Texture2D" path="res://assets/art/nature/bush_flowers.png" id="4"]
+[ext_resource type="Script" path="res://scripts/preview/test_zone_walker.gd" id="5"]
+[ext_resource type="Script" path="res://scripts/visual/kit_sprite.gd" id="6"]
+[ext_resource type="Texture2D" path="res://assets/art/nature/tree_oak_3d.png" id="7"]
+[ext_resource type="Texture2D" path="res://assets/art/nature/tree_poplar_3d.png" id="8"]
+[ext_resource type="Texture2D" path="res://assets/art/nature/tree_pine_3d.png" id="9"]
+[ext_resource type="Texture2D" path="res://assets/art/nature/bush_3d.png" id="10"]
+[ext_resource type="Script" path="res://scripts/preview/test_zone.gd" id="11"]
+
+[sub_resource type="ShaderMaterial" id="Wind"]
+shader = ExtResource("1")
+shader_parameter/rustle_px = 0.0
+shader_parameter/sway_px = 0.0
+
+[sub_resource type="RectangleShape2D" id="TrunkRound"]
+size = Vector2(18, 6)
+
+[sub_resource type="RectangleShape2D" id="TrunkTall"]
+size = Vector2(8, 5)
+
+[sub_resource type="RectangleShape2D" id="TrunkBush"]
+size = Vector2(16, 5)
+
+[sub_resource type="RectangleShape2D" id="Feet"]
+size = Vector2(10, 4)
+
+[node name="TestZone" type="Node2D"]
+script = ExtResource("11")
+kit_names = PackedStringArray("Flora propia (flora.py)", "Cozy (PixelLab)", "Bandas 3D (rig3d)")
+kit_nodes = Array[NodePath]([NodePath("World/FloraPropia"), NodePath("World/Cozy"), NodePath("World/Bandas3D")])
+kit_floors = PackedStringArray("res://assets/art/nature/ground_flora", "res://assets/art/nature/ground_cozy", "res://assets/art/nature/ground_flat")
+kit_tufts = PackedStringArray("res://assets/art/nature/flora_matas.json", "", "")
+
+[node name="Floors" type="Node2D" parent="."]
+
+[node name="World" type="Node2D" parent="."]
+y_sort_enabled = true
+
+[node name="Cozy" type="Node2D" parent="World"]
+y_sort_enabled = true
+
+[node name="Round1" type="StaticBody2D" parent="World/Cozy"]
+position = Vector2(-150, -30)
+collision_mask = 0
+
+[node name="Sprite" type="Sprite2D" parent="World/Cozy/Round1"]
+material = SubResource("Wind")
+texture = ExtResource("2")
+centered = false
+offset = Vector2(-51, -126)
+
+[node name="Shape" type="CollisionShape2D" parent="World/Cozy/Round1"]
+position = Vector2(0, -2)
+shape = SubResource("TrunkRound")
+
+[node name="Round2" type="StaticBody2D" parent="World/Cozy"]
+position = Vector2(130, 90)
+collision_mask = 0
+
+[node name="Sprite" type="Sprite2D" parent="World/Cozy/Round2"]
+material = SubResource("Wind")
+texture = ExtResource("2")
+centered = false
+offset = Vector2(-51, -126)
+flip_h = true
+
+[node name="Shape" type="CollisionShape2D" parent="World/Cozy/Round2"]
+position = Vector2(0, -2)
+shape = SubResource("TrunkRound")
+
+[node name="Tall1" type="StaticBody2D" parent="World/Cozy"]
+position = Vector2(-50, -80)
+collision_mask = 0
+
+[node name="Sprite" type="Sprite2D" parent="World/Cozy/Tall1"]
+material = SubResource("Wind")
+texture = ExtResource("3")
+centered = false
+offset = Vector2(-20, -121)
+
+[node name="Shape" type="CollisionShape2D" parent="World/Cozy/Tall1"]
+position = Vector2(0, -2)
+shape = SubResource("TrunkTall")
+
+[node name="Tall2" type="StaticBody2D" parent="World/Cozy"]
+position = Vector2(-20, -70)
+collision_mask = 0
+
+[node name="Sprite" type="Sprite2D" parent="World/Cozy/Tall2"]
+material = SubResource("Wind")
+texture = ExtResource("3")
+centered = false
+offset = Vector2(-20, -121)
+flip_h = true
+
+[node name="Shape" type="CollisionShape2D" parent="World/Cozy/Tall2"]
+position = Vector2(0, -2)
+shape = SubResource("TrunkTall")
+
+[node name="Tall3" type="StaticBody2D" parent="World/Cozy"]
+position = Vector2(190, -10)
+collision_mask = 0
+
+[node name="Sprite" type="Sprite2D" parent="World/Cozy/Tall3"]
+material = SubResource("Wind")
+texture = ExtResource("3")
+centered = false
+offset = Vector2(-20, -121)
+
+[node name="Shape" type="CollisionShape2D" parent="World/Cozy/Tall3"]
+position = Vector2(0, -2)
+shape = SubResource("TrunkTall")
+
+[node name="Bush1" type="StaticBody2D" parent="World/Cozy"]
+position = Vector2(-150, 70)
+collision_mask = 0
+
+[node name="Sprite" type="Sprite2D" parent="World/Cozy/Bush1"]
+material = SubResource("Wind")
+texture = ExtResource("4")
+centered = false
+offset = Vector2(-20, -40)
+
+[node name="Shape" type="CollisionShape2D" parent="World/Cozy/Bush1"]
+position = Vector2(0, -2)
+shape = SubResource("TrunkBush")
+
+[node name="Bush2" type="StaticBody2D" parent="World/Cozy"]
+position = Vector2(60, -30)
+collision_mask = 0
+
+[node name="Sprite" type="Sprite2D" parent="World/Cozy/Bush2"]
+material = SubResource("Wind")
+texture = ExtResource("4")
+centered = false
+offset = Vector2(-20, -40)
+flip_h = true
+
+[node name="Shape" type="CollisionShape2D" parent="World/Cozy/Bush2"]
+position = Vector2(0, -2)
+shape = SubResource("TrunkBush")
+
+[node name="Bandas3D" type="Node2D" parent="World"]
+y_sort_enabled = true
+
+[node name="Round1" type="StaticBody2D" parent="World/Bandas3D"]
+position = Vector2(-150, -30)
+collision_mask = 0
+
+[node name="Sprite" type="Sprite2D" parent="World/Bandas3D/Round1"]
+material = SubResource("Wind")
+texture = ExtResource("7")
+centered = false
+offset = Vector2(-56, -140)
+
+[node name="Shape" type="CollisionShape2D" parent="World/Bandas3D/Round1"]
+position = Vector2(0, -2)
+shape = SubResource("TrunkRound")
+
+[node name="Round2" type="StaticBody2D" parent="World/Bandas3D"]
+position = Vector2(130, 90)
+collision_mask = 0
+
+[node name="Sprite" type="Sprite2D" parent="World/Bandas3D/Round2"]
+material = SubResource("Wind")
+texture = ExtResource("7")
+centered = false
+offset = Vector2(-56, -140)
+flip_h = true
+
+[node name="Shape" type="CollisionShape2D" parent="World/Bandas3D/Round2"]
+position = Vector2(0, -2)
+shape = SubResource("TrunkRound")
+
+[node name="Tall1" type="StaticBody2D" parent="World/Bandas3D"]
+position = Vector2(-50, -80)
+collision_mask = 0
+
+[node name="Sprite" type="Sprite2D" parent="World/Bandas3D/Tall1"]
+material = SubResource("Wind")
+texture = ExtResource("8")
+centered = false
+offset = Vector2(-24, -141)
+
+[node name="Shape" type="CollisionShape2D" parent="World/Bandas3D/Tall1"]
+position = Vector2(0, -2)
+shape = SubResource("TrunkTall")
+
+[node name="Tall2" type="StaticBody2D" parent="World/Bandas3D"]
+position = Vector2(-20, -70)
+collision_mask = 0
+
+[node name="Sprite" type="Sprite2D" parent="World/Bandas3D/Tall2"]
+material = SubResource("Wind")
+texture = ExtResource("9")
+centered = false
+offset = Vector2(-36, -141)
+flip_h = true
+
+[node name="Shape" type="CollisionShape2D" parent="World/Bandas3D/Tall2"]
+position = Vector2(0, -2)
+shape = SubResource("TrunkTall")
+
+[node name="Tall3" type="StaticBody2D" parent="World/Bandas3D"]
+position = Vector2(190, -10)
+collision_mask = 0
+
+[node name="Sprite" type="Sprite2D" parent="World/Bandas3D/Tall3"]
+material = SubResource("Wind")
+texture = ExtResource("8")
+centered = false
+offset = Vector2(-24, -141)
+
+[node name="Shape" type="CollisionShape2D" parent="World/Bandas3D/Tall3"]
+position = Vector2(0, -2)
+shape = SubResource("TrunkTall")
+
+[node name="Bush1" type="StaticBody2D" parent="World/Bandas3D"]
+position = Vector2(-150, 70)
+collision_mask = 0
+
+[node name="Sprite" type="Sprite2D" parent="World/Bandas3D/Bush1"]
+material = SubResource("Wind")
+texture = ExtResource("10")
+centered = false
+offset = Vector2(-19, -46)
+
+[node name="Shape" type="CollisionShape2D" parent="World/Bandas3D/Bush1"]
+position = Vector2(0, -2)
+shape = SubResource("TrunkBush")
+
+[node name="Bush2" type="StaticBody2D" parent="World/Bandas3D"]
+position = Vector2(60, -30)
+collision_mask = 0
+
+[node name="Sprite" type="Sprite2D" parent="World/Bandas3D/Bush2"]
+material = SubResource("Wind")
+texture = ExtResource("10")
+centered = false
+offset = Vector2(-19, -46)
+flip_h = true
+
+[node name="Shape" type="CollisionShape2D" parent="World/Bandas3D/Bush2"]
+position = Vector2(0, -2)
+shape = SubResource("TrunkBush")
+
+[node name="FloraPropia" type="Node2D" parent="World"]
+y_sort_enabled = true
+
+[node name="Round1" type="StaticBody2D" parent="World/FloraPropia"]
+position = Vector2(-150, -30)
+collision_mask = 0
+
+[node name="Sprite" type="Sprite2D" parent="World/FloraPropia/Round1"]
+material = SubResource("Wind")
+texture = ExtResource("2")
+centered = false
+offset = Vector2(-51, -126)
+
+[node name="Shape" type="CollisionShape2D" parent="World/FloraPropia/Round1"]
+position = Vector2(0, -2)
+shape = SubResource("TrunkRound")
+
+[node name="Round2" type="StaticBody2D" parent="World/FloraPropia"]
+position = Vector2(130, 90)
+collision_mask = 0
+
+[node name="Sprite" type="Sprite2D" parent="World/FloraPropia/Round2"]
+material = SubResource("Wind")
+texture = ExtResource("2")
+centered = false
+offset = Vector2(-51, -126)
+flip_h = true
+
+[node name="Shape" type="CollisionShape2D" parent="World/FloraPropia/Round2"]
+position = Vector2(0, -2)
+shape = SubResource("TrunkRound")
+
+[node name="Tall1" type="StaticBody2D" parent="World/FloraPropia"]
+position = Vector2(-50, -80)
+collision_mask = 0
+
+[node name="Sprite" type="Sprite2D" parent="World/FloraPropia/Tall1"]
+material = SubResource("Wind")
+texture = ExtResource("3")
+centered = false
+offset = Vector2(-20, -121)
+
+[node name="Shape" type="CollisionShape2D" parent="World/FloraPropia/Tall1"]
+position = Vector2(0, -2)
+shape = SubResource("TrunkTall")
+
+[node name="Tall2" type="StaticBody2D" parent="World/FloraPropia"]
+position = Vector2(-20, -70)
+collision_mask = 0
+
+[node name="Sprite" type="Sprite2D" parent="World/FloraPropia/Tall2"]
+material = SubResource("Wind")
+texture = ExtResource("3")
+centered = false
+offset = Vector2(-20, -121)
+flip_h = true
+
+[node name="Shape" type="CollisionShape2D" parent="World/FloraPropia/Tall2"]
+position = Vector2(0, -2)
+shape = SubResource("TrunkTall")
+
+[node name="Tall3" type="StaticBody2D" parent="World/FloraPropia"]
+position = Vector2(190, -10)
+collision_mask = 0
+
+[node name="Sprite" type="Sprite2D" parent="World/FloraPropia/Tall3"]
+material = SubResource("Wind")
+texture = ExtResource("3")
+centered = false
+offset = Vector2(-20, -121)
+
+[node name="Shape" type="CollisionShape2D" parent="World/FloraPropia/Tall3"]
+position = Vector2(0, -2)
+shape = SubResource("TrunkTall")
+
+[node name="Bush1" type="StaticBody2D" parent="World/FloraPropia"]
+position = Vector2(-150, 70)
+collision_mask = 0
+
+[node name="Sprite" type="Sprite2D" parent="World/FloraPropia/Bush1"]
+material = SubResource("Wind")
+texture = ExtResource("4")
+centered = false
+offset = Vector2(-20, -40)
+
+[node name="Shape" type="CollisionShape2D" parent="World/FloraPropia/Bush1"]
+position = Vector2(0, -2)
+shape = SubResource("TrunkBush")
+
+[node name="Bush2" type="StaticBody2D" parent="World/FloraPropia"]
+position = Vector2(60, -30)
+collision_mask = 0
+
+[node name="Sprite" type="Sprite2D" parent="World/FloraPropia/Bush2"]
+material = SubResource("Wind")
+texture = ExtResource("4")
+centered = false
+offset = Vector2(-20, -40)
+flip_h = true
+
+[node name="Shape" type="CollisionShape2D" parent="World/FloraPropia/Bush2"]
+position = Vector2(0, -2)
+shape = SubResource("TrunkBush")
+
+[node name="Maid" type="CharacterBody2D" parent="World"]
+position = Vector2(0, 20)
+collision_layer = 2
+script = ExtResource("5")
+
+[node name="Sprite" type="AnimatedSprite2D" parent="World/Maid"]
+script = ExtResource("6")
+sheet_prefix = "res://assets/art/characters/maid_gato/maid_gato_"
+
+[node name="Shape" type="CollisionShape2D" parent="World/Maid"]
+position = Vector2(0, -2)
+shape = SubResource("Feet")
+
+[node name="Camera" type="Camera2D" parent="World/Maid"]

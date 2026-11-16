@@ -1,0 +1,59 @@
+{
+ "pieza": {
+  "id": "busto_medio",
+  "tipo": "personalizacion",
+  "ocupa": [
+   "busto"
+  ],
+  "tags": [
+   "femenino"
+  ]
+ },
+ "partes": [
+  {
+   "tipo": "esfera",
+   "nombre": "pecho",
+   "lados": [
+    "L",
+    "R"
+   ],
+   "material": "piel",
+   "capa": "cuerpo",
+   "linea": "tronco",
+   "hueso": "chest",
+   "relativo": [
+    "chest",
+    "cola"
+   ],
+   "pos": [
+    2.4,
+    -5.2,
+    -5.5
+   ],
+   "radios": [
+    2.6,
+    2.2,
+    1.6
+   ],
+   "sesgo_sombra": [
+    {
+     "fijar": 0.3,
+     "centro": [
+      2.4,
+      -5.2,
+      -7.1
+     ],
+     "radios": [
+      4.0,
+      4.0,
+      1.2
+     ],
+     "relativo": [
+      "chest",
+      "cola"
+     ]
+    }
+   ]
+  }
+ ]
+}

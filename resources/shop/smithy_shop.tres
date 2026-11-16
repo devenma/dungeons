@@ -1,11 +1,14 @@
-[gd_resource type="Resource" script_class="ShopData" load_steps=4 format=3]
+[gd_resource type="Resource" script_class="ShopData" load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://resources/shop/shop_data.gd" id="1"]
 [ext_resource type="Resource" path="res://resources/upgrades/peto.tres" id="2"]
 [ext_resource type="Resource" path="res://resources/upgrades/cinturon.tres" id="3"]
+[ext_resource type="Resource" path="res://resources/items/botas_osario.tres" id="4"]
 
 [resource]
 script = ExtResource("1")
+item = ExtResource("4")
+price = 120
 upgrades = Array[Resource]([ExtResource("2"), ExtResource("3")])
 title_key = "ui.shop.smithy_title"
 lines_prefix = "npc.blacksmith.shop"

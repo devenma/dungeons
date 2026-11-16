@@ -6,7 +6,7 @@ Dungeon crawler con historia 2D desarrollado con **Godot 4.7.2**.
 
 ## Concepto
 
-Un dungeon crawler con historia donde **explorar el dungeon es el núcleo**. El combate es en tiempo real, estilo ARPG: hack n' slash oscuro, duro y pesado, con sensación *beat 'em up* — golpes con peso, knockback y combos — y el pueblo es un espacio persistente que crece entre expediciones. Referencias de juego: *Moonlighter* + *Stardew Valley*, con exploración de cámara cenital tipo *Minish Cap* / *A Link to the Past*. Referencia de atmósfera: *Fear & Hunger* (lo más oscuro posible; ver D15). Paleta de tonos apagados, reservando la saturación para el feedback de combate. El combate maneja dos recursos: **stamina** para lo físico y **maná** para lo mágico, y algunas habilidades cuestan ambos (D19).
+Un dungeon crawler con historia donde **explorar el dungeon es el núcleo**. El combate es en tiempo real, estilo ARPG: hack n' slash oscuro, duro y pesado, con sensación *beat 'em up* — golpes con peso, knockback y combos — y el pueblo es un espacio persistente que crece entre expediciones. Referencias de juego: *Moonlighter* + *Stardew Valley*, con cámara aérea como la de *Sea of Stars*. Lo más oscuro es la mazmorra (assets de estilo *Blasphemous*, ambiente *Fear & Hunger*); el pueblo y el gremio son más cálidos, como *Sea of Stars* pero más oscuros (D15). Paleta de tonos apagados, reservando la saturación para el feedback de combate. El combate maneja dos recursos: **stamina** para lo físico y **maná** para lo mágico, y algunas habilidades cuestan ambos (D19).
 
 ## Loop
 

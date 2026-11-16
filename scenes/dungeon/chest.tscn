@@ -1,10 +1,14 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/dungeon/chest.gd" id="1"]
 [ext_resource type="Resource" path="res://resources/items/chest_drops.tres" id="2"]
 [ext_resource type="AudioStream" path="res://assets/audio/sfx/chest_open.tres" id="3"]
 [ext_resource type="Texture2D" path="res://assets/art/environment/crypt/chest_closed.png" id="4"]
 [ext_resource type="Texture2D" path="res://assets/art/environment/crypt/chest_open.png" id="5"]
+[ext_resource type="Resource" path="res://resources/relics/hueso_santo.tres" id="6"]
+[ext_resource type="Resource" path="res://resources/relics/rosario_negro.tres" id="7"]
+[ext_resource type="Resource" path="res://resources/relics/aliento_ermitano.tres" id="8"]
+[ext_resource type="Resource" path="res://resources/relics/diente_martir.tres" id="9"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_chest"]
 size = Vector2(24, 24)
@@ -16,6 +20,7 @@ collision_mask = 2
 script = ExtResource("1")
 drop_table = ExtResource("2")
 open_texture = ExtResource("5")
+relic_pool = Array[Resource]([ExtResource("6"), ExtResource("7"), ExtResource("8"), ExtResource("9")])
 
 [node name="Visual" type="Sprite2D" parent="."]
 position = Vector2(0, -3)

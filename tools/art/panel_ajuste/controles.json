@@ -1,0 +1,650 @@
+{
+ "_ayuda": "Controles por slot de pieza (ver README.md). Un control aplica a cualquier personaje que tenga alguna de sus rutas; el resto se ignora.",
+ "grupos": [
+  [
+   "cuerpo",
+   "Cuerpo"
+  ],
+  [
+   "busto",
+   "Busto"
+  ],
+  [
+   "torso+piernas",
+   "Vestido y pollera"
+  ],
+  [
+   "pelo",
+   "Pelo"
+  ],
+  [
+   "ojos",
+   "Cara"
+  ],
+  [
+   "pies",
+   "Calzado"
+  ],
+  [
+   "orejas",
+   "Orejas"
+  ],
+  [
+   "cola",
+   "Cola"
+  ],
+  [
+   "cabeza",
+   "Sombrero"
+  ]
+ ],
+ "controles": [
+  {
+   "id": "cadera",
+   "nombre": "Ancho de cadera",
+   "unidad": "%",
+   "min": -30,
+   "max": 30,
+   "paso": 1,
+   "ayuda": "Qué tan ancha se ve la cadera, de frente. Mueve el cuerpo y el arranque de la pollera.",
+   "objetivos": [
+    {
+     "ruta": [
+      "cuerpo",
+      "torso_perfil",
+      [
+       0,
+       1,
+       2,
+       3,
+       4
+      ],
+      1
+     ]
+    },
+    {
+     "ruta": [
+      "partes",
+      "pollera",
+      "perfil",
+      [
+       0,
+       1,
+       2
+      ],
+      1
+     ]
+    },
+    {
+     "ruta": [
+      "partes",
+      "ruedo",
+      "perfil",
+      [
+       0,
+       1,
+       2
+      ],
+      1
+     ]
+    },
+    {
+     "ruta": [
+      "partes",
+      "pollera_perfil",
+      "perfil",
+      [
+       0,
+       1
+      ],
+      2
+     ]
+    },
+    {
+     "ruta": [
+      "partes",
+      "ruedo_perfil",
+      "perfil",
+      [
+       0,
+       1
+      ],
+      2
+     ]
+    }
+   ],
+   "slot": "cuerpo"
+  },
+  {
+   "id": "cintura",
+   "nombre": "Cintura",
+   "unidad": "%",
+   "min": -30,
+   "max": 30,
+   "paso": 1,
+   "ayuda": "Qué tan marcada o ancha es la cintura.",
+   "objetivos": [
+    {
+     "ruta": [
+      "cuerpo",
+      "torso_perfil",
+      [
+       5,
+       6,
+       7,
+       8,
+       9,
+       10
+      ],
+      [
+       1,
+       2
+      ]
+     ]
+    }
+   ],
+   "slot": "cuerpo"
+  },
+  {
+   "id": "pierna",
+   "nombre": "Grosor de pierna",
+   "unidad": "%",
+   "min": -30,
+   "max": 30,
+   "paso": 1,
+   "ayuda": "Muslo y pantorrilla.",
+   "objetivos": [
+    {
+     "ruta": [
+      "cuerpo",
+      "grosor_pierna",
+      [
+       0,
+       1,
+       2,
+       3
+      ]
+     ]
+    },
+    {
+     "ruta": [
+      "partes",
+      "muslo",
+      "radios",
+      [
+       0,
+       1,
+       2,
+       3
+      ],
+      [
+       1,
+       2
+      ]
+     ]
+    }
+   ],
+   "slot": "cuerpo"
+  },
+  {
+   "id": "busto",
+   "nombre": "Busto",
+   "unidad": "%",
+   "min": -40,
+   "max": 40,
+   "paso": 1,
+   "ayuda": "Tamaño del busto.",
+   "objetivos": [
+    {
+     "ruta": [
+      "partes",
+      "pecho",
+      "radios",
+      [
+       0,
+       1,
+       2
+      ]
+     ]
+    }
+   ],
+   "slot": "busto"
+  },
+  {
+   "id": "largo_pollera",
+   "nombre": "Largo de pollera",
+   "unidad": "px",
+   "min": -3,
+   "max": 3,
+   "paso": 0.25,
+   "ayuda": "Cuántos píxeles más larga (positivo) o más corta (negativo) llega la pollera.",
+   "objetivos": [
+    {
+     "ruta": [
+      "partes",
+      "pollera",
+      "hasta"
+     ],
+     "modo": "add",
+     "factor": -1
+    },
+    {
+     "ruta": [
+      "partes",
+      "pollera",
+      "perfil",
+      6,
+      0
+     ],
+     "modo": "add",
+     "factor": -1
+    },
+    {
+     "ruta": [
+      "partes",
+      "ruedo",
+      "desde"
+     ],
+     "modo": "add",
+     "factor": -1
+    },
+    {
+     "ruta": [
+      "partes",
+      "ruedo",
+      "hasta"
+     ],
+     "modo": "add",
+     "factor": -1
+    },
+    {
+     "ruta": [
+      "partes",
+      "ruedo",
+      "perfil",
+      6,
+      0
+     ],
+     "modo": "add",
+     "factor": -1
+    },
+    {
+     "ruta": [
+      "partes",
+      "pollera_perfil",
+      "hasta"
+     ],
+     "modo": "add",
+     "factor": -1
+    },
+    {
+     "ruta": [
+      "partes",
+      "pollera_perfil",
+      "perfil",
+      5,
+      0
+     ],
+     "modo": "add",
+     "factor": -1
+    },
+    {
+     "ruta": [
+      "partes",
+      "ruedo_perfil",
+      "desde"
+     ],
+     "modo": "add",
+     "factor": -1
+    },
+    {
+     "ruta": [
+      "partes",
+      "ruedo_perfil",
+      "hasta"
+     ],
+     "modo": "add",
+     "factor": -1
+    },
+    {
+     "ruta": [
+      "partes",
+      "ruedo_perfil",
+      "perfil",
+      5,
+      0
+     ],
+     "modo": "add",
+     "factor": -1
+    }
+   ],
+   "slot": "torso+piernas"
+  },
+  {
+   "id": "vuelo_pollera",
+   "nombre": "Vuelo de pollera",
+   "unidad": "%",
+   "min": -40,
+   "max": 40,
+   "paso": 1,
+   "ayuda": "Qué tan abierta es la campana de la pollera hacia abajo.",
+   "objetivos": [
+    {
+     "ruta": [
+      "partes",
+      "pollera",
+      "perfil",
+      [
+       3,
+       4,
+       5,
+       6
+      ],
+      [
+       1,
+       2
+      ]
+     ]
+    },
+    {
+     "ruta": [
+      "partes",
+      "ruedo",
+      "perfil",
+      [
+       3,
+       4,
+       5,
+       6
+      ],
+      [
+       1,
+       2
+      ]
+     ]
+    },
+    {
+     "ruta": [
+      "partes",
+      "pollera_perfil",
+      "perfil",
+      [
+       2,
+       3,
+       4,
+       5
+      ],
+      [
+       1,
+       2
+      ]
+     ]
+    },
+    {
+     "ruta": [
+      "partes",
+      "ruedo_perfil",
+      "perfil",
+      [
+       2,
+       3,
+       4,
+       5
+      ],
+      [
+       1,
+       2
+      ]
+     ]
+    }
+   ],
+   "slot": "torso+piernas"
+  },
+  {
+   "id": "cuello",
+   "nombre": "Cuello del vestido",
+   "unidad": "%",
+   "min": -40,
+   "max": 40,
+   "paso": 1,
+   "ayuda": "Tamaño del cuello blanco del vestido.",
+   "objetivos": [
+    {
+     "ruta": [
+      "partes",
+      "cuello",
+      "R"
+     ]
+    }
+   ],
+   "slot": "torso+piernas"
+  },
+  {
+   "id": "pelo_largo",
+   "nombre": "Largo del pelo atrás",
+   "unidad": "%",
+   "min": -40,
+   "max": 40,
+   "paso": 1,
+   "ayuda": "Cuánto cae la melena por la espalda.",
+   "objetivos": [
+    {
+     "ruta": [
+      "partes",
+      "melena",
+      "camino",
+      [
+       2,
+       3,
+       4
+      ],
+      2
+     ]
+    }
+   ],
+   "slot": "pelo"
+  },
+  {
+   "id": "pelo_volumen",
+   "nombre": "Volumen del pelo",
+   "unidad": "%",
+   "min": -30,
+   "max": 30,
+   "paso": 1,
+   "ayuda": "Qué tan voluminoso es el peinado.",
+   "objetivos": [
+    {
+     "ruta": [
+      "partes",
+      "tapa",
+      "radios",
+      [
+       0,
+       1
+      ]
+     ]
+    },
+    {
+     "ruta": [
+      "partes",
+      "melena",
+      "ancho",
+      [
+       0,
+       1,
+       2,
+       3,
+       4
+      ]
+     ]
+    }
+   ],
+   "slot": "pelo"
+  },
+  {
+   "id": "ojos_altura",
+   "nombre": "Altura de los ojos",
+   "unidad": "px",
+   "min": -2,
+   "max": 2,
+   "paso": 0.25,
+   "ayuda": "Píxeles que suben (positivo) o bajan (negativo) los ojos.",
+   "objetivos": [
+    {
+     "ruta": [
+      "ojos",
+      "z"
+     ],
+     "modo": "add",
+     "factor": 1
+    }
+   ],
+   "slot": "ojos"
+  },
+  {
+   "id": "cara_ancho",
+   "nombre": "Ancho de cara",
+   "unidad": "%",
+   "min": -20,
+   "max": 20,
+   "paso": 1,
+   "ayuda": "Qué tan ancha es la cabeza.",
+   "objetivos": [
+    {
+     "ruta": [
+      "cuerpo",
+      "cabeza",
+      "radios",
+      0
+     ]
+    }
+   ],
+   "slot": "ojos"
+  },
+  {
+   "id": "menton",
+   "nombre": "Mentón",
+   "unidad": "px",
+   "min": -4,
+   "max": 4,
+   "paso": 0.25,
+   "ayuda": "Qué tan largo o corto es el mentón.",
+   "objetivos": [
+    {
+     "ruta": [
+      "cuerpo",
+      "cabeza",
+      "menton"
+     ],
+     "modo": "add",
+     "factor": 1
+    }
+   ],
+   "slot": "ojos"
+  },
+  {
+   "id": "brazos",
+   "nombre": "Grosor de brazo",
+   "slot": "cuerpo",
+   "unidad": "%",
+   "min": -30,
+   "max": 30,
+   "paso": 1,
+   "ayuda": "Brazo y antebrazo.",
+   "objetivos": [
+    {
+     "ruta": [
+      "cuerpo",
+      "grosor_brazo",
+      [
+       0,
+       1,
+       2,
+       3
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "hombros",
+   "nombre": "Ancho de hombros",
+   "slot": "cuerpo",
+   "unidad": "%",
+   "min": -30,
+   "max": 30,
+   "paso": 1,
+   "ayuda": "Separación de los hombros.",
+   "objetivos": [
+    {
+     "ruta": [
+      "cuerpo",
+      "hombros",
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "id": "pie_largo",
+   "nombre": "Largo del pie",
+   "slot": "pies",
+   "unidad": "%",
+   "min": -30,
+   "max": 30,
+   "paso": 1,
+   "ayuda": "Qué tan largo se ve el zapato.",
+   "objetivos": [
+    {
+     "ruta": [
+      "cuerpo",
+      "pie",
+      0
+     ]
+    }
+   ]
+  }
+ ],
+ "slots": {
+  "busto": "Busto",
+  "pelo": "Peinado",
+  "orejas": "Orejas",
+  "cabeza": "Sombrero o cofia",
+  "torso+piernas": "Ropa",
+  "pies": "Calzado",
+  "cola": "Cola",
+  "ojos": "Ojos y cara",
+  "cuerpo": "Cuerpo base",
+  "manos": "Manos",
+  "arma": "Arma"
+ },
+ "tela": {
+  "_ayuda": "Partes de ropa que admiten la tela caída (check Tela junto a la pieza): su opción \"tela\" de la receta (ver tools/art/README.md). La física sale del preajuste elegido (algodón, seda, lona) y de los números crudos de Avanzado; \"partes\" dice cuáles partes simulan y a cuáles siguen (el ruedo y el delantal siguen a la pollera de su vista).",
+  "predeterminado": "algodon",
+  "preajustes": [
+   {
+    "id": "algodon",
+    "nombre": "Algodón",
+    "params": {"cuadros": 100, "rigidez": 20, "cizalla": 4, "compresion": 0.03, "flexion": 0.04, "amortiguacion": 1.5, "masa": 0.3, "distancia": 0.05, "calidad_colision": 2, "gravedad": 1.5}
+   },
+   {
+    "id": "seda",
+    "nombre": "Seda",
+    "params": {"cuadros": 120, "rigidez": 10, "cizalla": 3, "compresion": 0.01, "flexion": 0.01, "amortiguacion": 1, "masa": 0.3, "distancia": 0.05, "calidad_colision": 2, "gravedad": 1.3}
+   },
+   {
+    "id": "lona",
+    "nombre": "Lona",
+    "params": {"cuadros": 100, "rigidez": 60, "cizalla": 20, "compresion": 0.4, "flexion": 1.0, "amortiguacion": 2, "masa": 0.3, "distancia": 0.05, "calidad_colision": 2, "gravedad": 2.5}
+   }
+  ],
+  "partes": {
+   "pollera": {"fijar": "cintura"},
+   "pollera_perfil": {"fijar": "cintura"},
+   "ruedo": {"sigue": "pollera"},
+   "ruedo_perfil": {"sigue": "pollera_perfil"},
+   "delantal": {"sigue": "pollera"},
+   "delantal_perfil": {"sigue": "pollera_perfil"}
+  }
+ }
+}

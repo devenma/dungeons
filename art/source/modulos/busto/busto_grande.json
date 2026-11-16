@@ -1,0 +1,59 @@
+{
+ "pieza": {
+  "id": "busto_grande",
+  "tipo": "personalizacion",
+  "ocupa": [
+   "busto"
+  ],
+  "tags": [
+   "femenino"
+  ]
+ },
+ "partes": [
+  {
+   "tipo": "esfera",
+   "nombre": "pecho",
+   "lados": [
+    "L",
+    "R"
+   ],
+   "material": "piel",
+   "capa": "cuerpo",
+   "linea": "tronco",
+   "hueso": "chest",
+   "relativo": [
+    "chest",
+    "cola"
+   ],
+   "pos": [
+    2.5,
+    -5.2,
+    -6.0
+   ],
+   "radios": [
+    2.8,
+    3.0,
+    2.1
+   ],
+   "sesgo_sombra": [
+    {
+     "fijar": 0.3,
+     "centro": [
+      2.5,
+      -7.5,
+      -6.9
+     ],
+     "radios": [
+      3.2,
+      3.0,
+      0.9
+     ],
+     "relativo": [
+      "chest",
+      "cola"
+     ]
+    }
+   ]
+  }
+ ]
+}

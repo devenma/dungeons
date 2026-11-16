@@ -1,0 +1,360 @@
+{
+ "incluir": [
+  "../../maniqui_op15/3d/malla.json",
+  "../../modulos/busto/busto_xl.json",
+  "../../modulos/cara/op15_cara_10.json",
+  "../../modulos/peinado/op15_pelo_10.json",
+  "../../modulos/adorno_cabeza/op15_orejas_gato.json",
+  "../../modulos/sombrero/op15_cofia.json",
+  "../../modulos/ropa/op15_vestido.json",
+  "../../modulos/calzado/op15_zapatos_medias.json",
+  "../../modulos/cola/op15_cola_gato.json"
+ ],
+ "cuerpo": {
+  "plano_pierna": 0.95,
+  "grosor_pierna": [
+   3.6,
+   2.0,
+   1.1,
+   1.1
+  ]
+ },
+ "rampas": {
+  "piel": {
+   "tonos": [
+    [
+     66,
+     31,
+     29
+    ],
+    [
+     133,
+     78,
+     65
+    ],
+    [
+     183,
+     119,
+     96
+    ],
+    [
+     216,
+     150,
+     124
+    ],
+    [
+     250,
+     207,
+     180
+    ]
+   ]
+  },
+  "piel_pierna": {
+   "tonos": [
+    [
+     66,
+     31,
+     29
+    ],
+    [
+     133,
+     78,
+     65
+    ],
+    [
+     183,
+     119,
+     96
+    ],
+    [
+     216,
+     150,
+     124
+    ],
+    [
+     250,
+     207,
+     180
+    ]
+   ]
+  },
+  "cara": {
+   "tonos": [
+    [
+     66,
+     31,
+     29
+    ],
+    [
+     133,
+     78,
+     65
+    ],
+    [
+     183,
+     119,
+     96
+    ],
+    [
+     216,
+     150,
+     124
+    ],
+    [
+     250,
+     207,
+     180
+    ]
+   ],
+   "umbrales": [
+    0.0001,
+    0.0002,
+    0.22,
+    0.42
+   ],
+   "plano": true
+  }
+ },
+ "borde_piel": {
+  "partes": [
+   "cabeza",
+   "oreja_L",
+   "oreja_R",
+   "nariz"
+  ],
+  "sin": [
+   "cuerpo"
+  ],
+  "rampa": "cara"
+ },
+ "sombra_ojos": {
+  "filas": 2,
+  "factor": 0.75
+ },
+ "sombras_2d": [
+  {
+   "de": [
+    "cabeza"
+   ],
+   "sobre": [
+    "cuerpo"
+   ],
+   "filas": 3,
+   "color": [
+    46,
+    20,
+    24
+   ]
+  }
+ ],
+ "partes": [
+  {
+   "nombre": "muslo",
+   "radios": [
+    [
+     0.1,
+     3.5,
+     2.92
+    ],
+    [
+     0.5,
+     3.4,
+     2.84
+    ],
+    [
+     0.78,
+     2.9,
+     2.49
+    ],
+    [
+     1.0,
+     2.0,
+     1.98
+    ]
+   ]
+  },
+  {
+   "nombre": "cabeza",
+   "material": "cara"
+  },
+  {
+   "nombre": "cabeza_sn",
+   "material": "cara"
+  },
+  {
+   "nombre": "oreja",
+   "material": "cara"
+  },
+  {
+   "nombre": "nariz",
+   "material": "cara"
+  },
+  {
+   "nombre": "cuello",
+   "quitar": true
+  },
+  {
+   "nombre": "oreja",
+   "quitar": true
+  },
+  {
+   "nombre": "cofia_banda",
+   "craneo": [
+    8.5,
+    8.5,
+    9.0,
+    8.0,
+    10.8
+   ]
+  },
+  {
+   "nombre": "cofia_volado",
+   "craneo": [
+    8.5,
+    8.5,
+    9.0,
+    8.0,
+    10.8
+   ]
+  },
+  {
+   "nombre": "cofia_banda_norte",
+   "craneo": [
+    8.5,
+    8.5,
+    9.0,
+    8.0,
+    10.8
+   ]
+  },
+  {
+   "nombre": "cofia_volado_norte",
+   "craneo": [
+    8.5,
+    8.5,
+    9.0,
+    8.0,
+    10.8
+   ]
+  },
+  {
+   "nombre": "cofia_banda_perfil",
+   "craneo": [
+    8.5,
+    8.5,
+    9.0,
+    8.0,
+    10.8
+   ]
+  },
+  {
+   "nombre": "cofia_volado_perfil",
+   "craneo": [
+    8.5,
+    8.5,
+    9.0,
+    8.0,
+    10.8
+   ]
+  },
+  {
+   "nombre": "oreja_gato",
+   "craneo": [
+    8.5,
+    8.5,
+    9.0,
+    8.0,
+    10.8
+   ]
+  },
+  {
+   "nombre": "oreja_gato_dentro",
+   "craneo": [
+    8.5,
+    8.5,
+    9.0,
+    8.0,
+    10.8
+   ]
+  },
+  {
+   "nombre": "oreja_gato_perfil",
+   "craneo": [
+    8.5,
+    8.5,
+    9.0,
+    8.0,
+    10.8
+   ]
+  },
+  {
+   "nombre": "oreja_gato_dentro_perfil",
+   "craneo": [
+    8.5,
+    8.5,
+    9.0,
+    8.0,
+    10.8
+   ]
+  },
+  {
+   "nombre": "lazo",
+   "pos": [
+    2.0,
+    -4.9,
+    1.0
+   ],
+   "radios": [
+    2.2,
+    0.7,
+    1.8
+   ]
+  },
+  {
+   "nombre": "nudo",
+   "pos": [
+    0,
+    -5.5,
+    0.8
+   ],
+   "radios": [
+    0.9,
+    0.6,
+    1.1
+   ]
+  },
+  {
+   "nombre": "cabeza_sn",
+   "cuadrar_arriba": 3.0,
+   "radios": [
+    9.5,
+    9.5,
+    8.7
+   ],
+   "cuadrar_abajo": 5.0,
+   "mandibula": 0.12
+  },
+  {
+   "nombre": "cabeza",
+   "radios": [
+    9.5,
+    9.5,
+    10.7
+   ],
+   "material": "piel"
+  },
+  {
+   "nombre": "oreja",
+   "pos": [
+    9.6,
+    -0.5,
+    -4.8
+   ],
+   "radios": [
+    1.6,
+    1.0,
+    2.6
+   ]
+  }
+ ]
+}

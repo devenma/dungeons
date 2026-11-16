@@ -1,0 +1,567 @@
+{
+ "especies": {
+  "pasto_alto": {
+   "png": "flora_pasto_alto.png",
+   "celda": [
+    32,
+    32
+   ],
+   "pivote": [
+    16,
+    28
+   ],
+   "variantes": 6,
+   "cuadros": 4,
+   "duraciones_ms": [
+    420,
+    240,
+    300,
+    240
+   ],
+   "densidad": 0.35,
+   "hornear": false,
+   "distancia_px": 13,
+   "viento_px": [
+    [
+     13,
+     43,
+     43,
+     13
+    ],
+    [
+     15,
+     36,
+     36,
+     15
+    ],
+    [
+     27,
+     36,
+     36,
+     27
+    ],
+    [
+     22,
+     24,
+     24,
+     22
+    ],
+    [
+     21,
+     32,
+     32,
+     21
+    ],
+    [
+     14,
+     40,
+     40,
+     14
+    ]
+   ]
+  },
+  "junco": {
+   "png": "flora_junco.png",
+   "celda": [
+    48,
+    48
+   ],
+   "pivote": [
+    24,
+    44
+   ],
+   "variantes": 3,
+   "cuadros": 4,
+   "duraciones_ms": [
+    420,
+    240,
+    300,
+    240
+   ],
+   "densidad": 0.04,
+   "hornear": false,
+   "distancia_px": 13,
+   "viento_px": [
+    [
+     51,
+     56,
+     56,
+     51
+    ],
+    [
+     33,
+     42,
+     42,
+     33
+    ],
+    [
+     41,
+     39,
+     39,
+     41
+    ]
+   ]
+  },
+  "arbusto": {
+   "png": "flora_arbusto.png",
+   "celda": [
+    32,
+    32
+   ],
+   "pivote": [
+    16,
+    28
+   ],
+   "variantes": 3,
+   "cuadros": 4,
+   "duraciones_ms": [
+    420,
+    240,
+    300,
+    240
+   ],
+   "densidad": 0.05,
+   "hornear": false,
+   "distancia_px": 20,
+   "viento_px": [
+    [
+     33,
+     28,
+     28,
+     33
+    ],
+    [
+     29,
+     40,
+     40,
+     29
+    ],
+    [
+     37,
+     35,
+     35,
+     37
+    ]
+   ]
+  },
+  "trebol": {
+   "png": "flora_trebol.png",
+   "celda": [
+    32,
+    32
+   ],
+   "pivote": [
+    16,
+    28
+   ],
+   "variantes": 3,
+   "cuadros": 4,
+   "duraciones_ms": [
+    420,
+    240,
+    300,
+    240
+   ],
+   "densidad": 0.15,
+   "hornear": false,
+   "distancia_px": 11,
+   "viento_px": [
+    [
+     16,
+     24,
+     24,
+     16
+    ],
+    [
+     11,
+     20,
+     20,
+     11
+    ],
+    [
+     11,
+     25,
+     25,
+     11
+    ]
+   ]
+  },
+  "pasto_medio": {
+   "png": "flora_pasto_medio.png",
+   "celda": [
+    32,
+    32
+   ],
+   "pivote": [
+    16,
+    28
+   ],
+   "variantes": 6,
+   "cuadros": 4,
+   "duraciones_ms": [
+    420,
+    240,
+    300,
+    240
+   ],
+   "densidad": 1.6,
+   "hornear": false,
+   "distancia_px": 10,
+   "viento_px": [
+    [
+     15,
+     10,
+     10,
+     15
+    ],
+    [
+     11,
+     12,
+     12,
+     11
+    ],
+    [
+     11,
+     16,
+     16,
+     11
+    ],
+    [
+     8,
+     13,
+     13,
+     8
+    ],
+    [
+     15,
+     15,
+     15,
+     15
+    ],
+    [
+     15,
+     10,
+     10,
+     15
+    ]
+   ]
+  },
+  "pasto_corto": {
+   "png": "flora_pasto_corto.png",
+   "celda": [
+    16,
+    16
+   ],
+   "pivote": [
+    8,
+    12
+   ],
+   "variantes": 8,
+   "cuadros": 4,
+   "duraciones_ms": [
+    420,
+    240,
+    300,
+    240
+   ],
+   "densidad": 10,
+   "hornear": false,
+   "distancia_px": 7,
+   "viento_px": [
+    [
+     12,
+     0,
+     12,
+     0
+    ],
+    [
+     16,
+     0,
+     16,
+     0
+    ],
+    [
+     6,
+     0,
+     6,
+     0
+    ],
+    [
+     16,
+     0,
+     16,
+     0
+    ],
+    [
+     12,
+     0,
+     12,
+     0
+    ],
+    [
+     15,
+     0,
+     15,
+     0
+    ],
+    [
+     9,
+     0,
+     9,
+     0
+    ],
+    [
+     8,
+     0,
+     8,
+     0
+    ]
+   ]
+  }
+ },
+ "atlas": {
+  "png": "flora_atlas.png",
+  "celda": 48,
+  "cuadros": 4,
+  "duraciones_ms": [
+   420,
+   240,
+   300,
+   240
+  ],
+  "filas": [
+   {
+    "especie": "arbusto",
+    "variante": 0,
+    "pivote": [
+     24,
+     44
+    ]
+   },
+   {
+    "especie": "arbusto",
+    "variante": 1,
+    "pivote": [
+     24,
+     44
+    ]
+   },
+   {
+    "especie": "arbusto",
+    "variante": 2,
+    "pivote": [
+     24,
+     44
+    ]
+   },
+   {
+    "especie": "junco",
+    "variante": 0,
+    "pivote": [
+     24,
+     44
+    ]
+   },
+   {
+    "especie": "junco",
+    "variante": 1,
+    "pivote": [
+     24,
+     44
+    ]
+   },
+   {
+    "especie": "junco",
+    "variante": 2,
+    "pivote": [
+     24,
+     44
+    ]
+   },
+   {
+    "especie": "pasto_alto",
+    "variante": 0,
+    "pivote": [
+     24,
+     44
+    ]
+   },
+   {
+    "especie": "pasto_alto",
+    "variante": 1,
+    "pivote": [
+     24,
+     44
+    ]
+   },
+   {
+    "especie": "pasto_alto",
+    "variante": 2,
+    "pivote": [
+     24,
+     44
+    ]
+   },
+   {
+    "especie": "pasto_alto",
+    "variante": 3,
+    "pivote": [
+     24,
+     44
+    ]
+   },
+   {
+    "especie": "pasto_alto",
+    "variante": 4,
+    "pivote": [
+     24,
+     44
+    ]
+   },
+   {
+    "especie": "pasto_alto",
+    "variante": 5,
+    "pivote": [
+     24,
+     44
+    ]
+   },
+   {
+    "especie": "pasto_corto",
+    "variante": 0,
+    "pivote": [
+     24,
+     44
+    ]
+   },
+   {
+    "especie": "pasto_corto",
+    "variante": 1,
+    "pivote": [
+     24,
+     44
+    ]
+   },
+   {
+    "especie": "pasto_corto",
+    "variante": 2,
+    "pivote": [
+     24,
+     44
+    ]
+   },
+   {
+    "especie": "pasto_corto",
+    "variante": 3,
+    "pivote": [
+     24,
+     44
+    ]
+   },
+   {
+    "especie": "pasto_corto",
+    "variante": 4,
+    "pivote": [
+     24,
+     44
+    ]
+   },
+   {
+    "especie": "pasto_corto",
+    "variante": 5,
+    "pivote": [
+     24,
+     44
+    ]
+   },
+   {
+    "especie": "pasto_corto",
+    "variante": 6,
+    "pivote": [
+     24,
+     44
+    ]
+   },
+   {
+    "especie": "pasto_corto",
+    "variante": 7,
+    "pivote": [
+     24,
+     44
+    ]
+   },
+   {
+    "especie": "pasto_medio",
+    "variante": 0,
+    "pivote": [
+     24,
+     44
+    ]
+   },
+   {
+    "especie": "pasto_medio",
+    "variante": 1,
+    "pivote": [
+     24,
+     44
+    ]
+   },
+   {
+    "especie": "pasto_medio",
+    "variante": 2,
+    "pivote": [
+     24,
+     44
+    ]
+   },
+   {
+    "especie": "pasto_medio",
+    "variante": 3,
+    "pivote": [
+     24,
+     44
+    ]
+   },
+   {
+    "especie": "pasto_medio",
+    "variante": 4,
+    "pivote": [
+     24,
+     44
+    ]
+   },
+   {
+    "especie": "pasto_medio",
+    "variante": 5,
+    "pivote": [
+     24,
+     44
+    ]
+   },
+   {
+    "especie": "trebol",
+    "variante": 0,
+    "pivote": [
+     24,
+     44
+    ]
+   },
+   {
+    "especie": "trebol",
+    "variante": 1,
+    "pivote": [
+     24,
+     44
+    ]
+   },
+   {
+    "especie": "trebol",
+    "variante": 2,
+    "pivote": [
+     24,
+     44
+    ]
+   }
+  ]
+ }
+}

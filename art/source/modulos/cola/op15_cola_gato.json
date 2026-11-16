@@ -1,0 +1,276 @@
+{
+ "pieza": {
+  "id": "op15_cola_gato",
+  "tipo": "cosmetico",
+  "ocupa": [
+   "cola"
+  ],
+  "tags": [
+   "gato",
+   "op15"
+  ]
+ },
+ "_nota": "Cola de gato: cadena tail_1..4 colgando de hips, base bajo el lazo del delantal; sube en S hacia la izquierda del personaje (+X) y hacia atrás. Medida sobre el cuerpo op15 (cintura z 28). Colores de op15_orejas_gato. Asimétrica: queda fuera del espejo del ciclo (espejar_sin). Resortes: vaivén con atraso respecto de la cadera, un cuadro más por segmento.",
+ "rampas": {
+  "cola_gato": {
+   "tonos": [
+    [
+     38,
+     38,
+     60
+    ],
+    [
+     66,
+     65,
+     88
+    ],
+    [
+     107,
+     108,
+     133
+    ]
+   ],
+   "umbrales": [
+    0.0001,
+    0.12
+   ]
+  }
+ },
+ "huesos": {
+  "tail_1": {
+   "cabeza": [
+    0.4,
+    6.0,
+    25.2
+   ],
+   "cola": [
+    3.4,
+    12.4,
+    22.2
+   ],
+   "padre": "hips",
+   "tipo": "colgante"
+  },
+  "tail_2": {
+   "cabeza": [
+    3.4,
+    12.4,
+    22.2
+   ],
+   "cola": [
+    8.5,
+    15.0,
+    25.0
+   ],
+   "padre": "tail_1",
+   "tipo": "colgante"
+  },
+  "tail_3": {
+   "cabeza": [
+    8.5,
+    15.0,
+    25.0
+   ],
+   "cola": [
+    12.3,
+    16.5,
+    30.5
+   ],
+   "padre": "tail_2",
+   "tipo": "colgante"
+  },
+  "tail_4": {
+   "cabeza": [
+    12.3,
+    16.5,
+    30.5
+   ],
+   "cola": [
+    15.5,
+    18.3,
+    33.5
+   ],
+   "padre": "tail_3",
+   "tipo": "colgante"
+  }
+ },
+ "partes": [
+  {
+   "tipo": "tubo",
+   "nombre": "cola_1",
+   "hueso": "tail_1",
+   "material": "cola_gato",
+   "capa": "pelo",
+   "linea": "cola",
+   "radios": [
+    [
+     0.0,
+     1.3
+    ],
+    [
+     1.0,
+     1.3
+    ]
+   ],
+   "tapas": [
+    1.0,
+    1.0
+   ],
+   "seg": 10
+  },
+  {
+   "tipo": "tubo",
+   "nombre": "cola_2",
+   "hueso": "tail_2",
+   "material": "cola_gato",
+   "capa": "pelo",
+   "linea": "cola",
+   "radios": [
+    [
+     0.0,
+     1.3
+    ],
+    [
+     1.0,
+     1.3
+    ]
+   ],
+   "tapas": [
+    1.0,
+    1.0
+   ],
+   "seg": 10,
+   "mezcla": [
+    "tail_1",
+    0.25
+   ]
+  },
+  {
+   "tipo": "tubo",
+   "nombre": "cola_3",
+   "hueso": "tail_3",
+   "material": "cola_gato",
+   "capa": "pelo",
+   "linea": "cola",
+   "radios": [
+    [
+     0.0,
+     1.3
+    ],
+    [
+     1.0,
+     1.3
+    ]
+   ],
+   "tapas": [
+    1.0,
+    1.0
+   ],
+   "seg": 10,
+   "mezcla": [
+    "tail_2",
+    0.25
+   ]
+  },
+  {
+   "tipo": "tubo",
+   "nombre": "cola_4",
+   "hueso": "tail_4",
+   "material": "cola_gato",
+   "capa": "pelo",
+   "linea": "cola",
+   "radios": [
+    [
+     0.0,
+     1.3
+    ],
+    [
+     1.0,
+     1.3
+    ]
+   ],
+   "tapas": [
+    1.0,
+    1.0
+   ],
+   "seg": 10,
+   "mezcla": [
+    "tail_3",
+    0.25
+   ]
+  }
+ ],
+ "espejar_sin": [
+  "cola_"
+ ],
+ "resortes": {
+  "pose.tail_1.lado": {
+   "impulsado_por": {
+    "pose.hips.girar": 3.2
+   },
+   "rigidez": 160,
+   "amortiguacion": 0.35,
+   "retraso": 0
+  },
+  "pose.tail_1.adelante": {
+   "impulsado_por": {
+    "pose.hips.girar": 2.4,
+    "cadera.subir": -3.0
+   },
+   "rigidez": 160,
+   "amortiguacion": 0.35,
+   "retraso": 0
+  },
+  "pose.tail_2.lado": {
+   "impulsado_por": {
+    "pose.hips.girar": 2.88
+   },
+   "rigidez": 160,
+   "amortiguacion": 0.35,
+   "retraso": 1
+  },
+  "pose.tail_2.adelante": {
+   "impulsado_por": {
+    "pose.hips.girar": 2.16,
+    "cadera.subir": -2.7
+   },
+   "rigidez": 160,
+   "amortiguacion": 0.35,
+   "retraso": 1
+  },
+  "pose.tail_3.lado": {
+   "impulsado_por": {
+    "pose.hips.girar": 2.56
+   },
+   "rigidez": 160,
+   "amortiguacion": 0.35,
+   "retraso": 2
+  },
+  "pose.tail_3.adelante": {
+   "impulsado_por": {
+    "pose.hips.girar": 1.92,
+    "cadera.subir": -2.4
+   },
+   "rigidez": 160,
+   "amortiguacion": 0.35,
+   "retraso": 2
+  },
+  "pose.tail_4.lado": {
+   "impulsado_por": {
+    "pose.hips.girar": 2.24
+   },
+   "rigidez": 160,
+   "amortiguacion": 0.35,
+   "retraso": 3
+  },
+  "pose.tail_4.adelante": {
+   "impulsado_por": {
+    "pose.hips.girar": 1.68,
+    "cadera.subir": -2.1
+   },
+   "rigidez": 160,
+   "amortiguacion": 0.35,
+   "retraso": 3
+  }
+ }
+}

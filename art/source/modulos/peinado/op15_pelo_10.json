@@ -1,0 +1,1008 @@
+{
+ "pieza": {
+  "id": "op15_pelo_10",
+  "tipo": "personalizacion",
+  "ocupa": [
+   "pelo"
+  ],
+  "tags": [
+   "corto",
+   "op15"
+  ]
+ },
+ "craneo": [
+  8.5,
+  8.5,
+  9.0,
+  6.0,
+  10.8
+ ],
+ "rampas": {
+  "pelo": {
+   "tonos": [
+    [
+     66,
+     31,
+     29
+    ],
+    [
+     118,
+     24,
+     68
+    ],
+    [
+     166,
+     33,
+     63
+    ],
+    [
+     206,
+     55,
+     69
+    ]
+   ],
+   "umbrales": [
+    0.0001,
+    0.5,
+    0.85
+   ],
+   "ambiente": 0.15
+  }
+ },
+ "cuerpo": {
+  "pelo": [
+   3,
+   10,
+   0
+  ],
+  "mechones": [
+   8.8,
+   0.0,
+   8,
+   -2
+  ]
+ },
+ "partes": [
+  {
+   "tipo": "pelo",
+   "nombre": "tapa",
+   "material": "pelo",
+   "capa": "pelo",
+   "linea": "cabeza",
+   "compensar": false,
+   "campana": 0.0,
+   "cierre": 0.15,
+   "abierto": 20,
+   "mechas": 0,
+   "radios": [
+    11.2,
+    8.8,
+    6.15
+   ],
+   "fondo": 9.6,
+   "bajo": 5.0,
+   "bajo_atras": 8.6,
+   "cara": [
+    5.0,
+    5.5
+   ],
+   "flequillo": -1.7,
+   "cuadrar": 2.0,
+   "cortina": 0.6,
+   "sien": 2.0,
+   "menton": 3.6,
+   "sesgo_sombra": [
+    {
+     "nota": "masa: tono medio",
+     "fijar": 0.6,
+     "caja": true,
+     "relativo": "cabeza",
+     "centro": [
+      0,
+      0,
+      0
+     ],
+     "radios": [
+      16,
+      16,
+      20
+     ]
+    },
+    {
+     "nota": "banda de brillo",
+     "fijar": 0.95,
+     "caja": true,
+     "relativo": "cabeza",
+     "centro": [
+      0,
+      0,
+      3.4
+     ],
+     "radios": [
+      16,
+      16,
+      0.9
+     ]
+    },
+    {
+     "nota": "sombra de abajo",
+     "fijar": 0.3,
+     "caja": true,
+     "relativo": "cabeza",
+     "centro": [
+      0,
+      0,
+      -11.0
+     ],
+     "radios": [
+      16,
+      16,
+      3.4
+     ]
+    }
+   ],
+   "tono_linea": 1,
+   "solo_en": [
+    "south",
+    "north"
+   ]
+  },
+  {
+   "tipo": "tarjeta",
+   "nombre": "flequillo",
+   "material": "pelo",
+   "capa": "pelo",
+   "linea": "cabeza",
+   "hueso": "neck",
+   "camino": [
+    [
+     0,
+     -5.4,
+     4.6
+    ],
+    [
+     0,
+     -9.2,
+     3.0
+    ],
+    [
+     0,
+     -10.0,
+     1.4
+    ],
+    [
+     0,
+     -10.0,
+     0.2
+    ]
+   ],
+   "ancho": [
+    8.4,
+    9.8,
+    10.0,
+    9.6
+   ],
+   "curva": [
+    0.0,
+    -3.6,
+    -6.4,
+    -6.4
+   ],
+   "grosor": 1.2,
+   "nv": 20,
+   "puntas": [
+    1.3,
+    -1.0,
+    1.0,
+    -1.5,
+    1.0,
+    -1.0,
+    1.3
+   ],
+   "sesgo_sombra": [
+    {
+     "nota": "masa: tono medio",
+     "fijar": 0.6,
+     "caja": true,
+     "relativo": "cabeza",
+     "centro": [
+      0,
+      0,
+      0
+     ],
+     "radios": [
+      16,
+      16,
+      20
+     ]
+    },
+    {
+     "nota": "banda de brillo",
+     "fijar": 0.95,
+     "caja": true,
+     "relativo": "cabeza",
+     "centro": [
+      0,
+      0,
+      3.4
+     ],
+     "radios": [
+      16,
+      16,
+      0.9
+     ]
+    },
+    {
+     "nota": "sombra de abajo",
+     "fijar": 0.3,
+     "caja": true,
+     "relativo": "cabeza",
+     "centro": [
+      0,
+      0,
+      -11.0
+     ],
+     "radios": [
+      16,
+      16,
+      3.4
+     ]
+    },
+    {
+     "nota": "linea de mechon",
+     "fijar": 0.12,
+     "caja": true,
+     "relativo": "cabeza",
+     "centro": [
+      -7,
+      0,
+      0.4
+     ],
+     "radios": [
+      0.3,
+      16,
+      3.2
+     ]
+    },
+    {
+     "nota": "linea de mechon",
+     "fijar": 0.12,
+     "caja": true,
+     "relativo": "cabeza",
+     "centro": [
+      -3.5,
+      0,
+      0.4
+     ],
+     "radios": [
+      0.3,
+      16,
+      3.2
+     ]
+    },
+    {
+     "nota": "linea de mechon",
+     "fijar": 0.12,
+     "caja": true,
+     "relativo": "cabeza",
+     "centro": [
+      0,
+      0,
+      0.4
+     ],
+     "radios": [
+      0.3,
+      16,
+      3.2
+     ]
+    },
+    {
+     "nota": "linea de mechon",
+     "fijar": 0.12,
+     "caja": true,
+     "relativo": "cabeza",
+     "centro": [
+      3.5,
+      0,
+      0.4
+     ],
+     "radios": [
+      0.3,
+      16,
+      3.2
+     ]
+    },
+    {
+     "nota": "linea de mechon",
+     "fijar": 0.12,
+     "caja": true,
+     "relativo": "cabeza",
+     "centro": [
+      7,
+      0,
+      0.4
+     ],
+     "radios": [
+      0.3,
+      16,
+      3.2
+     ]
+    }
+   ],
+   "tono_linea": 1,
+   "curvo": 0.12,
+   "solo_en": [
+    "south",
+    "north"
+   ],
+   "mechas": [
+    -0.75,
+    -0.4,
+    -0.1,
+    0.2,
+    0.55,
+    0.85
+   ],
+   "mechas_desde": 0.25
+  },
+  {
+   "tipo": "tarjeta",
+   "nombre": "cortina",
+   "lados": [
+    "L",
+    "R"
+   ],
+   "material": "pelo",
+   "capa": "pelo",
+   "linea": "cortina_<lado>",
+   "hueso": "lock_<lado>",
+   "rigido": 0.25,
+   "camino": [
+    [
+     7.9,
+     -4.2,
+     0.5
+    ],
+    [
+     8.3,
+     -4.6,
+     -3.5
+    ],
+    [
+     7.0,
+     -5.4,
+     -6.6
+    ],
+    [
+     5.6,
+     -5.8,
+     -9.0
+    ]
+   ],
+   "ancho": [
+    2.6,
+    3.0,
+    3.6,
+    3.4
+   ],
+   "lado_eje": [
+    0.6,
+    1,
+    0
+   ],
+   "curva": 0.0,
+   "grosor": 1.2,
+   "nv": 6,
+   "puntas": [
+    0.6,
+    -0.4,
+    0.8
+   ],
+   "sesgo_sombra": [
+    {
+     "nota": "masa: tono medio",
+     "fijar": 0.6,
+     "caja": true,
+     "relativo": "cabeza",
+     "centro": [
+      0,
+      0,
+      0
+     ],
+     "radios": [
+      16,
+      16,
+      20
+     ]
+    },
+    {
+     "nota": "banda de brillo",
+     "fijar": 0.95,
+     "caja": true,
+     "relativo": "cabeza",
+     "centro": [
+      0,
+      0,
+      3.4
+     ],
+     "radios": [
+      16,
+      16,
+      0.9
+     ]
+    },
+    {
+     "nota": "sombra de abajo",
+     "fijar": 0.3,
+     "caja": true,
+     "relativo": "cabeza",
+     "centro": [
+      0,
+      0,
+      -11.0
+     ],
+     "radios": [
+      16,
+      16,
+      3.4
+     ]
+    }
+   ],
+   "tono_linea": 1,
+   "solo_en": [
+    "south",
+    "north"
+   ]
+  },
+  {
+   "tipo": "tarjeta",
+   "nombre": "cortina_perfil",
+   "lados": [
+    "L",
+    "R"
+   ],
+   "material": "pelo",
+   "capa": "pelo",
+   "linea": "cortina_<lado>",
+   "hueso": "lock_<lado>",
+   "rigido": 0.25,
+   "camino": [
+    [
+     8.6,
+     0.6,
+     1.0
+    ],
+    [
+     9.2,
+     0.6,
+     -2.5
+    ],
+    [
+     9.3,
+     0.4,
+     -5.5
+    ],
+    [
+     8.8,
+     0.2,
+     -8.2
+    ]
+   ],
+   "ancho": [
+    1.2,
+    1.4,
+    1.3,
+    0.9
+   ],
+   "lado_eje": [
+    0.25,
+    1,
+    0
+   ],
+   "curva": 0.0,
+   "grosor": 1.2,
+   "nv": 6,
+   "puntas": [
+    0.0
+   ],
+   "sesgo_sombra": [
+    {
+     "nota": "masa: tono medio",
+     "fijar": 0.6,
+     "caja": true,
+     "relativo": "cabeza",
+     "centro": [
+      0,
+      0,
+      0
+     ],
+     "radios": [
+      16,
+      16,
+      20
+     ]
+    },
+    {
+     "nota": "banda de brillo",
+     "fijar": 0.95,
+     "caja": true,
+     "relativo": "cabeza",
+     "centro": [
+      0,
+      0,
+      3.4
+     ],
+     "radios": [
+      16,
+      16,
+      0.9
+     ]
+    },
+    {
+     "nota": "sombra de abajo",
+     "fijar": 0.3,
+     "caja": true,
+     "relativo": "cabeza",
+     "centro": [
+      0,
+      0,
+      -11.0
+     ],
+     "radios": [
+      16,
+      16,
+      3.4
+     ]
+    }
+   ],
+   "tono_linea": 1,
+   "solo_en": [
+    "east",
+    "west"
+   ]
+  },
+  {
+   "tipo": "tarjeta",
+   "nombre": "melena",
+   "material": "pelo",
+   "capa": "pelo",
+   "linea": "cabeza",
+   "hueso": "hair",
+   "camino": [
+    [
+     0,
+     5.4,
+     3.0
+    ],
+    [
+     0,
+     6.6,
+     1.0
+    ],
+    [
+     0,
+     7.8,
+     -2.5
+    ],
+    [
+     0,
+     8.8,
+     -6.5
+    ],
+    [
+     0,
+     8.8,
+     -9.4
+    ]
+   ],
+   "ancho": [
+    6.0,
+    7.2,
+    8.0,
+    9.0,
+    9.6
+   ],
+   "curva": [
+    4.5,
+    5.4,
+    6.0,
+    4.0,
+    1.5
+   ],
+   "grosor": 2.0,
+   "nv": 24,
+   "puntas": [
+    0.2,
+    0.0,
+    0.3,
+    0.0,
+    0.3,
+    0.0,
+    0.2
+   ],
+   "rigido": 0.35,
+   "curvo": 0,
+   "sesgo_sombra": [
+    {
+     "nota": "masa: tono medio",
+     "fijar": 0.6,
+     "caja": true,
+     "relativo": "cabeza",
+     "centro": [
+      0,
+      0,
+      0
+     ],
+     "radios": [
+      16,
+      16,
+      20
+     ]
+    },
+    {
+     "nota": "banda de brillo",
+     "fijar": 0.95,
+     "caja": true,
+     "relativo": "cabeza",
+     "centro": [
+      0,
+      0,
+      3.4
+     ],
+     "radios": [
+      16,
+      16,
+      0.9
+     ]
+    },
+    {
+     "nota": "sombra de abajo",
+     "fijar": 0.3,
+     "caja": true,
+     "relativo": "cabeza",
+     "centro": [
+      0,
+      0,
+      -11.0
+     ],
+     "radios": [
+      16,
+      16,
+      3.4
+     ]
+    },
+    {
+     "nota": "linea de mechon",
+     "fijar": 0.12,
+     "caja": true,
+     "relativo": "cabeza",
+     "centro": [
+      -6.8,
+      0,
+      -3.5
+     ],
+     "radios": [
+      0.3,
+      16,
+      5.5
+     ]
+    },
+    {
+     "nota": "linea de mechon",
+     "fijar": 0.12,
+     "caja": true,
+     "relativo": "cabeza",
+     "centro": [
+      -4.4,
+      0,
+      -3.5
+     ],
+     "radios": [
+      0.3,
+      16,
+      5.5
+     ]
+    },
+    {
+     "nota": "linea de mechon",
+     "fijar": 0.12,
+     "caja": true,
+     "relativo": "cabeza",
+     "centro": [
+      -2.2,
+      0,
+      -3.5
+     ],
+     "radios": [
+      0.3,
+      16,
+      5.5
+     ]
+    },
+    {
+     "nota": "linea de mechon",
+     "fijar": 0.12,
+     "caja": true,
+     "relativo": "cabeza",
+     "centro": [
+      2.2,
+      0,
+      -3.5
+     ],
+     "radios": [
+      0.3,
+      16,
+      5.5
+     ]
+    },
+    {
+     "nota": "linea de mechon",
+     "fijar": 0.12,
+     "caja": true,
+     "relativo": "cabeza",
+     "centro": [
+      4.4,
+      0,
+      -3.5
+     ],
+     "radios": [
+      0.3,
+      16,
+      5.5
+     ]
+    },
+    {
+     "nota": "linea de mechon",
+     "fijar": 0.12,
+     "caja": true,
+     "relativo": "cabeza",
+     "centro": [
+      6.8,
+      0,
+      -3.5
+     ],
+     "radios": [
+      0.3,
+      16,
+      5.5
+     ]
+    }
+   ],
+   "tono_linea": 1,
+   "mechas": [
+    -0.8,
+    -0.5,
+    -0.2,
+    0.2,
+    0.5,
+    0.8
+   ],
+   "mechas_desde": 0.3
+  },
+  {
+   "tipo": "pelo",
+   "nombre": "tapa_perfil",
+   "material": "pelo",
+   "capa": "pelo",
+   "linea": "cabeza",
+   "compensar": false,
+   "campana": 0.0,
+   "cierre": 0.15,
+   "abierto": 20,
+   "mechas": 0,
+   "radios": [
+    9.6,
+    8.0,
+    6.1
+   ],
+   "fondo": 9.0,
+   "bajo": 5.0,
+   "bajo_atras": 7.4,
+   "cara": [
+    5.0,
+    5.5
+   ],
+   "flequillo": -1.7,
+   "cuadrar": 2.0,
+   "cortina": 0.6,
+   "sien": 2.0,
+   "menton": 3.6,
+   "sesgo_sombra": [
+    {
+     "nota": "masa: tono medio",
+     "fijar": 0.6,
+     "caja": true,
+     "relativo": "cabeza",
+     "centro": [
+      0,
+      0,
+      0
+     ],
+     "radios": [
+      16,
+      16,
+      20
+     ]
+    },
+    {
+     "nota": "banda de brillo",
+     "fijar": 0.95,
+     "caja": true,
+     "relativo": "cabeza",
+     "centro": [
+      0,
+      0,
+      3.4
+     ],
+     "radios": [
+      16,
+      16,
+      0.9
+     ]
+    },
+    {
+     "nota": "sombra de abajo",
+     "fijar": 0.3,
+     "caja": true,
+     "relativo": "cabeza",
+     "centro": [
+      0,
+      0,
+      -11.0
+     ],
+     "radios": [
+      16,
+      16,
+      3.4
+     ]
+    }
+   ],
+   "tono_linea": 1,
+   "solo_en": [
+    "east",
+    "west"
+   ]
+  },
+  {
+   "tipo": "tarjeta",
+   "nombre": "flequillo_perfil",
+   "material": "pelo",
+   "capa": "pelo",
+   "linea": "cabeza",
+   "hueso": "neck",
+   "camino": [
+    [
+     0,
+     -5.0,
+     4.6
+    ],
+    [
+     0,
+     -9.2,
+     3.9
+    ],
+    [
+     0,
+     -10.2,
+     3.2
+    ],
+    [
+     0,
+     -10.2,
+     2.7
+    ]
+   ],
+   "ancho": [
+    8.4,
+    9.8,
+    10.0,
+    9.6
+   ],
+   "curva": [
+    0.0,
+    -3.6,
+    -6.4,
+    -6.4
+   ],
+   "grosor": 1.2,
+   "nv": 20,
+   "puntas": [
+    0.9,
+    -0.7,
+    0.6,
+    -1.1,
+    0.6,
+    -0.7,
+    0.9
+   ],
+   "tono_linea": 1,
+   "curvo": 0.1,
+   "solo_en": [
+    "east",
+    "west"
+   ]
+  },
+  {
+   "tipo": "esfera",
+   "nombre": "rizo",
+   "lados": [
+    "L",
+    "R"
+   ],
+   "material": "pelo",
+   "capa": "pelo",
+   "linea": "rizo_<lado>",
+   "hueso": "lock_<lado>",
+   "relativo": "cabeza",
+   "pos": [
+    9.0,
+    4.2,
+    -4.0
+   ],
+   "radios": [
+    2.3,
+    3.0,
+    3.0
+   ],
+   "solo_en": [
+    "east",
+    "west"
+   ]
+  },
+  {
+   "tipo": "esfera",
+   "lados": [
+    "L",
+    "R"
+   ],
+   "material": "pelo",
+   "capa": "pelo",
+   "hueso": "lock_<lado>",
+   "relativo": "cabeza",
+   "solo_en": [
+    "south",
+    "north"
+   ],
+   "nombre": "rizo_sn_alto",
+   "linea": "rizo_alto_<lado>",
+   "pos": [
+    10.5,
+    -0.5,
+    -4.4
+   ],
+   "radios": [
+    2.5,
+    3.0,
+    3.2
+   ]
+  },
+  {
+   "tipo": "esfera",
+   "lados": [
+    "L",
+    "R"
+   ],
+   "material": "pelo",
+   "capa": "pelo",
+   "hueso": "lock_<lado>",
+   "relativo": "cabeza",
+   "solo_en": [
+    "south",
+    "north"
+   ],
+   "nombre": "rizo_sn_bajo",
+   "linea": "rizo_bajo_<lado>",
+   "pos": [
+    9.4,
+    -1.0,
+    -7.8
+   ],
+   "radios": [
+    2.3,
+    2.8,
+    2.6
+   ]
+  }
+ ],
+ "retoques": []
+}

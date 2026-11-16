@@ -1,0 +1,16 @@
+PANEL DE AJUSTE
+================
+
+Sirve para cambiar medidas y piezas de un personaje (cadera, pollera, pelo, ojos, el peinado, la ropa...) y ver al toque como queda en pixel art.
+
+1. Doble clic en abrir_panel.bat. Se abre el navegador solo (la primera vez tarda unos segundos). Hace falta Python con numpy y Pillow.
+2. Arriba a la izquierda elegis personaje, referencia y animacion. Si no tocas nada, se ve el personaje quieto.
+3. "Piezas": un desplegable por parte (peinado, ropa, calzado...). Elegi otra o "(ninguna)" para verlo sin esa pieza.
+3b. En "Piezas", el check "Tela" hace que la pollera caiga como tela (vista previa, tarda unos segundos la primera vez; elegis Algodon, Seda o Lona); "Hornear" guarda esa forma en el vestido.
+4. Los deslizadores actualizan la vista en menos de un segundo (renderizan al soltar o cuando dejas de moverlos). Se puede escribir el numero, usar las flechas del teclado, la flecha circular lo deja en cero, y Ctrl+Z / Ctrl+Y deshacen y rehacen.
+5. Arriba de las vistas: cuantas direcciones ver, zoom, la referencia (al lado, encima o en silueta), cuadricula y regla. La regla cuenta las filas desde la suela (la suela es 0). Con el mouse sobre el dibujo ves fila, columna y color.
+6. "Antes / despues" muestra lo que estaba guardado. "Ver 3D" muestra el modelo sin pixelar grande; la tira "Referencia 3D" de arriba se actualiza sola (se apaga con "3D en vivo").
+7. "Play" anima el personaje; la barra mueve cuadro por cuadro.
+8. "¿Esta bien?" revisa la caminata y contesta en verde o rojo. "Guardar" guarda; "Volver a como estaba" deshace todo.
+9. "Render de prueba" escribe la hoja en art\pruebas. "Exportar al juego" la copia a assets (te pregunta antes de pisar).
+10. Si algo falla, sale un cartel rojo arriba a la derecha con lo que paso; queda hasta que lo cierres con la X ("Limpiar todo" saca todos). Para terminar, cerrar la ventana negra.

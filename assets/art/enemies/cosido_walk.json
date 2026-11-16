@@ -19,5 +19,6 @@
  "anchor": {
   "feet_x": 48,
   "sole_y": 93
- }
+ },
+ "move_speed": 14.7
 }
